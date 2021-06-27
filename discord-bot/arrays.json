@@ -1,8 +1,8 @@
 {
     "genreList": [
-        "Brostep/Riddim", "Future Riddim", "Color Bass", "Melodic Dubstep", "Electro House", "Midtempo/New Beat", "Techno", "Hardstyle", "Happy Hardcore", 
-        "Other Hardcore", "Psytrance", "Other Trance", "Progressive House", "Future House", "Big Room House", "Bass House", "Trap", "Future Bass", "Glitch Hop/Moombah", "Dancefloor DnB",
-        "Liquid DnB", "Neuro DnB", "Other DnB", "Indie Dance/Nu Disco", "Synthwave", "Garage", "Other Chillout", "Non-EDM"
+        "Brostep/Riddim", "Future Riddim", "Color Bass", "Melodic Dubstep", "Electro House", "Midtempo/New Beat", "Techno", "Hardstyle", "Hardcore", 
+        "Psytrance", "Other Trance", "Progressive House", "Future House", "Big Room House", "Bass House", "Trap", "Future Bass", "Glitch Hop/Moombah", "Dancefloor DnB",
+        "Liquid DnB", "Neuro DnB", "Other DnB", "Indie Dance/Nu Disco", "Synthwave", "Garage/Chillout", "Non-EDM"
     ],
     
     "ogreList": [

@@ -1,5 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
+const { capitalize } = require('../func.js');
 
 module.exports = {
     name: 'editreview',
@@ -13,13 +14,8 @@ module.exports = {
 	execute(message, args) {
         
         //Auto-adjustment to caps for each word
-        args[0] = args[0].split(' ');
-        args[0] = args[0].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        args[0] = args[0].join(' ');
-
-        args[1] = args[1].split(' ');
-        args[1] = args[1].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        args[1] = args[1].join(' ');
+        args[0] = capitalize(args[0]);
+        args[1] = capitalize(args[1]);
 
         let taggedUser = false;
         let taggedMember = false;
@@ -75,22 +71,15 @@ module.exports = {
 
             if (Array.isArray(featArtists)) {
                 for (let i = 0; i < featArtists.length; i++) {
-                    featArtists[i] = featArtists[i].split(' ');
-                    featArtists[i] = featArtists[i].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                    featArtists[i] = featArtists[i].join(' ');
-
+                    featArtists[i] = capitalize(featArtists[i]);
                     artistArray.push(featArtists[i]);
                 }
             } else if (featArtists != false) {
-                featArtists = featArtists.split(' ');
-                featArtists = featArtists.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                featArtists = featArtists.join(' ');
-
+                featArtists = capitalize(featArtists);
                 artistArray.push(featArtists);
             }
 
         } else if (args[1].includes('(ft')) {
-
             songName = args[1].split(` (ft`);
             if (songName[1].includes(`[`)) {
                 featArtists = songName[1].split('[');
@@ -103,20 +92,13 @@ module.exports = {
 
             if (Array.isArray(featArtists)) {
                 for (let i = 0; i < featArtists.length; i++) {
-                    featArtists[i] = featArtists[i].split(' ');
-                    featArtists[i] = featArtists[i].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                    featArtists[i] = featArtists[i].join(' ');
-
+                    featArtists[i] = capitalize(featArtists[i]);
                     artistArray.push(featArtists[i]);
                 }
             } else {
-                featArtists = featArtists.split(' ');
-                featArtists = featArtists.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                featArtists = featArtists.join(' ');
-
+                featArtists = capitalize(featArtists);
                 artistArray.push(featArtists);
             }
-
         }
 
         //Remix preparation

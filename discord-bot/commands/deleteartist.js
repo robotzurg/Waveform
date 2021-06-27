@@ -1,23 +1,21 @@
 const db = require("../db.js");
+const { capitalize } = require("../func.js");
 
 module.exports = {
 	name: 'deleteartist',
-    aliases: ['deleteartist', 'deletea'],
-	type: 'Admin',
-    description: 'Deletes an artist from the database. [ADMIN/BOT OWNER ONLY]',
-    args: true,
-    arg_num: 1,
-    usage: '<artist>',
-	execute(message, args) {
-        
-        //Auto-adjustment to caps for each word
-        args[0] = args[0].split(' ');
-        args[0] = args[0].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        args[0] = args[0].join(' ');
-
-		if (message.member.hasPermission('ADMINISTRATOR') || message.author.id === '122568101995872256') {
-            db.reviewDB.delete(args[0]);
-			message.channel.send(`${args[0]} deleted from the database.`);
-		} else { return message.reply('You don\'t have the perms to use this command!'); }
+    description: 'Deletes an artist from the database.',
+	options: [
+        {
+            name: 'artist',
+            type: 'STRING',
+            description: 'The name of the artist.',
+            required: true,
+        },
+    ],
+    admin: true,
+	execute(interaction) {
+		interaction.options[0].value = capitalize(interaction.options[0].value);
+		db.reviewDB.delete(interaction.options[0].value);
+		interaction.editReply(`${interaction.options[0].value} deleted from the database.`);
 	},
 };

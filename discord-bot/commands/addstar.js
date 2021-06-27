@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { filter_users } = require("../func.js");
+const { filter_users, capitalize } = require("../func.js");
 const Discord = require('discord.js');
 
 module.exports = {
@@ -67,14 +67,10 @@ module.exports = {
         }
 
         //Auto-adjustment to caps for each word
-        artistArray[0] = artistArray[0].split(' ');
-        artistArray[0] = artistArray[0].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        artistArray[0] = artistArray[0].join(' ');
+        artistArray[0] = capitalize(artistArray[0]);
 
         if (args[0] != 's') {
-            args[0] = args[0].split(' ');
-            args[0] = args[0].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-            args[0] = args[0].join(' ');
+            args[0] = capitalize(args[0]);
         }
 
         if (args.length === 1 && args[0] != 's') {         
@@ -110,9 +106,7 @@ module.exports = {
             }
         }
 
-        argSongName = argSongName.split(' ');
-        argSongName = argSongName.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        argSongName = argSongName.join(' ');
+        argSongName = capitalize(argSongName);
         
         if (argSongName.includes('EP') || argSongName.includes('LP') || argSongName.toLowerCase().includes('the remixes')) {
             return message.channel.send('This isn\'t a single! Please use `!getEP` to get EP/LP overviews.');
@@ -139,14 +133,10 @@ module.exports = {
 
                 if (Array.isArray(vocalsArray)) {
                     for (let i = 0; i < vocalsArray.length; i++) {
-                        vocalsArray[i] = vocalsArray[i].split(' ');
-                        vocalsArray[i] = vocalsArray[i].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                        vocalsArray[i] = vocalsArray[i].join(' ');
+                        vocalsArray[i] = capitalize(vocalsArray[i]);
                     }
                 } else if (vocalsArray != false) {
-                    vocalsArray = vocalsArray.split(' ');
-                    vocalsArray = vocalsArray.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                    vocalsArray = vocalsArray.join(' ');
+                    vocalsArray = capitalize(vocalsArray);
                 }
 
             } else if (argSongName.includes('(ft')) {
@@ -163,17 +153,11 @@ module.exports = {
 
                 if (Array.isArray(vocalsArray)) {
                     for (let i = 0; i < vocalsArray.length; i++) {
-                        vocalsArray[i] = vocalsArray[i].split(' ');
-                        vocalsArray[i] = vocalsArray[i].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                        vocalsArray[i] = vocalsArray[i].join(' ');
+                        vocalsArray[i] = capitalize(vocalsArray[i]);
                     }
                 } else {
-                    vocalsArray = vocalsArray.split(' ');
-                    vocalsArray = vocalsArray.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                    vocalsArray = vocalsArray.join(' ');
-
+                    vocalsArray = capitalize(vocalsArray);
                 }
-
             }
         }
 
@@ -227,9 +211,7 @@ module.exports = {
 
         for (let i = 0; i < artistArray.length; i++) {
             if (artistArray[i] != rmxArtist) {
-                artistArray[i] = artistArray[i].split(' ');
-                artistArray[i] = artistArray[i].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                artistArray[i] = artistArray[i].join(' ');
+                artistArray[i] = capitalize(artistArray[i]);
 
                 if (!db.reviewDB.has(artistArray[i])) return message.channel.send(`${artistArray[i]} not found in database.`);
                 if (db.reviewDB.get(artistArray[i], `["${songName}"]`) === undefined) return message.channel.send(`${artistArray[i]} - ${argSongName} not found in database.`);
@@ -238,15 +220,12 @@ module.exports = {
 
                 db.reviewDB.set(artistArray[i], true, `["${songName}"].["<@${message.author.id}>"].starred`);
             } else {
-                artistArray[i] = artistArray[i].split(' ');
-                artistArray[i] = artistArray[i].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                artistArray[i] = artistArray[i].join(' ');
+                artistArray[i] = capitalize(artistArray[i]);
 
                 if (!db.reviewDB.has(artistArray[i])) return message.channel.send(`${artistArray[i]} not found in database.`);
                 if (db.reviewDB.get(artistArray[i], `["${fullSongName}"]`) === undefined) return message.channel.send(`${artistArray[i]} - ${argSongName} not found in database.`);
                 if (db.reviewDB.get(artistArray[i], `["${fullSongName}"].["<@${message.author.id}>"]`) === undefined) return message.channel.send(`You haven't reviewed ${artistArray[i]} - ${argSongName}.`);
                 if (db.reviewDB.get(artistArray[i], `["${fullSongName}"].["<@${message.author.id}>"].rate`) != '10/10') return message.channel.send(`You can only give stars to songs you gave a 10/10.`);
-
 
                 db.reviewDB.set(artistArray[i], true, `["${fullSongName}"].["<@${message.author.id}>"].starred`);
             }

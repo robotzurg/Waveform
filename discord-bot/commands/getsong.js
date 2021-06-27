@@ -1,22 +1,49 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
+const { capitalize } = require('../func.js');
 
 module.exports = {
     name: 'getsong',
-    type: 'Review DB',
-    aliases: ['getsong', 'gets'],
-    moreinfo: 'https://discord.com/channels/680864893552951306/794751896823922708/795552783960506370',
-    description: 'Get all the data about a song and displays it in an embed message.\n\nYou can also put nothing for the artist argument, which will make the bot search the database for the song in question and display it.',
-    args: true,
-    arg_num: 2,
-    usage: '<artist> [op] | <song>',
-	execute(message, args) {
+    description: 'Get all the data about a song and displays it in an embed message.',
+    options: [
+        {
+            name: 'artist',
+            type: 'STRING',
+            description: 'The name of the artist.',
+            required: true,
+        }, {
+            name: 'song',
+            type: 'STRING',
+            description: 'The name of the song.',
+            required: true,
+        }, {
+            name: 'remixers',
+            type: 'STRING',
+            description: 'Remix artists on the song.',
+            required: false,
+        }, 
+    ],
+	admin: false,
+	async execute(interaction) {
 
-        let argArtistName = args[0];
-        let argSongName = args[1];
-        let sent = false;
+        let args = [];
+        let rmxArtists = [];
 
-        if (args[0] === 's') {
+        await interaction.options.forEach(async (value) => {
+            args.push(value.value);
+            if (value.name === 'remixers') {
+                rmxArtists.push(value.value.split(' & '));
+                rmxArtists = rmxArtists.flat(1);
+            }
+        });
+
+        let origArtistNames = args[0];
+        let origSongName = args[1];
+        
+        origArtistNames = capitalize(origArtistNames);
+        origSongName = capitalize(origSongName);
+
+        /*if (args[0] === 's') {
             message.author.presence.activities.forEach((activity) => {
                 if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
                     let artists = activity.state;
@@ -50,29 +77,19 @@ module.exports = {
                         song = `${title[0]} VIP`;
                     }
                     
-                    argArtistName = artists;
-                    argSongName = song;
+                    origArtistNames = artists;
+                    origSongName = song;
                     sent = true;
                 }
             });
-        }
+        }*/
 
-        if (sent === false && args[0] === 's') {
+        /*if (sent === false && args[0] === 's') {
             return message.channel.send('You aren\'t listening to a song on Spotify, or the song you tried to query does not exist.');
-        }
+        }*/
 
-        //Auto-adjustment to caps for each word
-        argArtistName = argArtistName.split(' ');
-        argArtistName = argArtistName.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        argArtistName = argArtistName.join(' ');
-
-        if (args[0] != 's') {
-            args[0] = args[0].split(' ');
-            args[0] = args[0].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-            args[0] = args[0].join(' ');
-        }
-
-        if (args.length === 1 && args[0] != 's') {         
+    
+        /*if (args.length === 1) {         
             const dbKeyArray = db.reviewDB.keyArray();
             let options = [];
 
@@ -90,9 +107,9 @@ module.exports = {
                     }
 
                     if (AsongArray[ii] === args[0] && !vocalCheck.includes(dbKeyArray[aI]) && !options.includes(`${collabCheck} | ${AsongArray[ii]}`)) {
-                        argArtistName = dbKeyArray[aI];
-                        argSongName = AsongArray[ii];
-                        options.push([argArtistName, argSongName]);
+                        origArtistNames = dbKeyArray[aI];
+                        origSongName = AsongArray[ii];
+                        options.push([origArtistNames, origSongName]);
                         options[options.length - 1] = options[options.length - 1].join(' | ');
                     } 
                 }
@@ -103,81 +120,41 @@ module.exports = {
             if (options.length === 0) {
                 return message.channel.send('There is no song in the database that exists with this name.');
             }
-        }
-
-        argSongName = argSongName.split(' ');
-        argSongName = argSongName.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        argSongName = argSongName.join(' ');
+        }*/
         
-        if (argSongName.includes('EP') || argSongName.includes('LP') || argSongName.toLowerCase().includes('the remixes')) {
-            return message.channel.send('This isn\'t a single! Please use `!getEP` to get EP/LP overviews.');
+        if (origSongName.includes('EP') || origSongName.includes('LP') || origSongName.toLowerCase().includes('the remixes')) {
+            return interaction.editReply('This isn\'t a single! EP reviews are coming soon.');
         }
-
 
         // Function to grab average of all ratings later
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
 
-        const artistName = argArtistName.split(' & ');
+        let artistArray = origArtistNames.split(' & ');
+        let songName = origSongName;
 
-        for (let i = 0; i < artistName.length; i++) {
-            if (!db.reviewDB.has(artistName[i])) {
-                return message.channel.send(`The artist \`${artistName[i]}\` is not in the database, therefore this song isn't either.`);
+        if (rmxArtists.length != 0) {
+            artistArray = rmxArtists;
+            songName = `${origSongName} (${rmxArtists.join(' & ')} Remix)`;
+        }
+
+        for (let i = 0; i < artistArray.length; i++) {
+            if (!db.reviewDB.has(artistArray[i])) {
+                return interaction.editReply(`The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.`);
             }
         }
         
-        let songName = argSongName;
-        let rmxArtist = false;
         let songObj;
         let songEP = false;
-        let remixObj;
+        let remixArray;
         let remixes = [];
         let fullSongName = false;
         let starCount = 0;
 
-        let artistsEmbed = argArtistName;
+        let artistsEmbed = origArtistNames;
         let vocalistsEmbed = [];
-
-        //Take out the ft./feat.
-        if (argSongName.includes('(feat')) {
-
-            songName = argSongName.split(` (feat`);
-            if (argSongName.toLowerCase().includes('remix')) { 
-                rmxArtist = songName[1].split(' [')[1].slice(0, -6);
-                fullSongName = `${songName} [${rmxArtist}Remix]`;
-            }
-            songName = songName[0];
-
-        } else if (argSongName.includes('(ft')) {
-
-            songName = argSongName.split(` (ft`);
-            if (argSongName.toLowerCase().includes('remix')) { 
-                rmxArtist = songName[1].split(' [')[1].slice(0, -6); 
-                fullSongName = `${songName} [${rmxArtist}Remix]`;
-            }
-            songName = songName[0];
-
-        }
 
         if (fullSongName === false) {
             fullSongName = songName;
-        }
-    
-        //Remix preparation
-        if (songName.toLowerCase().includes('remix')) {
-            songName = argSongName.split(` [`)[0];
-            rmxArtist = argSongName.split(' [')[1].slice(0, -7);
-            fullSongName = `${songName} [${rmxArtist} Remix]`;
-        } else if (songName.toLowerCase().includes('bootleg]')) {
-            songName = argSongName.substring(0, argSongName.length - 10).split(' [')[0];
-            rmxArtist = argSongName.substring(0, argSongName.length - 10).split(' [')[1];
-            fullSongName = `${songName} [${rmxArtist} Bootleg]`;
-        } else if (songName.toLowerCase().includes('flip]') || songName.toLowerCase().includes('edit]')) {
-            songName = argSongName.substring(0, argSongName.length - 6).split(' [')[0];
-            rmxArtist = argSongName.substring(0, argSongName.length - 6).split(' [')[1];
-        }
-
-        if (artistName[0] === rmxArtist) {
-            artistName[0] = db.reviewDB.get(rmxArtist, `["${songName} [${rmxArtist} Remix]"].Collab`)[0];
         }
 
         //Adjust (VIP)
@@ -187,111 +164,95 @@ module.exports = {
         }
 
         // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
-        if (db.reviewDB.get(artistName[0], `["${songName}"].Collab`) != undefined) {
-            if (db.reviewDB.get(artistName[0], `["${songName}"].Collab`).length != 0) {
-                artistsEmbed = [artistName[0]];
-                artistsEmbed.push(db.reviewDB.get(artistName[0], `["${songName}"].Collab`));
+        if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
+            if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
+                artistsEmbed = [artistArray[0]];
+                artistsEmbed.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
                 artistsEmbed = artistsEmbed.flat(1);
+                if (rmxArtists.length != 0) {
+                    artistsEmbed = artistsEmbed.filter(v => !rmxArtists.includes(v));
+                }
+
                 artistsEmbed = artistsEmbed.join(' & ');
             }
         }
 
-        if (db.reviewDB.get(artistName[0], `["${songName}"].Vocals`) != undefined) {
-            if (db.reviewDB.get(artistName[0], `["${songName}"].Vocals`).length != 0) {
+        if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`) != undefined) {
+            if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`).length != 0) {
                 vocalistsEmbed = [];
-                vocalistsEmbed.push(db.reviewDB.get(artistName[0], `["${songName}"].Vocals`));
+                vocalistsEmbed.push(db.reviewDB.get(artistArray[0], `["${songName}"].vocals`));
                 vocalistsEmbed = vocalistsEmbed.flat(1);
                 vocalistsEmbed = vocalistsEmbed.join(' & ');
             }
         }
 
+        console.log(artistArray[0]);
+        songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
+        if (songObj === undefined) return interaction.editReply('The requested song does not exist.\nUse `/getArtist` to get a full list of this artist\'s songs.');
+        songEP = songObj.ep;
+        remixArray = songObj.remixers;
 
-        if (rmxArtist === false) {
-            songObj = db.reviewDB.get(artistName[0], `["${songName}"]`);
-            if (songObj === undefined) return message.channel.send('The requested song does not exist.\nUse `!getArtist` to get a full list of this artist\'s songs.');
-            songEP = songObj.EP;
-            remixObj = songObj.Remixers;
-
-            if (remixObj != false && remixObj != undefined && remixObj != null) {
-                let remixObjKeys = Object.keys(remixObj);
-
-                for (let i = 0; i < remixObjKeys.length; i++) {
-                    remixes.push(`\`${remixObjKeys[i]} Remix\``);
-                }
+        if (remixArray.length != 0) {
+            for (let i = 0; i < remixArray.length; i++) {
+                remixes.push(`\`${remixArray[i]} Remix\``);
             }
-            if (songEP === undefined) songEP = false;
-        } else {
-            songObj = db.reviewDB.get(artistName[0], `["${songName}"].Remixers.["${rmxArtist}"]`);
-            if (songObj === undefined) return message.channel.send('The requested song does not exist.\nUse `!getArtist` to get a full list of this artist\'s songs.');
-            if (db.reviewDB.get(artistName[0], `["${songName}"].Remixers.["${rmxArtist}"].EP` === undefined)) {
-                songEP = songObj.EP;
-            } else {
-                songEP = false;
-            }
-            if (songEP === undefined) songEP = false;
         }
-        
-        if (songObj === undefined) return message.channel.send('The requested song does not exist.\nUse `!getArtist` to get a full list of this artist\'s songs.');
+        if (songEP === undefined || songEP === false) songEP = false;
         
         let userArray = Object.keys(songObj);
         
-        userArray = userArray.filter(e => e !== 'EP');
-        userArray = userArray.filter(e => e !== 'Image');
-        userArray = userArray.filter(e => e !== 'Remixers');
-        userArray = userArray.filter(e => e !== 'Collab');
-        userArray = userArray.filter(e => e !== 'Vocals');
-        userArray = userArray.filter(e => e !== 'EPpos');
+        userArray = userArray.filter(e => e !== 'ep');
+        userArray = userArray.filter(e => e !== 'art');
+        userArray = userArray.filter(e => e !== 'remixers');
+        userArray = userArray.filter(e => e !== 'collab');
+        userArray = userArray.filter(e => e !== 'vocals');
+        userArray = userArray.filter(e => e !== 'hof_id');
+        userArray = userArray.filter(e => e !== 'review_num');
+
+        console.log(userArray);
         
         const rankNumArray = [];
 
-        const exampleEmbed = new Discord.MessageEmbed()
-            .setColor(`${message.member.displayHexColor}`);
+        const songEmbed = new Discord.MessageEmbed()
+            .setColor(`${interaction.member.displayHexColor}`);
 
-            if (!argSongName.includes('(feat') && !argSongName.includes('(ft') && vocalistsEmbed.length != 0) {
-                vocalistsEmbed = `${argSongName} (ft. ${vocalistsEmbed})`;
-                exampleEmbed.setTitle(`${artistsEmbed} - ${vocalistsEmbed}`);
+            if (vocalistsEmbed.length != 0) {
+                vocalistsEmbed = `${songName} (ft. ${vocalistsEmbed})`;
+                songEmbed.setTitle(`${artistsEmbed} - ${vocalistsEmbed}`);
             } else {
-                exampleEmbed.setTitle(`${artistsEmbed} - ${argSongName}`);
+                songEmbed.setTitle(`${artistsEmbed} - ${songName}`);
             }
 
             for (let i = 0; i < userArray.length; i++) {
                 if (userArray[i] != 'EP') {
                     let rating;
                     let starred = false;
-                    if (rmxArtist === false) {
-                        rating = db.reviewDB.get(artistName[0], `["${songName}"].["${userArray[i]}"].rate`);
-                        if (db.reviewDB.get(artistName[0], `["${songName}"].["${userArray[i]}"].starred`) === true) {
-                            starCount++;
-                            starred = true;
-                        }
-                    } else {
-                        rating = db.reviewDB.get(artistName[0], `["${songName}"].Remixers.["${rmxArtist}"].["${userArray[i]}"].rate`);
-                        if (db.reviewDB.get(artistName[0], `["${songName}"].Remixers.["${rmxArtist}"].["${userArray[i]}"].starred`) === true) {
-                            starCount++;
-                            starred = true;
-                        }
+                    rating = db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].rating`);
+                    if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].starred`) === true) {
+                        starCount++;
+                        starred = true;
                     }
-                    rankNumArray.push(parseFloat(rating.slice(0, -3)));
+                    rankNumArray.push(parseFloat(rating));
                     if (starred === true) {
-                        userArray[i] = [parseFloat(rating.slice(0, -3)) + 1, `:star2: ${userArray[i]} \`${rating}\``];
+                        userArray[i] = [parseFloat(rating) + 1, `:star2: ${userArray[i]} \`${rating}/10\``];
                     } else {
-                        userArray[i] = [parseFloat(rating.slice(0, -3)), `${userArray[i]} \`${rating}\``];
+                        userArray[i] = [parseFloat(rating), `<@${userArray[i]}> \`${rating}/10\``];
                     }
                 }
             }
             
             if (rankNumArray.length != 0) {
+                console.log(rankNumArray);
                 if (starCount != 0) {
-                    exampleEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***\n:star2: **This song has ${starCount} star${starCount === 1 ? '' : 's'}!** :star2:`);
+                    songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***\n:star2: **This song has ${starCount} star${starCount === 1 ? '' : 's'}!** :star2:`);
                 } else {
-                    exampleEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***`);
+                    songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***`);
                 }
             } else {
-                exampleEmbed.setDescription(`*The average rating of this song is N/A*`);
+                songEmbed.setDescription(`*The average rating of this song is N/A*`);
             }
 
-            if (userArray != 0) {
-                console.log(userArray);
+            if (userArray != 0) { // Sort it by highest to lowest rating
                 userArray = userArray.sort(function(a, b) {
                     return b[0] - a[0];
                 });
@@ -301,43 +262,28 @@ module.exports = {
                 for (let i = 0; i <= userArray.length; i++) {
                     userArray.splice(i, 1);
                 }
-
-                exampleEmbed.addField('Reviews:', userArray);
+            
+                songEmbed.addField('Reviews:', userArray.join('\n'));
             } else {
-                exampleEmbed.addField('Reviews:', 'No reviews :(');
+                songEmbed.addField('Reviews:', 'No reviews :(');
             }
 
             if (remixes.length != 0) {
-                exampleEmbed.addField('Remixes:', remixes);
+                songEmbed.addField('Remixes:', remixes.join('\n'));
             } 
 
-            if (rmxArtist === false) {
-                if ((db.reviewDB.get(artistName[0], `["${songName}"].Image`)) === false) {
-                    exampleEmbed.setThumbnail(message.author.avatarURL({ format: "png" }));
-                    if (songEP != false) {
-                        exampleEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistName[0], `["${songEP}"].Image`));
-                    }
-                } else {
-                    exampleEmbed.setThumbnail(db.reviewDB.get(artistName[0], `["${songName}"].Image`));
-                    if (songEP != false) {
-                        exampleEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistName[0], `["${songEP}"].Image`));
-                    }
+            if ((db.reviewDB.get(artistArray[0], `["${songName}"].art`)) === false) {
+                songEmbed.setThumbnail(interaction.author.avatarURL({ format: "png" }));
+                if (songEP != false) {
+                    songEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
                 }
             } else {
-                if (db.reviewDB.get(artistName[0], `["${songName}"].Remixers.["${rmxArtist}"].Image`) === false) {
-                    exampleEmbed.setThumbnail(message.author.avatarURL({ format: "png" }));
-                    if (songEP != false) {
-                        exampleEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistName[0], `["${songEP}"].Image`));
-                    }
-                } else {
-                    exampleEmbed.setThumbnail(db.reviewDB.get(artistName[0], `["${songName}"].Remixers.["${rmxArtist}"].Image`));
-                    if (songEP != false) {
-                        exampleEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistName[0], `["${songEP}"].Image`));
-                    }
+                songEmbed.setThumbnail(db.reviewDB.get(artistArray[0], `["${songName}"].art`));
+                if (songEP != false) {
+                    songEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
                 }
             }
 
-        message.reactions.removeAll();
-        message.channel.send(exampleEmbed);
+        interaction.editReply({ embeds: [songEmbed] });
 	},
 };

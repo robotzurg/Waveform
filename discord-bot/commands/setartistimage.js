@@ -1,4 +1,5 @@
 const db = require("../db.js");
+const { capitalize } = require("../func.js");
 
 module.exports = {
 	name: 'setartistimage',
@@ -9,12 +10,10 @@ module.exports = {
 	args: true,
 	arg_num: 2,
 	usage: '<artist> | [op] <url>',
-	execute(message, args) {
+	async execute(message, args) {
 
 		//Auto-adjustment to caps for each word
-        args[0] = args[0].split(' ');
-        args[0] = args[0].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        args[0] = args[0].join(' ');
+        args[0] = capitalize(args[0]);
 
 		let thumbnailImage;
 		if (args.length < 1) {

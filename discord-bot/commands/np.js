@@ -1,15 +1,18 @@
 const Discord = require('discord.js');
 const db = require('../db.js');
+const { capitalize } = require('../func.js');
 
 module.exports = {
 	name: 'np',
-	type: 'Fun',
 	description: 'Display your currently playing song on Spotify!',
-	execute(message) {
+    options: [],
+	execute(interaction) {
         let sent = false;
         // Function to grab average of all ratings later
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
-        message.author.presence.activities.forEach((activity) => {
+        console.log(interaction.user);
+        interaction.user.presence.activities.forEach((activity) => {
+            console.log(activity);
             if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
                 let artists = activity.state;
                 let artistArray = [activity.state];
@@ -27,9 +30,7 @@ module.exports = {
                 if (artists.includes(',')) {
                     artists = artists.split(', ');
                     for (let i = 0; i < artists.length; i++) {
-                        artists[i] = artists[i].split(' ');
-                        artists[i] = artists[i].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                        artists[i] = artists[i].join(' ');
+                        artists[i] = capitalize(artists[i]);
                     }
                     artists = artists.join(' & ');
                 }
@@ -42,7 +43,7 @@ module.exports = {
                 if (activity.details.includes('Remix') && activity.details.includes('-')) {
                     let title = activity.details.split(' - ');
                     rmxArtist = title[1].slice(0, -6);
-                    activity.details = `${title[0]} [${rmxArtist} Remix]`;
+                    activity.details = `${title[0]} (${rmxArtist} Remix)`;
                 }
 
                 if (activity.details.includes('VIP') && activity.details.includes('-')) {
@@ -56,38 +57,32 @@ module.exports = {
                 }
 
                 const exampleEmbed = new Discord.MessageEmbed()
-                .setColor(`${message.member.displayHexColor}`)
+                .setColor(`${interaction.member.displayHexColor}`)
                 .setTitle(`${artists} - ${activity.details}`)
-                .setAuthor(`${message.member.displayName}'s current song`, `${message.author.avatarURL({ format: "png", dynamic: false })}`);
+                .setAuthor(`${interaction.member.displayName}'s current song`, `${interaction.user.avatarURL({ format: "png", dynamic: false })}`);
 
-                artistArray[0] = artistArray[0].split(' ');
-                artistArray[0] = artistArray[0].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                artistArray[0] = artistArray[0].join(' ');
+                artistArray[0] = capitalize(artistArray[0]);
 
                 if (rmxArtist != false) {
-                    rmxArtist = rmxArtist.split(' ');
-                    rmxArtist = rmxArtist.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                    rmxArtist = rmxArtist.join(' ');
-
+                    rmxArtist = capitalize(rmxArtist);
                     artistArray[0] = rmxArtist;
                 }
 
                 if (db.reviewDB.has(artistArray[0])) {
 
-                    activity.details = activity.details.split(' ');
-                    activity.details = activity.details.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                    activity.details = activity.details.join(' ');
+                    activity.details = capitalize(activity.details);
 
                     if (db.reviewDB.get(artistArray[0], `["${activity.details}"]`) != undefined) {
 
                         let userArray = Object.keys(db.reviewDB.get(artistArray[0], `["${activity.details}"]`));
             
-                        userArray = userArray.filter(e => e !== 'EP');
-                        userArray = userArray.filter(e => e !== 'Image');
-                        userArray = userArray.filter(e => e !== 'Remixers');
-                        userArray = userArray.filter(e => e !== 'Collab');
-                        userArray = userArray.filter(e => e !== 'Vocals');
-                        userArray = userArray.filter(e => e !== 'EPpos');
+                        userArray = userArray.filter(e => e !== 'ep');
+                        userArray = userArray.filter(e => e !== 'art');
+                        userArray = userArray.filter(e => e !== 'remixers');
+                        userArray = userArray.filter(e => e !== 'collab');
+                        userArray = userArray.filter(e => e !== 'vocals');
+                        userArray = userArray.filter(e => e !== 'hof_id');
+                        userArray = userArray.filter(e => e !== 'review_num');
                         
                         const rankNumArray = [];
                         let starNum = 0;
@@ -95,30 +90,31 @@ module.exports = {
 
                             for (let i = 0; i < userArray.length; i++) {
                                 
-                                if (userArray[i] === `<@${message.author.id}>`) {
-                                    yourReview = db.reviewDB.get(artistArray[0], `["${activity.details}"].["${userArray[i]}"].rate`);
+                                if (userArray[i] === `${interaction.user.id}`) {
+                                    yourReview = db.reviewDB.get(artistArray[0], `["${activity.details}"].["${userArray[i]}"].rating`);
+                                    console.log(yourReview);
                                 }
-                                if (userArray[i] != 'EP') {
+                                if (userArray[i] != 'ep') {
                                     let rating;
-                                    rating = db.reviewDB.get(artistArray[0], `["${activity.details}"].${userArray[i]}.rate`);
+                                    rating = db.reviewDB.get(artistArray[0], `["${activity.details}"].["${userArray[i]}"].rating`);
 
-                                    if (db.reviewDB.get(artistArray[0], `["${activity.details}"].${userArray[i]}.starred`) === true) {
+                                    if (db.reviewDB.get(artistArray[0], `["${activity.details}"].["${userArray[i]}"].starred`) === true) {
                                         starNum++;
                                         console.log(userArray[i]);
-                                        if (userArray[i] === `<@${message.author.id}>`) {
+                                        if (userArray[i] === `${interaction.user.id}`) {
                                             yourStar = '⭐'; //Added to the end of your rating tab
                                         }
                                     }
 
-                                    rankNumArray.push(parseFloat(rating.slice(0, -3)));
-                                    userArray[i] = [parseFloat(rating.slice(0, -3)), `${userArray[i]} \`${rating}\``];
+                                    rankNumArray.push(rating);
+                                    userArray[i] = [rating, `${userArray[i]} \`${rating}\``];
                                 }
                             }
 
-                        exampleEmbed.setDescription(`Reviews: \`${userArray.length} reviews\`\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}${yourReview != false ? `\nYour Rating: \`${yourReview}${yourStar}\`` : ''}`);
+                        exampleEmbed.setDescription(`Reviews: \`${userArray.length} reviews\`\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}${yourReview != false ? `\nYour Rating: \`${yourReview}/10${yourStar}\`` : ''}`);
 
-                        if (db.reviewDB.get(artistArray[0], `["${activity.details}"].EP`) != undefined && db.reviewDB.get(artistArray[0], `["${activity.details}"].EP`) != false) {
-                            exampleEmbed.setFooter(`from ${db.reviewDB.get(artistArray[0], `["${activity.details}"].EP`)}`, db.reviewDB.get(artistArray[0], `["${db.reviewDB.get(artistArray[0], `["${activity.details}"].EP`)}"].Image`));
+                        if (db.reviewDB.get(artistArray[0], `["${activity.details}"].ep`) != undefined && db.reviewDB.get(artistArray[0], `["${activity.details}"].ep`) != false) {
+                            exampleEmbed.setFooter(`from ${db.reviewDB.get(artistArray[0], `["${activity.details}"].ep`)}`, db.reviewDB.get(artistArray[0], `["${db.reviewDB.get(artistArray[0], `["${activity.details}"].ep`)}"].art`));
                         }
                     } else {
                         exampleEmbed.setDescription(`This song has not been reviewed in the database.`);
@@ -134,11 +130,11 @@ module.exports = {
                     exampleEmbed.setThumbnail(`https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`);
                 }
                 
-                message.channel.send(exampleEmbed);
+                interaction.editReply({ embeds: [exampleEmbed] });
                 sent = true;
             }
         });
 
-        if (sent === false) return message.channel.send('You aren\'t playing a song on Spotify.');
+        if (sent === false) return interaction.editReply('You aren\'t playing a song on Spotify.');
 	},
 };

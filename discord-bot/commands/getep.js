@@ -1,5 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
+const { capitalize } = require('../func.js');
 
 module.exports = {
     name: 'getep',
@@ -25,10 +26,7 @@ module.exports = {
 
         // Function to grab average of all ratings later
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
-
-        args[0] = args[0].split(' ');
-        args[0] = args[0].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        args[0] = args[0].join(' ');
+        args[0] = capitalize(args[0]);
 
         if (argArtistName === false) {
             const dbKeyArray = db.reviewDB.keyArray();

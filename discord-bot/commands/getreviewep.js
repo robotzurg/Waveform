@@ -1,11 +1,12 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
+const { capitalize } = require('../func.js');
 
 module.exports = {
     name: 'getreviewep',
     type: 'Review DB',
     aliases: ['getreviewep', 'getrep', 'getreviewlp', 'getrlp'],
-    description: 'Get an EP review from a user on the server that they have written! Putting nothing for <user> will replace <user> with yourself.',
+    description: 'Get an EP review from a user on the server that they have written!',
     args: true,
     arg_num: 3,
     usage: '<artist> | <song/ep/lp> | [op] <user>',
@@ -39,13 +40,8 @@ module.exports = {
         }
 
         //Auto-adjustment to caps for each word
-        argArtistName = argArtistName.split(' ');
-        argArtistName = argArtistName.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        argArtistName = argArtistName.join(' ');
-
-        args[0] = args[0].split(' ');
-        args[0] = args[0].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        args[0] = args[0].join(' ');
+        argArtistName = capitalize(argArtistName);
+        args[0] = capitalize(args[0]);
 
         if (argEPName === false) {
             const dbKeyArray = db.reviewDB.keyArray();

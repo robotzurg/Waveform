@@ -2,7 +2,7 @@ const Discord = require('discord.js');
 const { prefix } = require('../config.json');
 const db = require("../db.js");
 const { mailboxes } = require('../arrays.json');
-const { filter_users, msg_delete_timeout } = require('../func');
+const { filter_users, msg_delete_timeout, capitalize } = require('../func');
 
 module.exports = {
     name: 'addreviewep',
@@ -13,16 +13,35 @@ module.exports = {
     args: true,
     arg_num: 4,
     usage: '<artist> | <ep/lp_name> | [op] <image> | [op] <user_that_sent_ep/lp>',
-	execute(message, args) {
+	async execute(message, args) {
 
-        //Auto-adjustment to caps for each word
-        args[0] = args[0].split(' ');
-        args[0] = args[0].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        args[0] = args[0].join(' ');
+        let reviewType = 'r'; // i for individual, r for ranking
 
-        args[1] = args[1].split(' ');
-        args[1] = args[1].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        args[1] = args[1].join(' ');
+        const epEmbed = new Discord.MessageEmbed()
+        .setColor(`${message.member.displayHexColor}`)
+        .setTitle(`${args[0]} - ${args[1]}`)
+        .setDescription(`Is this an ranking review, or an individual song review?\n🇮: Individual Song Review\n🇷: Ranking Review`);
+
+        const filter = (reaction, user) => {
+            return (reaction.emoji.name === '🇮' || reaction.emoji.name === '🇷') && user.id === message.author.id;
+        };
+
+        let msg = await message.channel.send(epEmbed);
+        await msg.react('🇮');
+        await msg.react('🇷');
+        await msg.awaitReactions(filter, { max: 1, time: 15000, errors: ['time'] })
+        .then(collected => {
+            const reaction = collected.first();
+            if (reaction.emoji.name === '🇮') {
+                reviewType = 'i';
+            } else if (reaction.emoji.name === '🇷') {
+                reviewType = 'r';
+            }
+        });
+
+        /*//Auto-adjustment to caps for each word
+        args[0] = capitalize(args[0]);
+        args[1] = capitalize(args[1]);
 
         let ep_name = args[1];
         let songs_in_ep = [];
@@ -230,9 +249,7 @@ module.exports = {
                     rmxArtist = fullSongName.substring(0, fullSongName.length - 7).split(' [')[1];
                     artistArray = args[0].split(' & ');
 
-                    rmxArtist = rmxArtist.split(' ');
-                    rmxArtist = rmxArtist.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                    rmxArtist = rmxArtist.join(' ');
+                    rmxArtist = capitalize(rmxArtist);
 
                 } else if (songName.toString().toLowerCase().includes('bootleg]')) {
                     fullSongName = songName;
@@ -240,9 +257,7 @@ module.exports = {
                     rmxArtist = fullSongName.substring(0, fullSongName.length - 9).split(' [')[1];
                     artistArray = args[0].split(' & ');
 
-                    rmxArtist = rmxArtist.split(' ');
-                    rmxArtist = rmxArtist.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                    rmxArtist = rmxArtist.join(' ');
+                    rmxArtist = capitalize(rmxArtist);
 
                 } else if (songName.toString().toLowerCase().includes('flip]') || songName.toString().toLowerCase().includes('edit]')) {
                     fullSongName = songName;
@@ -250,9 +265,7 @@ module.exports = {
                     rmxArtist = fullSongName.substring(0, fullSongName.length - 6).split(' [')[1];
                     artistArray = args[0].split(' & ');
 
-                    rmxArtist = rmxArtist.split(' ');
-                    rmxArtist = rmxArtist.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                    rmxArtist = rmxArtist.join(' ');
+                    rmxArtist = capitalize(rmxArtist);
                 } else {
                     rmxArtist = false;
                 }
@@ -271,13 +284,8 @@ module.exports = {
                         songName = [songName[0], songName[1].split(`[`)];
                         rmxArtist = songName[1][1].slice(0, -7); 
 
-                        songName[0] = songName[0].split(' ');
-                        songName[0] = songName[0].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                        songName[0] = songName[0].join(' ');
-
-                        rmxArtist = rmxArtist.split(' ');
-                        rmxArtist = rmxArtist.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                        rmxArtist = rmxArtist.join(' ');
+                        songName[0] = capitalize(songName[0]);
+                        rmxArtist = capitalize(rmxArtist);
 
                         fullSongName = `${songName[0]} [${rmxArtist} Remix]`;
                     } else {
@@ -289,17 +297,11 @@ module.exports = {
 
                     if (Array.isArray(featArtists)) {
                         for (let i = 0; i < featArtists.length; i++) {
-                            featArtists[i] = featArtists[i].split(' ');
-                            featArtists[i] = featArtists[i].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                            featArtists[i] = featArtists[i].join(' ');
-        
+                            featArtists[i] = capitalize(featArtists[i]);
                             artistArray.push(featArtists[i]);
                         }
                     } else if (featArtists != false) {
-                        featArtists = featArtists.split(' ');
-                        featArtists = featArtists.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                        featArtists = featArtists.join(' ');
-        
+                        featArtists = capitalize(featArtists);
                         artistArray.push(featArtists);
                     }
                 }
@@ -314,17 +316,11 @@ module.exports = {
 
                     if (Array.isArray(epSingleCollabArtists)) {
                         for (let i = 0; i < epSingleCollabArtists.length; i++) {
-                            epSingleCollabArtists[i] = epSingleCollabArtists[i].split(' ');
-                            epSingleCollabArtists[i] = epSingleCollabArtists[i].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                            epSingleCollabArtists[i] = epSingleCollabArtists[i].join(' ');
-
+                            epSingleCollabArtists[i] = capitalize(epSingleCollabArtists[i]);
                             artistArray.push(epSingleCollabArtists[i]);
                         }   
                     } else {
-                        epSingleCollabArtists = epSingleCollabArtists.split(' ');
-                        epSingleCollabArtists = epSingleCollabArtists.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                        epSingleCollabArtists = epSingleCollabArtists.join(' ');
-
+                        epSingleCollabArtists = capitalize(epSingleCollabArtists);
                         artistArray.push(epSingleCollabArtists);
                     }
 
@@ -341,9 +337,7 @@ module.exports = {
                     }
                 }  
 
-                songName = songName.split(' ');
-                songName = songName.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                songName = songName.join(' ');
+                songName = capitalize(songName);
 
                 if (rmxArtist === false) {
                     songs_in_rep.push(songName);
@@ -1000,6 +994,6 @@ module.exports = {
                 }
             });
 
-        });
+        });*/
     },
 };

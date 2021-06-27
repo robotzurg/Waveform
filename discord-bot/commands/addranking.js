@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { mailboxes } = require('../arrays.json');
-const { filter_users, msg_delete_timeout } = require('../func.js');
+const { filter_users, msg_delete_timeout, capitalize } = require('../func.js');
 
 module.exports = {
     name: 'addranking',
@@ -15,13 +15,8 @@ module.exports = {
 	execute(message, args) {
 
         //Auto-adjustment to caps for each word
-        args[0] = args[0].split(' ');
-        args[0] = args[0].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        args[0] = args[0].join(' ');
-
-        args[1] = args[1].split(' ');
-        args[1] = args[1].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        args[1] = args[1].join(' ');
+        args[0] = capitalize(args[0]);
+        args[1] = capitalize(args[1]);
 
         let ep_name = args[1];
         let songs_in_ep = [];
@@ -226,27 +221,21 @@ module.exports = {
                     songName = fullSongName.substring(0, fullSongName.length - 7).split(' [')[0];
                     rmxArtist = fullSongName.substring(0, fullSongName.length - 7).split(' [')[1];
 
-                    rmxArtist = rmxArtist.split(' ');
-                    rmxArtist = rmxArtist.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                    rmxArtist = rmxArtist.join(' ');
+                    rmxArtist = capitalize(rmxArtist);
 
                 } else if (songName.toString().toLowerCase().includes('bootleg')) {
                     fullSongName = songName;
                     songName = fullSongName.substring(0, fullSongName.length - 9).split(' [')[0];
                     rmxArtist = fullSongName.substring(0, fullSongName.length - 9).split(' [')[1];
 
-                    rmxArtist = rmxArtist.split(' ');
-                    rmxArtist = rmxArtist.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                    rmxArtist = rmxArtist.join(' ');
+                    rmxArtist = capitalize(rmxArtist);
 
                 } else if (songName.toString().toLowerCase().includes('flip') || songName.toString().toLowerCase().includes('edit')) {
                     fullSongName = songName;
                     songName = fullSongName.substring(0, fullSongName.length - 6).split(' [')[0];
                     rmxArtist = fullSongName.substring(0, fullSongName.length - 6).split(' [')[1];
 
-                    rmxArtist = rmxArtist.split(' ');
-                    rmxArtist = rmxArtist.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                    rmxArtist = rmxArtist.join(' ');
+                    rmxArtist = capitalize(rmxArtist);
                 }
 
                 if (songName.includes('(feat') || songName.includes('(ft')) {
@@ -272,16 +261,12 @@ module.exports = {
 
                     if (Array.isArray(featArtists)) {
                         for (let i = 0; i < featArtists.length; i++) {
-                            featArtists[i] = featArtists[i].split(' ');
-                            featArtists[i] = featArtists[i].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                            featArtists[i] = featArtists[i].join(' ');
+                            featArtists[i] = capitalize(featArtists[i]);
         
                             artistArray.push(featArtists[i]);
                         }
                     } else if (featArtists != false) {
-                        featArtists = featArtists.split(' ');
-                        featArtists = featArtists.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                        featArtists = featArtists.join(' ');
+                        featArtists = capitalize(featArtists);
         
                         artistArray.push(featArtists);
                     }
@@ -298,16 +283,12 @@ module.exports = {
 
                     if (Array.isArray(epSingleCollabArtists)) {
                         for (let i = 0; i < epSingleCollabArtists.length; i++) {
-                            epSingleCollabArtists[i] = epSingleCollabArtists[i].split(' ');
-                            epSingleCollabArtists[i] = epSingleCollabArtists[i].map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                            epSingleCollabArtists[i] = epSingleCollabArtists[i].join(' ');
+                            epSingleCollabArtists[i] = capitalize(epSingleCollabArtists[i]);
 
                             artistArray.push(epSingleCollabArtists[i]);
                         }   
                     } else {
-                        epSingleCollabArtists = epSingleCollabArtists.split(' ');
-                        epSingleCollabArtists = epSingleCollabArtists.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                        epSingleCollabArtists = epSingleCollabArtists.join(' ');
+                        epSingleCollabArtists = capitalize(epSingleCollabArtists);
 
                         artistArray.push(epSingleCollabArtists);
                     }
@@ -325,9 +306,7 @@ module.exports = {
                     }
                 }
 
-                songName = songName.split(' ');
-                songName = songName.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-                songName = songName.join(' ');
+                songName = capitalize(songName);
 
                 m.delete();
 
