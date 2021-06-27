@@ -234,7 +234,7 @@ module.exports = {
                     }
                     rankNumArray.push(parseFloat(rating));
                     if (starred === true) {
-                        userArray[i] = [parseFloat(rating) + 1, `:star2: ${userArray[i]} \`${rating}/10\``];
+                        userArray[i] = [parseFloat(rating) + 1, `:star2: <@${userArray[i]}> \`${rating}/10\``];
                     } else {
                         userArray[i] = [parseFloat(rating), `<@${userArray[i]}> \`${rating}/10\``];
                     }

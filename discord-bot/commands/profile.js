@@ -32,7 +32,7 @@ module.exports = {
         const profileEmbed = new Discord.MessageEmbed()       
         .setColor(`${taggedMember.displayHexColor}`)
         .setTitle(`${taggedMember.displayName}'s Profile`)
-        .setDescription(`Average Rating: \`${db.user_stats.get(taggedUser.id, 'avg_rating')}\`\n` +
+        .setDescription(`Average Rating: \`${db.user_stats.get(taggedUser.id, 'avg_rating').toFixed(1)}\`\n` +
         `Favorite Song: **${db.user_stats.get(taggedUser.id, 'fav_song')}**\n` +
         `Least Favorite Song: **${db.user_stats.get(taggedUser.id, 'least_fav_song')}**\n` +
         `Most Recent Review: **${db.user_stats.get(taggedUser.id, 'recent_review')}**\n` +
