@@ -78,8 +78,6 @@ module.exports = {
 					review_number += 1;
 					if (reviewObj.starred === undefined) reviewObj.starred = false;
 
-					if (!reviewObj.rate.includes('/10') || reviewObj.rate === undefined) console.log(`Failed: (rating improperly formatted.) ${artist} - ${songObjKeys[i]}`);
-
 					newReviewObj = {
 						"name": reviewObj.name,
 						"rating": parseFloat(reviewObj.rate.slice(0, -3)),
