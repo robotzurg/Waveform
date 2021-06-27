@@ -90,7 +90,7 @@ module.exports = {
             }
     },
 
-    review_song: function(interaction, fullArtistArray, song, review, rating, rmxArtists, featArtists, thumbnailImage = false, taggedUser) {
+    review_song: function(interaction, fullArtistArray, song, review, rating, rmxArtists, featArtists, thumbnailImage = false) {
         for (let i = 0; i < fullArtistArray.length; i++) {
 
             let songName;
@@ -211,7 +211,7 @@ module.exports = {
         };
 
         msg.react('🌟');
-        msg.awaitReactions(filter, { max: 1, time: 10000, errors: ['time'] })
+        msg.awaitReactions({ filter, max: 1, time: 10000, errors: ['time'] })
         .then(collected => {
             console.log(collected);
             console.log('first');

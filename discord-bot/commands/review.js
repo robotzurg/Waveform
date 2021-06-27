@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { capitalize, update_art, review_song, hall_of_fame_check, average } = require('../func.js');
+const { capitalize, update_art, review_song, hall_of_fame_check } = require('../func.js');
 
 module.exports = {
     name: 'review',
@@ -164,11 +164,6 @@ module.exports = {
         // Update user stats
         db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'recent_review');
         db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'review_list');
-        let rating_list_arr = db.user_stats.get(interaction.user.id, 'rating_list');
-        rating_list_arr.push(parseFloat(rating));
-        db.user_stats.set(interaction.user.id, rating_list_arr, 'rating_list');
-        db.user_stats.set(interaction.user.id, average(rating_list_arr), 'avg_rating');
-        
 
         // Send the embed rate message
         interaction.editReply({ embeds: [reviewEmbed] });

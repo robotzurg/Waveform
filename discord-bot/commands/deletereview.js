@@ -64,6 +64,16 @@ module.exports = {
             }
         }
 
+        // Update user stats
+        const array_user = db.user_stats.get(interaction.user.id, 'review_list');
+        for (let i = 0; i < array_user.length; i++) {
+            // if (array_user[i].includes(songName)) delete array_user[i];
+        }
+
+        if (db.user_stats.get(interaction.user.id, 'recent_review').includes(songName)) {
+            db.user_stats.set(interaction.user.id, 'N/A', 'recent_review');
+        }
+
         let songObj;
         for (let i = 0; i < artistArray.length; i++) {
 

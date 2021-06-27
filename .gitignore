@@ -75,3 +75,4 @@ typings/
 # FuseBox cache
 .fusebox/
 discord-bot/config.json
+discord-bot/package-lock.json

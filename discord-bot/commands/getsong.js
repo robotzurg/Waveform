@@ -273,7 +273,7 @@ module.exports = {
             } 
 
             if ((db.reviewDB.get(artistArray[0], `["${songName}"].art`)) === false) {
-                songEmbed.setThumbnail(interaction.author.avatarURL({ format: "png" }));
+                songEmbed.setThumbnail(interaction.user.avatarURL({ format: "png" }));
                 if (songEP != false) {
                     songEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
                 }
