@@ -26,9 +26,9 @@ module.exports = {
 			artist = artistArray[a];
 
 			const artistObj = db.reviewdb_old.get(artist);
-			if (artist.includes('&')) return console.log(`Failed: (Artist name includes &) ${artist}`);
-			if (artist.includes('.')) return console.log(`Failed: (Artist name includes .) ${artist}`);
-			if (artistObj === undefined) return interaction.editReply(`Failed: (Artist Not Found) ${artist}`);
+			if (artist.includes('&')) { console.log(`Failed: (Artist name includes &) ${artist}`); continue; }
+			if (artist.includes('.')) { console.log(`Failed: (Artist name includes .) ${artist}`); continue; }
+			if (artistObj === undefined) { interaction.editReply(`Failed: (Artist Not Found) ${artist}`); continue; }
 
 			let newArtistObj = {
 				Image: false,
