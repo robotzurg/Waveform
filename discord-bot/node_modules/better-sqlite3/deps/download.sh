@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # ===
 # This script defines and generates the bundled SQLite3 unit (sqlite3.c).
@@ -18,8 +18,8 @@
 # 3. node-gyp links the two resulting binaries to generate better_sqlite3.node.
 # ===
 
-VERSION="3330000"
-YEAR="2020"
+YEAR="2021"
+VERSION="3350200"
 
 DEFINES="
 SQLITE_DQS=0
@@ -36,6 +36,7 @@ SQLITE_TRACE_SIZE_LIMIT=32
 SQLITE_DEFAULT_CACHE_SIZE=-16000
 SQLITE_DEFAULT_FOREIGN_KEYS=1
 SQLITE_DEFAULT_WAL_SYNCHRONOUS=1
+SQLITE_ENABLE_DESERIALIZE
 SQLITE_ENABLE_COLUMN_METADATA
 SQLITE_ENABLE_UPDATE_DELETE_LIMIT
 SQLITE_ENABLE_STAT4
@@ -48,6 +49,13 @@ SQLITE_ENABLE_RTREE
 SQLITE_ENABLE_GEOPOLY
 SQLITE_INTROSPECTION_PRAGMAS
 SQLITE_SOUNDEX
+HAVE_STDINT_H=1
+HAVE_INT8_T=1
+HAVE_INT16_T=1
+HAVE_INT32_T=1
+HAVE_UINT8_T=1
+HAVE_UINT16_T=1
+HAVE_UINT32_T=1
 "
 
 # ========== START SCRIPT ========== #
@@ -64,7 +72,7 @@ curl -#f "https://www.sqlite.org/$YEAR/sqlite-src-$VERSION.zip" > "$TEMP/source.
 
 echo "extracting source..."
 unzip "$TEMP/source.zip" -d "$TEMP" > /dev/null || exit 1
-cd "$TEMP/sqlite-src-$VERSION"
+cd "$TEMP/sqlite-src-$VERSION" || exit 1
 
 echo "configuring amalgamation..."
 sh configure > /dev/null || exit 1
@@ -92,7 +100,7 @@ printf "$DEFINES" | sed -e "/^\s*$/d" >> "$DOCS"
 printf "\`\`\`\n" >> "$DOCS"
 
 echo "cleaning up..."
-cd - > /dev/null
+cd - > /dev/null || exit 1
 rm -rf "$TEMP"
 
 echo "done!"

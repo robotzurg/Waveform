@@ -49,7 +49,7 @@ describe('new Database()', function () {
 	});
 	it('should allow disk-bound databases to be created', function () {
 		expect(existsSync(util.next())).to.be.false;
-		const db = this.db = Database(util.current());
+		const db = this.db = new Database(util.current());
 		expect(db.name).to.equal(util.current());
 		expect(db.memory).to.be.false;
 		expect(db.readonly).to.be.false;
@@ -97,7 +97,7 @@ describe('new Database()', function () {
 				const start = Date.now();
 				expect(() => db.exec('BEGIN EXCLUSIVE')).to.throw(Database.SqliteError).with.property('code', 'SQLITE_BUSY');
 				const end = Date.now();
-				expect(end - start).to.be.closeTo(timeout, 100);
+				expect(end - start).to.be.closeTo(timeout, 200);
 			} finally {
 				db.close();
 			}
@@ -130,5 +130,30 @@ describe('new Database()', function () {
 		expect(Database.prototype.close).to.be.a('function');
 		expect(Database.prototype.close).to.equal(db.close);
 		expect(Database.prototype).to.equal(Object.getPrototypeOf(db));
+	});
+	it('should work properly when called as a function', function () {
+		const db = this.db = Database(util.next());
+		expect(db).to.be.an.instanceof(Database);
+		expect(db.constructor).to.equal(Database);
+		expect(Database.prototype.close).to.equal(db.close);
+		expect(Database.prototype).to.equal(Object.getPrototypeOf(db));
+	});
+	it('should work properly when subclassed', function () {
+		class MyDatabase extends Database {
+			foo() {
+				return 999;
+			}
+		}
+		const db = this.db = new MyDatabase(util.next());
+		expect(db).to.be.an.instanceof(Database);
+		expect(db).to.be.an.instanceof(MyDatabase);
+		expect(db.constructor).to.equal(MyDatabase);
+		expect(Database.prototype.close).to.equal(db.close);
+		expect(MyDatabase.prototype.close).to.equal(db.close);
+		expect(Database.prototype.foo).to.be.undefined;
+		expect(MyDatabase.prototype.foo).to.equal(db.foo);
+		expect(Database.prototype).to.equal(Object.getPrototypeOf(MyDatabase.prototype));
+		expect(MyDatabase.prototype).to.equal(Object.getPrototypeOf(db));
+		expect(db.foo()).to.equal(999);
 	});
 });
