@@ -26,9 +26,9 @@ module.exports = {
 			artist = artistArray[a];
 
 			const artistObj = db.reviewdb_old.get(artist);
-			if (artist.includes('&')) return console.log(`Failed: (Artist name includes &) ${artist}`);
-			if (artist.includes('.')) return console.log(`Failed: (Artist name includes .) ${artist}`);
-			if (artistObj === undefined) return interaction.editReply(`Failed: (Artist Not Found) ${artist}`);
+			if (artist.includes('&')) { console.log(`Failed: (Artist name includes &) ${artist}`); continue; }
+			if (artist.includes('.')) { console.log(`Failed: (Artist name includes .) ${artist}`); continue; }
+			if (artistObj === undefined) { interaction.editReply(`Failed: (Artist Not Found) ${artist}`); continue; }
 
 			let newArtistObj = {
 				Image: false,
@@ -91,14 +91,14 @@ module.exports = {
 
 					if (reviewObj.starred === true) {
 						for (let s = 0; s < star_list.length; s++) {
-							if (star_list[s].split(" ").includes(songObjKeys[i])) break;
+							if (star_list[s].split(" - ")[1].includes(songObjKeys[i])) break;
 							db.user_stats.push(userArray[j].slice(0, -1).slice(2), `${artist} - ${songObjKeys[i]}`, 'star_list');
 							db.user_stats.math(userArray[j].slice(0, -1).slice(2), '+', 1, 'star_num');
 						} 
 					}
 
 					for (let r = 0; r < rev_list.length; r++) {
-						if (rev_list[r].split(" ").includes(songObjKeys[i])) break;
+						if (rev_list[r].split(" - ")[1].includes(songObjKeys[i])) break;
 						db.user_stats.push(userArray[j].slice(0, -1).slice(2), `${artist} - ${songObjKeys[i]}`, 'review_list');
 					}
 
