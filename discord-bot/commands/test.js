@@ -78,7 +78,8 @@ module.exports = {
 					review_number += 1;
 					if (reviewObj.starred === undefined) reviewObj.starred = false;
 
-					if (!reviewObj.rate.includes('/10') || reviewObj.rate === undefined) console.log(`Failed: (rating improperly formatted.) ${artist} - ${songObjKeys[i]}`);
+					if (reviewObj.rate === undefined) { console.log('Failed: (rating improperly formatted.)'); continue; }
+					if (!reviewObj.rate.includes('/10')) { console.log(`Failed: (rating improperly formatted.) ${artist} - ${songObjKeys[i]}`); continue; }
 
 					newReviewObj = {
 						"msg_id": false,
