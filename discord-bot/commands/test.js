@@ -21,7 +21,7 @@ module.exports = {
 
 		const artistArray = db.reviewdb_old.keyArray();
 
-		for (let a = 0; a < 15; a++) {
+		for (let a = 0; a < artistArray.length; a++) {
 
 			artist = artistArray[a];
 
@@ -100,7 +100,6 @@ module.exports = {
 					for (let r = 0; r < rev_list.length; r++) {
 						if (rev_list[r].split(" ").includes(songObjKeys[i])) break;
 						db.user_stats.push(userArray[j].slice(0, -1).slice(2), `${artist} - ${songObjKeys[i]}`, 'review_list');
-						console.log('did it!');
 					}
 
 					newSongObj[`${userArray[j]}`.slice(0, -1).slice(2)] = newReviewObj;
