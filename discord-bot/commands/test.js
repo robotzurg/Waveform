@@ -37,7 +37,7 @@ module.exports = {
 			let songObjKeys = Object.keys(artistObj);
 			songObjKeys = songObjKeys.filter(x => x != 'Image');
 			for (let i = 0; i < songObjKeys.length; i++) {
-				if (songObjKeys[i].toLowerCase().split(" ").includes('remix') || songObjKeys[i].toLowerCase().split(" ").includes('ep') || songObjKeys[i].toLowerCase().split(" ").includes('lp')) {
+				if (songObjKeys[i].split(" ").includes('remix]') || songObjKeys[i].toLowerCase().split(" ").includes('ep') || songObjKeys[i].toLowerCase().split(" ").includes('lp')) {
 					console.log(`Failed:  (EP/LP/Remix review) ${songObjKeys[i]}`);
 					continue;
 				}
