@@ -22,6 +22,7 @@
     "for-async": "^1.0.1",
     "node-cron": "^2.0.3",
     "node-gyp": "^7.1.2",
+    "num-words": "^1.2.2",
     "sequelize": "^6.3.5",
     "sqlite3": "^5.0.0",
     "trello": "^0.10.0",

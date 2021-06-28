@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { capitalize } = require('../func.js');
+const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 
 module.exports = {
     name: 'getsong',
@@ -186,7 +187,6 @@ module.exports = {
             }
         }
 
-        console.log(artistArray[0]);
         songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
         if (songObj === undefined) return interaction.editReply('The requested song does not exist.\nUse `/getArtist` to get a full list of this artist\'s songs.');
         songEP = songObj.ep;
@@ -209,8 +209,16 @@ module.exports = {
         userArray = userArray.filter(e => e !== 'hof_id');
         userArray = userArray.filter(e => e !== 'review_num');
 
-        console.log(userArray);
+        let userIDList = Object.keys(songObj);
         
+        userIDList = userIDList.filter(e => e !== 'ep');
+        userIDList = userIDList.filter(e => e !== 'art');
+        userIDList = userIDList.filter(e => e !== 'remixers');
+        userIDList = userIDList.filter(e => e !== 'collab');
+        userIDList = userIDList.filter(e => e !== 'vocals');
+        userIDList = userIDList.filter(e => e !== 'hof_id');
+        userIDList = userIDList.filter(e => e !== 'review_num');
+
         const rankNumArray = [];
 
         const songEmbed = new Discord.MessageEmbed()
@@ -234,15 +242,16 @@ module.exports = {
                     }
                     rankNumArray.push(parseFloat(rating));
                     if (starred === true) {
-                        userArray[i] = [parseFloat(rating) + 1, `:star2: <@${userArray[i]}> \`${rating}/10\``];
+                        userArray[i] = [parseFloat(rating) + 1, `${numReacts[i + 1]} :star2: <@${userArray[i]}> \`${rating}/10\``];
+                        userIDList[i] = [parseFloat(rating) + 1, userIDList[i]];
                     } else {
-                        userArray[i] = [parseFloat(rating), `<@${userArray[i]}> \`${rating}/10\``];
+                        userArray[i] = [parseFloat(rating), `${numReacts[i + 1]} <@${userArray[i]}> \`${rating}/10\``];
+                        userIDList[i] = [parseFloat(rating), userIDList[i]];
                     }
                 }
             }
             
             if (rankNumArray.length != 0) {
-                console.log(rankNumArray);
                 if (starCount != 0) {
                     songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***\n:star2: **This song has ${starCount} star${starCount === 1 ? '' : 's'}!** :star2:`);
                 } else {
@@ -256,12 +265,29 @@ module.exports = {
                 userArray = userArray.sort(function(a, b) {
                     return b[0] - a[0];
                 });
+
+                userIDList = userIDList.sort(function(a, b) {
+                    return b[0] - a[0];
+                });
     
                 userArray = userArray.flat(1);
+                userIDList = userIDList.flat(1);
     
                 for (let i = 0; i <= userArray.length; i++) {
                     userArray.splice(i, 1);
                 }
+
+                for (let i = 0; i <= userIDList.length; i++) {
+                    userIDList.splice(i, 1);
+                }
+
+                let songText;
+                for (let i = 0; i < userArray.length; i++) {
+                    songText = userArray[i].split(' ');
+                    songText[0] = numReacts[i + 1];
+                    userArray[i] = songText.join(' ');
+                }
+                
             
                 songEmbed.addField('Reviews:', userArray.join('\n'));
             } else {
@@ -285,5 +311,83 @@ module.exports = {
             }
 
         interaction.editReply({ embeds: [songEmbed] });
+        const msg = await interaction.fetchReply();
+
+        for (let i = 0; i < userIDList.length; i++) {
+            msg.react(numReacts[i + 1]);
+        }
+
+        const filter = (reaction, user) => {
+            return user.id === interaction.user.id && reaction.message.id === msg.id;
+        };
+
+        const collector = msg.createReactionCollector({ filter, time: 60000 });
+
+        collector.on('collect', async (reaction) => {
+
+            if (reaction.emoji.name === '◀') {
+                msg.reactions.removeAll();
+
+                for (let i = 0; i < userIDList.length; i++) {
+                    msg.react(numReacts[i + 1]);
+                }
+
+                return interaction.editReply({ embeds: [songEmbed] });
+            }
+
+            let num;
+            switch (reaction.emoji.name) {
+                case numReacts[1]: num = 0; break;
+                case numReacts[2]: num = 1; break;
+                case numReacts[3]: num = 2; break;
+                case numReacts[4]: num = 3; break;
+                case numReacts[5]: num = 4; break;
+                case numReacts[6]: num = 5; break;
+                case numReacts[7]: num = 6; break;
+                case numReacts[8]: num = 7; break;
+                case numReacts[9]: num = 8; break;
+                case numReacts[10]: num = 9; break;
+            }
+
+            console.log(userIDList);
+            const taggedMember = await interaction.guild.members.fetch(userIDList[num]);
+            const taggedUser = taggedMember.user;
+            // console.log(taggedMember);
+
+            const reviewEmbed = new Discord.MessageEmbed()
+            .setColor(`${taggedMember.displayHexColor}`);
+
+            if (vocalistsEmbed.length != 0) {
+                vocalistsEmbed = `${songName} (ft. ${vocalistsEmbed})`;
+                reviewEmbed.setTitle(`${artistsEmbed} - ${vocalistsEmbed}`);
+            } else {
+                reviewEmbed.setTitle(`${artistsEmbed} - ${songName}`);
+            }
+
+            reviewEmbed.setAuthor(`${taggedMember.displayName}'s review`, `${taggedUser.avatarURL({ format: "png" })}`);
+
+            if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].review`) != '-') {
+                reviewEmbed.setDescription(db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].review`));
+            } else {
+                reviewEmbed.setDescription(`Rating: **${db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].rating`)}/10**`);
+            }
+
+            if ((db.reviewDB.get(artistArray[0], `["${songName}"].art`)) === false) {
+                reviewEmbed.setThumbnail(interaction.user.avatarURL({ format: "png" }));
+            } else {
+                reviewEmbed.setThumbnail(db.reviewDB.get(artistArray[0], `["${songName}"].art`));
+            }
+
+            if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].review`) != '-') reviewEmbed.addField('Rating: ', `**${db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].rating`)}/10**`, true);
+
+            interaction.editReply({ embeds: [reviewEmbed] });
+            msg.reactions.removeAll();
+            msg.react('◀');
+        });
+
+        collector.on('end', collected => {
+            console.log(collected);
+            msg.reactions.removeAll();
+        });
 	},
 };

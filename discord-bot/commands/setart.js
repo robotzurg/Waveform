@@ -138,6 +138,7 @@ module.exports = {
             });
 
             msgstoEdit = msgstoEdit.filter(item => item !== undefined);
+            msgstoEdit = msgstoEdit.filter(item => item !== false);
             if (msgstoEdit.length > 0) { 
                 let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
 
@@ -157,6 +158,33 @@ module.exports = {
                         });
                     });
                 });
+            }
+
+            if (db.hall_of_fame.has(songName)) {
+               msgstoEdit = [db.hall_of_fame.get(songName)];
+
+                if (msgstoEdit.length > 0) { 
+                    let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel').slice(0, -1).slice(2));
+
+                    forAsync(msgstoEdit, function(item) {
+                        return new Promise(function(resolve) {
+                            let msgtoEdit = item;
+                            let msgEmbed;
+                            let embed_data;
+
+                            channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                                console.log(msg);
+                                embed_data = msg.embeds;
+                                msgEmbed = embed_data[0];
+                                // return console.log(msgEmbed);
+                                msgEmbed.image.url = thumbnailImage;
+                                msg.edit({ embeds: [msgEmbed] });
+                                resolve();
+                            });
+                        });
+                    });
+                }
+
             }
         }
 
