@@ -3,8 +3,8 @@ const db = require("../db.js");
 const { capitalize } = require('../func.js');
 
 module.exports = {
-    name: 'addstar',
-    description: 'Add a star to an existing review of yours!',
+    name: 'unstar',
+    description: 'Remove a star to an existing review of yours!',
     options: [
         {
             name: 'artist',
@@ -101,16 +101,16 @@ module.exports = {
             if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`${artistArray[i]} not found in database.`);
             if (db.reviewDB.get(artistArray[i], `["${songName}"]`) === undefined) return interaction.editReply(`${origArtistArray.join(' & ')} - ${songName} not found in database.`);
             if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`You haven't reviewed ${origArtistArray.join(' & ')} - ${songName}.`);
-            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) === true) return interaction.editReply(`You've already starred ${origArtistArray.join(' & ')} - ${songName}!`);
+            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) === false) return interaction.editReply(`You haven't starred ${origArtistArray.join(' & ')} - ${songName}!`);
 
-            db.reviewDB.set(artistArray[i], true, `["${songName}"].["${interaction.user.id}"].starred`);
+            db.reviewDB.set(artistArray[i], false, `["${songName}"].["${interaction.user.id}"].starred`);
         }
 
-        db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : '' }`, 'star_list');
-        interaction.editReply(`Star added to ${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : '' }!`);
+        db.user_stats.delete(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : '' }`, 'star_list');
+        interaction.editReply(`Unstarred ${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : '' }.`);
 
-        db.user_stats.math(interaction.user.id, '+', 1, 'star_num');
-        
+        db.user_stats.math(interaction.user.id, '-', 1, 'star_num');
+
         const songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
 
         let userArray = Object.keys(songObj);
@@ -160,6 +160,15 @@ module.exports = {
                     hof_msg.edit({ embeds: [hofEmbed] });
                 });
             }
+        } else if (db.hall_of_fame.has(songName)) {
+            const hofChannel = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel').slice(0, -1).slice(2));
+            hofChannel.messages.fetch(`${db.hall_of_fame.get(songName)}`).then(msg => {
+                msg.delete();
+                db.hall_of_fame.delete(songName);
+            }).catch(err => {
+                console.log('Message not found.');
+                console.log(err);
+            });
         }
 
         
@@ -173,9 +182,10 @@ module.exports = {
                 let embed_data = msg.embeds;
                 let msgEmbed = embed_data[0];
                 let msgEmbedTitle = msgEmbed.title;
-                if (!msgEmbedTitle.includes(':star2:')) {
-                    msgEmbed.title = `:star2: ${msgEmbedTitle} :star2:`;
-                    console.log(msgEmbed.title);
+                if (msgEmbedTitle.includes(':star2:')) {
+                    while (msgEmbed.title.includes(':star2:')) {
+                        msgEmbed.title = msgEmbed.title.replace(':star2:', '');
+                    }
                 }
                 msg.edit({ embeds: [msgEmbed] });
             });

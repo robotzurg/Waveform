@@ -13,9 +13,14 @@ module.exports = {
         },
     ],
     admin: true,
-	execute(interaction) {
-		interaction.options[0].value = capitalize(interaction.options[0].value);
-		db.reviewDB.delete(interaction.options[0].value);
-		interaction.editReply(`${interaction.options[0].value} deleted from the database.`);
+	async execute(interaction) {
+		let args = [];
+
+        await interaction.options.forEach(async (value) => {
+            args.push(capitalize(value.value));
+        });
+
+		db.reviewDB.delete(args[0]);
+		interaction.editReply(`${args[0]} deleted from the database.`);
 	},
 };

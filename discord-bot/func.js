@@ -287,6 +287,7 @@ module.exports = {
         })
         .catch(collected => {
             console.log(collected);
+            msg.reactions.removeAll();
         });
     },
 
