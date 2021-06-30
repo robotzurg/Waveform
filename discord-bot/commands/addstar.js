@@ -106,8 +106,8 @@ module.exports = {
             db.reviewDB.set(artistArray[i], true, `["${songName}"].["${interaction.user.id}"].starred`);
         }
 
-        db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : '' }`, 'star_list');
-        interaction.editReply(`Star added to ${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : '' }!`);
+        db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : '' }`, 'star_list');
+        interaction.editReply(`Star added to ${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : '' }!`);
 
         db.user_stats.math(interaction.user.id, '+', 1, 'star_num');
         
@@ -141,7 +141,7 @@ module.exports = {
             const hofEmbed = new Discord.MessageEmbed()
             
             .setColor(`#FFFF00`)
-            .setTitle(`${origArtistArray} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : ''}`)
+            .setTitle(`${origArtistArray} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : ''}`)
             .setDescription(`:star2: **This song currently has ${star_count} stars!** :star2:`)
             .addField('Starred Reviews:', star_array.join('\n'))
             .setImage(thumbnailImage);

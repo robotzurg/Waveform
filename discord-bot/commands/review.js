@@ -177,6 +177,24 @@ module.exports = {
                 db.reviewDB.set(fullArtistArray[i], msg.id, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
             }
         }
+
+        /*const filter = (reaction, user) => {
+            return (reaction.emoji.name === '🌟') && user.id === interaction.user.id;
+        };
+
+        msg.react('🌟');
+        msg.awaitReactions({ filter, max: 1, time: 10000, errors: ['time'] })
+        .then(collected => {
+            console.log(collected);
+            const reaction = collected.first();
+            if (reaction.emoji.name === '🌟') {
+                
+            }
+        })
+        .catch(collected => {
+            console.log(collected);
+            msg.reactions.removeAll();
+        });*/
         
         // Star reaction stuff for hall of fame
         if (rating === '10') {

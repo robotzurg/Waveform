@@ -359,9 +359,17 @@ module.exports = {
 
             if (vocalistsEmbed.length != 0) {
                 vocalistsEmbed = `${songName} (ft. ${vocalistsEmbed})`;
-                reviewEmbed.setTitle(`${artistsEmbed} - ${vocalistsEmbed}`);
+                if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].starred`) === false) {
+                    reviewEmbed.setTitle(`${artistsEmbed} - ${vocalistsEmbed}`);
+                } else {
+                    reviewEmbed.setTitle(`:star2: ${artistsEmbed} - ${vocalistsEmbed} :star2:`);
+                }
             } else {
-                reviewEmbed.setTitle(`${artistsEmbed} - ${songName}`);
+                if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].starred`) === false) {
+                    reviewEmbed.setTitle(`${artistsEmbed} - ${songName}`);
+                } else {
+                    reviewEmbed.setTitle(`:star2: ${artistsEmbed} - ${songName} :star2:`);
+                }
             }
 
             reviewEmbed.setAuthor(`${taggedMember.displayName}'s review`, `${taggedUser.avatarURL({ format: "png" })}`);
