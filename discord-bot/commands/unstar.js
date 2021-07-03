@@ -80,7 +80,6 @@ module.exports = {
                 vocalistsEmbed = [];
                 vocalistsEmbed.push(db.reviewDB.get(artistArray[0], `["${songName}"].vocals`));
                 vocalistsEmbed = vocalistsEmbed.flat(1);
-                vocalistsEmbed = vocalistsEmbed.join(' & ');
             }
         }
         
@@ -95,6 +94,9 @@ module.exports = {
             artistArray = artistArray.flat(1);
         }
 
+        // I have no freaking idea why I have to do this here, but I do
+        origArtistArray = args[0].split(' & ');
+
         for (let i = 0; i < artistArray.length; i++) {
             artistArray[i] = capitalize(artistArray[i]);
 
@@ -106,8 +108,10 @@ module.exports = {
             db.reviewDB.set(artistArray[i], false, `["${songName}"].["${interaction.user.id}"].starred`);
         }
 
-        db.user_stats.delete(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : '' }`, 'star_list');
-        interaction.editReply(`Unstarred ${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : '' }.`);
+        console.log(vocalistsEmbed);
+
+        db.user_stats.remove(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : '' }`, 'star_list');
+        interaction.editReply(`Unstarred ${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : '' }.`);
 
         db.user_stats.math(interaction.user.id, '-', 1, 'star_num');
 
@@ -141,7 +145,7 @@ module.exports = {
             const hofEmbed = new Discord.MessageEmbed()
             
             .setColor(`#FFFF00`)
-            .setTitle(`${origArtistArray} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : ''}`)
+            .setTitle(`${origArtistArray} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : ''}`)
             .setDescription(`:star2: **This song currently has ${star_count} stars!** :star2:`)
             .addField('Starred Reviews:', star_array.join('\n'))
             .setImage(thumbnailImage);

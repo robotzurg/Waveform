@@ -220,13 +220,11 @@ module.exports = {
         userIDList = userIDList.filter(e => e !== 'review_num');
 
         const rankNumArray = [];
-
         const songEmbed = new Discord.MessageEmbed()
             .setColor(`${interaction.member.displayHexColor}`);
 
             if (vocalistsEmbed.length != 0) {
-                vocalistsEmbed = `${songName} (ft. ${vocalistsEmbed})`;
-                songEmbed.setTitle(`${artistsEmbed} - ${vocalistsEmbed}`);
+                songEmbed.setTitle(`${artistsEmbed} - ${songName} (ft. ${vocalistsEmbed})`);
             } else {
                 songEmbed.setTitle(`${artistsEmbed} - ${songName}`);
             }
@@ -357,12 +355,13 @@ module.exports = {
             const reviewEmbed = new Discord.MessageEmbed()
             .setColor(`${taggedMember.displayHexColor}`);
 
+            console.log(vocalistsEmbed);
+
             if (vocalistsEmbed.length != 0) {
-                vocalistsEmbed = `${songName} (ft. ${vocalistsEmbed})`;
                 if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].starred`) === false) {
-                    reviewEmbed.setTitle(`${artistsEmbed} - ${vocalistsEmbed}`);
+                    reviewEmbed.setTitle(`${artistsEmbed} - ${songName} (ft. ${vocalistsEmbed})`);
                 } else {
-                    reviewEmbed.setTitle(`:star2: ${artistsEmbed} - ${vocalistsEmbed} :star2:`);
+                    reviewEmbed.setTitle(`:star2: ${artistsEmbed} - ${songName} (ft. ${vocalistsEmbed}) :star2:`);
                 }
             } else {
                 if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].starred`) === false) {

@@ -60,6 +60,7 @@ module.exports = {
 
         let thumbnailImage;
         let artistsEmbed = origArtistArray;
+        console.log(origArtistArray);
         let vocalistsEmbed = [];
 
         if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
@@ -83,7 +84,7 @@ module.exports = {
                 vocalistsEmbed = vocalistsEmbed.join(' & ');
             }
         }
-        
+
         if (db.reviewDB.get(artistArray[0], `["${songName}"].art`) != false) {
             thumbnailImage = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
         } else {
@@ -94,6 +95,9 @@ module.exports = {
             artistArray.push(vocalistsEmbed);
             artistArray = artistArray.flat(1);
         }
+
+        // I have no freaking idea why I have to do this here, but I do
+        origArtistArray = args[0].split(' & ');
 
         for (let i = 0; i < artistArray.length; i++) {
             artistArray[i] = capitalize(artistArray[i]);

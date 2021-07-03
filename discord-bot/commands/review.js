@@ -154,7 +154,7 @@ module.exports = {
 
         //Add review to database
         //Quick thumbnail image check to assure we aren't putting in an avatar
-        if (thumbnailImage === undefined || thumbnailImage === false || thumbnailImage.includes('avatar') === true) { 
+        if (thumbnailImage === undefined || thumbnailImage === false || thumbnailImage.includes('avatar') === true || thumbnailImage === 'spotify' || thumbnailImage === 's') { 
             thumbnailImage = false;
         }
 
