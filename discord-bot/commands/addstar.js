@@ -39,6 +39,9 @@ module.exports = {
         args[0] = capitalize(args[0]);
         args[1] = capitalize(args[1]);
 
+        args[0] = args[0].trim();
+        args[1] = args[1].trim();
+
         let origArtistArray = args[0].split(' & ');
         let songName = args[1];
 

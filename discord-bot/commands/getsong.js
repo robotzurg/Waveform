@@ -38,6 +38,9 @@ module.exports = {
             }
         });
 
+        args[0] = args[0].trim();
+        args[1] = args[1].trim();
+
         let origArtistNames = args[0];
         let origSongName = args[1];
         

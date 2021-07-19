@@ -95,6 +95,9 @@ module.exports = {
         args[0] = capitalize(args[0]);
         args[1] = capitalize(args[1]);
 
+        args[0] = args[0].trim();
+        args[1] = args[1].trim();
+
         // [] check, as the system requires [] to grab the remix artist with string slicing.
         if (args[1].includes('Remix)')) {
             interaction.editReply('Please use [] for remixes, not ()!\nExample: `Song [Remix Artist Remix]`');
@@ -102,6 +105,10 @@ module.exports = {
 
         let rating = args[2];
         let review = args[3];
+
+        if (rating.includes('/10')) rating = parseInt(rating.slice(3));
+
+        args[2] = rating;
 
         //Split up the artists into an array
         let artistArray;

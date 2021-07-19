@@ -56,6 +56,9 @@ module.exports = {
         args[0] = capitalize(args[0]);
         args[1] = capitalize(args[1]);
 
+        args[0] = args[0].trim();
+        args[1] = args[1].trim();
+
         let thumbnailImage = args[2];
         if (thumbnailImage.toLowerCase() === 's' || thumbnailImage.toLowerCase() === 'spotify') {
             interaction.member.presence.activities.forEach((activity) => {

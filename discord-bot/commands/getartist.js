@@ -23,6 +23,8 @@ module.exports = {
         //Auto-adjustment to caps for each word
         args[0] = capitalize(args[0]);
 
+        args[0] = args[0].trim();
+
         const artistObj = db.reviewDB.get(args[0]);
         if (artistObj === undefined) return interaction.editReply('Artist not found.');
         const artistImage = artistObj.Image;
