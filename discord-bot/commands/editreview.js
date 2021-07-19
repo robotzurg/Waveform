@@ -11,6 +11,7 @@ module.exports = {
     args: true,
     arg_num: 5,
     usage: '<artist> | <song_name> | <rating> | <rate_desc> | [op] <user_who_sent_song>',
+    admin: true,
 	execute(message, args) {
         
         //Auto-adjustment to caps for each word
