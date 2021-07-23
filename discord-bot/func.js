@@ -217,7 +217,7 @@ module.exports = {
             console.log(collected);
             console.log('first');
             const reaction = collected.first();
-            console.log(reaction.emoji.name === '🌟');
+            if (reaction === undefined) return;
             if (reaction.emoji.name === '🌟') {
                 db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${songName}`, 'star_list');
                 db.user_stats.math(interaction.user.id, '+', 1, 'star_num');

@@ -1,6 +1,7 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { capitalize, update_art, review_song, hall_of_fame_check } = require('../func.js');
+const { mailboxes } = require('../arrays.json');
 
 module.exports = {
     name: 'review',
@@ -51,8 +52,8 @@ module.exports = {
 	admin: false,
 	async execute(interaction) {
         // Check if we are reviewing in the right chat, if not, boot out
-        if (`<#${interaction.channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel')) {
-            return interaction.editReply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')}!`);
+        if (`<#${interaction.channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel') && !mailboxes.includes(interaction.channel.name)) {
+            return interaction.editReply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
         }
 
         let args = [];
@@ -176,33 +177,25 @@ module.exports = {
         interaction.editReply({ embeds: [reviewEmbed] });
         const msg = await interaction.fetchReply();
 
-        // Setting the message id for the message we just sent
-        for (let i = 0; i < fullArtistArray.length; i++) {
-            if (rmxArtists.length === 0) {
-                db.reviewDB.set(fullArtistArray[i], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
-            } else if (rmxArtists.includes(fullArtistArray[i])) {
-                db.reviewDB.set(fullArtistArray[i], msg.id, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
+        // Setting the message id for the message we just sent (and check for mailbox, if so put as FALSE so we don't have to look for a non-existant message)
+        if (!mailboxes.includes(interaction.channel.name)) {
+            for (let i = 0; i < fullArtistArray.length; i++) {
+                if (rmxArtists.length === 0) {
+                    db.reviewDB.set(fullArtistArray[i], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
+                } else if (rmxArtists.includes(fullArtistArray[i])) {
+                    db.reviewDB.set(fullArtistArray[i], msg.id, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
+                }
+            }
+        } else {
+            for (let i = 0; i < fullArtistArray.length; i++) {
+                if (rmxArtists.length === 0) {
+                    db.reviewDB.set(fullArtistArray[i], false, `["${songName}"].["${interaction.user.id}"].msg_id`); 
+                } else if (rmxArtists.includes(fullArtistArray[i])) {
+                    db.reviewDB.set(fullArtistArray[i], false, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
+                }
             }
         }
 
-        /*const filter = (reaction, user) => {
-            return (reaction.emoji.name === '🌟') && user.id === interaction.user.id;
-        };
-
-        msg.react('🌟');
-        msg.awaitReactions({ filter, max: 1, time: 10000, errors: ['time'] })
-        .then(collected => {
-            console.log(collected);
-            const reaction = collected.first();
-            if (reaction.emoji.name === '🌟') {
-                
-            }
-        })
-        .catch(collected => {
-            console.log(collected);
-            msg.reactions.removeAll();
-        });*/
-        
         // Star reaction stuff for hall of fame
         if (rating === '10') {
             hall_of_fame_check(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);

@@ -13,6 +13,8 @@ module.exports = {
     usage: '<artist> | <song_name> | <rating> | <rate_desc> | [op] <user_who_sent_song>',
     admin: true,
 	execute(message, args) {
+
+        return;
         
         //Auto-adjustment to caps for each word
         args[0] = capitalize(args[0]);
