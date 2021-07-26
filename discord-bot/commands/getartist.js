@@ -46,6 +46,7 @@ module.exports = {
             }
 
             for (let i = 0; i < songArray.length; i++) {
+                if (songArray[i].toLowerCase().includes('ep') || songArray[i].toLowerCase().includes('lp') || songArray[i].toLowerCase().includes('/')) break;
                 starNum = 0;
                 const songObj = db.reviewDB.get(args[0], `["${songArray[i]}"]`);
                 reviewNum = parseInt(db.reviewDB.get(args[0], `["${songArray[i]}"].review_num`));
@@ -71,6 +72,8 @@ module.exports = {
 
                 let songDetails;
                 let remixerKeys = db.reviewDB.get(args[0], `["${songArray[i]}"].remixers`);
+
+                console.log(remixerKeys);
                 
                 if (remixerKeys.length > 0) {
                     songDetails = [`\`${reviewNum} review${reviewNum > 1 || reviewNum === 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
@@ -81,11 +84,11 @@ module.exports = {
                     songDetails = `\`${reviewNum} review${reviewNum > 1 || reviewNum === 0 ? 's' : ''}\`${starNum != 0 ? ` \`${starNum} ⭐\`` : ''}`;
                 }
 
-                if (!songArray[i].includes('Remix') && !songArray[i].includes('EP') && !songArray[i].includes('LP') && !songArray[i].includes('/')) {
+                if (!songArray[i].includes('Remix') /*&& !songArray[i].includes('EP') && !songArray[i].includes('LP') && !songArray[i].includes('/')*/) {
                     singleArray.push(`-${songArray[i]} ${songDetails}`);
                     singleArray[singleArray.length - 1] = singleArray[singleArray.length - 1].replace('*', '\\*');
 
-                } else if (!songArray[i].includes('EP') && !songArray[i].includes('LP') && !songArray[i].includes('/')) {
+                } else {
                     remixArray.push(`-${songArray[i]} ${songDetails}`);
                     remixArray[remixArray.length - 1] = remixArray[remixArray.length - 1].replace('*', '\\*');
                 }

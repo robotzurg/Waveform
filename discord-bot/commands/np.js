@@ -106,7 +106,7 @@ module.exports = {
                                         }
                                     }
 
-                                    rankNumArray.push(rating);
+                                    rankNumArray.push(parseFloat(rating));
                                     userArray[i] = [rating, `${userArray[i]} \`${rating}\``];
                                 }
                             }
