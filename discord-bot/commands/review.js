@@ -64,16 +64,16 @@ module.exports = {
         let rmxArtists = [];
         
         interaction.options.forEach((value) => {
-            args.push(value.value);
+            args.push(value.value.trim());
             if (value.name === 'art') {
-                thumbnailImage = value.value;
+                thumbnailImage = value.value.trim();
             } else if (value.name === 'user_who_sent') {
-                taggedMember = value.value;
+                taggedMember = value.value.trim();
             } else if (value.name === 'vocalists') {
-                featArtists.push(value.value.split(' & '));
+                featArtists.push(value.value.trim().split(' & '));
                 featArtists = featArtists.flat(1);
             } else if (value.name === 'remixers') {
-                rmxArtists.push(value.value.split(' & '));
+                rmxArtists.push(value.value.trim().split(' & '));
                 rmxArtists = rmxArtists.flat(1);
             }
         });
@@ -106,6 +106,9 @@ module.exports = {
 
         let rating = args[2];
         let review = args[3];
+
+	rating = rating.trim();
+	review = review.trim();
 
         if (rating.includes('/10')) rating = parseInt(rating.slice(3));
 

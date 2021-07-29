@@ -36,7 +36,7 @@ module.exports = {
         let rmxArtists = [];
 
         await interaction.options.forEach(async (value) => {
-            args.push(value.value);
+            args.push(value.value.trim());
             if (value.name === 'user') {
                 taggedMember = await interaction.guild.members.fetch(value.value);
                 taggedUser = taggedMember.user;
