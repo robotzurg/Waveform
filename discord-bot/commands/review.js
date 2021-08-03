@@ -70,10 +70,10 @@ module.exports = {
             } else if (value.name === 'user_who_sent') {
                 taggedMember = value.value.trim();
             } else if (value.name === 'vocalists') {
-                featArtists.push(value.value.trim().split(' & '));
+                featArtists.push(capitalize(value.value.trim()).split(' & '));
                 featArtists = featArtists.flat(1);
             } else if (value.name === 'remixers') {
-                rmxArtists.push(value.value.trim().split(' & '));
+                rmxArtists.push(capitalize(value.value.trim()).split(' & '));
                 rmxArtists = rmxArtists.flat(1);
             }
         });
