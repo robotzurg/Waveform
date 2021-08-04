@@ -247,6 +247,14 @@ module.exports = {
             });
         }
 
+
+	select_options.push({
+                label: `Back`,
+        	description: `Go back to the main song data menu.`,
+        	value: `back`,
+    	});
+
+
         const row = new Discord.MessageActionRow()
             .addComponents(
                 new Discord.MessageSelectMenu()
