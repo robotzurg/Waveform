@@ -3,7 +3,7 @@ const { capitalize } = require('../func.js');
 
 module.exports = {
     name: 'epmerge',
-    description: 'Merge multiple songs into an EP/LP.',
+    description: 'Merge multiple songs into an EP/LP, and can also be used to fix song order.',
     options: [
         {
             name: 'artists',
@@ -32,7 +32,7 @@ module.exports = {
         let args = [];
         let epArt = false;
 
-        interaction.options.forEach((value) => {
+        interaction.options._hoistedOptions.forEach((value) => {
             if (value.name === 'art') {
                 epArt = value.value;
             } else {

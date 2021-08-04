@@ -43,7 +43,7 @@ client.once('ready', async () => {
     });
     await client.guilds.cache.get('680864893552951306')?.commands.set(data);
 	let perm_command;
-	const command_list = await client.guilds.cache.get('680864893552951306')?.commands.cache.array();
+	const command_list = await client.guilds.cache.get('680864893552951306')?.commands.cache.keys();
 	for (let i = 0; i < command_list.length; i++) {
 		if (admin_list.includes(command_list[i].name)) {
 			perm_command = await client.guilds.cache.get('680864893552951306')?.commands.fetch(command_list[i].id);
@@ -64,7 +64,7 @@ client.once('ready', async () => {
 });
 
 // Listen for interactions (INTERACTION COMMAND HANDLER)
-client.on('interaction', async interaction => {
+client.on('interactionCreate', async interaction => {
 	if (!interaction.isCommand()) return;
 
 	await interaction.defer();
@@ -100,11 +100,12 @@ client.on('interaction', async interaction => {
         await console.error(error);
         await interaction.reply(`There was an error trying to execute that command!`);
     }
+    
 });
 
 
 // Listen for messages
-client.on('message', async message => {
+client.on('messageCreate', async message => {
 
     //Review Chat Filter
     if (db.server_settings.get(message.guild.id, 'review_filter') === true && `<#${message.channel.id}>` === db.server_settings.get(message.guild.id, 'review_channel')) {

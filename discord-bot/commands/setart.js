@@ -39,7 +39,7 @@ module.exports = {
         let rmxArtists = [];
         let featArtists = [];
 
-        await interaction.options.forEach(async (value) => {
+        await interaction.options._hoistedOptions.forEach(async (value) => {
             args.push(value.value);
             if (value.name === 'remixers') {
                 value.value = capitalize(value.value);

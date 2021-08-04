@@ -28,7 +28,7 @@ module.exports = {
         let args = [];
         let rmxArtists = [];
 
-        await interaction.options.forEach(async (value) => {
+        await interaction.options._hoistedOptions.forEach(async (value) => {
             args.push(value.value);
             if (value.name === 'remixers') {
                 rmxArtists.push(value.value.split(' & '));
@@ -94,7 +94,6 @@ module.exports = {
             artistArray = artistArray.flat(1);
         }
 
-        // I have no freaking idea why I have to do this here, but I do
         origArtistArray = args[0].split(' & ');
 
         for (let i = 0; i < artistArray.length; i++) {

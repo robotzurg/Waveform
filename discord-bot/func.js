@@ -292,7 +292,7 @@ module.exports = {
     },
 
     get_args: function(interaction, args) {
-        interaction.options.forEach((value) => {
+        interaction.options._hoistedOptions.forEach((value) => {
             args.push(value.value);
             console.log(args);
         });

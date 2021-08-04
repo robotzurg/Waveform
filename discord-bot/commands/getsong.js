@@ -30,7 +30,7 @@ module.exports = {
         let args = [];
         let rmxArtists = [];
 
-        await interaction.options.forEach(async (value) => {
+        await interaction.options._hoistedOptions.forEach(async (value) => {
             args.push(value.value);
             if (value.name === 'remixers') {
                 rmxArtists.push(value.value.split(' & '));
@@ -232,93 +232,85 @@ module.exports = {
                 }
             }
 
-        interaction.editReply({ embeds: [songEmbed] });
-        const msg = await interaction.fetchReply();
+        // Button/Select Menu setup
+        let select_options = [];
+        let taggedMemberSel;
+        let taggedUserSel;
 
         for (let i = 0; i < userIDList.length; i++) {
-            msg.react(numReacts[i + 1]);
+            taggedMemberSel = await interaction.guild.members.fetch(userIDList[i]);
+            taggedUserSel = taggedMemberSel.user;
+            select_options.push({
+                label: `${taggedMemberSel.displayName}`,
+                description: `${taggedMemberSel.displayName}'s review of the song.`,
+                value: `${taggedUserSel.id}`,
+            });
         }
 
-        const filter = (reaction, user) => {
-            return user.id === interaction.user.id && reaction.message.id === msg.id;
-        };
+        const row = new Discord.MessageActionRow()
+            .addComponents(
+                new Discord.MessageSelectMenu()
+                    .setCustomId('select')
+                    .setPlaceholder('See other reviews by clicking on me!')
+                    .addOptions(select_options),
+            );
 
-        const collector = msg.createReactionCollector({ filter, time: 60000 });
+        interaction.editReply({ embeds: [songEmbed], components: [row] });
+       
+        // const filter = i => i.user.id === interaction.user.id;
+		const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });
 
-        collector.on('collect', async (reaction) => {
+		collector.on('collect', async i => {
+			if (i.customId === 'select') { // Select Menu
 
-            if (reaction.emoji.name === '◀') {
-                msg.reactions.removeAll();
-
-                for (let i = 0; i < userIDList.length; i++) {
-                    msg.react(numReacts[i + 1]);
+                if (i.values[0] === 'back') { // Back Selection
+                    return await i.update({ embeds: [songEmbed], components: [row] });
                 }
+                
+                const taggedMember = await interaction.guild.members.fetch(i.values[0]);
+                const taggedUser = taggedMember.user;
 
-                return interaction.editReply({ embeds: [songEmbed] });
-            }
-
-            let num;
-            switch (reaction.emoji.name) {
-                case numReacts[1]: num = 0; break;
-                case numReacts[2]: num = 1; break;
-                case numReacts[3]: num = 2; break;
-                case numReacts[4]: num = 3; break;
-                case numReacts[5]: num = 4; break;
-                case numReacts[6]: num = 5; break;
-                case numReacts[7]: num = 6; break;
-                case numReacts[8]: num = 7; break;
-                case numReacts[9]: num = 8; break;
-                case numReacts[10]: num = 9; break;
-            }
-
-            console.log(userIDList);
-            const taggedMember = await interaction.guild.members.fetch(userIDList[num]);
-            const taggedUser = taggedMember.user;
-            // console.log(taggedMember);
-
-            const reviewEmbed = new Discord.MessageEmbed()
-            .setColor(`${taggedMember.displayHexColor}`);
-
-            console.log(vocalistsEmbed);
-
-            if (vocalistsEmbed.length != 0) {
-                if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].starred`) === false) {
-                    reviewEmbed.setTitle(`${artistsEmbed} - ${songName} (ft. ${vocalistsEmbed})`);
+                const reviewEmbed = new Discord.MessageEmbed()
+                .setColor(`${taggedMember.displayHexColor}`);
+    
+                if (vocalistsEmbed.length != 0) {
+                    if (db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].starred`) === false) {
+                        reviewEmbed.setTitle(`${artistsEmbed} - ${songName} (ft. ${vocalistsEmbed})`);
+                    } else {
+                        reviewEmbed.setTitle(`:star2: ${artistsEmbed} - ${songName} (ft. ${vocalistsEmbed}) :star2:`);
+                    }
                 } else {
-                    reviewEmbed.setTitle(`:star2: ${artistsEmbed} - ${songName} (ft. ${vocalistsEmbed}) :star2:`);
+                    if (db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].starred`) === false) {
+                        reviewEmbed.setTitle(`${artistsEmbed} - ${songName}`);
+                    } else {
+                        reviewEmbed.setTitle(`:star2: ${artistsEmbed} - ${songName} :star2:`);
+                    }
                 }
-            } else {
-                if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].starred`) === false) {
-                    reviewEmbed.setTitle(`${artistsEmbed} - ${songName}`);
+    
+                reviewEmbed.setAuthor(`${taggedMember.displayName}'s review`, `${taggedUser.avatarURL({ format: "png" })}`);
+    
+                if (db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].review`) != '-') {
+                    reviewEmbed.setDescription(db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].review`));
                 } else {
-                    reviewEmbed.setTitle(`:star2: ${artistsEmbed} - ${songName} :star2:`);
+                    reviewEmbed.setDescription(`Rating: **${db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].rating`)}/10**`);
                 }
-            }
+    
+                if ((db.reviewDB.get(artistArray[0], `["${songName}"].art`)) === false) {
+                    reviewEmbed.setThumbnail(interaction.user.avatarURL({ format: "png" }));
+                } else {
+                    reviewEmbed.setThumbnail(db.reviewDB.get(artistArray[0], `["${songName}"].art`));
+                }
+    
+                if (db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].review`) != '-') reviewEmbed.addField('Rating: ', `**${db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].rating`)}/10**`, true);
+    
+                await i.update({ embeds: [reviewEmbed], components: [row] });
 
-            reviewEmbed.setAuthor(`${taggedMember.displayName}'s review`, `${taggedUser.avatarURL({ format: "png" })}`);
+			} 
+		});
 
-            if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].review`) != '-') {
-                reviewEmbed.setDescription(db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].review`));
-            } else {
-                reviewEmbed.setDescription(`Rating: **${db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].rating`)}/10**`);
-            }
-
-            if ((db.reviewDB.get(artistArray[0], `["${songName}"].art`)) === false) {
-                reviewEmbed.setThumbnail(interaction.user.avatarURL({ format: "png" }));
-            } else {
-                reviewEmbed.setThumbnail(db.reviewDB.get(artistArray[0], `["${songName}"].art`));
-            }
-
-            if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].review`) != '-') reviewEmbed.addField('Rating: ', `**${db.reviewDB.get(artistArray[0], `["${songName}"].["${userIDList[num]}"].rating`)}/10**`, true);
-
-            interaction.editReply({ embeds: [reviewEmbed] });
-            msg.reactions.removeAll();
-            msg.react('◀');
-        });
-
-        collector.on('end', collected => {
-            console.log(collected);
-            msg.reactions.removeAll();
+		collector.on('end', async collected => {
+            console.log(`Collected ${collected.size} items`);
+            await interaction.editReply({ embeds: [songEmbed], components: [] });
         });
 	},
 };

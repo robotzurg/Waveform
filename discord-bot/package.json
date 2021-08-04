@@ -16,7 +16,7 @@
     "config.json": "0.0.4",
     "cron": "^1.8.2",
     "discord-pages": "^1.0.2",
-    "discord.js": "github:discordjs/discord.js",
+    "discord.js": "^13.0.0-dev.t1628035429.00d5cee",
     "enmap": "^5.8.2",
     "eslint": "^7.15.0",
     "for-async": "^1.0.1",

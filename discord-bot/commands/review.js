@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const db = require("../db.js");
 const { capitalize, update_art, review_song, hall_of_fame_check } = require('../func.js');
 const { mailboxes } = require('../arrays.json');
+const wait = require('util').promisify(setTimeout);
 
 module.exports = {
     name: 'review',
@@ -62,8 +63,33 @@ module.exports = {
         let thumbnailImage = false;
         let featArtists = [];
         let rmxArtists = [];
+
+        // Setup buttons
+        const row = new Discord.MessageActionRow()
+        .addComponents(
+            new Discord.MessageButton()
+                .setCustomId('artist')
+                .setLabel('Artist')
+                .setStyle('PRIMARY')
+                .setEmoji('📝'),
+            new Discord.MessageButton()
+                .setCustomId('song')
+                .setLabel('Song')
+                .setStyle('PRIMARY')
+                .setEmoji('📝'),
+            new Discord.MessageButton()
+                .setCustomId('rating')
+                .setLabel('Rating')
+                .setStyle('PRIMARY')
+                .setEmoji('📝'),
+            new Discord.MessageButton()
+                .setCustomId('review')
+                .setLabel('Review')
+                .setStyle('PRIMARY')
+                .setEmoji('📝'),
+        );
         
-        interaction.options.forEach((value) => {
+        interaction.options._hoistedOptions.forEach((value) => {
             args.push(value.value.trim());
             if (value.name === 'art') {
                 thumbnailImage = value.value.trim();
@@ -145,7 +171,7 @@ module.exports = {
             thumbnailImage = interaction.user.avatarURL({ format: "png", dynamic: false });
         }
 
-        const reviewEmbed = new Discord.MessageEmbed()
+        let reviewEmbed = new Discord.MessageEmbed()
         .setColor(`${interaction.member.displayHexColor}`)
         .setTitle(`${args[0]} - ${fullSongName}`)
         .setAuthor(`${interaction.member.displayName}'s review`, `${interaction.user.avatarURL({ format: "png", dynamic: false })}`);
@@ -169,15 +195,113 @@ module.exports = {
             thumbnailImage = false;
         }
 
+        // Send the embed rate message
+        interaction.editReply({ embeds: [reviewEmbed], components: [row] });
+
+		const filter = i => i.user.id === interaction.user.id;
+		const collector = interaction.channel.createMessageComponentCollector({ filter, time: 10000 });
+		let a_collector;
+		let s_collector;
+		let ra_collector;
+		let re_collector;
+
+		collector.on('collect', async i => {
+			switch (i.customId) {
+				case 'artist': {
+					await i.deferUpdate();
+					await i.editReply({ content: 'Type in the Artist Name(s) (separated with &, DO NOT PUT REMIXERS OR FEATURE VOCALISTS HERE!)', components: [] });
+					a_collector = interaction.channel.createMessageCollector({ max: 1, time: 15000 });
+					a_collector.on('collect', async m => {
+						m.content = capitalize(m.content);
+                        artistArray = m.content.split(' & '); 
+                        fullArtistArray = [artistArray, rmxArtists, featArtists]; 
+                        fullArtistArray = fullArtistArray.flat(1);
+                        reviewEmbed.setTitle(`${m.content} - ${fullSongName}`);
+						await i.editReply({ embeds: [reviewEmbed], components: [row] });
+						m.delete();
+					});
+					
+					a_collector.on('end', async collected => {
+						console.log(`Collected ${collected.size} items`);
+                        await i.editReply({ embeds: [reviewEmbed], components: [row] });
+					});
+				} break;
+				case 'song': {
+					await i.deferUpdate();
+					await i.editReply({ content: 'Type in the Song Name (NO FT. SHOULD BE INCLUDED)', components: [] });
+
+					s_collector = interaction.channel.createMessageCollector({ max: 1, time: 15000 });
+					s_collector.on('collect', async m => {
+                        m.content = capitalize(m.content);
+						songName = m.content;
+                        fullSongName = (`${songName}` + 
+                        `${(featArtists.length != 0) ? ` (ft. ${featArtists.join(' & ')})` : ``}` +
+                        `${(rmxArtists.length != 0) ? ` (${rmxArtists.join(' & ')} Remix)` : ``}`);
+                        reviewEmbed.setTitle(`${artistArray.join(' & ')} - ${fullSongName}`);
+						await i.editReply({ embeds: [reviewEmbed], components: [row] });
+						m.delete();
+					});
+					
+					s_collector.on('end', async collected => {
+						console.log(`Collected ${collected.size} items`);
+						await i.editReply({ embeds: [reviewEmbed], components: [row] });
+					});
+				} break;
+				case 'rating': {
+					await i.deferUpdate();
+					await i.editReply({ content: 'Type in the rating (DO NOT ADD /10!)', components: [] });
+
+					ra_collector = interaction.channel.createMessageCollector({ max: 1, time: 15000 });
+					ra_collector.on('collect', async m => {
+						rating = parseInt(m.content);
+                        reviewEmbed.fields[0] = { name : 'Rating', value : `**${rating}/10**` };
+						await i.editReply({ embeds: [reviewEmbed], components: [row] });
+						m.delete();
+					});
+					
+					ra_collector.on('end', async collected => {
+						console.log(`Collected ${collected.size} items`);
+						await i.editReply({ embeds: [reviewEmbed], components: [row] });
+					});
+				} break;
+				case 'review': {
+					await i.deferUpdate();
+					await i.editReply({ content: 'Type in the new review.', components: [] });
+
+					re_collector = interaction.channel.createMessageCollector({ max: 1, time: 15000 });
+					re_collector.on('collect', async m => {
+						review = m.content;
+                        reviewEmbed.setDescription(review);
+						await i.editReply({ embeds: [reviewEmbed], components: [row] });
+						m.delete();
+					});
+					
+					re_collector.on('end', async collected => {
+						console.log(`Collected ${collected.size} items`);
+						await i.editReply({ embeds: [reviewEmbed], components: [row] });
+					});
+				} break;
+			}
+		});
+
+		collector.on('end', async collected => {
+			console.log(`Collected ${collected.size} items`);
+			if (a_collector != undefined) a_collector.stop();
+			if (s_collector != undefined) s_collector.stop();
+			if (ra_collector != undefined) ra_collector.stop();
+			if (re_collector != undefined) re_collector.stop();
+			await interaction.editReply({ content: ' ', embeds: [reviewEmbed], components: [] });
+		});
+
+        await wait(10000);
+
         // Review the song
         review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser);
 
         // Update user stats
         db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'recent_review');
         db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'review_list');
-
-        // Send the embed rate message
-        interaction.editReply({ embeds: [reviewEmbed] });
+        
         const msg = await interaction.fetchReply();
 
         // Setting the message id for the message we just sent (and check for mailbox, if so put as FALSE so we don't have to look for a non-existant message)
@@ -185,6 +309,7 @@ module.exports = {
             for (let i = 0; i < fullArtistArray.length; i++) {
                 if (rmxArtists.length === 0) {
                     db.reviewDB.set(fullArtistArray[i], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
+                    console.log(db.reviewDB.get(fullArtistArray[i], `["${songName}"].["${interaction.user.id}"].msg_id`));
                 } else if (rmxArtists.includes(fullArtistArray[i])) {
                     db.reviewDB.set(fullArtistArray[i], msg.id, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
                 }

@@ -16,7 +16,7 @@ module.exports = {
 	async execute(interaction) {
 		let args = [];
 
-        await interaction.options.forEach(async (value) => {
+        await interaction.options._hoistedOptions.forEach(async (value) => {
             args.push(capitalize(value.value));
         });
 

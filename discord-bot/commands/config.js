@@ -27,7 +27,7 @@ module.exports = {
     admin: true,
 	execute(interaction) {
         let args = [];     
-        interaction.options.forEach((value) => {
+        interaction.options._hoistedOptions.forEach((value) => {
             args.push(value.value);
         });
 

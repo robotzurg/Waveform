@@ -35,7 +35,7 @@ module.exports = {
         let taggedMember = interaction.member;
         let rmxArtists = [];
 
-        await interaction.options.forEach(async (value) => {
+        await interaction.options._hoistedOptions.forEach(async (value) => {
             args.push(value.value.trim());
             if (value.name === 'user') {
                 taggedMember = await interaction.guild.members.fetch(value.value);
@@ -51,42 +51,6 @@ module.exports = {
 
         let origArtistNames = args[0];
         let songName = args[1];
-
-        /*if (origArtistNames.toLowerCase() === 's') {
-            const dbKeyArray = db.reviewDB.keyArray();
-            let options = [];
-            
-            for (let i = 0; i < dbKeyArray.length; i++) {
-                let aI = dbKeyArray.length - 1 - i;
-                let AsongArray = Object.keys(db.reviewDB.get(dbKeyArray[aI]));
-                AsongArray = AsongArray.filter(item => item !== 'Image');
-
-                for (let ii = 0; ii < AsongArray.length; ii++) {
-                    let vocalCheck = [db.reviewDB.get(dbKeyArray[aI], `["${AsongArray[ii]}"].vocals`)].flat(1);
-                    let collabCheck = db.reviewDB.get(dbKeyArray[aI], `["${AsongArray[ii]}"].collab`);
-
-                    
-                    if (Array.isArray(collabCheck)) {
-                        collabCheck = collabCheck.toString();
-                    }
-
-                    if (AsongArray[ii] === args[1] && !vocalCheck.includes(dbKeyArray[aI]) && !options.includes(`${collabCheck} ${AsongArray[ii]}`)) {
-                        origArtistNames = dbKeyArray[aI];
-                        songName = AsongArray[ii];
-                        options.push([origArtistNames, songName]);
-                        options[options.length - 1] = options[options.length - 1].join(' ');
-                    } 
-                }
-
-                if (options.length > 0) break;
-            }
-            
-            if (options.length === 0) {
-                return interaction.editReply('There is no song in the database that exists with this name.');
-            } else if (options.length > 1) {
-                return interaction.editReply(`Looks like multiple songs of the same name exist in the database. Please use \`/getReview <artist> <song>\` on one of these songs to get the review:\n\`\`\`${options.join('\n')}\`\`\``);
-            }
-        }*/
 
         // Format somethings to be more consistent.
         if (songName.includes('(VIP)')) {
@@ -114,7 +78,7 @@ module.exports = {
         let thumbnailImage;
         let artistsEmbed = origArtistNames;
         let vocalistsEmbed = [];
-        let epfrom = db.reviewDB.get(rmxArtists.length === 0 ? artistArray[0] : rmxArtists, `["${songName}"].EP`);
+        let epfrom = db.reviewDB.get(rmxArtists.length === 0 ? artistArray[0] : rmxArtists, `["${songName}"].ep`);
 
         // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
         if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
