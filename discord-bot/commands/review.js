@@ -199,7 +199,7 @@ module.exports = {
         interaction.editReply({ embeds: [reviewEmbed], components: [row] });
 
 		const filter = i => i.user.id === interaction.user.id;
-		const collector = interaction.channel.createMessageComponentCollector({ filter, time: 10000 });
+		const collector = interaction.channel.createMessageComponentCollector({ filter, time: 60000 });
 		let a_collector;
 		let s_collector;
 		let ra_collector;

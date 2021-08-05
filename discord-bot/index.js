@@ -2,8 +2,6 @@
 const fs = require('fs');
 const Discord = require('discord.js');
 const { token } = require('./config.json');
-// const db = require("./db.js");
-// const cron = require('node-cron');
 const db = require('./db');
 
 // create a new Discord client and give it some variables
