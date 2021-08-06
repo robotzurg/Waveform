@@ -207,88 +207,63 @@ module.exports = {
     },
 
     hall_of_fame_check: function(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage) {
-        const filter = (reaction, user) => {
-            return (reaction.emoji.name === '🌟') && user.id === interaction.user.id;
-        };
+        db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${songName}`, 'star_list');
+        db.user_stats.math(interaction.user.id, '+', 1, 'star_num');
+        for (let i = 0; i < fullArtistArray.length; i++) {
+            db.reviewDB.set(fullArtistArray[i], true, `["${songName}"].["${interaction.user.id}"].starred`);
+        }
 
-        msg.react('🌟');
-        msg.awaitReactions({ filter, max: 1, time: 10000, errors: ['time'] })
-        .then(collected => {
-            console.log(collected);
-            console.log('first');
-            const reaction = collected.first();
-            if (reaction === undefined) return;
-            if (reaction.emoji.name === '🌟') {
-                db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${songName}`, 'star_list');
-                db.user_stats.math(interaction.user.id, '+', 1, 'star_num');
-                for (let i = 0; i < fullArtistArray.length; i++) {
-                    db.reviewDB.set(fullArtistArray[i], true, `["${songName}"].["${interaction.user.id}"].starred`);
-                }
+        const songObj = db.reviewDB.get(fullArtistArray[0], `["${songName}"]`);
 
-                const songObj = db.reviewDB.get(fullArtistArray[0], `["${songName}"]`);
+        let userArray = Object.keys(songObj);
+        let star_array = [];
+        let star_count = 0;
 
-                let userArray = Object.keys(songObj);
-                let star_array = [];
-                let star_count = 0;
+        userArray = userArray.filter(e => e !== 'remixers');
+        userArray = userArray.filter(e => e !== 'ep');
+        userArray = userArray.filter(e => e !== 'collab');
+        userArray = userArray.filter(e => e !== 'art');
+        userArray = userArray.filter(e => e !== 'vocals');
+        userArray = userArray.filter(e => e !== 'review_num');
+        userArray = userArray.filter(e => e !== 'hof_id');
 
-                userArray = userArray.filter(e => e !== 'remixers');
-                userArray = userArray.filter(e => e !== 'ep');
-                userArray = userArray.filter(e => e !== 'collab');
-                userArray = userArray.filter(e => e !== 'art');
-                userArray = userArray.filter(e => e !== 'vocals');
-                userArray = userArray.filter(e => e !== 'review_num');
-                userArray = userArray.filter(e => e !== 'hof_id');
+        for (let i = 0; i < userArray.length; i++) {
+            let star_check;
+            star_check = db.reviewDB.get(fullArtistArray[0], `["${songName}"].["${userArray[i]}"].starred`);
 
-                for (let i = 0; i < userArray.length; i++) {
-                    let star_check;
-                    star_check = db.reviewDB.get(fullArtistArray[0], `["${songName}"].["${userArray[i]}"].starred`);
-
-                    if (star_check === true) {
-                        star_count++;
-                        star_array.push(`:star2: <@${userArray[i]}>`);
-                        console.log(star_array);
-                    }
-                }
-
-                // Add to the hall of fame channel!
-                if (star_count >= db.server_settings.get(interaction.guild.id, 'star_cutoff')) {
-                    const hofChannel = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel').slice(0, -1).slice(2));
-                    const hofEmbed = new Discord.MessageEmbed()
-                    
-                    .setColor(`#FFFF00`)
-                    .setTitle(`${args[0]} - ${args[1]}`)
-                    .setDescription(`:star2: **This song currently has ${star_count} stars!** :star2:`)
-                    .addField('Starred Reviews:', star_array.join('\n'))
-                    .setImage(thumbnailImage);
-                    hofEmbed.setFooter(`Use /getSong ${songName} to get more details about this song!`);
-
-                    if (!db.hall_of_fame.has(songName)) {
-                        hofChannel.send({ embeds: [hofEmbed] }).then(hof_msg => {
-                            db.hall_of_fame.set(songName, hof_msg.id);
-                            for (let i = 0; i < fullArtistArray.length; i++) {
-                                db.reviewDB.set(fullArtistArray[i], hof_msg.id, `["${songName}"].hof_id`);
-                            }
-            
-                        });
-                    } else {
-                        hofChannel.messages.fetch(`${db.hall_of_fame.get(songName)}`).then(hof_msg => {
-                            hof_msg.edit({ embeds: [hofEmbed] });
-                        });
-                    }
-                }
-
-                msg.reactions.removeAll();
-                let embed_data = msg.embeds;
-                let msgEmbed = embed_data[0];
-                let msgEmbedTitle = msgEmbed.title;
-                msgEmbed.title = `:star2: ${msgEmbedTitle} :star2:`;
-                interaction.editReply({ embeds: [msgEmbed] });
+            if (star_check === true) {
+                star_count++;
+                star_array.push(`:star2: <@${userArray[i]}>`);
+                console.log(star_array);
             }
-        })
-        .catch(collected => {
-            console.log(collected);
-            msg.reactions.removeAll();
-        });
+        }
+
+        // Add to the hall of fame channel!
+        if (star_count >= db.server_settings.get(interaction.guild.id, 'star_cutoff')) {
+            const hofChannel = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel').slice(0, -1).slice(2));
+            const hofEmbed = new Discord.MessageEmbed()
+            
+            .setColor(`#FFFF00`)
+            .setTitle(`${args[0]} - ${args[1]}`)
+            .setDescription(`:star2: **This song currently has ${star_count} stars!** :star2:`)
+            .addField('Starred Reviews:', star_array.join('\n'))
+            .setImage(thumbnailImage);
+            hofEmbed.setFooter(`Use /getSong ${songName} to get more details about this song!`);
+
+            if (!db.hall_of_fame.has(songName)) {
+                hofChannel.send({ embeds: [hofEmbed] }).then(hof_msg => {
+                    db.hall_of_fame.set(songName, hof_msg.id);
+                    for (let i = 0; i < fullArtistArray.length; i++) {
+                        db.reviewDB.set(fullArtistArray[i], hof_msg.id, `["${songName}"].hof_id`);
+                    }
+    
+                });
+            } else {
+                hofChannel.messages.fetch(`${db.hall_of_fame.get(songName)}`).then(hof_msg => {
+                    hof_msg.edit({ embeds: [hofEmbed] });
+                });
+            }
+        }
     },
 
     get_args: function(interaction, args) {

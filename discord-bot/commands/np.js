@@ -10,9 +10,7 @@ module.exports = {
         let sent = false;
         // Function to grab average of all ratings later
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
-        console.log(interaction.user);
-        interaction.user.presence.activities.forEach((activity) => {
-            console.log(activity);
+        interaction.member.presence.activities.forEach((activity) => {
             if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
                 let artists = activity.state;
                 let artistArray = [activity.state];
