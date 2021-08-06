@@ -183,6 +183,7 @@ module.exports = {
 
                 Object.assign(songObj, newuserObj);
                 db.reviewDB.set(fullArtistArray[i], songObj, `["${songName}"]`);
+                db.reviewDB.set(fullArtistArray[i], thumbnailImage, `["${songName}"].art`);
 
             } else if (review_object.name != undefined) { // Otherwise if you have no review but the song and artist objects exist
 
@@ -196,6 +197,7 @@ module.exports = {
                 //Inject the newsongobject into the songobject and then put it in the database
                 Object.assign(songObj, newuserObj);
                 db.reviewDB.set(fullArtistArray[i], songObj, `["${songName}"]`);
+                db.reviewDB.set(fullArtistArray[i], thumbnailImage, `["${songName}"].art`);
 
             } else { // This case only occurs when the remixer tab of the original song needs to be updated.
                 for (let r = 0; r < rmxArtists.length; r++) {

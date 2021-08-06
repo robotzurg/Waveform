@@ -325,6 +325,8 @@ module.exports = {
                     if (collector != undefined) collector.stop(); // Collector for all buttons
                     await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [] });
 
+                    console.log(thumbnailImage);
+
                     // Review the song
                     review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser);
 
