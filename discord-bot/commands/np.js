@@ -12,6 +12,8 @@ module.exports = {
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
         interaction.member.presence.activities.forEach((activity) => {
             if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                activity.state = activity.state.trim();
+                activity.details = activity.details.trim();
                 let artists = activity.state;
                 let artistArray = [activity.state];
                 let rmxArtist = false;
@@ -120,7 +122,7 @@ module.exports = {
 
                 } else {
                     if (!activity.details.toLowerCase().includes('remix')) {
-                        exampleEmbed.setDescription(`This artist is not been reviewed in the database.`);
+                        exampleEmbed.setDescription(`This artist has not been reviewed in the database.`);
                     }
                 }
 

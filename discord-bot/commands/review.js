@@ -325,8 +325,6 @@ module.exports = {
                     if (collector != undefined) collector.stop(); // Collector for all buttons
                     await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [] });
 
-                    console.log(thumbnailImage);
-
                     // Review the song
                     review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser);
 
@@ -357,7 +355,7 @@ module.exports = {
                     }
 
                     // Star reaction stuff for hall of fame
-                    if (rating === '10') {
+                    if (rating === '10' && starred === true) {
                         hall_of_fame_check(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
                     }
                 
