@@ -65,7 +65,7 @@ client.once('ready', async () => {
 client.on('interactionCreate', async interaction => {
 	if (!interaction.isCommand()) return;
 
-	await interaction.defer();
+	await interaction.deferReply();
 
     let args;
 
