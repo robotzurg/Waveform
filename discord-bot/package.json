@@ -24,6 +24,7 @@
     "node-gyp": "^7.1.2",
     "num-words": "^1.2.2",
     "sequelize": "^6.3.5",
+    "spotify-url-info": "^2.2.3",
     "sqlite3": "^5.0.0",
     "trello": "^0.10.0",
     "trello-node-api": "0.0.9"

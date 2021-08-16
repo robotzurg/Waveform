@@ -3,6 +3,7 @@ const fs = require('fs');
 const Discord = require('discord.js');
 const { token } = require('./config.json');
 const db = require('./db');
+//const { getPreview } = require('spotify-url-info');
 
 // create a new Discord client and give it some variables
 const { Client, Intents } = require('discord.js');
@@ -104,6 +105,11 @@ client.on('interactionCreate', async interaction => {
 
 // Listen for messages
 client.on('messageCreate', async message => {
+
+    /*if (message.content.includes('https:') && message.author.id === '122568101995872256') {
+        getPreview(message.content)
+            .then(data => console.log(data));
+    }*/
 
     //Review Chat Filter
     if (db.server_settings.get(message.guild.id, 'review_filter') === true && `<#${message.channel.id}>` === db.server_settings.get(message.guild.id, 'review_channel')) {
