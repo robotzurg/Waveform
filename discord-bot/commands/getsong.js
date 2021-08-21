@@ -2,28 +2,26 @@ const Discord = require('discord.js');
 const db = require("../db.js");
 const { capitalize } = require('../func.js');
 const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-    name: 'getsong',
-    description: 'Get all the data about a song and displays it in an embed message.',
-    options: [
-        {
-            name: 'artist',
-            type: 'STRING',
-            description: 'The name of the artist.',
-            required: true,
-        }, {
-            name: 'song',
-            type: 'STRING',
-            description: 'The name of the song.',
-            required: true,
-        }, {
-            name: 'remixers',
-            type: 'STRING',
-            description: 'Remix artists on the song.',
-            required: false,
-        }, 
-    ],
+    data: new SlashCommandBuilder()
+        .setName('getsong')
+        .setDescription('Get all the data about a song and displays it in an embed message.')
+        .addStringOption(option => 
+            option.setName('artist')
+                .setDescription('The name of the artist(s).')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('song')
+                .setDescription('The name of the song.')
+                .setRequired(true))
+            
+        .addStringOption(option => 
+            option.setName('remixers')
+                .setDescription('Remix artists on the song, if any.')
+                .setRequired(false)),
 	admin: false,
 	async execute(interaction) {
 

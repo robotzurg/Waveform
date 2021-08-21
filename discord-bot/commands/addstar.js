@@ -1,29 +1,28 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { capitalize } = require('../func.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-    name: 'addstar',
-    description: 'Add a star to an existing review of yours!',
-    options: [
-        {
-            name: 'artist',
-            type: 'STRING',
-            description: 'The name of the artist.',
-            required: true,
-        }, {
-            name: 'song',
-            type: 'STRING',
-            description: 'The name of the song.',
-            required: true,
-        }, {
-            name: 'remixers',
-            type: 'STRING',
-            description: 'Remix artists on the song.',
-            required: false,
-        }, 
-    ],
-	admin: false,
+	data: new SlashCommandBuilder()
+		.setName('addstar')
+		.setDescription('Add a star to a song!')
+        .addStringOption(option => 
+            option.setName('artist')
+                .setDescription('The name of the artist(s).')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('song')
+                .setDescription('The name of the song.')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('remixers')
+                .setDescription('Remix artists on the song.')
+                .setRequired(false)),
+    
+    admin: false,
 	async execute(interaction) {
         let args = [];
         let rmxArtists = [];

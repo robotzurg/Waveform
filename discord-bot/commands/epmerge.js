@@ -1,33 +1,32 @@
 const db = require("../db.js");
 const { capitalize } = require('../func.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-    name: 'epmerge',
-    description: 'Merge multiple songs into an EP/LP, and can also be used to fix song order.',
-    options: [
-        {
-            name: 'artists',
-            type: 'STRING',
-            description: 'The primary artists of the EP/LP',
-            required: true,
-        }, {
-            name: 'songs',
-            type: 'STRING',
-            description: 'What songs are in the EP/LP (song names **separated by &**)',
-            required: true,
-        }, {
-            name: 'ep_name',
-            type: 'STRING',
-            description: 'Name of the EP (be sure to add EP or LP to the end of the name, manually.)',
-            required: true,
-        }, {
-            name: 'art',
-            type: 'STRING',
-            description: 'Art for the EP',
-            required: false,
-        },
-    ],
-	admin: false,
+	data: new SlashCommandBuilder()
+		.setName('epmerge')
+		.setDescription('Creates a new EP in the database, merging existing songs into it.')
+        .addStringOption(option => 
+            option.setName('artists')
+                .setDescription('The primary artists of the EP/LP.')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('songs')
+                .setDescription('What songs are in the EP/LP (song names **separated by &**)')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('ep_name')
+                .setDescription('Name of the EP (be sure to add EP or LP to the end of the name, manually.)')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('art')
+                .setDescription('Art of the EP')
+                .setRequired(false)),
+
+    admin: false,
 	async execute(interaction) {
         let args = [];
         let epArt = false;

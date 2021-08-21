@@ -1,18 +1,17 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { get_args } = require('../func.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-    name: 'profile',
-    description: 'Display your user profile!',
-    options: [
-        {
-            name: 'user',
-            type: 'USER',
-            description: 'The user whos profile you\'d like to see.',
-            required: false,
-        },
-    ],
+    data: new SlashCommandBuilder()
+        .setName('profile')
+        .setDescription('Display your (or others) user profile!')
+
+        .addUserOption(option => 
+            option.setName('user')
+                .setDescription('The user whose profile you\'d like to see.')
+                .setRequired(false)),
 	admin: false,
 	async execute(interaction) {
         let args = [];

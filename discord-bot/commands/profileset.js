@@ -1,26 +1,22 @@
 const db = require("../db.js");
 const { get_args } = require('../func.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-    name: 'setprofile',
-    description: 'Set aspects of your profile.',
-    options: [
-        {
-            name: 'setting',
-            type: 'STRING',
-            description: 'Which setting to set.',
-            required: true,
-            choices: [
-                { name: 'Favorite Song', value: 'FS' },
-                { name: 'Least Favorite Song', value: 'LFS' },
-            ],   
-        }, {
-            name: 'value',
-            type: 'STRING',
-            description: 'The value to put in. (Full song name!)',
-            required: true,
-        },
-    ],
+	data: new SlashCommandBuilder()
+		.setName('profileset')
+		.setDescription('Set aspects of your profile.')
+        .addStringOption(option => 
+            option.setName('setting')
+                .setDescription('Which setting to set.')
+                .setRequired(true)
+                .addChoice('Favorite Song', 'FS')
+                .addChoice('Least Favorite Song', 'LFS'))
+
+        .addStringOption(option => 
+            option.setName('value')
+                .setDescription('The value to put in. (Full song name!)')
+                .setRequired(true)),
 	admin: false,
 	async execute(interaction) {
         let args = [];

@@ -1,11 +1,12 @@
 const Discord = require('discord.js');
 const db = require('../db.js');
 const { capitalize } = require('../func.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-	name: 'np',
-	description: 'Display your currently playing song on Spotify!',
-    options: [],
+    data: new SlashCommandBuilder()
+        .setName('np')
+        .setDescription('Display your currently playing song on Spotify!'),
 	execute(interaction) {
         let sent = false;
         // Function to grab average of all ratings later

@@ -1,33 +1,32 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { capitalize } = require('../func.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-    name: 'getreview',
-    description: 'Get a review from a user on the server that they have written!',
-    options: [
-        {
-            name: 'artist',
-            type: 'STRING',
-            description: 'The name of the artist.',
-            required: true,
-        }, {
-            name: 'song',
-            type: 'STRING',
-            description: 'The name of the song.',
-            required: true,
-        }, {
-            name: 'user',
-            type: 'USER',
-            description: 'User who made the review. Defaults to yourself.',
-            required: false,
-        }, {
-            name: 'remixers',
-            type: 'STRING',
-            description: 'Remix artists on the song.',
-            required: false,
-        }, 
-    ],
+    data: new SlashCommandBuilder()
+        .setName('getreview')
+        .setDescription('Get a review someone has written in the database!')
+        .addStringOption(option => 
+            option.setName('artist')
+                .setDescription('The name of the artist(s).')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('song')
+                .setDescription('The name of the song.')
+                .setRequired(true))
+            
+        .addUserOption(option => 
+            option.setName('user')
+                .setDescription('User who made the review. Defaults to yourself.')
+                .setRequired(false))
+
+        .addStringOption(option => 
+            option.setName('remixers')
+                .setDescription('Remix artists on the song.')
+                .setRequired(false)),
+                
 	admin: false,
 	async execute(interaction) {
         let args = [];

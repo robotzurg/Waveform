@@ -1,38 +1,36 @@
 const db = require("../db.js");
 const forAsync = require('for-async');
 const { capitalize } = require("../func.js");
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-    name: 'setart',
-	description: 'Set an image for a song/EP/LP!',
-    options: [
-        {
-            name: 'artist',
-            type: 'STRING',
-            description: 'The name of the artist.',
-            required: true,
-        }, {
-            name: 'song',
-            type: 'STRING',
-            description: 'The name of the song.',
-            required: true,
-        }, {
-            name: 'url',
-            type: 'STRING',
-            description: 'The image URL. (put in "spotify" for spotify art.)',
-            required: true,
-        }, {
-            name: 'vocalists',
-            type: 'STRING',
-            description: 'The vocalists on the song, if any.',
-            required: false,
-        }, {
-            name: 'remixers',
-            type: 'STRING',
-            description: 'The remixers on the song, if this is a remix review.',
-            required: false,
-        },
-    ],
+    data: new SlashCommandBuilder()
+        .setName('setart')
+        .setDescription('Put in some art for a song (or EP/LP) in the database!')
+        .addStringOption(option => 
+            option.setName('artists')
+                .setDescription('The name of the artist(s).')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('song')
+                .setDescription('The name of the song/EP/LP.')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('art')
+                .setDescription('Art for the song/EP/LP. (put spotify or s here if you want to use your spotify status.)')
+                .setRequired(true))
+            
+        .addStringOption(option => 
+            option.setName('vocalists')
+                .setDescription('Vocalists who feature on the song, if any. (use & to separate multiple)')
+                .setRequired(false))
+
+        .addStringOption(option => 
+            option.setName('remixers')
+                .setDescription('The remixers on the song, if this is a remix.')
+                .setRequired(false)),
 	admin: false,
 	async execute(interaction) {
         let args = [];

@@ -1,19 +1,17 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { capitalize, get_args, average } = require('../func.js');
-// const DiscordPages = require("discord-pages");
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-    name: 'getartist',
-    description: 'Get all the songs from an artist and display them in an embed message.',
-    options: [
-        {
-            name: 'artist',
-            type: 'STRING',
-            description: 'The name of the artist.',
-            required: true,
-        },
-    ],
+    data: new SlashCommandBuilder()
+        .setName('getartist')
+        .setDescription('Get all the songs from an artist and display them in an embed message.')
+        .addStringOption(option => 
+            option.setName('artist')
+                .setDescription('The name of the artist.')
+                .setRequired(true)),
+
     admin: false,
 	execute(interaction) {
 

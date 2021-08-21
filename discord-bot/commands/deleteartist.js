@@ -1,17 +1,15 @@
 const db = require("../db.js");
 const { capitalize } = require("../func.js");
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-	name: 'deleteartist',
-    description: 'Deletes an artist from the database.',
-	options: [
-        {
-            name: 'artist',
-            type: 'STRING',
-            description: 'The name of the artist.',
-            required: true,
-        },
-    ],
+	data: new SlashCommandBuilder()
+		.setName('deleteartist')
+		.setDescription('Deletes an artist from the database.')
+        .addStringOption(option => 
+            option.setName('artist')
+                .setDescription('The name of the artist.')
+                .setRequired(true)),
     admin: true,
 	async execute(interaction) {
 		let args = [];

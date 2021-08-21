@@ -2,53 +2,51 @@ const Discord = require('discord.js');
 const db = require("../db.js");
 const { capitalize, update_art, review_song, hall_of_fame_check } = require('../func.js');
 const { mailboxes } = require('../arrays.json');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-    name: 'review',
-    description: 'Create a song review embed message!',
-    options: [
-        {
-            name: 'artists',
-            type: 'STRING',
-            description: 'The name of the artist. (DO NOT PUT ANY REMIXERS OR VOCALISTS HERE, ONLY PRODUCTION ARTISTS)',
-            required: true,
-        }, {
-            name: 'song',
-            type: 'STRING',
-            description: 'The name of the song. (Do not include any features or remixers in here!)',
-            required: true,
-        }, {
-            name: 'score',
-            type: 'STRING',
-            description: 'Score for the song (1-10, decimals allowed.)',
-            required: true,
-        }, {
-            name: 'review',
-            type: 'STRING',
-            description: 'Review of the song (Set this to - if you wish to do a rating and no review.)',
-            required: true,
-        }, {
-            name: 'art',
-            type: 'STRING',
-            description: 'Art of the song',
-            required: false,
-        }, {
-            name: 'vocalists',
-            type: 'STRING',
-            description: 'Vocalists who feature on the song (use & to separate multiple)',
-            required: false,
-        }, {
-            name: 'remixers',
-            type: 'STRING',
-            description: 'Remixers who remixed the song (use & to separate multiple)',
-            required: false,
-        }, {
-            name: 'user_who_sent',
-            type: 'USER',
-            description: 'User who sent a song',
-            required: false,
-        },
-    ],
+    data: new SlashCommandBuilder()
+        .setName('review')
+        .setDescription('Review a song using Waveform.')
+        .addStringOption(option => 
+            option.setName('artists')
+                .setDescription('The name of the artist(s). (DO NOT PUT ANY REMIXERS OR VOCALISTS HERE, ONLY PRODUCTION ARTISTS)')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('song')
+                .setDescription('The name of the song. (Do not include any features or remixers in here!)')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('rating')
+                .setDescription('Rating for the song (1-10, decimals allowed.)')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('review')
+                .setDescription('Review of the song (Set this to - if you wish to do a rating and no review.)')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('art')
+                .setDescription('Art of the song (put spotify or s here if you want to use your spotify status.)')
+                .setRequired(false))
+            
+        .addStringOption(option => 
+            option.setName('vocalists')
+                .setDescription('Vocalists who feature on the song (use & to separate multiple)')
+                .setRequired(false))
+
+        .addStringOption(option => 
+            option.setName('remixers')
+                .setDescription('Put remixers here, if you reviewing a remix of the original song. (NOT IN ARTISTS ARGUMENT)')
+                .setRequired(false))
+    
+        .addUserOption(option => 
+            option.setName('user_who_sent')
+                .setDescription('User who sent you this song in Mailbox. Ignore if not a mailbox review.')
+                .setRequired(false)),
 	admin: false,
 	async execute(interaction) {
         // Check if we are reviewing in the right chat, if not, boot out

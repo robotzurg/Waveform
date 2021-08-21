@@ -3,7 +3,9 @@ const fs = require('fs');
 const Discord = require('discord.js');
 const { token } = require('./config.json');
 const db = require('./db');
-//const { getPreview } = require('spotify-url-info');
+const { getPreview } = require('spotify-url-info');
+const { REST } = require('@discordjs/rest');
+const { Routes } = require('discord-api-types/v9');
 
 // create a new Discord client and give it some variables
 const { Client, Intents } = require('discord.js');
@@ -13,50 +15,37 @@ myIntents.add('GUILD_PRESENCES', 'GUILD_MEMBERS', 'GUILD_PRESENCES');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, 
                             Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_PRESENCES], partials: ['MESSAGE', 'CHANNEL', 'REACTION'] });
 client.commands = new Discord.Collection();
+const registerCommands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-const cooldowns = new Discord.Collection();
 
-// Command Collections
+// Place your client and guild ids here
+const clientId = '828651073136361472';
+const guildId = '680864893552951306';
+
 for (const file of commandFiles) {
 	const command = require(`./commands/${file}`);
-
-	// set a new item in the Collection
-	// with the key as the command name and the value as the exported module
-	client.commands.set(command.name, command);
+    client.commands.set(command.data.name, command);
+    registerCommands.push(command.data.toJSON());
 }
 
-client.once('ready', async () => {
-    const data = [];
-	const admin_list = [];
-	let permissions;
-    client.commands.forEach(function(value, key) {
-        data.push({
-            name: key,
-            description: value.description,
-            options: value.options,
-			defaultPermission: !value.admin,
-        });
-		if (value.admin === true) {
-			admin_list.push(key);
-		}
-    });
-    await client.guilds.cache.get('680864893552951306')?.commands.set(data);
-	let perm_command;
-	const command_list = await client.guilds.cache.get('680864893552951306')?.commands.cache.keys();
-	for (let i = 0; i < command_list.length; i++) {
-		if (admin_list.includes(command_list[i].name)) {
-			perm_command = await client.guilds.cache.get('680864893552951306')?.commands.fetch(command_list[i].id);
-			permissions = [
-				{
-					id: '847223926782296064',
-					type: 'ROLE',
-					permission: true,
-				},
-			];
-			await perm_command.setPermissions(permissions);
-		}
-	}
+const rest = new REST({ version: '9' }).setToken(token);
 
+(async () => {
+	try {
+		console.log('Started refreshing application (/) commands.');
+
+		await rest.put(
+			Routes.applicationGuildCommands(clientId, guildId),
+			{ body: registerCommands },
+		);
+
+		console.log('Successfully reloaded application (/) commands.');
+	} catch (error) {
+		console.error(error);
+	}
+})();
+
+client.once('ready', async () => {
     console.log('Ready!');
     const date = new Date().toLocaleTimeString().replace("/.*(d{2}:d{2}:d{2}).*/", "$1");
     console.log(date);
@@ -68,36 +57,15 @@ client.on('interactionCreate', async interaction => {
 
 	await interaction.deferReply();
 
-    let args;
-
     const command = client.commands.get(interaction.commandName);
 
-	if (!cooldowns.has(command.name)) {
-        cooldowns.set(command.name, new Discord.Collection());
-    }
-    
-    const now = Date.now();
-    const timestamps = cooldowns.get(command.name);
-    const cooldownAmount = (command.cooldown || 0) * 1000;
-
-    if (timestamps.has(interaction.user.id)) {
-        const expirationTime = timestamps.get(interaction.user.id) + cooldownAmount;
-
-        if (now < expirationTime) {
-            const timeLeft = (expirationTime - now) / 1000;
-            return interaction.editReply(`please wait ${timeLeft.toFixed(0)} more second(s) before reusing the \`${command.name}\` command.`);
-        }
-
-    }
-
-	timestamps.set(interaction.user.id, now);
-	setTimeout(() => timestamps.delete(interaction.user.id), cooldownAmount); 
+    if (!command) return;
 
     try {
-        await command.execute(interaction, client, args);
+        await command.execute(interaction, client);
     } catch (error) {
         await console.error(error);
-        await interaction.reply(`There was an error trying to execute that command!`);
+        await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
     }
     
 });
@@ -106,10 +74,12 @@ client.on('interactionCreate', async interaction => {
 // Listen for messages
 client.on('messageCreate', async message => {
 
-    /*if (message.content.includes('https:') && message.author.id === '122568101995872256') {
+    if (message.content.includes('https:') && message.author.id === '122568101995872256') {
         getPreview(message.content)
-            .then(data => console.log(data));
-    }*/
+            .then(data => {
+                message.channel.send(`Title: **${data.title}**\nMade by: **${data.artist}**\nReleased on **${data.date}**\nArt Link: <${data.image}>\nSpotify Link: ${data.link}`);
+            });
+    }
 
     //Review Chat Filter
     if (db.server_settings.get(message.guild.id, 'review_filter') === true && `<#${message.channel.id}>` === db.server_settings.get(message.guild.id, 'review_channel')) {

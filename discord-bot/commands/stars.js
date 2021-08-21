@@ -1,16 +1,16 @@
 const Discord = require('discord.js');
 const db = require('../db.js');
 const { get_args } = require('../func.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-	name: 'stars',
-	description: 'Show a list of all the stars a user has!',
-    options: [{
-        name: 'user',
-        type: 'USER',
-        description: 'User whos reviews to look at.',
-        required: false,
-    }],
+    data: new SlashCommandBuilder()
+        .setName('stars')
+        .setDescription('See a full list of all the stars a user has on songs in the database.')
+        .addUserOption(option => 
+            option.setName('user')
+                .setDescription('User to see stars from. (Optional, Defaults to yourself)')
+                .setRequired(false)),
     admin: false,
 	async execute(interaction) {
         let args = [];

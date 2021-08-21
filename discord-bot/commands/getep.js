@@ -1,23 +1,21 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { capitalize, get_args } = require('../func.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-    name: 'getep',
-    description: 'Get all the songs from a specific EP and display them in an embed message.',
-    options: [
-        {
-            name: 'artist',
-            type: 'STRING',
-            description: 'The name of the artist.',
-            required: true,
-        }, {
-            name: 'ep_name',
-            type: 'STRING',
-            description: 'The name of the EP.',
-            required: true,
-        },
-    ],
+    data: new SlashCommandBuilder()
+        .setName('getep')
+        .setDescription('Get all the songs from a specific EP and display them in an embed message.')
+        .addStringOption(option => 
+            option.setName('artist')
+                .setDescription('The name of the artist.')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('ep_name')
+                .setDescription('The name of the EP.')
+                .setRequired(true)),
     admin: false,
 	execute(interaction) {
 

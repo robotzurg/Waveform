@@ -1,28 +1,26 @@
 const db = require("../db.js");
 const { capitalize } = require("../func.js");
 const wait = require('util').promisify(setTimeout);
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-    name: 'deletereview',
-    description: 'Edit a pre-existing review of your own in the review DB.',
-    options: [
-        {
-            name: 'artist',
-            type: 'STRING',
-            description: 'The name of the artist.',
-            required: true,
-        }, {
-            name: 'song',
-            type: 'STRING',
-            description: 'The name of the song.',
-            required: true,
-        }, {
-            name: 'remixers',
-            type: 'STRING',
-            description: 'Remixers of the song. Use to delete remixes of the song.',
-            required: false,
-        },
-    ],
+	data: new SlashCommandBuilder()
+		.setName('deletereview')
+		.setDescription('Delete a review!')
+        .addStringOption(option => 
+            option.setName('artist')
+                .setDescription('The name of the artist(s).')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('song')
+                .setDescription('The name of the song.')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('remixers')
+                .setDescription('Remix artists on the song, use this to delete remix reviews.')
+                .setRequired(false)),
 	admin: false,
     async execute(interaction) {
         let args = [];

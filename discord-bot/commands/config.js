@@ -1,29 +1,24 @@
 const Discord = require("discord.js");
 const db = require('../db.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
-	name: 'config',
-	type: 'Review DB',
-	description: 'Configure settings for Waveform. Using no arguments shows the config list.',
-    options: [
-        {
-            name: 'configuration',
-            type: 'STRING',
-            description: 'Which setting to configure.',
-            required: false,
-            choices: [
-                { name: 'Review Channel', value: 'RC' },
-                { name: 'Review Chat Filter', value: 'RCF' },
-                { name: 'Hall of Fame Channel', value: 'HFC' },
-                { name: 'Star Cutoff for HoF', value: 'SC' },
-            ],   
-        }, {
-            name: 'value',
-            type: 'STRING',
-            description: 'The value to put in for the configuration (REQUIRES AN ARGUMENT PLACED INTO CONFIGURATION.)',
-            required: false,
-        },
-    ],
+	data: new SlashCommandBuilder()
+		.setName('config')
+		.setDescription('Configure settings for Waveform. Using no arguments shows the config list.')
+        .addStringOption(option => 
+            option.setName('configuration')
+                .setDescription('Which setting to configure.')
+                .setRequired(false)
+                .addChoice('Review Channel', 'RC')
+                .addChoice('Review Chat Filter', 'RCF')
+                .addChoice('Hall of Fame Channel', 'HFC')
+                .addChoice('Star Cutoff for HoF', 'SC'))
+
+        .addStringOption(option => 
+            option.setName('value')
+                .setDescription('The value to put in for the configuration (REQUIRES AN ARGUMENT PLACED INTO CONFIGURATION.)')
+                .setRequired(false)),
     admin: true,
 	execute(interaction) {
         let args = [];     
