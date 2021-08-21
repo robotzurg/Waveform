@@ -3,7 +3,6 @@ const fs = require('fs');
 const Discord = require('discord.js');
 const { token } = require('./config.json');
 const db = require('./db');
-const { getPreview } = require('spotify-url-info');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
 
@@ -24,8 +23,15 @@ const guildId = '680864893552951306';
 
 for (const file of commandFiles) {
 	const command = require(`./commands/${file}`);
-    client.commands.set(command.data.name, command);
-    registerCommands.push(command.data.toJSON());
+    if (command.type === undefined) {
+        // Slash Commands
+        client.commands.set(command.data.name, command);
+        registerCommands.push(command.data.toJSON());
+    } else {
+        // Context Menu Commands (these have a different structure)
+        client.commands.set(command.name, command);
+        registerCommands.push(command);
+    }
 }
 
 const rest = new REST({ version: '9' }).setToken(token);
@@ -53,7 +59,8 @@ client.once('ready', async () => {
 
 // Listen for interactions (INTERACTION COMMAND HANDLER)
 client.on('interactionCreate', async interaction => {
-	if (!interaction.isCommand()) return;
+
+	if (!interaction.isCommand() && !interaction.isContextMenu()) return;
 
 	await interaction.deferReply();
 
@@ -73,13 +80,6 @@ client.on('interactionCreate', async interaction => {
 
 // Listen for messages
 client.on('messageCreate', async message => {
-
-    if (message.content.includes('https:') && message.author.id === '122568101995872256') {
-        getPreview(message.content)
-            .then(data => {
-                message.channel.send(`Title: **${data.title}**\nMade by: **${data.artist}**\nReleased on **${data.date}**\nArt Link: <${data.image}>\nSpotify Link: ${data.link}`);
-            });
-    }
 
     //Review Chat Filter
     if (db.server_settings.get(message.guild.id, 'review_filter') === true && `<#${message.channel.id}>` === db.server_settings.get(message.guild.id, 'review_channel')) {
