@@ -1,0 +1,33 @@
+body {
+    background-color: #1a1a1a;
+    color: white;
+    font-family: 'Sora', sans-serif;
+}
+
+h1 {
+    color: lightgreen;
+    border-bottom: 15px dotted lightskyblue;
+    width: 300px;
+}
+
+h2 {
+    color: gray;
+    font-size: 125%;
+}
+
+.def {
+    color: grey;
+    font-size: 100%;
+}
+
+a:link {
+    color: pink;
+}
+
+a:visited {
+    color: cyan;
+}
+
+a:hover {
+    text-decoration: none;
+}
