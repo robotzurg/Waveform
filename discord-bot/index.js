@@ -92,6 +92,5 @@ client.on('messageCreate', async message => {
 
 });
 
-
 // login to Discord
 client.login(token);
