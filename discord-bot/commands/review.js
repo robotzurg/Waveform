@@ -128,13 +128,17 @@ module.exports = {
         } else { // Context Menu Command
             args = [sp_artist, sp_song, sp_rating, sp_review, sp_art, sp_vocalists, sp_remixers, sp_user_who_sent];
             thumbnailImage = sp_art;
+            if (sp_vocalists != undefined) {
+                featArtists.push(capitalize(sp_vocalists).split(' & '));
+                featArtists = featArtists.flat(1);
+            }
         }
-
+        
         taggedMember = await interaction.guild.members.fetch(taggedMember);
         taggedUser = taggedMember.user;
 
         // Spotify check (checks for both "spotify" and "s" as the image link)
-        if (thumbnailImage != false) {
+        if (thumbnailImage != false && thumbnailImage != undefined) {
             if (thumbnailImage.toLowerCase().includes('spotify') || thumbnailImage.toLowerCase() === 's') {
                 interaction.member.presence.activities.forEach((activity) => {
                     if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
@@ -145,7 +149,9 @@ module.exports = {
         }
 
         // Make sure we DON'T get any slip ups, where the bot lets spotify run through (if it can't find a status)
-        if (thumbnailImage.toLowerCase().includes('spotify') || thumbnailImage.toLowerCase() === 's') thumbnailImage = false;
+        if (thumbnailImage != undefined && thumbnailImage != false) {
+            if (thumbnailImage.toLowerCase().includes('spotify') || thumbnailImage.toLowerCase() === 's') thumbnailImage = false;
+        }
         
         //Auto-adjustment to caps for each word
         args[0] = capitalize(args[0]);
@@ -162,12 +168,13 @@ module.exports = {
         let rating = args[2];
         let review = args[3];
 
-        rating = rating.trim();
+        console.log(rating);
+
+        if (!Number.isInteger(rating)) {
+            rating = rating.trim();
+            if (rating.includes('/10')) rating = parseInt(rating.slice(3));
+        }
         review = review.trim();
-
-        if (rating.includes('/10')) rating = parseInt(rating.slice(3));
-
-        args[2] = rating;
 
         //Split up the artists into an array
         let artistArray;
@@ -397,41 +404,39 @@ module.exports = {
 
         } else { // Reviewing with the Spotify Link Review Context Menu
 
-            // return int_channel.send('Test');
-
             // Review the song
             review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser);
 
             // Update user stats
             db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'recent_review');
             db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'review_list');
-            
-            const msg = await interaction.fetchReply();
 
-            // Setting the message id for the message we just sent (and check for mailbox, if so put as FALSE so we don't have to look for a non-existant message)
-            if (!mailboxes.includes(int_channel.name)) {
-                for (let ii = 0; ii < fullArtistArray.length; ii++) {
-                    if (rmxArtists.length === 0) {
-                        db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
-                        console.log(db.reviewDB.get(fullArtistArray[ii], `["${songName}"].["${interaction.user.id}"].msg_id`));
-                    } else if (rmxArtists.includes(fullArtistArray[ii])) {
-                        db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
+            await int_channel.send({ embeds: [reviewEmbed] }).then(msg => {
+                // Setting the message id for the message we just sent (and check for mailbox, if so put as FALSE so we don't have to look for a non-existant message)
+                if (!mailboxes.includes(int_channel.name)) {
+                    for (let ii = 0; ii < fullArtistArray.length; ii++) {
+                        if (rmxArtists.length === 0) {
+                            db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
+                            console.log(db.reviewDB.get(fullArtistArray[ii], `["${songName}"].["${interaction.user.id}"].msg_id`));
+                        } else if (rmxArtists.includes(fullArtistArray[ii])) {
+                            db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
+                        }
+                    }
+                } else {
+                    for (let ii = 0; ii < fullArtistArray.length; ii++) {
+                        if (rmxArtists.length === 0) {
+                            db.reviewDB.set(fullArtistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`); 
+                        } else if (rmxArtists.includes(fullArtistArray[ii])) {
+                            db.reviewDB.set(fullArtistArray[ii], false, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
+                        }
                     }
                 }
-            } else {
-                for (let ii = 0; ii < fullArtistArray.length; ii++) {
-                    if (rmxArtists.length === 0) {
-                        db.reviewDB.set(fullArtistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`); 
-                    } else if (rmxArtists.includes(fullArtistArray[ii])) {
-                        db.reviewDB.set(fullArtistArray[ii], false, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
-                    }
-                }
-            }
 
-            // Star reaction stuff for hall of fame
-            if (sp_star === true) {
-                hall_of_fame_check(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
-            }
+                // Star reaction stuff for hall of fame
+                if (sp_star === true) {
+                    hall_of_fame_check(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
+                }
+            });
         }
     },
 };
