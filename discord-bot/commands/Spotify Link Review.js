@@ -58,15 +58,18 @@ module.exports = {
 				console.log(artists);
 				console.log(song);
 				await interaction.editReply({ content: `Type in your rating for **${artists} - ${song}** (DO NOT ADD /10!)`, components: [] });
+				const ra_filter = m => m.author.id === interaction.user.id
 
-				let ra_collector = await interaction.channel.createMessageCollector({ max: 1, time: 60000 });
+				let ra_collector = await interaction.channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
 				ra_collector.on('collect', async m => {
+					console.log(m.author.id)
 
 					rating = parseFloat(m.content);
 					m.delete();
 					await interaction.editReply({ content: `Type in your review for **${artists} - ${song}**`, components: [] });
+					const re_filter = m => m.author.id === interaction.user.id
 
-					let re_collector = interaction.channel.createMessageCollector({ max: 1, time: 120000 });
+					let re_collector = interaction.channel.createMessageCollector({ filter: re_filter, max: 1, time: 10000000 });
 					re_collector.on('collect', async m2 => {
 
                         review = m2.content;
@@ -75,17 +78,19 @@ module.exports = {
 
                         let star_collector = interaction.channel.createMessageComponentCollector({ max: 2, time: 120000 });
 						star_collector.on('collect', async i => {
-							switch (i.customId) {
-								case 'star': {
-									starred = true;
-									await interaction.editReply({ content: 'Review sent.', components: [] });
-									review_cmd.execute(interaction, artists, song, rating, review, art, undefined, undefined, undefined, starred);
-								} break;
-								case 'nostar': {
-									starred = false;
-									await interaction.editReply({ content: 'Review sent.', components: [] });
-									review_cmd.execute(interaction, artists, song, rating, review, art, vocalists, undefined, undefined, starred);
-								} break;
+							if (i.user.id === interaction.user.id) {
+								switch (i.customId) {
+									case 'star': {
+										starred = true;
+										await interaction.editReply({ content: 'Review sent.', components: [] });
+										review_cmd.execute(interaction, artists, song, rating, review, art, undefined, undefined, undefined, starred);
+									} break;
+									case 'nostar': {
+										starred = false;
+										await interaction.editReply({ content: 'Review sent.', components: [] });
+										review_cmd.execute(interaction, artists, song, rating, review, art, vocalists, undefined, undefined, starred);
+									} break;
+								}
 							}
 						});
 					
