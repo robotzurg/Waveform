@@ -52,6 +52,12 @@ const rest = new REST({ version: '9' }).setToken(token);
 })();
 
 client.once('ready', async () => {
+    const user_data = db.user_stats.keyArray();
+
+    for (let i = 0; i < user_data.length; i++) {
+        db.user_stats.set(user_data[i], false, 'current_ep_review');
+    }
+
     console.log('Ready!');
     const date = new Date().toLocaleTimeString().replace("/.*(d{2}:d{2}:d{2}).*/", "$1");
     console.log(date);

@@ -51,7 +51,6 @@ module.exports = {
 	async execute(interaction, sp_artist, sp_song, sp_rating, sp_review, sp_art, sp_vocalists, sp_remixers, sp_user_who_sent, sp_star) {
 
         let int_channel = interaction.channel;
-        console.log(sp_artist, sp_song, sp_rating, sp_review, sp_art, sp_vocalists, sp_remixers, sp_user_who_sent, sp_star);
 
         // If we do a context menu review, we have to change the channel focus to #reviews.
         if (sp_song != undefined) {
@@ -71,6 +70,7 @@ module.exports = {
         let thumbnailImage = false;
         let featArtists = [];
         let rmxArtists = [];
+        let starred = false;
 
         // Setup buttons
         const row = new Discord.MessageActionRow()
@@ -109,6 +109,15 @@ module.exports = {
                 .setLabel('Send to Database')
                 .setStyle('SUCCESS'),
         );
+
+        if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
+            row2.addComponents( 
+                new Discord.MessageButton()
+                .setCustomId('ep_done')
+                .setLabel('Push to EP Review')
+                .setStyle('SUCCESS'),
+            );
+        }
         
         if (sp_song === undefined || sp_song === null) {
             interaction.options._hoistedOptions.forEach((value) => {
@@ -126,12 +135,14 @@ module.exports = {
                 }
             });
         } else { // Context Menu Command
-            args = [sp_artist, sp_song, sp_rating, sp_review, sp_art, sp_vocalists, sp_remixers, sp_user_who_sent];
+            args = [sp_artist, sp_song, sp_rating, sp_review, sp_art, sp_vocalists, sp_remixers, sp_user_who_sent, sp_star];
             thumbnailImage = sp_art;
             if (sp_vocalists != undefined) {
                 featArtists.push(capitalize(sp_vocalists).split(' & '));
                 featArtists = featArtists.flat(1);
             }
+
+            starred = sp_star;
         }
         
         taggedMember = await interaction.guild.members.fetch(taggedMember);
@@ -241,7 +252,6 @@ module.exports = {
             let s_collector;
             let ra_collector;
             let re_collector;
-            let starred = false;
 
             collector.on('collect', async i => {
                 switch (i.customId) {
@@ -343,6 +353,32 @@ module.exports = {
                         }
 
                         await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
+                    } break;
+                    case 'ep_done': {
+                        await i.deferUpdate();
+
+                        if (a_collector != undefined) a_collector.stop();
+                        if (s_collector != undefined) s_collector.stop();
+                        if (ra_collector != undefined) ra_collector.stop();
+                        if (re_collector != undefined) re_collector.stop();
+                        if (collector != undefined) collector.stop(); // Collector for all buttons
+                        interaction.deleteReply();
+
+                        let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review');
+                        let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+
+                        let msgEmbed;
+                        let embed_data;
+
+                        channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                            console.log(msg);
+                            embed_data = msg.embeds;
+                            msgEmbed = embed_data[0];
+                            console.log(msgEmbed);
+                            msgEmbed.thumbnail.url = thumbnailImage;
+                            msg.edit({ embeds: [msgEmbed] });
+                        });
+
                     } break;
                     case 'done': { // Send the review to the database
                         await i.deferUpdate(); 
