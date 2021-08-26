@@ -179,8 +179,6 @@ module.exports = {
         let rating = args[2];
         let review = args[3];
 
-        console.log(rating);
-
         if (!Number.isInteger(rating)) {
             rating = rating.trim();
             if (rating.includes('/10')) rating = parseInt(rating.slice(3));
@@ -354,7 +352,7 @@ module.exports = {
 
                         await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
                     } break;
-                    case 'ep_done': {
+                    case 'ep_done': { // EP review handling
                         await i.deferUpdate();
 
                         if (a_collector != undefined) a_collector.stop();
@@ -368,16 +366,50 @@ module.exports = {
                         let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
 
                         let msgEmbed;
-                        let embed_data;
+                        let mainArtists;
+                        let epName;
+                        let collab;
 
-                        channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                            console.log(msg);
-                            embed_data = msg.embeds;
-                            msgEmbed = embed_data[0];
-                            console.log(msgEmbed);
-                            msgEmbed.thumbnail.url = thumbnailImage;
+                        // Review the song
+                        review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser, epName);
+
+                        // Edit the EP embed
+                        await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                            msgEmbed = msg.embeds[0];
+                            mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
+                            mainArtists = mainArtists.flat(1);
+                            epName = msgEmbed.title.split(' - ')[1];
+                            collab = artistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
+                            msgEmbed.fields.push({
+                                name: `${fullSongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`,
+                                value: `${review}`,
+                                inline: false,
+                            });
                             msg.edit({ embeds: [msgEmbed] });
+
+                            // Star reaction stuff for hall of fame
+                            if (rating === '10' && starred === true) {
+                                hall_of_fame_check(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
+                            }
                         });
+
+                        // Update user stats
+                        db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'recent_review');
+                        db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'review_list');
+
+                        for (let ii = 0; ii < mainArtists.length; ii++) {
+                            // Update EP details
+                            db.reviewDB.push(mainArtists[ii], songName, `["${epName}"].songs`);
+                        }
+
+                        // Set msg_id for this review to false, since its part of the EP review message
+                        for (let ii = 0; ii < fullArtistArray.length; ii++) {
+                            if (rmxArtists.length === 0) {
+                                db.reviewDB.set(fullArtistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`); 
+                            } else if (rmxArtists.includes(fullArtistArray[ii])) {
+                                db.reviewDB.set(fullArtistArray[ii], false, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
+                            }
+                        }
 
                     } break;
                     case 'done': { // Send the review to the database
@@ -444,8 +476,8 @@ module.exports = {
             review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser);
 
             // Update user stats
-            db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'recent_review');
-            db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'review_list');
+            //db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'recent_review');
+            //db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'review_list');
 
             await int_channel.send({ embeds: [reviewEmbed] }).then(msg => {
                 // Setting the message id for the message we just sent (and check for mailbox, if so put as FALSE so we don't have to look for a non-existant message)

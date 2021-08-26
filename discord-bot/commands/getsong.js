@@ -261,7 +261,9 @@ module.exports = {
                     .addOptions(select_options),
             );
 
-        interaction.editReply({ embeds: [songEmbed], components: [row] });
+        interaction.editReply({ embeds: [songEmbed], components: [row] }).then(msg => {
+            console.log(msg.embeds[0].fields);
+        });
        
         // const filter = i => i.user.id === interaction.user.id;
 		const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });

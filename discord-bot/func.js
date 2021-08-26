@@ -91,7 +91,7 @@ module.exports = {
             }
     },
 
-    review_song: function(interaction, fullArtistArray, song, review, rating, rmxArtists, featArtists, thumbnailImage = false) {
+    review_song: function(interaction, fullArtistArray, song, review, rating, rmxArtists, featArtists, thumbnailImage = false, ep_name = false) {
         for (let i = 0; i < fullArtistArray.length; i++) {
 
             let songName;
@@ -121,7 +121,7 @@ module.exports = {
                     collab: fullArtistArray.filter(word => !featArtists.includes(word) && !rmxArtists.includes(word) && fullArtistArray[i] != word), // Filter out the specific artist in question
                     vocals: featArtists,
                     hof_id: false,
-                    ep: false,
+                    ep: ep_name,
                     review_num: 1,
                 },
             };
@@ -136,7 +136,7 @@ module.exports = {
                             collab: fullArtistArray.filter(word => !featArtists.includes(word) && !rmxArtists.includes(word) && fullArtistArray[i] != word), // Filter out the specific artist in question
                             vocals: featArtists,
                             hof_id: false,
-                            ep: false,
+                            ep: ep_name,
                             review_num: 0,
                         },
                     };
@@ -162,7 +162,7 @@ module.exports = {
                 db.reviewDB.set(fullArtistArray[i], false, 'Image');
 
             } else if(db.reviewDB.get(fullArtistArray[i], `["${songName}"]`) === undefined) { //If the artist db exists, check if the song db doesn't exist
-            const artistObj = db.reviewDB.get(fullArtistArray[i]);
+                const artistObj = db.reviewDB.get(fullArtistArray[i]);
 
                 //Create the object that will be injected into the Artist object
                 const newsongObj = song_object;
