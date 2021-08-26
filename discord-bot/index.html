@@ -10,10 +10,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300&display=swap" rel="stylesheet">
 </head>
 
+<script src="bundle.js"></script>
+
 <body>
 
     <h1>Waveform</h1>
-    <div class="def">A Discord bot created by Jeffdev.</div>
+    <div class="def" id="def">A Discord bot created by Jeffdev.</div>
+
+    <script>
+        const db = require('../db.js')
+        //console.log(db.user_stats.get('122568101995872256', 'current_ep_review'))
+        document.getElementById('def').innerHTML = `${db.user_stats.get('122568101995872256', 'current_ep_review')}`
+    </script>
 
     <p>Waveform is a Discord bot created to review music and show data about reviewed songs.<br>
     It's a private Discord bot made for the Hotdog Water Review Corp.</p>
