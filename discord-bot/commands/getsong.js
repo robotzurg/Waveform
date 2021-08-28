@@ -182,6 +182,7 @@ module.exports = {
             }
 
             if (userArray != 0) { // Sort it by highest to lowest rating
+
                 userArray = userArray.sort(function(a, b) {
                     return b[0] - a[0];
                 });

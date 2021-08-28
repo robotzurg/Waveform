@@ -42,6 +42,11 @@ module.exports = {
             option.setName('remixers')
                 .setDescription('Put remixers here, if you reviewing a remix of the original song. (NOT IN ARTISTS ARGUMENT)')
                 .setRequired(false))
+
+        .addIntegerOption(option => 
+            option.setName('ranking_pos')
+                .setDescription('If this is a ranking, put the position in the ranking here (Ignore if not an EP review)')
+                .setRequired(false))
     
         .addUserOption(option => 
             option.setName('user_who_sent')
@@ -68,6 +73,7 @@ module.exports = {
         let taggedUser = false;
         let taggedMember = false;
         let thumbnailImage = false;
+        let ranking_pos = false;
         let featArtists = [];
         let rmxArtists = [];
         let starred = false;
@@ -121,7 +127,11 @@ module.exports = {
         
         if (sp_song === undefined || sp_song === null) {
             interaction.options._hoistedOptions.forEach((value) => {
-                args.push(value.value.trim());
+                if (!Number.isInteger(value.value)) {
+                    args.push(value.value.trim());
+                } else {
+                    args.push(value.value);
+                }
                 if (value.name === 'art') {
                     thumbnailImage = value.value.trim();
                 } else if (value.name === 'user_who_sent') {
@@ -132,6 +142,8 @@ module.exports = {
                 } else if (value.name === 'remixers') {
                     rmxArtists.push(capitalize(value.value.trim()).split(' & '));
                     rmxArtists = rmxArtists.flat(1);
+                } else if (value.name === 'ranking_pos') {
+                    ranking_pos = value.value;
                 }
             });
         } else { // Context Menu Command
@@ -367,21 +379,30 @@ module.exports = {
 
                         let msgEmbed;
                         let mainArtists;
-                        let epName;
+                        let ep_name;
                         let collab;
+                        let field_name;
 
-                        // Review the song
-                        review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser, epName);
-
-                        // Edit the EP embed
                         await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                             msgEmbed = msg.embeds[0];
                             mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
                             mainArtists = mainArtists.flat(1);
-                            epName = msgEmbed.title.split(' - ')[1];
+                            ep_name = msgEmbed.title.split(' - ')[1];
+                        });
+
+                        // Review the song
+                        review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser, ep_name);
+
+                        // Edit the EP embed
+                        await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                             collab = artistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
+                            if (starred === true) {
+                                field_name = `🌟 ${fullSongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
+                            } else {
+                                field_name = `${fullSongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
+                            }
                             msgEmbed.fields.push({
-                                name: `${fullSongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`,
+                                name: field_name,
                                 value: `${review}`,
                                 inline: false,
                             });
@@ -399,7 +420,10 @@ module.exports = {
 
                         for (let ii = 0; ii < mainArtists.length; ii++) {
                             // Update EP details
-                            db.reviewDB.push(mainArtists[ii], songName, `["${epName}"].songs`);
+                            db.reviewDB.push(mainArtists[ii], songName, `["${ep_name}"].songs`);
+                            if (ranking_pos != false) {
+                                db.reviewDB.push(mainArtists[ii], [ranking_pos, `${ranking_pos}. ${songName} (${rating}/10)`], `["${ep_name}"].["${interaction.user.id}"].ranking`);
+                            }
                         }
 
                         // Set msg_id for this review to false, since its part of the EP review message

@@ -60,9 +60,9 @@ module.exports = {
 
         const ep_object = db.reviewDB.get(artistArray[0], `${epName}`);
         if (ep_object === undefined) return interaction.editReply('EP not found. *(EP Object not found in database.)*');
-        const ep_overall_rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].ep_rating`);
-        const ep_overall_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].ep_review`);
-        let ep_ranking = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].ep_ranking`);
+        const ep_overall_rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].rating`);
+        const ep_overall_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].review`);
+        let ep_ranking = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].ranking`);
         if (ep_ranking === undefined) ep_ranking = []; // This is handling for any odd scenarios where this never gets set
 
         let ep_art = db.reviewDB.get(artistArray[0], `${epName}.art`);
@@ -120,29 +120,20 @@ module.exports = {
                 epEmbed.addField(`${rstarred === true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `${rreview}`);
             }
         }
-
-        if (ep_ranking.length != 0 && ep_ranking != undefined) {
-            epEmbed.addField('Ranking:', `\`\`\`${ep_ranking.join('\n')}\`\`\``);
-        }
-
-        if (ep_overall_review != false && ep_overall_review != undefined && ep_ranking.length === 0) {
-            if (ep_overall_rating === false || ep_overall_rating === undefined) {
-                epEmbed.addField('Overall Thoughts:', ep_overall_review);
-            } else {
-                epEmbed.addField(`Overall Thoughts (${ep_overall_rating})`, ep_overall_review);
-            }
-        } else if (ep_overall_review != false && ep_overall_review != undefined && ep_ranking.length != 0) {
-            if (ep_overall_rating === false || ep_overall_rating === undefined) {
-                epEmbed.setDescription(ep_overall_review);
-            } else {
-                epEmbed.setDescription(ep_overall_review);
-                epEmbed.setFooter(`Rating: ${ep_overall_rating}`);
-            }
-        }
-
+        
         epEmbed.setColor(`${taggedMember.displayHexColor}`);
         epEmbed.setTitle(`${origArtistArray} - ${epName}`);
         epEmbed.setAuthor(rsentby != false ? `${rname}'s mailbox review` : `${rname}'s review`, `${taggedUser.avatarURL({ format: "png" })}`);
+
+        if (ep_overall_rating != false && ep_overall_review != false) {
+            epEmbed.setTitle(`${origArtistArray} - ${epName} (${ep_overall_rating}/10)`);
+            epEmbed.setDescription(`*${ep_overall_review}*`);
+        } else if (ep_overall_rating != false) {
+            epEmbed.setTitle(`${origArtistArray} - ${epName} (${ep_overall_rating}/10)`);
+        } else if (ep_overall_review != false) {
+            epEmbed.setDescription(`*${ep_overall_review}*`);
+        }
+
         if (epName.includes('EP')) {
             epEmbed.setAuthor(rsentby != false && rsentby != undefined && ep_songs.length != 0 ? `${rname}'s mailbox EP review` : `${rname}'s EP review`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
         } else if (epName.includes('LP')) {
@@ -154,5 +145,27 @@ module.exports = {
         }
         
         interaction.editReply({ embeds: [epEmbed] });
+
+        if (db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"]`) != undefined) {
+            if (ep_ranking.length != 0) {
+                const rankingEmbed = new Discord.MessageEmbed()
+                .setColor(`${taggedMember.displayHexColor}`);
+
+                ep_ranking = ep_ranking.sort(function(a, b) {
+                    return a[0] - b[0];
+                });
+    
+                ep_ranking = ep_ranking.flat(1);
+    
+                for (let ii = 0; ii <= ep_ranking.length; ii++) {
+                    ep_ranking.splice(ii, 1);
+                }
+
+                rankingEmbed.addField(`Ranking:`, `\`\`\`${ep_ranking.join('\n')}\`\`\``);
+
+                interaction.channel.send({ embeds: [rankingEmbed] });
+            } 
+        }
+
 	},
 };

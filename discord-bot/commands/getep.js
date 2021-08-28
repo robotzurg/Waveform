@@ -67,9 +67,9 @@ module.exports = {
             for (let i = 0; i < reviewNum.length; i++) {
                 console.log(argEPName);
                 console.log(reviewNum[i]);
-                rating = db.reviewDB.get(artistArray[0], `["${argEPName}"].["${reviewNum[i]}"].epRating`);
+                rating = db.reviewDB.get(artistArray[0], `["${argEPName}"].["${reviewNum[i]}"].rating`);
                 if (rating != false && rating != undefined && !isNaN(rating)) {
-                   EPrankArray.push(parseFloat(rating.slice(0, -3)));
+                   EPrankArray.push(parseFloat(rating));
                 }
             }
             

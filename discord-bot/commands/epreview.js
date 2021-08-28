@@ -40,7 +40,7 @@ module.exports = {
 	admin: false,
 	async execute(interaction) {
 
-        return interaction.editReply('This feature is not added yet.');
+        // return interaction.editReply('This feature is not added yet.');
 
         if (mailboxes.includes(interaction.channel.name)) return interaction.editReply('Mailboxes are NOT currently supported with EP Reviews.');
 
@@ -52,6 +52,7 @@ module.exports = {
         let user_sent_by = interaction.options.getString('user_sent_by');
         let taggedMember = false;
         let taggedUser = false;
+        let rankingMsgID;
 
         if (user_sent_by === null) {
             user_sent_by = false;
@@ -87,27 +88,7 @@ module.exports = {
             if (art.toLowerCase().includes('spotify') || art.toLowerCase() === 's') art = false;
         }
 
-        // Setup buttons
         const row = new Discord.MessageActionRow()
-        .addComponents(
-            new Discord.MessageButton()
-                .setCustomId('rank')
-                .setLabel(`${ep_name.includes('LP') ? 'Rank this LP' : 'Rank this EP'}`)
-                .setStyle('PRIMARY')
-                .setEmoji('📝'),
-            /*new Discord.MessageButton()
-                .setCustomId('rating')
-                .setLabel(`Write an Overall Rating`)
-                .setStyle('PRIMARY')
-                .setEmoji('📝'),
-            new Discord.MessageButton()
-                .setCustomId('review')
-                .setLabel(`Write an Overall Review`)
-                .setStyle('PRIMARY')
-                .setEmoji('📝'),*/
-        );
-
-        const row2 = new Discord.MessageActionRow()
         .addComponents(
             new Discord.MessageButton()
                 .setCustomId('done')
@@ -195,18 +176,26 @@ module.exports = {
         epEmbed.setThumbnail(art);
 
         if (overall_rating != false && overall_review != false) {
-            epEmbed.setDescription(`**Overall Rating:** ${overall_rating}/10\n**Overall Review:** ${overall_review}`);
+            epEmbed.setDescription(`*Overall Rating:* ***${overall_rating}/10***\n*${overall_review}*`);
         } else if (overall_rating != false) {
-            epEmbed.setDescription(`**Overall Rating:** ${overall_rating}/10`);
+            epEmbed.setDescription(`*Overall Rating:* ***${overall_rating}/10***`);
         } else if (overall_review != false) {
-            epEmbed.setDescription(`**Overall Review:** ${overall_review}`);
+            epEmbed.setDescription(`*${overall_review}*`);
         }
 
         if (taggedUser != false && taggedUser != undefined) {
             epEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
         }
 
-        interaction.editReply({ embeds: [epEmbed], components: [row, row2] });
+        interaction.editReply({ embeds: [epEmbed], components: [row] });
+
+        const rankingEmbed = new Discord.MessageEmbed()
+        .setColor(`${interaction.member.displayHexColor}`)
+        .addField(`Ranking`, `This part of the review will be updated/deleted as needed when the **"Send to Database"** button has been clicked.`);
+
+        await interaction.channel.send({ embeds: [rankingEmbed] }).then(async msg => {
+            rankingMsgID = msg.id;
+        });
 
         // Grab message id to put in user_stats and the ep object
         const msg = await interaction.fetchReply();
@@ -230,22 +219,44 @@ module.exports = {
         // let rev_collector;
 
         collector.on('collect', async i => {
-            switch (i.customId) {
-                case 'rank': {
-                    await i.deferUpdate();
-                } break;
-                case 'done': {
-                    await i.deferUpdate();
-                    if (rank_collector != undefined) rank_collector.stop();
-                    if (collector != undefined) collector.stop();
+            if (i.user.id === interaction.user.id) {
+                switch (i.customId) {
+                    case 'done': {
+                        await i.deferUpdate();
+                        if (rank_collector != undefined) rank_collector.stop();
+                        if (collector != undefined) collector.stop();
 
-                    const mainMsg = await interaction.fetchReply();
-                    let msgEmbed = msg.embeds[0];
+                        const mainMsg = await interaction.fetchReply();
+                        let msgEmbed = msg.embeds[0];
 
-                    mainMsg.edit({ content: " ", embeds: [msgEmbed], components: [] });
+                        mainMsg.edit({ content: " ", embeds: [msgEmbed], components: [] });
 
-                    db.user_stats.set(interaction.user.id, false, 'current_ep_review');
-                } break;
+                        await interaction.channel.messages.fetch(rankingMsgID).then(rank_msg => {
+                            let ep_ranking = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`);
+                            if (ep_ranking.length === 0) return rank_msg.delete();
+
+                            ep_ranking = ep_ranking.sort(function(a, b) {
+                                return a[0] - b[0];
+                            });
+                
+                            ep_ranking = ep_ranking.flat(1);
+                
+                            for (let ii = 0; ii <= ep_ranking.length; ii++) {
+                                ep_ranking.splice(ii, 1);
+                            }
+
+                            ep_ranking = `\`\`\`${ep_ranking.join('\n')}\`\`\``;
+                            let rankMsgEmbed = rank_msg.embeds[0];
+                            rankMsgEmbed.fields[0].value = ep_ranking;
+
+                            rank_msg.edit({ embeds: [rankMsgEmbed] });
+                        });
+
+                        db.user_stats.set(interaction.user.id, false, 'current_ep_review');
+                    } break;
+                }
+            } else {
+                i.reply({ content: `These buttons aren't for you!`, ephemeral: true });
             }
         });
     },
