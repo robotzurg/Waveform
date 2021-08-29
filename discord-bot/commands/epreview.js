@@ -40,12 +40,10 @@ module.exports = {
 	admin: false,
 	async execute(interaction) {
 
-        // return interaction.editReply('This feature is not added yet.');
-
         if (mailboxes.includes(interaction.channel.name)) return interaction.editReply('Mailboxes are NOT currently supported with EP Reviews.');
 
         let artistArray = capitalize(interaction.options.getString('artists'));
-        const ep_name = capitalize(interaction.options.getString('ep_name'));
+        let ep_name = capitalize(interaction.options.getString('ep_name'));
         let art = interaction.options.getString('art');
         let overall_rating = interaction.options.getString('overall_rating');
         let overall_review = interaction.options.getString('overall_review');
@@ -60,6 +58,18 @@ module.exports = {
 
         if (art === null) {
             art === false;
+        }
+
+        if (overall_rating === null) {
+            overall_rating = false;
+        }
+
+        if (overall_review === null) {
+            overall_review = false;
+        }
+
+        if (!ep_name.includes('EP') && !ep_name.includes('LP')) {
+            ep_name = `${ep_name} EP`;
         }
 
         artistArray = [artistArray.split(' & ')];
