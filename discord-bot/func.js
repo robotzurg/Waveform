@@ -91,7 +91,7 @@ module.exports = {
             }
     },
 
-    review_song: function(interaction, fullArtistArray, song, review, rating, rmxArtists, featArtists, thumbnailImage = false, ep_name = false) {
+    review_song: function(interaction, fullArtistArray, song, review, rating, rmxArtists, featArtists, thumbnailImage = false, ep_name) {
         for (let i = 0; i < fullArtistArray.length; i++) {
 
             let songName;

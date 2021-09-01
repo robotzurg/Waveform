@@ -50,7 +50,6 @@ module.exports = {
         let user_sent_by = interaction.options.getString('user_sent_by');
         let taggedMember = false;
         let taggedUser = false;
-        let rankingMsgID;
 
         if (user_sent_by === null) {
             user_sent_by = false;
@@ -144,7 +143,7 @@ module.exports = {
 
             } else if (db.reviewDB.get(artistArray[i], `["${ep_name}"]`) === undefined) {
 
-                let db_artist_obj = db.reviewDB.get(artistArray);
+                let db_artist_obj = db.reviewDB.get(artistArray[i]);
                 Object.assign(db_artist_obj, epObject);
                 db.reviewDB.set(artistArray[i], db_artist_obj);
 
@@ -203,13 +202,12 @@ module.exports = {
         .setColor(`${interaction.member.displayHexColor}`)
         .addField(`Ranking`, `This part of the review will be updated/deleted as needed when the **"Send to Database"** button has been clicked.`);
 
-        await interaction.channel.send({ embeds: [rankingEmbed] }).then(async msg => {
-            rankingMsgID = msg.id;
-        });
-
         // Grab message id to put in user_stats and the ep object
         const msg = await interaction.fetchReply();
-        db.user_stats.set(interaction.user.id, msg.id, 'current_ep_review');
+
+        await interaction.channel.send({ embeds: [rankingEmbed] }).then(async rank_msg => {
+            db.user_stats.set(interaction.user.id, [msg.id, rank_msg.id], 'current_ep_review');
+        });
 
         // Set message ids
         if (!mailboxes.includes(interaction.channel.name)) {
@@ -241,7 +239,7 @@ module.exports = {
 
                         mainMsg.edit({ content: " ", embeds: [msgEmbed], components: [] });
 
-                        await interaction.channel.messages.fetch(rankingMsgID).then(rank_msg => {
+                        await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
                             let ep_ranking = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`);
                             if (ep_ranking.length === 0) return rank_msg.delete();
 
@@ -262,7 +260,7 @@ module.exports = {
                             rank_msg.edit({ embeds: [rankMsgEmbed] });
                         });
 
-                        db.user_stats.set(interaction.user.id, false, 'current_ep_review');
+                        db.user_stats.set(interaction.user.id, [], 'current_ep_review');
                     } break;
                 }
             } else {

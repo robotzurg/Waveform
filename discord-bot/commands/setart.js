@@ -149,7 +149,6 @@ module.exports = {
                     return new Promise(function(resolve) {
                         let msgtoEdit = item;
                         let msgEmbed;
-                        let embed_data;
 
                         channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                             msgEmbed = msg.embeds[0];

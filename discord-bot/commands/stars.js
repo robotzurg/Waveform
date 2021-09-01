@@ -32,6 +32,8 @@ module.exports = {
             .setTitle(`🌟 ${taggedMember.displayName}'s Stars 🌟`)
             .setDescription(`${db.user_stats.get(args[0], `star_list`).join('\n')}`);
 
+        console.log(starCommandEmbed.thumbnail.url);
+
         interaction.editReply({ embeds: [starCommandEmbed] });
 	},
 };

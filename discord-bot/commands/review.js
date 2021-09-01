@@ -117,12 +117,14 @@ module.exports = {
         );
 
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
-            row2.addComponents( 
-                new Discord.MessageButton()
-                .setCustomId('ep_done')
-                .setLabel('Push to EP Review')
-                .setStyle('SUCCESS'),
-            );
+            if (db.user_stats.get(interaction.user.id, 'current_ep_review').length != 0) {
+                row2.addComponents( 
+                    new Discord.MessageButton()
+                    .setCustomId('ep_done')
+                    .setLabel('Push to EP Review')
+                    .setStyle('SUCCESS'),
+                );
+            }
         }
         
         if (sp_song === undefined || sp_song === null) {
@@ -281,6 +283,17 @@ module.exports = {
                             } else {
                                 reviewEmbed.setTitle(`🌟 ${m.content} - ${fullSongName} 🌟`);
                             }
+
+                            // Change our "default avatar review image" to the artists image in the database, if one exists
+                            if (db.reviewDB.has(fullArtistArray[0])) {
+                                thumbnailImage = db.reviewDB.get(fullArtistArray[0], `["${songName}"].art`);
+                                if (thumbnailImage === undefined || thumbnailImage === false) {
+                                    thumbnailImage = interaction.user.avatarURL({ format: "png", dynamic: false });
+                                } 
+                            }
+
+                            reviewEmbed.setThumbnail(thumbnailImage);
+
                             await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
                             m.delete();
                         });
@@ -303,6 +316,17 @@ module.exports = {
                             `${(featArtists.length != 0) ? ` (ft. ${featArtists.join(' & ')})` : ``}` +
                             `${(rmxArtists.length != 0) ? ` (${rmxArtists.join(' & ')} Remix)` : ``}`);
                             reviewEmbed.setTitle(`${artistArray.join(' & ')} - ${fullSongName}`);
+
+                            // Change our "default avatar review image" to the artists image in the database, if one exists
+                            if (db.reviewDB.has(fullArtistArray[0])) {
+                                thumbnailImage = db.reviewDB.get(fullArtistArray[0], `["${songName}"].art`);
+                                if (thumbnailImage === undefined || thumbnailImage === false) {
+                                    thumbnailImage = interaction.user.avatarURL({ format: "png", dynamic: false });
+                                } 
+                            }
+
+                            reviewEmbed.setThumbnail(thumbnailImage);
+
                             await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
                             m.delete();
                         });
@@ -374,7 +398,7 @@ module.exports = {
                         if (collector != undefined) collector.stop(); // Collector for all buttons
                         interaction.deleteReply();
 
-                        let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review');
+                        let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review')[0];
                         let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
 
                         let msgEmbed;
@@ -388,10 +412,17 @@ module.exports = {
                             mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
                             mainArtists = mainArtists.flat(1);
                             ep_name = msgEmbed.title.split(' - ')[1];
+                            if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && thumbnailImage === false) {
+                                thumbnailImage = msgEmbed.thumbnail.url;
+                            }
                         });
 
                         // Review the song
-                        review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser, ep_name);
+                        await review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser, ep_name);
+
+                        for (let j = 0; j < artistArray.length; j++) {
+                            db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
+                        }
 
                         // Edit the EP embed
                         await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
@@ -426,7 +457,7 @@ module.exports = {
                             }
                         }
 
-                        /*await interaction.channel.messages.fetch(rankingMsgID).then(rank_msg => {
+                        await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
                             let ep_ranking = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`);
                             if (ep_ranking.length === 0) return rank_msg.delete();
 
@@ -445,7 +476,7 @@ module.exports = {
                             rankMsgEmbed.fields[0].value = ep_ranking;
 
                             rank_msg.edit({ embeds: [rankMsgEmbed] });
-                        });*/
+                        });
 
                         // Set msg_id for this review to false, since its part of the EP review message
                         for (let ii = 0; ii < fullArtistArray.length; ii++) {

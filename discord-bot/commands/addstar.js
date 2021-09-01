@@ -181,10 +181,35 @@ module.exports = {
                 let msgEmbedTitle = msgEmbed.title;
                 if (!msgEmbedTitle.includes(':star2:')) {
                     msgEmbed.title = `:star2: ${msgEmbedTitle} :star2:`;
-                    console.log(msgEmbed.title);
                 }
                 msg.edit({ embeds: [msgEmbed] });
             });
+        }
+
+        let ep_from = db.reviewDB.get(artistArray[0], `["${songName}"].ep`);
+        console.log(ep_from);
+        if (ep_from != false && ep_from != undefined) {
+            if (db.reviewDB.get(artistArray[0], `["${ep_from}"].["${interaction.user.id}"]`) != undefined) {
+                let epMsgToEdit = db.reviewDB.get(artistArray[0], `["${ep_from}"].["${interaction.user.id}"].msg_id`);
+
+                let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+                channelsearch.messages.fetch(`${epMsgToEdit}`).then(msg => {
+                    let msgEmbed = msg.embeds[0];
+                    let msg_embed_fields = msgEmbed.fields;
+                    let field_num = -1;
+                    for (let i = 0; i < msg_embed_fields.length; i++) {
+                        if (msg_embed_fields[i].name.includes(songName)) {
+                            field_num = i;
+                        }
+                    }
+
+                    if (!msg_embed_fields[field_num].name.includes('🌟')) {
+                        msg_embed_fields[field_num].name = `🌟 ${msg_embed_fields[field_num].name} 🌟`;
+                    }
+
+                    msg.edit({ embeds: [msgEmbed] });
+                });
+            } 
         }
     },
 };
