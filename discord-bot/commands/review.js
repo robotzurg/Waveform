@@ -3,6 +3,7 @@ const db = require("../db.js");
 const { capitalize, update_art, review_song, hall_of_fame_check } = require('../func.js');
 const { mailboxes } = require('../arrays.json');
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const wait = require('util').promisify(setTimeout);
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -114,6 +115,10 @@ module.exports = {
                 .setCustomId('done')
                 .setLabel('Send to Database')
                 .setStyle('SUCCESS'),
+            new Discord.MessageButton()
+                .setCustomId('delete')
+                .setLabel('Delete')
+                .setStyle('DANGER'),
         );
 
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
@@ -187,11 +192,19 @@ module.exports = {
 
         // [] check, as the system requires [] to grab the remix artist with string slicing.
         if (args[1].includes('Remix)')) {
-            interaction.editReply('Please use [] for remixes, not ()!\nExample: `Song [Remix Artist Remix]`');
+            await interaction.editReply('Please use the Remixers argument for Remixers, do not include them in the song name!`');
+            await wait(10000);
+            return await interaction.deleteReply();
         }
 
-        let rating = args[2];
+        let rating = parseInt(args[2].trim());
         let review = args[3];
+
+        if (isNaN(rating)) {
+            await interaction.editReply('Your rating is not a number! Make sure NOT to include /10, just do the number, like "8".');
+            await wait(10000);
+            return await interaction.deleteReply();
+        }
 
         if (!Number.isInteger(rating)) {
             rating = rating.trim();
@@ -388,6 +401,14 @@ module.exports = {
 
                         await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
                     } break;
+                    case 'delete': {
+                        if (a_collector != undefined) a_collector.stop();
+                        if (s_collector != undefined) s_collector.stop();
+                        if (ra_collector != undefined) ra_collector.stop();
+                        if (re_collector != undefined) re_collector.stop();
+                        if (collector != undefined) collector.stop(); // Collector for all buttons
+                        interaction.deleteReply();
+                    } break;
                     case 'ep_done': { // EP review handling
                         await i.deferUpdate();
 
@@ -411,7 +432,10 @@ module.exports = {
                             msgEmbed = msg.embeds[0];
                             mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
                             mainArtists = mainArtists.flat(1);
-                            ep_name = msgEmbed.title.split(' - ')[1];
+                            ep_name = msgEmbed.title.split(' - ');
+                            ep_name.shift();
+                            console.log(ep_name);
+                            ep_name = ep_name.join(' - ');
                             if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && thumbnailImage === false) {
                                 thumbnailImage = msgEmbed.thumbnail.url;
                             }
@@ -479,7 +503,7 @@ module.exports = {
 
                                     rank_msg.edit({ embeds: [rankMsgEmbed] });
                                 });
-                        };
+                        }
 
                         // Set msg_id for this review to false, since its part of the EP review message
                         for (let ii = 0; ii < fullArtistArray.length; ii++) {
