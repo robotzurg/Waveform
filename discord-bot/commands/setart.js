@@ -132,10 +132,12 @@ module.exports = {
             userArray = userArray.filter(item => item !== 'ep');
             userArray = userArray.filter(item => item !== 'hof_id');
             userArray = userArray.filter(item => item !== 'review_num');
+            userArray = userArray.filter(item => item !== 'songs');
 
 
             userArray.forEach(user => {
                 msgstoEdit.push(db.reviewDB.get(artistArray[0], `["${songName}"].["${user}"].msg_id`));
+                console.log(msgstoEdit);
             });
 
             msgstoEdit = msgstoEdit.filter(item => item !== undefined);
@@ -150,11 +152,9 @@ module.exports = {
                         let embed_data;
 
                         channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                            console.log(msg);
-                            embed_data = msg.embeds;
-                            msgEmbed = embed_data[0];
-                            msgEmbed.thumbnail.url = thumbnailImage;
-                            msg.edit({ embeds: [msgEmbed] });
+                            msgEmbed = msg.embeds[0];
+                            msgEmbed.setThumbnail(thumbnailImage);
+                            msg.edit({ content: ' ', embeds: [msgEmbed] });
                             resolve();
                         });
                     });
@@ -177,7 +177,6 @@ module.exports = {
                                 console.log(msg);
                                 embed_data = msg.embeds;
                                 msgEmbed = embed_data[0];
-                                // return console.log(msgEmbed);
                                 msgEmbed.image.url = thumbnailImage;
                                 msg.edit({ embeds: [msgEmbed] });
                                 resolve();
