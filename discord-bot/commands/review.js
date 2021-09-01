@@ -457,26 +457,29 @@ module.exports = {
                             }
                         }
 
-                        await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
-                            let ep_ranking = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`);
-                            if (ep_ranking.length === 0) return rank_msg.delete();
 
-                            ep_ranking = ep_ranking.sort(function(a, b) {
-                                return a[0] - b[0];
-                            });
-                
-                            ep_ranking = ep_ranking.flat(1);
-                
-                            for (let ii = 0; ii <= ep_ranking.length; ii++) {
-                                ep_ranking.splice(ii, 1);
-                            }
+                        if (db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`).length != 0) {
+                                await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
+                                    let ep_ranking = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`);
+                                    if (ep_ranking.length === 0) return rank_msg.delete();
 
-                            ep_ranking = `\`\`\`${ep_ranking.join('\n')}\`\`\``;
-                            let rankMsgEmbed = rank_msg.embeds[0];
-                            rankMsgEmbed.fields[0].value = ep_ranking;
+                                    ep_ranking = ep_ranking.sort(function(a, b) {
+                                        return a[0] - b[0];
+                                    });
+                        
+                                    ep_ranking = ep_ranking.flat(1);
+                        
+                                    for (let ii = 0; ii <= ep_ranking.length; ii++) {
+                                        ep_ranking.splice(ii, 1);
+                                    }
 
-                            rank_msg.edit({ embeds: [rankMsgEmbed] });
-                        });
+                                    ep_ranking = `\`\`\`${ep_ranking.join('\n')}\`\`\``;
+                                    let rankMsgEmbed = rank_msg.embeds[0];
+                                    rankMsgEmbed.fields[0].value = ep_ranking;
+
+                                    rank_msg.edit({ embeds: [rankMsgEmbed] });
+                                });
+                        };
 
                         // Set msg_id for this review to false, since its part of the EP review message
                         for (let ii = 0; ii < fullArtistArray.length; ii++) {
