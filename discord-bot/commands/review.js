@@ -197,7 +197,7 @@ module.exports = {
             return await interaction.deleteReply();
         }
 
-        let rating = parseInt(args[2].trim());
+        let rating = parseFloat(args[2].trim());
         let review = args[3];
 
         if (isNaN(rating)) {
@@ -206,10 +206,6 @@ module.exports = {
             return await interaction.deleteReply();
         }
 
-        if (!Number.isInteger(rating)) {
-            rating = rating.trim();
-            if (rating.includes('/10')) rating = parseInt(rating.slice(3));
-        }
         review = review.trim();
 
         //Split up the artists into an array
