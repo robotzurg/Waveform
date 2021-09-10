@@ -25,12 +25,12 @@ module.exports = {
 
         .addStringOption(option => 
             option.setName('overall_rating')
-                .setDescription('Overall Rating of the EP/LP. Out of 10, decimals allowed. Can also be done with a button.')
+                .setDescription('Overall Rating of the EP/LP. Out of 10, decimals allowed. Can be added later.')
                 .setRequired(false))
 
         .addStringOption(option => 
             option.setName('overall_review')
-                .setDescription('Overall Review of the EP/LP. Can also be done with a button.')
+                .setDescription('Overall Review of the EP/LP. Can be added later.')
                 .setRequired(false))
     
         .addUserOption(option => 
@@ -96,14 +96,6 @@ module.exports = {
         if (art != undefined && art != false) {
             if (art.toLowerCase().includes('spotify') || art.toLowerCase() === 's') art = false;
         }
-
-        const row = new Discord.MessageActionRow()
-        .addComponents(
-            new Discord.MessageButton()
-                .setCustomId('done')
-                .setLabel('Send to Database')
-                .setStyle('SUCCESS'),
-        );
 
         // Add in the EP object/review
         for (let i = 0; i < artistArray.length; i++) {
@@ -196,11 +188,11 @@ module.exports = {
             epEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
         }
 
-        interaction.editReply({ embeds: [epEmbed], components: [row] });
+        interaction.editReply({ embeds: [epEmbed] });
 
         const rankingEmbed = new Discord.MessageEmbed()
         .setColor(`${interaction.member.displayHexColor}`)
-        .addField(`Ranking`, `This part of the review will be updated/deleted as needed when the **"Send to Database"** button has been clicked.`);
+        .addField(`Ranking`, `This part of the review will be updated/deleted as needed.`);
 
         // Grab message id to put in user_stats and the ep object
         const msg = await interaction.fetchReply();
@@ -220,52 +212,5 @@ module.exports = {
             }
         }
 
-        // Collectors
-        const collector = interaction.channel.createMessageComponentCollector({ time: 100000000 });
-        let rank_collector;
-        // let rate_collector;
-        // let rev_collector;
-
-        collector.on('collect', async i => {
-            if (i.user.id === interaction.user.id) {
-                switch (i.customId) {
-                    case 'done': {
-                        await i.deferUpdate();
-                        if (rank_collector != undefined) rank_collector.stop();
-                        if (collector != undefined) collector.stop();
-
-                        const mainMsg = await interaction.fetchReply();
-                        let msgEmbed = msg.embeds[0];
-
-                        mainMsg.edit({ content: " ", embeds: [msgEmbed], components: [] });
-
-                        await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
-                            let ep_ranking = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`);
-                            if (ep_ranking.length === 0) return rank_msg.delete();
-
-                            ep_ranking = ep_ranking.sort(function(a, b) {
-                                return a[0] - b[0];
-                            });
-                
-                            ep_ranking = ep_ranking.flat(1);
-                
-                            for (let ii = 0; ii <= ep_ranking.length; ii++) {
-                                ep_ranking.splice(ii, 1);
-                            }
-
-                            ep_ranking = `\`\`\`${ep_ranking.join('\n')}\`\`\``;
-                            let rankMsgEmbed = rank_msg.embeds[0];
-                            rankMsgEmbed.fields[0].value = ep_ranking;
-
-                            rank_msg.edit({ embeds: [rankMsgEmbed] });
-                        });
-
-                        db.user_stats.set(interaction.user.id, [], 'current_ep_review');
-                    } break;
-                }
-            } else {
-                i.reply({ content: `These buttons aren't for you!`, ephemeral: true });
-            }
-        });
     },
 };

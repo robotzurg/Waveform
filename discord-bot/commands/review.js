@@ -499,6 +499,10 @@ module.exports = {
 
                                     rank_msg.edit({ embeds: [rankMsgEmbed] });
                                 });
+                        } else {
+                            await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
+                                rank_msg.delete();
+                            });
                         }
 
                         // Set msg_id for this review to false, since its part of the EP review message
