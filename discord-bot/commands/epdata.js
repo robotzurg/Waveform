@@ -1,4 +1,3 @@
-const Discord = require('discord.js');
 const db = require("../db.js");
 const { capitalize } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
@@ -36,24 +35,38 @@ module.exports = {
 
 	admin: false,
 	async execute(interaction) {
-        interaction.editReply('This is not added yet.');
-        /*let artistArray = capitalize(interaction.options.getString('artists'));
+        return interaction.editReply('Not done yet');
+        let artistArray = capitalize(interaction.options.getString('artists')).split(' & ');
         let ep_name = capitalize(interaction.options.getString('ep_name'));
         let data_type = interaction.options.getString('data_type');
         let data = interaction.options.getString('data');
 
+        // Quick checks to see if we've got stuff in the database for this
         for (let i = 0; i < artistArray.length; i++) {
-            if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`Artist \`${artistArray[i]}\``);
+            if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`Artist \`${artistArray[i]}\` is not in the database.`);
+            if (db.reviewDB.get(artistArray[i], `["${ep_name}"]`) === undefined) return interaction.editReply(`\`${ep_name}\` is not in ${artistArray[i]}'s database.`);
+            if (db.reviewDB.get(artistArray[i], `["${ep_name}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`You don't have a review for ${ep_name} in the database.`);
         }
-        
 
-        await interaction.channel.messages.fetch().then(msg => {
+        let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+
+        await channelsearch.messages.fetch(db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].msg_id`)).then(msg => {
             console.log(msg);
-            embed_data = msg.embeds;
-            msgEmbed = embed_data[0];
-            msgEmbed.image.url = thumbnailImage;
+            let msgEmbed = msg.embeds[0];
+
+            if (data_type === 'rating') {
+                msgEmbed.setName(`${artistArray.join(' & ')} - ${ep_name} (${data}/10)`);
+                for (let i = 0; i < artistArray.length; i++) {
+                    db.reviewDB.set(artistArray[i], parseFloat(data), `["${ep_name}"].["${interaction.user.id}"].overall_rating`);
+                }
+            } else if (data_type === 'review') {
+                msgEmbed.setDescription(`*${data}*`);
+                for (let i = 0; i < artistArray.length; i++) {
+                    db.reviewDB.set(artistArray[i], data, `["${ep_name}"].["${interaction.user.id}"].overall_review`);
+                }
+            }
+
             msg.edit({ embeds: [msgEmbed] });
-            resolve();
-        });*/
+        });
     },
 };

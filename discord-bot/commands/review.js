@@ -432,6 +432,10 @@ module.exports = {
                             ep_name.shift();
                             console.log(ep_name);
                             ep_name = ep_name.join(' - ');
+                            //if (ep_name.includes('/10')) {
+                                //ep_name = ep_name.replace('/10)', '');
+                                //ep_name = ep_name.slice(4);
+                            //}
                             if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && thumbnailImage === false) {
                                 thumbnailImage = msgEmbed.thumbnail.url;
                             }
