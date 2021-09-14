@@ -499,7 +499,7 @@ module.exports = {
 
                                     rank_msg.edit({ embeds: [rankMsgEmbed] });
                                 });
-                        } else {
+                        } else if (db.reviewDB.get(artistArray[0], `["${ep_name}"].songs`).length == 1) {
                             await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
                                 rank_msg.delete();
                             });
