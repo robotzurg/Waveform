@@ -94,6 +94,8 @@ module.exports = {
     review_song: function(interaction, fullArtistArray, song, review, rating, rmxArtists, featArtists, thumbnailImage = false, ep_name) {
         for (let i = 0; i < fullArtistArray.length; i++) {
 
+            if (ep_name === undefined) ep_name = false;
+
             let songName;
 
             if (rmxArtists.includes(fullArtistArray[i])) {
