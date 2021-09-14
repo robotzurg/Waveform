@@ -20,11 +20,11 @@ module.exports = {
                 .setRequired(true)
                 .addChoices([
 					[
-						'Overall Rating',
-						'rating',
+						'overall_rating',
+						'overall_rating',
 					], [
-						'Overall Review',
-						'review',
+						'overall_review',
+						'overall_review',
 					],
 				]))
         .addStringOption(option => 
@@ -35,7 +35,6 @@ module.exports = {
 
 	admin: false,
 	async execute(interaction) {
-        return interaction.editReply('Not done yet');
         let artistArray = capitalize(interaction.options.getString('artists')).split(' & ');
         let ep_name = capitalize(interaction.options.getString('ep_name'));
         let data_type = interaction.options.getString('data_type');
@@ -54,12 +53,12 @@ module.exports = {
             console.log(msg);
             let msgEmbed = msg.embeds[0];
 
-            if (data_type === 'rating') {
-                msgEmbed.setName(`${artistArray.join(' & ')} - ${ep_name} (${data}/10)`);
+            if (data_type === 'overall_rating') {
+                msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${data}/10)`);
                 for (let i = 0; i < artistArray.length; i++) {
                     db.reviewDB.set(artistArray[i], parseFloat(data), `["${ep_name}"].["${interaction.user.id}"].overall_rating`);
                 }
-            } else if (data_type === 'review') {
+            } else if (data_type === 'overall_review') {
                 msgEmbed.setDescription(`*${data}*`);
                 for (let i = 0; i < artistArray.length; i++) {
                     db.reviewDB.set(artistArray[i], data, `["${ep_name}"].["${interaction.user.id}"].overall_review`);
@@ -68,5 +67,7 @@ module.exports = {
 
             msg.edit({ embeds: [msgEmbed] });
         });
+
+        interaction.editReply(`Updated your review of ${ep_name} to house the new data. Check your review in #reviews!`);
     },
 };

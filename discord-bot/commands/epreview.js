@@ -177,9 +177,10 @@ module.exports = {
         epEmbed.setThumbnail(art);
 
         if (overall_rating != false && overall_review != false) {
-            epEmbed.setDescription(`*Overall Rating:* ***${overall_rating}/10***\n*${overall_review}*`);
+            epEmbed.setDescription(`*${overall_review}*`);
+            epEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${overall_rating}/10)`);
         } else if (overall_rating != false) {
-            epEmbed.setDescription(`*Overall Rating:* ***${overall_rating}/10***`);
+            epEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${overall_rating}/10)`);
         } else if (overall_review != false) {
             epEmbed.setDescription(`*${overall_review}*`);
         }

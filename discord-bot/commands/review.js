@@ -432,10 +432,10 @@ module.exports = {
                             ep_name.shift();
                             console.log(ep_name);
                             ep_name = ep_name.join(' - ');
-                            //if (ep_name.includes('/10')) {
-                                //ep_name = ep_name.replace('/10)', '');
-                                //ep_name = ep_name.slice(4);
-                            //}
+                            if (ep_name.includes('/10')) {
+                                ep_name = ep_name.replace('/10)', '');
+                                ep_name = ep_name.slice(0, -4).trim();
+                            }
                             if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && thumbnailImage === false) {
                                 thumbnailImage = msgEmbed.thumbnail.url;
                             }
@@ -481,7 +481,6 @@ module.exports = {
                             }
                         }
 
-
                         if (db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`).length != 0) {
                                 await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
                                     let ep_ranking = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`);
@@ -503,10 +502,12 @@ module.exports = {
 
                                     rank_msg.edit({ embeds: [rankMsgEmbed] });
                                 });
-                        } else if (db.reviewDB.get(artistArray[0], `["${ep_name}"].songs`).length == 1) {
+                        } else {
                             await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
                                 rank_msg.delete();
-                            });
+                            }).catch(d => {
+                                console.log('Ranking not found, working as intended.');
+                            });    
                         }
 
                         // Set msg_id for this review to false, since its part of the EP review message
