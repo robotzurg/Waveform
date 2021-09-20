@@ -237,13 +237,20 @@ module.exports = {
         let taggedUserSel;
 
         for (let i = 0; i < userIDList.length; i++) {
-            taggedMemberSel = await interaction.guild.members.fetch(userIDList[i]);
-            taggedUserSel = taggedMemberSel.user;
-            select_options.push({
-                label: `${taggedMemberSel.displayName}`,
-                description: `${taggedMemberSel.displayName}'s review of the song.`,
-                value: `${taggedUserSel.id}`,
-            });
+            taggedMemberSel = await interaction.guild.members.fetch(userIDList[i])
+            // eslint-disable-next-line no-unused-vars
+            .catch(x => taggedMemberSel = 'Invalid Member (They have left the server)');
+            if (taggedMemberSel != 'Invalid Member (They have left the server)') {
+                taggedUserSel = taggedMemberSel.user;
+            }
+
+            if (taggedMemberSel != 'Invalid Member (They have left the server)') {
+                select_options.push({
+                    label: `${taggedMemberSel.displayName}`,
+                    description: `${taggedMemberSel.displayName}'s review of the song.`,
+                    value: `${taggedUserSel.id}`,
+                });
+            }
         }
 
 

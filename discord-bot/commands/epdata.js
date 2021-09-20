@@ -59,6 +59,9 @@ module.exports = {
                     db.reviewDB.set(artistArray[i], parseFloat(data), `["${ep_name}"].["${interaction.user.id}"].overall_rating`);
                 }
             } else if (data_type === 'overall_review') {
+                if (data.includes('\\n')) {
+                    data = data.split('\\n').join('\n');
+                }
                 msgEmbed.setDescription(`*${data}*`);
                 for (let i = 0; i < artistArray.length; i++) {
                     db.reviewDB.set(artistArray[i], data, `["${ep_name}"].["${interaction.user.id}"].overall_review`);

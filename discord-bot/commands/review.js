@@ -197,7 +197,7 @@ module.exports = {
             return await interaction.deleteReply();
         }
 
-        let rating = parseFloat(args[2].trim());
+        let rating = parseFloat(args[2]);
         let review = args[3];
 
         if (isNaN(rating)) {
@@ -207,6 +207,10 @@ module.exports = {
         }
 
         review = review.trim();
+
+        if (review.includes('\\n')) {
+            review = review.split('\\n').join('\n');
+        }
 
         //Split up the artists into an array
         let artistArray;
@@ -434,7 +438,7 @@ module.exports = {
                             ep_name = ep_name.join(' - ');
                             if (ep_name.includes('/10')) {
                                 ep_name = ep_name.replace('/10)', '');
-                                ep_name = ep_name.slice(0, -4).trim();
+                                ep_name = ep_name.slice(0, -3).trim();
                             }
                             if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && thumbnailImage === false) {
                                 thumbnailImage = msgEmbed.thumbnail.url;
@@ -505,6 +509,7 @@ module.exports = {
                         } else {
                             await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
                                 rank_msg.delete();
+                            // eslint-disable-next-line no-unused-vars
                             }).catch(d => {
                                 console.log('Ranking not found, working as intended.');
                             });    
