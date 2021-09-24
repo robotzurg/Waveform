@@ -67,8 +67,10 @@ module.exports = {
             overall_review = false;
         }
 
-        if (overall_review.includes('\\n')) {
-            overall_review = overall_review.split('\\n').join('\n');
+        if (overall_review != null && overall_review != false && overall_review != undefined) {
+                if (overall_review.includes('\\n')) {
+                    overall_review = overall_review.split('\\n').join('\n');
+                }
         }
 
         if (!ep_name.includes('EP') && !ep_name.includes('LP')) {
