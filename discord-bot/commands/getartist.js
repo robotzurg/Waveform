@@ -28,6 +28,7 @@ module.exports = {
         const artistImage = artistObj.Image;
         let songArray = Object.keys(artistObj);
         songArray = songArray.filter(item => item !== 'Image');
+        console.log(songArray);
         let reviewNum;
         const singleArray = [];
         const remixArray = [];
@@ -44,7 +45,8 @@ module.exports = {
             }
 
             for (let i = 0; i < songArray.length; i++) {
-                if (songArray[i].toLowerCase().includes('ep') || songArray[i].toLowerCase().includes('lp') || songArray[i].toLowerCase().includes('/')) break;
+                console.log(songArray[i])
+                if (songArray[i].includes('EP') || songArray[i].includes('LP')) continue;
                 starNum = 0;
                 const songObj = db.reviewDB.get(args[0], `["${songArray[i]}"]`);
                 reviewNum = parseInt(db.reviewDB.get(args[0], `["${songArray[i]}"].review_num`));
@@ -85,6 +87,7 @@ module.exports = {
                 if (!songArray[i].includes('Remix') /*&& !songArray[i].includes('EP') && !songArray[i].includes('LP') && !songArray[i].includes('/')*/) {
                     singleArray.push(`-${songArray[i]} ${songDetails}`);
                     singleArray[singleArray.length - 1] = singleArray[singleArray.length - 1].replace('*', '\\*');
+                    console.log(singleArray)
 
                 } else {
                     remixArray.push(`-${songArray[i]} ${songDetails}`);
