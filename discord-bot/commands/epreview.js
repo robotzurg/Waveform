@@ -205,7 +205,7 @@ module.exports = {
         const msg = await interaction.fetchReply();
 
         await interaction.channel.send({ embeds: [rankingEmbed] }).then(async rank_msg => {
-            db.user_stats.set(interaction.user.id, [msg.id, rank_msg.id], 'current_ep_review');
+            db.user_stats.set(interaction.user.id, [msg.id, rank_msg.id, artistArray], 'current_ep_review');
         });
 
         // Set message ids

@@ -56,7 +56,7 @@ module.exports = {
             if (data_type === 'overall_rating') {
                 msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${data}/10)`);
                 for (let i = 0; i < artistArray.length; i++) {
-                    db.reviewDB.set(artistArray[i], parseFloat(data), `["${ep_name}"].["${interaction.user.id}"].overall_rating`);
+                    db.reviewDB.set(artistArray[i], parseFloat(data), `["${ep_name}"].["${interaction.user.id}"].rating`);
                 }
             } else if (data_type === 'overall_review') {
                 if (data.includes('\\n')) {
@@ -64,7 +64,7 @@ module.exports = {
                 }
                 msgEmbed.setDescription(`*${data}*`);
                 for (let i = 0; i < artistArray.length; i++) {
-                    db.reviewDB.set(artistArray[i], data, `["${ep_name}"].["${interaction.user.id}"].overall_review`);
+                    db.reviewDB.set(artistArray[i], data, `["${ep_name}"].["${interaction.user.id}"].review`);
                 }
             }
 

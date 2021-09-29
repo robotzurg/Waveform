@@ -214,7 +214,17 @@ module.exports = {
 
         //Split up the artists into an array
         let artistArray;
-        artistArray = args[0].split(' & '); // This should never be changed beyond the original song artists (no features or remix artists.)
+
+        if (args[0] != "Ep" && args[0] != "Lp") {
+            artistArray = args[0].split(' & '); // This should never be changed beyond the original song artists (no features or remix artists.)
+        } else {
+            artistArray = db.user_stats.get(interaction.user.id, `current_ep_review`)[2];
+            console.log(`Changed: ${artistArray}`);
+            if (artistArray === undefined) return interaction.editReply('You don\'t have an active EP/LP review going, so you can\'t use this syntax.');
+        }
+
+        console.log(`Final: ${artistArray}`);
+
         let fullArtistArray = [artistArray, rmxArtists, featArtists]; // This one is the one for every artist, original + features + remixers.
         fullArtistArray = fullArtistArray.flat(1);
 
@@ -245,7 +255,7 @@ module.exports = {
 
         let reviewEmbed = new Discord.MessageEmbed()
         .setColor(`${interaction.member.displayHexColor}`)
-        .setTitle(`${args[0]} - ${fullSongName}`)
+        .setTitle(`${artistArray.join(' & ')} - ${fullSongName}`)
         .setAuthor(`${interaction.member.displayName}'s review`, `${interaction.user.avatarURL({ format: "png", dynamic: false })}`);
         if (review != '-') {
             reviewEmbed.setDescription(review);
