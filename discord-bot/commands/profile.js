@@ -34,7 +34,7 @@ module.exports = {
         .setDescription(`Favorite Song: **${db.user_stats.get(taggedUser.id, 'fav_song')}**\n` +
         `Least Favorite Song: **${db.user_stats.get(taggedUser.id, 'least_fav_song')}**\n` +
         `Most Recent Review: **${db.user_stats.get(taggedUser.id, 'recent_review')}**\n` +
-        `Number of Stars Given: \`${db.user_stats.get(taggedUser.id, 'star_num')} ⭐\``)
+        `Number of Stars Given: \`${db.user_stats.get(taggedUser.id, 'star_list').length} ⭐\``)
         .setThumbnail(taggedUser.avatarURL({ format: "png", dynamic: false }));
 
         interaction.editReply({ embeds: [profileEmbed] });

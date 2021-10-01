@@ -75,44 +75,6 @@ module.exports = {
             songName = `${songName} (${rmxArtists.join(' & ')} Remix)`;
         }
 
-
-        /*for (let i = 0; i < artistArray.length; i++) {
-            if (!db.reviewDB.has(artistArray[i])) {
-                newSong = true;
-                db.reviewDB.set(artistArray[i], { 
-                    [songName]: { // Create the SONG DB OBJECT
-                        EP: false, 
-                        Remixers: {},
-                        Image: thumbnailImage,
-                        Collab: artistArray.filter(word => !featArtists.includes(word) && artistArray[i] != word),
-                        Vocals: featArtists,
-                    },
-                    
-                });
-            } else if (db.reviewDB.get(artistArray[i], `["${songName}"]`) === undefined) {
-                newSong = true;
-                console.log('Song Not Detected!');
-                const artistObj = db.reviewDB.get(artistArray[i]);
-
-                //Create the object that will be injected into the Artist object
-                const newsongObj = { 
-                    [songName]: { 
-                        EP: false, 
-                        Remixers: {},
-                        Image: thumbnailImage,
-                        Collab: artistArray.filter(word => !featArtists.includes(word) && artistArray[i] != word),
-                        Vocals: featArtists,
-                    },
-                };
-
-                //Inject the newsongobject into the artistobject and then put it in the database
-                Object.assign(artistObj, newsongObj);
-                db.reviewDB.set(artistArray[i], artistObj);
-            }
-        
-		}*/
-		
-
 		if (newSong === false) {
 			for (let i = 0; i < artistArray.length; i++) {
                 db.reviewDB.set(artistArray[i], thumbnailImage, `["${songName}"].art`);
@@ -122,6 +84,8 @@ module.exports = {
         // Fix artwork on all reviews for this song
         const imageSongObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
         let msgstoEdit = [];
+        let userIDs = [];
+        let count = -1;
 
         if (imageSongObj != undefined) {
             let userArray = Object.keys(imageSongObj);
@@ -137,16 +101,18 @@ module.exports = {
 
             userArray.forEach(user => {
                 msgstoEdit.push(db.reviewDB.get(artistArray[0], `["${songName}"].["${user}"].msg_id`));
-                console.log(msgstoEdit);
+                userIDs.push(user);
             });
 
             msgstoEdit = msgstoEdit.filter(item => item !== undefined);
             msgstoEdit = msgstoEdit.filter(item => item !== false);
             if (msgstoEdit.length > 0) { 
-                let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+                
 
-                forAsync(msgstoEdit, function(item) {
+                forAsync(msgstoEdit, async function(item) {
+                    count += 1;
                     return new Promise(function(resolve) {
+                        let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
                         let msgtoEdit = item;
                         let msgEmbed;
 
@@ -155,6 +121,14 @@ module.exports = {
                             msgEmbed.setThumbnail(thumbnailImage);
                             msg.edit({ content: ' ', embeds: [msgEmbed] });
                             resolve();
+                        }).catch(() => {
+                            channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
+                            channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                                msgEmbed = msg.embeds[0];
+                                msgEmbed.setThumbnail(thumbnailImage);
+                                msg.edit({ content: ' ', embeds: [msgEmbed] });
+                                resolve();
+                            });
                         });
                     });
                 });

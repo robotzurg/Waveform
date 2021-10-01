@@ -29,6 +29,7 @@
     "for-async": "^1.0.1",
     "node-cron": "^2.0.3",
     "node-gyp": "^7.1.2",
+    "node.js": "^0.0.1-security",
     "num-words": "^1.2.2",
     "ramda": "^0.27.1",
     "sequelize": "^6.3.5",

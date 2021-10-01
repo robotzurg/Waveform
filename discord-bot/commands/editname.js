@@ -40,33 +40,47 @@ module.exports = {
 
         const song_obj = db.reviewDB.get(artistArray[0], new_song);
         let msgstoEdit = [];
+        let count = -1;
+        let userIDs = [];
 
-            let userArray = Object.keys(song_obj);
-            userArray = userArray.filter(item => item !== 'art');
-            userArray = userArray.filter(item => item !== 'collab');
-            userArray = userArray.filter(item => item !== 'vocals');
-            userArray = userArray.filter(item => item !== 'remixers');
-            userArray = userArray.filter(item => item !== 'ep');
-            userArray = userArray.filter(item => item !== 'hof_id');
-            userArray = userArray.filter(item => item !== 'review_num');
-            userArray = userArray.filter(item => item !== 'songs');
+        let userArray = Object.keys(song_obj);
+        userArray = userArray.filter(item => item !== 'art');
+        userArray = userArray.filter(item => item !== 'collab');
+        userArray = userArray.filter(item => item !== 'vocals');
+        userArray = userArray.filter(item => item !== 'remixers');
+        userArray = userArray.filter(item => item !== 'ep');
+        userArray = userArray.filter(item => item !== 'hof_id');
+        userArray = userArray.filter(item => item !== 'review_num');
+        userArray = userArray.filter(item => item !== 'songs');
 
 
-            userArray.forEach(user => {
-                msgstoEdit.push(db.reviewDB.get(artistArray[0], `["${new_song}"].["${user}"].msg_id`));
-                console.log(msgstoEdit);
-            });
+        userArray.forEach(user => {
+            msgstoEdit.push(db.reviewDB.get(artistArray[0], `["${new_song}"].["${user}"].msg_id`));
+            userIDs.push(user);
+        });
 
-            msgstoEdit = msgstoEdit.filter(item => item !== undefined);
-            msgstoEdit = msgstoEdit.filter(item => item !== false);
-            if (msgstoEdit.length > 0) { 
-                let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+        msgstoEdit = msgstoEdit.filter(item => item !== undefined);
+        msgstoEdit = msgstoEdit.filter(item => item !== false);
+        if (msgstoEdit.length > 0) { 
 
-                forAsync(msgstoEdit, function(item) {
-                    return new Promise(function(resolve) {
-                        let msgtoEdit = item;
-                        let msgEmbed;
+            forAsync(msgstoEdit, async function(item) {
+                count += 1;
+                return new Promise(function(resolve) {
+                    let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+                    let msgtoEdit = item;
+                    let msgEmbed;
 
+                    channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                        msgEmbed = msg.embeds[0];
+                        if (msgEmbed.title.includes('🌟')) {
+                            msgEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${new_song} 🌟`);
+                        } else {
+                            msgEmbed.setTitle(`${artistArray.join(' & ')} - ${new_song}`);
+                        }
+                        msg.edit({ content: ' ', embeds: [msgEmbed] });
+                        resolve();
+                    }).catch(() => {
+                        channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
                         channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                             msgEmbed = msg.embeds[0];
                             if (msgEmbed.title.includes('🌟')) {
@@ -79,7 +93,8 @@ module.exports = {
                         });
                     });
                 });
-            }
+            });
+        }
 
 		interaction.editReply(`${artistArray.join(' & ')} - ${old_song} changed to ${new_song}.`);
 	},

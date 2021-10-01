@@ -114,8 +114,6 @@ module.exports = {
 
         db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : '' }`, 'star_list');
         interaction.editReply(`Star added to ${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : '' }!`);
-
-        db.user_stats.math(interaction.user.id, '+', 1, 'star_num');
         
         const songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
 
@@ -175,7 +173,6 @@ module.exports = {
         if (msgtoEdit != false && msgtoEdit != undefined) {
             let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
             channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                console.log(msg);
                 let embed_data = msg.embeds;
                 let msgEmbed = embed_data[0];
                 let msgEmbedTitle = msgEmbed.title;
@@ -183,6 +180,17 @@ module.exports = {
                     msgEmbed.title = `:star2: ${msgEmbedTitle} :star2:`;
                 }
                 msg.edit({ embeds: [msgEmbed] });
+            }).catch(() => {
+                channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                    let embed_data = msg.embeds;
+                    let msgEmbed = embed_data[0];
+                    let msgEmbedTitle = msgEmbed.title;
+                    if (!msgEmbedTitle.includes(':star2:')) {
+                        msgEmbed.title = `:star2: ${msgEmbedTitle} :star2:`;
+                    }
+                    msg.edit({ embeds: [msgEmbed] });
+                });
             });
         }
 
@@ -208,6 +216,24 @@ module.exports = {
                     }
 
                     msg.edit({ embeds: [msgEmbed] });
+                }).catch(() => {
+                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                    channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                        let msgEmbed = msg.embeds[0];
+                        let msg_embed_fields = msgEmbed.fields;
+                        let field_num = -1;
+                        for (let i = 0; i < msg_embed_fields.length; i++) {
+                            if (msg_embed_fields[i].name.includes(songName)) {
+                                field_num = i;
+                            }
+                        }
+
+                        if (!msg_embed_fields[field_num].name.includes('🌟')) {
+                            msg_embed_fields[field_num].name = `🌟 ${msg_embed_fields[field_num].name} 🌟`;
+                        }
+
+                        msg.edit({ embeds: [msgEmbed] });
+                    });
                 });
             } 
         }

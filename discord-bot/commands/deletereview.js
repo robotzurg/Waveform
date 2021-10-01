@@ -67,13 +67,6 @@ module.exports = {
         }
 
         // Update user stats
-        let array_user = db.user_stats.get(interaction.user.id, 'review_list');
-        for (let i = 0; i < array_user.length; i++) {
-            if (array_user[i].includes(songName)) array_user = array_user.filter(x => x !== array_user[i]);
-        }
-
-        db.user_stats.set(interaction.user.id, array_user, 'review_list');
-
         if (db.user_stats.get(interaction.user.id, 'recent_review').includes(songName)) {
             db.user_stats.set(interaction.user.id, 'N/A', 'recent_review');
         }
@@ -96,7 +89,11 @@ module.exports = {
                 let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
                 channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
                     msg.delete();
-                    console.log(msg);
+                }).catch(() => {
+                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                    channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
+                        msg.delete();
+                    });
                 });
             }
 

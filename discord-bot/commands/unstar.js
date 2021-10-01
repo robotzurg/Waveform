@@ -110,8 +110,6 @@ module.exports = {
         db.user_stats.remove(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : '' }`, 'star_list');
         interaction.editReply(`Unstarred ${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : '' }.`);
 
-        db.user_stats.math(interaction.user.id, '-', 1, 'star_num');
-
         const songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
 
         let userArray = Object.keys(songObj);
@@ -188,6 +186,19 @@ module.exports = {
                     }
                 }
                 msg.edit({ embeds: [msgEmbed] });
+            }).catch(() => {
+                channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                    let embed_data = msg.embeds;
+                    let msgEmbed = embed_data[0];
+                    let msgEmbedTitle = msgEmbed.title;
+                    if (msgEmbedTitle.includes(':star2:')) {
+                        while (msgEmbed.title.includes(':star2:')) {
+                            msgEmbed.title = msgEmbed.title.replace(':star2:', '');
+                        }
+                    }
+                    msg.edit({ embeds: [msgEmbed] });
+                });
             });
         }
 

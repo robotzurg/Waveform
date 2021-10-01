@@ -485,7 +485,6 @@ module.exports = {
 
                         // Update user stats
                         db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'recent_review');
-                        db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'review_list');
 
                         for (let ii = 0; ii < mainArtists.length; ii++) {
                             // Update EP details
@@ -519,8 +518,7 @@ module.exports = {
                         } else {
                             await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
                                 rank_msg.delete();
-                            // eslint-disable-next-line no-unused-vars
-                            }).catch(d => {
+                            }).catch(() => {
                                 console.log('Ranking not found, working as intended.');
                             });    
                         }
@@ -546,31 +544,20 @@ module.exports = {
                         await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [] });
 
                         // Review the song
-                        review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser);
+                        review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser, false);
 
                         // Update user stats
                         db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'recent_review');
-                        db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'review_list');
                         
                         const msg = await interaction.fetchReply();
 
                         // Setting the message id for the message we just sent (and check for mailbox, if so put as FALSE so we don't have to look for a non-existant message)
-                        if (!mailboxes.includes(int_channel.name)) {
-                            for (let ii = 0; ii < fullArtistArray.length; ii++) {
-                                if (rmxArtists.length === 0) {
-                                    db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
-                                    console.log(db.reviewDB.get(fullArtistArray[ii], `["${songName}"].["${interaction.user.id}"].msg_id`));
-                                } else if (rmxArtists.includes(fullArtistArray[ii])) {
-                                    db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
-                                }
-                            }
-                        } else {
-                            for (let ii = 0; ii < fullArtistArray.length; ii++) {
-                                if (rmxArtists.length === 0) {
-                                    db.reviewDB.set(fullArtistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`); 
-                                } else if (rmxArtists.includes(fullArtistArray[ii])) {
-                                    db.reviewDB.set(fullArtistArray[ii], false, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
-                                }
+                        for (let ii = 0; ii < fullArtistArray.length; ii++) {
+                            if (rmxArtists.length === 0) {
+                                db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
+                                console.log(db.reviewDB.get(fullArtistArray[ii], `["${songName}"].["${interaction.user.id}"].msg_id`));
+                            } else if (rmxArtists.includes(fullArtistArray[ii])) {
+                                db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
                             }
                         }
 
@@ -596,30 +583,19 @@ module.exports = {
         } else { // Reviewing with the Spotify Link Review Context Menu
 
             // Review the song
-            review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser);
+            review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser, false);
 
             // Update user stats
-            //db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'recent_review');
-            //db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'review_list');
+            db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'recent_review');
 
             await int_channel.send({ embeds: [reviewEmbed] }).then(msg => {
                 // Setting the message id for the message we just sent (and check for mailbox, if so put as FALSE so we don't have to look for a non-existant message)
-                if (!mailboxes.includes(int_channel.name)) {
-                    for (let ii = 0; ii < fullArtistArray.length; ii++) {
-                        if (rmxArtists.length === 0) {
-                            db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
-                            console.log(db.reviewDB.get(fullArtistArray[ii], `["${songName}"].["${interaction.user.id}"].msg_id`));
-                        } else if (rmxArtists.includes(fullArtistArray[ii])) {
-                            db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
-                        }
-                    }
-                } else {
-                    for (let ii = 0; ii < fullArtistArray.length; ii++) {
-                        if (rmxArtists.length === 0) {
-                            db.reviewDB.set(fullArtistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`); 
-                        } else if (rmxArtists.includes(fullArtistArray[ii])) {
-                            db.reviewDB.set(fullArtistArray[ii], false, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
-                        }
+                for (let ii = 0; ii < fullArtistArray.length; ii++) {
+                    if (rmxArtists.length === 0) {
+                        db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
+                        console.log(db.reviewDB.get(fullArtistArray[ii], `["${songName}"].["${interaction.user.id}"].msg_id`));
+                    } else if (rmxArtists.includes(fullArtistArray[ii])) {
+                        db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
                     }
                 }
 

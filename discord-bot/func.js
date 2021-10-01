@@ -69,10 +69,10 @@ module.exports = {
                     msgstoEdit = msgstoEdit.filter(item => item !== false);
                     
                     if (msgstoEdit.length > 0) { 
-                        let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
 
-                        forAsync(msgstoEdit, function(item) {
+                        forAsync(msgstoEdit, async function(item) {
                             return new Promise(function(resolve) {
+                                let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
                                 let msgtoEdit = item;
                                 let msgEmbed;
                                 let embed_data;
@@ -83,6 +83,15 @@ module.exports = {
                                     msgEmbed.thumbnail.url = new_image;
                                     msg.edit({ embeds: [msgEmbed] });
                                     resolve();
+                                }).catch(() => {
+                                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                                    channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                                        embed_data = msg.embeds;
+                                        msgEmbed = embed_data[0];
+                                        msgEmbed.thumbnail.url = new_image;
+                                        msg.edit({ embeds: [msgEmbed] });
+                                        resolve();
+                                    });
                                 });
                             });
                         });
@@ -91,7 +100,14 @@ module.exports = {
             }
     },
 
-    review_song: function(interaction, fullArtistArray, song, review, rating, rmxArtists, featArtists, thumbnailImage = false, ep_name) {
+    review_song: function(interaction, fullArtistArray, song, review, rating, rmxArtists, featArtists, thumbnailImage = false, user_who_sent, ep_name) {
+
+        if (user_who_sent === undefined) {
+            user_who_sent = false;
+        } else {
+            user_who_sent = user_who_sent.id;
+        }
+
         for (let i = 0; i < fullArtistArray.length; i++) {
 
             if (ep_name === undefined) ep_name = false;
@@ -111,7 +127,7 @@ module.exports = {
                 review: review,
                 rating: rating,
                 starred: false,
-                sentby: false,
+                sentby: user_who_sent,
             };
 
             // Used if the song object or atist object don't already exist
@@ -212,7 +228,6 @@ module.exports = {
 
     hall_of_fame_check: function(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage) {
         db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${songName}`, 'star_list');
-        db.user_stats.math(interaction.user.id, '+', 1, 'star_num');
         for (let i = 0; i < fullArtistArray.length; i++) {
             db.reviewDB.set(fullArtistArray[i], true, `["${songName}"].["${interaction.user.id}"].starred`);
         }
