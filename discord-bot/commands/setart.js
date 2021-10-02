@@ -108,7 +108,6 @@ module.exports = {
             msgstoEdit = msgstoEdit.filter(item => item !== false);
             if (msgstoEdit.length > 0) { 
                 
-
                 forAsync(msgstoEdit, async function(item) {
                     count += 1;
                     return new Promise(function(resolve) {
