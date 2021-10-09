@@ -4,8 +4,8 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('epdata')
-        .setDescription('Add some data to an EP/LP review')
+        .setName('epedit')
+        .setDescription('Edit/add data to an EP/LP review')
         .addStringOption(option => 
             option.setName('artists')
                 .setDescription('The name of the MAIN EP/LP artist(s). (separate with &, Do not put any one-off collaborators here.)')
@@ -16,7 +16,7 @@ module.exports = {
                 .setRequired(true))
         .addStringOption(option => 
             option.setName('data_type')
-                .setDescription('The type of data to add the EP/LP review')
+                .setDescription('The type of data to edit/add to the EP/LP review')
                 .setRequired(true)
                 .addChoices([
 					[
