@@ -33,6 +33,7 @@ module.exports = {
         let taggedUser = interaction.user;
         let taggedMember = interaction.member;
         let rmxArtists = [];
+        let spotifyCheck = false;
 
         await interaction.options._hoistedOptions.forEach(async (value) => {
             args.push(value.value.trim());
@@ -45,11 +46,64 @@ module.exports = {
             }
         });
 
+        // Spotify Check
+        if (args[0].toLowerCase() === 's' || args[1].toLowerCase() === 's') {
+            interaction.member.presence.activities.forEach((activity) => {
+                if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                    activity.state = activity.state.trim();
+                    activity.details = activity.details.trim();
+                    let artists = activity.state;
+                    if (artists.includes(';')) {
+                        artists = artists.split('; ');
+                        if (activity.details.includes('feat.') || activity.details.includes('ft.') || activity.details.includes('remix')) {
+                            artists.pop();
+                        }
+                        artists = artists.join(' & ');
+                    }
+
+                    if (artists.includes(',')) {
+                        artists = artists.split(', ');
+                        for (let i = 0; i < artists.length; i++) {
+                            artists[i] = capitalize(artists[i]);
+                        }
+                        artists = artists.join(' & ');
+                    }
+                    
+                    // Fix some formatting for a couple things
+                    if (activity.details.includes('Remix') && activity.details.includes('-')) {
+                        let title = activity.details.split(' - ');
+                        rmxArtists = title[1].slice(0, -6).split(' & ');
+                        activity.details = `${title[0]} (${rmxArtists.join(' & ')} Remix)`;
+                    }
+
+                    if (activity.details.includes('VIP') && activity.details.includes('-')) {
+                        let title = activity.details.split(' - ');
+                        activity.details = `${title[0]} VIP`;
+                    }
+
+                    if (activity.details.includes('(VIP)')) {
+                        let title = activity.details.split(' (V');
+                        activity.details = `${title[0]} VIP`;
+                    }
+                    if (args[0].toLowerCase() === 's') args[0] = artists;
+                    if (args[1].toLowerCase() === 's') args[1] = activity.details;
+                    spotifyCheck = true;
+                }
+            });
+        }
+
+        if (spotifyCheck === false && (args[0].toLowerCase() === 's' || args[1].toLowerCase() === 's')) {
+            return interaction.editReply('Spotify status not detected, please type in the artist/song name manually or fix your status!');
+        }
+
         args[0] = capitalize(args[0]);
         args[1] = capitalize(args[1]);
 
         let origArtistNames = args[0];
         let songName = args[1];
+
+        console.log(origArtistNames);
+        console.log(songName);
 
         // Format somethings to be more consistent.
         if (songName.includes('(VIP)')) {
@@ -65,7 +119,7 @@ module.exports = {
         } 
 
         if (!db.reviewDB.has(artistArray[0])) {
-            return interaction.editReply('No artist found.');
+            return interaction.editReply(`The artist \`${artistArray[0]}\` was not found in the database.`);
         }
 
         let rname;

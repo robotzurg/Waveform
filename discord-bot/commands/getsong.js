@@ -27,6 +27,7 @@ module.exports = {
 
         let args = [];
         let rmxArtists = [];
+        let spotifyCheck = false;
 
         await interaction.options._hoistedOptions.forEach(async (value) => {
             args.push(value.value);
@@ -35,6 +36,55 @@ module.exports = {
                 rmxArtists = rmxArtists.flat(1);
             }
         });
+
+        if (args[0].toLowerCase() === 's' || args[1].toLowerCase() === 's') {
+            interaction.member.presence.activities.forEach((activity) => {
+                if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                    activity.state = activity.state.trim();
+                    activity.details = activity.details.trim();
+                    let artists = activity.state;
+                    if (artists.includes(';')) {
+                        artists = artists.split('; ');
+                        if (activity.details.includes('feat.') || activity.details.includes('ft.') || activity.details.includes('remix')) {
+                            artists.pop();
+                        }
+                        artists = artists.join(' & ');
+                    }
+
+                    if (artists.includes(',')) {
+                        artists = artists.split(', ');
+                        for (let i = 0; i < artists.length; i++) {
+                            artists[i] = capitalize(artists[i]);
+                        }
+                        artists = artists.join(' & ');
+                    }
+                    
+                    // Fix some formatting for a couple things
+                    if (activity.details.includes('Remix') && activity.details.includes('-')) {
+                        let title = activity.details.split(' - ');
+                        rmxArtists = title[1].slice(0, -6).split(' & ');
+                        activity.details = `${title[0]} (${rmxArtists.join(' & ')} Remix)`;
+                    }
+
+                    if (activity.details.includes('VIP') && activity.details.includes('-')) {
+                        let title = activity.details.split(' - ');
+                        activity.details = `${title[0]} VIP`;
+                    }
+
+                    if (activity.details.includes('(VIP)')) {
+                        let title = activity.details.split(' (V');
+                        activity.details = `${title[0]} VIP`;
+                    }
+                    if (args[0].toLowerCase() === 's') args[0] = artists;
+                    if (args[1].toLowerCase() === 's') args[1] = activity.details;
+                    spotifyCheck = true;
+                }
+            });
+        }
+
+        if (spotifyCheck === false && (args[0].toLowerCase() === 's' || args[1].toLowerCase() === 's')) {
+            return interaction.editReply('Spotify status not detected, please type in the artist/song name manually or fix your status!');
+        }
 
         args[0] = args[0].trim();
         args[1] = args[1].trim();
@@ -46,7 +96,7 @@ module.exports = {
         origSongName = capitalize(origSongName);
         
         if (origSongName.includes('EP') || origSongName.includes('LP') || origSongName.toLowerCase().includes('the remixes')) {
-            return interaction.editReply('This isn\'t a single! EP reviews are coming soon.');
+            return interaction.editReply('This isn\'t a single! Use `/getep` to get an EP/LP overview.');
         }
 
         // Function to grab average of all ratings later
@@ -110,7 +160,7 @@ module.exports = {
         }
 
         songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
-        if (songObj === undefined) return interaction.editReply('The requested song does not exist.\nUse `/getArtist` to get a full list of this artist\'s songs.');
+        if (songObj === undefined) return interaction.editReply(`The requested song \`${origArtistNames} - ${origSongName}\` does not exist.\nUse \`/getArtist\` to get a full list of this artist's songs.`);
         songEP = songObj.ep;
         remixArray = songObj.remixers;
 
@@ -269,9 +319,7 @@ module.exports = {
                     .addOptions(select_options),
             );
 
-        interaction.editReply({ embeds: [songEmbed], components: [row] }).then(msg => {
-            console.log(msg.embeds[0].fields);
-        });
+        interaction.editReply({ embeds: [songEmbed], components: [row] });
        
         // const filter = i => i.user.id === interaction.user.id;
 		const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });
