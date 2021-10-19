@@ -70,6 +70,16 @@ module.exports = {
                     }
                     
                     // Fix some formatting for a couple things
+                    if (activity.details.includes(' (feat.')) {
+                        let title = activity.details.split(' (feat.');
+                        activity.details = title[0];
+                    }
+                    
+                    if (activity.details.includes(' (ft.')) {
+                        let title = activity.details.split(' (ft.');
+                        activity.details = title[0];
+                    }
+                    
                     if (activity.details.includes('Remix') && activity.details.includes('-')) {
                         let title = activity.details.split(' - ');
                         rmxArtists = title[1].slice(0, -6).split(' & ');

@@ -15,6 +15,7 @@ module.exports = {
             if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
                 activity.state = activity.state.trim();
                 activity.details = activity.details.trim();
+                url = `https://open.spotify.com/track/${activity.syncId}`;
                 let artists = activity.state;
                 let artistArray = [activity.state];
                 let rmxArtist = false;
@@ -112,18 +113,18 @@ module.exports = {
                                 }
                             }
 
-                        exampleEmbed.setDescription(`Reviews: \`${userArray.length} reviews\`\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}${yourReview != false ? `\nYour Rating: \`${yourReview}/10${yourStar}\`` : ''}`);
+                        exampleEmbed.setDescription(`Reviews: \`${userArray.length} reviews\`\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}${yourReview != false ? `\nYour Rating: \`${yourReview}/10${yourStar}\`` : ''}\n[<:spotify:899365299814559784> Spotify](${url})`);
 
                         if (db.reviewDB.get(artistArray[0], `["${activity.details}"].ep`) != undefined && db.reviewDB.get(artistArray[0], `["${activity.details}"].ep`) != false) {
                             exampleEmbed.setFooter(`from ${db.reviewDB.get(artistArray[0], `["${activity.details}"].ep`)}`, db.reviewDB.get(artistArray[0], `["${db.reviewDB.get(artistArray[0], `["${activity.details}"].ep`)}"].art`));
                         }
                     } else {
-                        exampleEmbed.setDescription(`This song has not been reviewed in the database.`);
+                        exampleEmbed.setDescription(`This song has not been reviewed in the database.\n[<:spotify:899365299814559784> Spotify](${url})`);
                     }
 
                 } else {
                     if (!activity.details.toLowerCase().includes('remix')) {
-                        exampleEmbed.setDescription(`This artist has not been reviewed in the database.`);
+                        exampleEmbed.setDescription(`This artist has not been reviewed in the database.\n[<:spotify:899365299814559784> Spotify](${url})`);
                     }
                 }
 
@@ -135,7 +136,7 @@ module.exports = {
                 sent = true;
             }
         });
-
+        
         if (sent === false) return interaction.editReply('You aren\'t playing a song on Spotify.');
 	},
 };
