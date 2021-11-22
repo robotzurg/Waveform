@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { capitalize } = require('../func.js');
+const { capitalize, parse_spotify } = require('../func.js');
 const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
@@ -37,56 +37,17 @@ module.exports = {
             }
         });
 
+        args[0] = capitalize(args[0].trim());
+        args[1] = capitalize(args[1].trim());
+
         if (args[0].toLowerCase() === 's' || args[1].toLowerCase() === 's') {
             interaction.member.presence.activities.forEach((activity) => {
                 if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
-                    activity.state = activity.state.trim();
-                    activity.details = activity.details.trim();
-                    let artists = activity.state;
-                    if (artists.includes(';')) {
-                        artists = artists.split('; ');
-                        if (activity.details.includes('feat.') || activity.details.includes('ft.') || activity.details.includes('remix')) {
-                            artists.pop();
-                        }
-                        artists = artists.join(' & ');
-                    }
-
-                    if (artists.includes(',')) {
-                        artists = artists.split(', ');
-                        for (let i = 0; i < artists.length; i++) {
-                            artists[i] = capitalize(artists[i]);
-                        }
-                        artists = artists.join(' & ');
-                    }
                     
-                    // Fix some formatting for a couple things
-                    if (activity.details.includes(' (feat.')) {
-                        let title = activity.details.split(' (feat.');
-                        activity.details = title[0];
-                    }
+                    let sp_data = parse_spotify(activity);
                     
-                    if (activity.details.includes(' (ft.')) {
-                        let title = activity.details.split(' (ft.');
-                        activity.details = title[0];
-                    }
-                    
-                    if (activity.details.includes('Remix') && activity.details.includes('-')) {
-                        let title = activity.details.split(' - ');
-                        rmxArtists = title[1].slice(0, -6).split(' & ');
-                        activity.details = `${title[0]} (${rmxArtists.join(' & ')} Remix)`;
-                    }
-
-                    if (activity.details.includes('VIP') && activity.details.includes('-')) {
-                        let title = activity.details.split(' - ');
-                        activity.details = `${title[0]} VIP`;
-                    }
-
-                    if (activity.details.includes('(VIP)')) {
-                        let title = activity.details.split(' (V');
-                        activity.details = `${title[0]} VIP`;
-                    }
-                    if (args[0].toLowerCase() === 's') args[0] = artists;
-                    if (args[1].toLowerCase() === 's') args[1] = activity.details;
+                    if (args[0].toLowerCase() === 's') args[0] = sp_data[0];
+                    if (args[1].toLowerCase() === 's') args[1] = sp_data[1];
                     spotifyCheck = true;
                 }
             });
@@ -96,14 +57,8 @@ module.exports = {
             return interaction.editReply('Spotify status not detected, please type in the artist/song name manually or fix your status!');
         }
 
-        args[0] = args[0].trim();
-        args[1] = args[1].trim();
-
-        let origArtistNames = args[0];
+        let origArtistNames = args[0].join(' & ');
         let origSongName = args[1];
-        
-        origArtistNames = capitalize(origArtistNames);
-        origSongName = capitalize(origSongName);
         
         if (origSongName.includes('EP') || origSongName.includes('LP') || origSongName.toLowerCase().includes('the remixes')) {
             return interaction.editReply('This isn\'t a single! Use `/getep` to get an EP/LP overview.');

@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require('../db.js');
-const { capitalize } = require('../func.js');
+const { capitalize, parse_spotify } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -13,70 +13,27 @@ module.exports = {
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
         interaction.member.presence.activities.forEach((activity) => {
             if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
-                activity.state = activity.state.trim();
-                activity.details = activity.details.trim();
+                let sp_data = parse_spotify(activity);
                 let url = `https://open.spotify.com/track/${activity.syncId}`;
-                let artists = activity.state;
-                let artistArray = [activity.state];
-                let rmxArtist = false;
                 let yourReview = false;
-                if (artists.includes(';')) {
-                    artists = artists.split('; ');
-                    if (activity.details.includes('feat.') || activity.details.includes('ft.') || activity.details.includes('remix')) {
-                        artists.pop();
-                    }
-                    artistArray = artists;
-                    artists = artists.join(' & ');
-                }
-
-                if (artists.includes(',')) {
-                    artists = artists.split(', ');
-                    for (let i = 0; i < artists.length; i++) {
-                        artists[i] = capitalize(artists[i]);
-                    }
-                    artists = artists.join(' & ');
-                }
-                
-                // Fix some formatting for a couple things
-                if (activity.details.includes('- Extended Mix')) {
-                    activity.details = activity.details.replace('- Extended Mix', `(Extended Mix)`);
-                }
-
-                if (activity.details.includes('Remix') && activity.details.includes('-')) {
-                    let title = activity.details.split(' - ');
-                    rmxArtist = title[1].slice(0, -6);
-                    activity.details = `${title[0]} (${rmxArtist} Remix)`;
-                }
-
-                if (activity.details.includes('VIP') && activity.details.includes('-')) {
-                    let title = activity.details.split(' - ');
-                    activity.details = `${title[0]} VIP`;
-                }
-
-                if (activity.details.includes('(VIP)')) {
-                    let title = activity.details.split(' (V');
-                    activity.details = `${title[0]} VIP`;
-                }
+                let artistArray = sp_data[0];
+                let title = sp_data[1];
+                let displayArtists = sp_data[2];
 
                 const exampleEmbed = new Discord.MessageEmbed()
                 .setColor(`${interaction.member.displayHexColor}`)
-                .setTitle(`${artists} - ${activity.details}`)
+                .setTitle(`${displayArtists} - ${title}`)
                 .setAuthor(`${interaction.member.displayName}'s current song`, `${interaction.user.avatarURL({ format: "png", dynamic: false })}`);
 
                 artistArray[0] = capitalize(artistArray[0]);
 
-                if (rmxArtist != false) {
-                    rmxArtist = capitalize(rmxArtist);
-                    artistArray[0] = rmxArtist;
-                }
-
                 if (db.reviewDB.has(artistArray[0])) {
 
-                    activity.details = capitalize(activity.details);
+                    title = capitalize(title);
 
-                    if (db.reviewDB.get(artistArray[0], `["${activity.details}"]`) != undefined) {
+                    if (db.reviewDB.get(artistArray[0], `["${title}"]`) != undefined) {
 
-                        let userArray = Object.keys(db.reviewDB.get(artistArray[0], `["${activity.details}"]`));
+                        let userArray = Object.keys(db.reviewDB.get(artistArray[0], `["${title}"]`));
             
                         userArray = userArray.filter(e => e !== 'ep');
                         userArray = userArray.filter(e => e !== 'art');
@@ -93,14 +50,14 @@ module.exports = {
                             for (let i = 0; i < userArray.length; i++) {
                                 
                                 if (userArray[i] === `${interaction.user.id}`) {
-                                    yourReview = db.reviewDB.get(artistArray[0], `["${activity.details}"].["${userArray[i]}"].rating`);
+                                    yourReview = db.reviewDB.get(artistArray[0], `["${title}"].["${userArray[i]}"].rating`);
                                     console.log(yourReview);
                                 }
                                 if (userArray[i] != 'ep') {
                                     let rating;
-                                    rating = db.reviewDB.get(artistArray[0], `["${activity.details}"].["${userArray[i]}"].rating`);
+                                    rating = db.reviewDB.get(artistArray[0], `["${title}"].["${userArray[i]}"].rating`);
 
-                                    if (db.reviewDB.get(artistArray[0], `["${activity.details}"].["${userArray[i]}"].starred`) === true) {
+                                    if (db.reviewDB.get(artistArray[0], `["${title}"].["${userArray[i]}"].starred`) === true) {
                                         starNum++;
                                         console.log(userArray[i]);
                                         if (userArray[i] === `${interaction.user.id}`) {
@@ -115,15 +72,15 @@ module.exports = {
 
                         exampleEmbed.setDescription(`Reviews: \`${userArray.length} reviews\`\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}${yourReview != false ? `\nYour Rating: \`${yourReview}/10${yourStar}\`` : ''}\n<:spotify:899365299814559784> [Spotify](${url})`);
 
-                        if (db.reviewDB.get(artistArray[0], `["${activity.details}"].ep`) != undefined && db.reviewDB.get(artistArray[0], `["${activity.details}"].ep`) != false) {
-                            exampleEmbed.setFooter(`from ${db.reviewDB.get(artistArray[0], `["${activity.details}"].ep`)}`, db.reviewDB.get(artistArray[0], `["${db.reviewDB.get(artistArray[0], `["${activity.details}"].ep`)}"].art`));
+                        if (db.reviewDB.get(artistArray[0], `["${title}"].ep`) != undefined && db.reviewDB.get(artistArray[0], `["${title}"].ep`) != false) {
+                            exampleEmbed.setFooter(`from ${db.reviewDB.get(artistArray[0], `["${title}"].ep`)}`, db.reviewDB.get(artistArray[0], `["${db.reviewDB.get(artistArray[0], `["${title}"].ep`)}"].art`));
                         }
                     } else {
                         exampleEmbed.setDescription(`This song has not been reviewed in the database.\n<:spotify:899365299814559784> [Spotify](${url})`);
                     }
 
                 } else {
-                    if (!activity.details.toLowerCase().includes('remix')) {
+                    if (!title.toLowerCase().includes('remix')) {
                         exampleEmbed.setDescription(`This artist has not been reviewed in the database.\n<:spotify:899365299814559784> [Spotify](${url})`);
                     }
                 }

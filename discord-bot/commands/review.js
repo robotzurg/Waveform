@@ -235,11 +235,6 @@ module.exports = {
 
         let songName = args[1];
 
-        // Fix artwork on all reviews for this song
-        if (thumbnailImage != false && db.reviewDB.has(fullArtistArray[0])) {
-            update_art(interaction, fullArtistArray[0], songName, thumbnailImage);
-        }
-        
         // Change our "default avatar review image" to the artists image in the database, if one exists
         if (db.reviewDB.has(fullArtistArray[0]) && thumbnailImage === false) {
             thumbnailImage = db.reviewDB.get(fullArtistArray[0], `["${songName}"].art`);
@@ -564,6 +559,11 @@ module.exports = {
                         // Star reaction stuff for hall of fame
                         if (rating === '10' && starred === true) {
                             hall_of_fame_check(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
+                        }
+
+                        // Fix artwork on all reviews for this song
+                        if (thumbnailImage != false && db.reviewDB.has(fullArtistArray[0])) {
+                            await update_art(interaction, fullArtistArray[0], songName, thumbnailImage);
                         }
                     
                         // End the collector

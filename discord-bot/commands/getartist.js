@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { capitalize, get_args, average } = require('../func.js');
+const { capitalize, get_args, average, parse_spotify } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -16,12 +16,28 @@ module.exports = {
 	execute(interaction) {
 
         let args = [];
+        let spotifyCheck;
         args = get_args(interaction, args);
 
         //Auto-adjustment to caps for each word
         args[0] = capitalize(args[0]);
-
         args[0] = args[0].trim();
+        
+        // Spotify Check
+        if (args[0].toLowerCase() === 's') {
+            interaction.member.presence.activities.forEach((activity) => {
+                if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                    let sp_data = parse_spotify(activity);
+                    
+                    if (args[0].toLowerCase() === 's') args[0] = sp_data[0][0];
+                    spotifyCheck = true;
+                }
+            });
+        }
+
+        if (spotifyCheck === false && (args[0].toLowerCase() === 's')) {
+            return interaction.editReply('Spotify status not detected, please type in the artist name manually or fix your status!');
+        }
 
         const artistObj = db.reviewDB.get(args[0]);
         if (artistObj === undefined) return interaction.editReply('Artist not found.');
@@ -45,7 +61,6 @@ module.exports = {
             }
 
             for (let i = 0; i < songArray.length; i++) {
-                console.log(songArray[i])
                 if (songArray[i].includes('EP') || songArray[i].includes('LP')) continue;
                 starNum = 0;
                 const songObj = db.reviewDB.get(args[0], `["${songArray[i]}"]`);
@@ -87,7 +102,7 @@ module.exports = {
                 if (!songArray[i].includes('Remix') /*&& !songArray[i].includes('EP') && !songArray[i].includes('LP') && !songArray[i].includes('/')*/) {
                     singleArray.push(`-${songArray[i]} ${songDetails}`);
                     singleArray[singleArray.length - 1] = singleArray[singleArray.length - 1].replace('*', '\\*');
-                    console.log(singleArray)
+                    console.log(singleArray);
 
                 } else {
                     remixArray.push(`-${songArray[i]} ${songDetails}`);

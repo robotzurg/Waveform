@@ -47,11 +47,16 @@ module.exports = {
 
     // Updates the art for embed messages, NOT in the database. That's done in the !add review commands themselves.
     update_art: function(interaction, first_artist, song_name, new_image) {
+        console.log('in here');
         const imageSongObj = db.reviewDB.get(first_artist, `["${song_name}"]`);
             if (imageSongObj != undefined) {
                 let msgstoEdit = [];
+                let userIDs = [];
+                let count = -1;
+
 
                 let userArray = Object.keys(imageSongObj);
+                userArray = userArray.filter(e => e !== 'art');
                 userArray = userArray.filter(e => e !== 'remixers');
                 userArray = userArray.filter(e => e !== 'ep');
                 userArray = userArray.filter(e => e !== 'collab');
@@ -63,6 +68,7 @@ module.exports = {
                 if (userArray.length != 0) {
                     userArray.forEach(user => {
                         msgstoEdit.push(db.reviewDB.get(first_artist, `["${song_name}"].["${user}"].msg_id`));
+                        userIDs.push(user);
                     });
 
                     msgstoEdit = msgstoEdit.filter(item => item !== undefined);
@@ -71,25 +77,23 @@ module.exports = {
                     if (msgstoEdit.length > 0) { 
 
                         forAsync(msgstoEdit, async function(item) {
+                            count += 1;
                             return new Promise(function(resolve) {
                                 let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
                                 let msgtoEdit = item;
                                 let msgEmbed;
-                                let embed_data;
 
                                 channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                    embed_data = msg.embeds;
-                                    msgEmbed = embed_data[0];
-                                    msgEmbed.thumbnail.url = new_image;
-                                    msg.edit({ embeds: [msgEmbed] });
+                                    msgEmbed = msg.embeds[0];
+                                    msgEmbed.setThumbnail(new_image);
+                                    msg.edit({ content: ' ', embeds: [msgEmbed] });
                                     resolve();
                                 }).catch(() => {
-                                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
                                     channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                        embed_data = msg.embeds;
-                                        msgEmbed = embed_data[0];
-                                        msgEmbed.thumbnail.url = new_image;
-                                        msg.edit({ embeds: [msgEmbed] });
+                                        msgEmbed = msg.embeds[0];
+                                        msgEmbed.setThumbnail(new_image);
+                                        msg.edit({ content: ' ', embeds: [msgEmbed] });
                                         resolve();
                                     });
                                 });
@@ -296,6 +300,72 @@ module.exports = {
 
     average: function(array) {
         return array.reduce((a, b) => a + b) / array.length;
+    },
+
+    parse_spotify: function(activity) {
+        activity.state = activity.state.trim();
+        activity.details = activity.details.trim();
+        let artists = activity.state;
+        let artistArray = [activity.state];
+        let rmxArtist = false;
+        let title = activity.details;
+        let displayArtists = artistArray;
+
+        if (artists.includes(';')) {
+            artists = artists.split('; ');
+            if (activity.details.includes('feat.') || activity.details.includes('ft.') || activity.details.toLowerCase().includes('remix')) {
+                artists.pop();
+            }
+            artistArray = artists;
+            artists = artists.join(' & ');
+        }
+
+        if (artists.includes(',')) {
+            artists = artists.split(', ');
+            if (activity.details.includes('feat.') || activity.details.includes('ft.') || activity.details.toLowerCase().includes('remix')) {
+                artists.pop();
+            }
+            artistArray = artists;
+            artists = artists.join(' & ');
+        }
+        
+        // Fix some formatting for a couple things
+        if (activity.details.includes('- Extended Mix')) {
+            activity.details = activity.details.replace('- Extended Mix', `(Extended Mix)`);
+        }
+
+        if (activity.details.includes('Remix') && activity.details.includes('-')) {
+            title = activity.details.split(' - ');
+            rmxArtist = title[1].slice(0, -6);
+            activity.details = `${title[0]} (${rmxArtist} Remix)`;
+            displayArtists = artistArray;
+            artistArray = [rmxArtist.split(' & ')];
+            artistArray = artistArray.flat(1);
+        }
+
+        if (activity.details.includes('VIP') && activity.details.includes('-')) {
+            title = activity.details.split(' - ');
+            activity.details = `${title[0]} VIP`;
+        }
+
+        if (activity.details.includes('(VIP)')) {
+            title = activity.details.split(' (V');
+            activity.details = `${title[0]} VIP`;
+        }
+
+        if (activity.details.includes('feat.')) {
+            title = activity.details.split(' (feat. ');
+            activity.details = `${title[0]}`;
+        }
+
+        if (activity.details.includes('ft. ')) {
+            title = activity.details.split(' (ft. ');
+            activity.details = `${title[0]}`;
+        }
+
+        title = activity.details;
+
+        return [artistArray, title, displayArtists];
     },
     
     

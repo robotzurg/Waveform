@@ -1,7 +1,8 @@
 const db = require("../db.js");
 const forAsync = require('for-async');
-const { capitalize } = require("../func.js");
+const { capitalize, parse_spotify } = require("../func.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const Discord = require("discord.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -21,11 +22,6 @@ module.exports = {
             option.setName('art')
                 .setDescription('Art for the song/EP/LP. (put spotify or s here if you want to use your spotify status.)')
                 .setRequired(true))
-            
-        .addStringOption(option => 
-            option.setName('vocalists')
-                .setDescription('Vocalists who feature on the song, if any. (use & to separate multiple)')
-                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('remixers')
@@ -35,7 +31,7 @@ module.exports = {
 	async execute(interaction) {
         let args = [];
         let rmxArtists = [];
-        let featArtists = [];
+        let spotifyCheck = false;
 
         await interaction.options._hoistedOptions.forEach(async (value) => {
             args.push(value.value);
@@ -43,19 +39,28 @@ module.exports = {
                 value.value = capitalize(value.value);
                 rmxArtists.push(value.value.split(' & '));
                 rmxArtists = rmxArtists.flat(1);
-            } else if (value.name === 'vocalists') {
-                value.value = capitalize(value.value);
-                featArtists.push(value.value.split(' & '));
-                featArtists = featArtists.flat(1);
             }
         });
         
 		//Auto-adjustment to caps for each word
-        args[0] = capitalize(args[0]);
-        args[1] = capitalize(args[1]);
+        args[0] = capitalize(args[0].trim());
+        args[1] = capitalize(args[1].trim());
 
-        args[0] = args[0].trim();
-        args[1] = args[1].trim();
+        if (args[0].toLowerCase() === 's' || args[1].toLowerCase() === 's') {
+            interaction.member.presence.activities.forEach((activity) => {
+                if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                    let sp_data = parse_spotify(activity);
+                    
+                    if (args[0].toLowerCase() === 's') args[0] = sp_data[0];
+                    if (args[1].toLowerCase() === 's') args[1] = sp_data[1];
+                    spotifyCheck = true;
+                }
+            });
+        }
+
+        if (spotifyCheck === false && (args[0].toLowerCase() === 's' || args[1].toLowerCase() === 's')) {
+            return interaction.editReply('Spotify status not detected, please type in the artist/song name manually or fix your status!');
+        }
 
         let thumbnailImage = args[2];
         if (thumbnailImage.toLowerCase() === 's' || thumbnailImage.toLowerCase() === 'spotify') {
@@ -66,9 +71,25 @@ module.exports = {
             });
         }
   
-        let artistArray = args[0].split(' & ');
+        let artistArray = args[0];
+        if (!Array.isArray(artistArray)) artistArray = args[0].split(' & ');
         let songName = args[1];
 		let newSong = false;
+
+        // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
+        if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
+            if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
+                artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
+                artistArray = artistArray.flat(1);
+            }
+        }
+
+        if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`) != undefined) {
+            if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`).length != 0) {
+                artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].vocals`));
+                artistArray = artistArray.flat(1);
+            }
+        }
 
         if (rmxArtists.length != 0) {
             artistArray = rmxArtists;
@@ -102,6 +123,7 @@ module.exports = {
             userArray.forEach(user => {
                 msgstoEdit.push(db.reviewDB.get(artistArray[0], `["${songName}"].["${user}"].msg_id`));
                 userIDs.push(user);
+                console.log(userIDs);
             });
 
             msgstoEdit = msgstoEdit.filter(item => item !== undefined);
@@ -160,6 +182,11 @@ module.exports = {
             }
         }
 
-		return interaction.editReply(`Image for ${args[0]} - ${songName} changed.`);
+        let displayEmbed = new Discord.MessageEmbed()
+        .setColor(`${interaction.member.displayHexColor}`)
+        .setDescription(`Art for **${artistArray.join(' & ')} - ${songName}** has been changed to the new art below.`)
+        .setImage(thumbnailImage);
+
+		return interaction.editReply({ embeds: [displayEmbed] });
 	},
 };
