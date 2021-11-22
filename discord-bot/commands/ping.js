@@ -1,5 +1,4 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const Canvas = require('canvas')
 
 module.exports = {
 	data: new SlashCommandBuilder()
