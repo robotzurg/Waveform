@@ -39,6 +39,8 @@ module.exports = {
         let rmxArray = interaction.options.getString('remixers');
         let taggedMember;
         let taggedUser;
+        let oldrating;
+        let oldreview;
 
         if (user_who_sent != null && user_who_sent != undefined) {
             taggedMember = await interaction.guild.members.fetch(user_who_sent);
@@ -46,6 +48,7 @@ module.exports = {
         }
 
         artistArray = artistArray.split(' & ');
+        if (!db.reviewDB.has(artistArray[0])) return interaction.editReply(`Artist ${artistArray[0]} not found!`);
 
         // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
         if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
@@ -73,8 +76,16 @@ module.exports = {
             if (!db.reviewDB.get(artistArray[i], songName) === undefined) return interaction.editReply(`Song ${songName} not found!`);
             if (!db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`Review not found!`);
 
-            if (rating != null && rating != undefined) db.reviewDB.set(artistArray[i], parseFloat(rating), `["${songName}"].["${interaction.user.id}"].rating`);
-            if (review != null && review != undefined) db.reviewDB.set(artistArray[i], review, `["${songName}"].["${interaction.user.id}"].review`);
+            if (rating != null && rating != undefined) {
+                oldrating = db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`);
+                db.reviewDB.set(artistArray[i], parseFloat(rating), `["${songName}"].["${interaction.user.id}"].rating`);
+            } 
+
+            if (review != null && review != undefined) {
+                oldreview = db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].review`);
+                db.reviewDB.set(artistArray[i], review, `["${songName}"].["${interaction.user.id}"].review`);
+            }
+
             if (user_who_sent != null && user_who_sent != undefined) db.reviewDB.set(artistArray[i], user_who_sent.id, `["${songName}"].["${interaction.user.id}"].user_who_sent`);
         }
 
@@ -136,6 +147,8 @@ module.exports = {
             } 
         }
 
-        interaction.editReply(`Edited your review. Go check it out in <#680877758909382757> or your mailbox!`);
+        interaction.editReply(`Here's what was edited on your review of **${artistArray.join(' & ')} - ${songName}**:` +
+        `\n${(oldrating != undefined) ? `\`${oldrating}/10\` changed to \`${rating}/10\`` : ``}` +
+        `\n${(oldreview != undefined) ? `Review was changed to \`${review}\`` : ``}`);
     },
 };

@@ -15,30 +15,21 @@ module.exports = {
                 .setDescription('The name of the EP/LP. (INCLUDE EP OR LP IN THE TITLE!)')
                 .setRequired(true))
         .addStringOption(option => 
-            option.setName('data_type')
-                .setDescription('The type of data to edit/add to the EP/LP review')
-                .setRequired(true)
-                .addChoices([
-					[
-						'overall_rating',
-						'overall_rating',
-					], [
-						'overall_review',
-						'overall_review',
-					],
-				]))
+            option.setName('ep_rating')
+                .setDescription('The new rating of the EP/LP.')
+                .setRequired(false))
         .addStringOption(option => 
-            option.setName('data')
-                .setDescription('The data to insert (a number if rating, text if review)')
-                .setRequired(true)),
-
-
+            option.setName('ep_review')
+                .setDescription('The new written overall review of the EP/LP.')
+                .setRequired(false)),
 	admin: false,
 	async execute(interaction) {
         let artistArray = capitalize(interaction.options.getString('artists')).split(' & ');
         let ep_name = capitalize(interaction.options.getString('ep_name'));
-        let data_type = interaction.options.getString('data_type');
-        let data = interaction.options.getString('data');
+        let ep_rating = interaction.options.getString('ep_rating');
+        let ep_review = interaction.options.getString('ep_review');
+
+        if (ep_rating == null && ep_review == null) return interaction.editReply('You must either edit the ep overall rating, or ep overall review with this command!');
 
         // Quick checks to see if we've got stuff in the database for this
         for (let i = 0; i < artistArray.length; i++) {
@@ -53,18 +44,20 @@ module.exports = {
             console.log(msg);
             let msgEmbed = msg.embeds[0];
 
-            if (data_type === 'overall_rating') {
-                msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${data}/10)`);
+            if (ep_rating != null) {
+                msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${ep_rating}/10)`);
                 for (let i = 0; i < artistArray.length; i++) {
-                    db.reviewDB.set(artistArray[i], parseFloat(data), `["${ep_name}"].["${interaction.user.id}"].rating`);
+                    db.reviewDB.set(artistArray[i], parseFloat(ep_rating), `["${ep_name}"].["${interaction.user.id}"].rating`);
                 }
-            } else if (data_type === 'overall_review') {
-                if (data.includes('\\n')) {
-                    data = data.split('\\n').join('\n');
+            }
+            
+            if (ep_review != null) {
+                if (ep_review.includes('\\n')) {
+                    ep_review = ep_review.split('\\n').join('\n');
                 }
-                msgEmbed.setDescription(`*${data}*`);
+                msgEmbed.setDescription(`*${ep_review}*`);
                 for (let i = 0; i < artistArray.length; i++) {
-                    db.reviewDB.set(artistArray[i], data, `["${ep_name}"].["${interaction.user.id}"].review`);
+                    db.reviewDB.set(artistArray[i], ep_review, `["${ep_name}"].["${interaction.user.id}"].review`);
                 }
             }
 

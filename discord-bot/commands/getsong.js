@@ -36,8 +36,8 @@ module.exports = {
                 rmxArtists = rmxArtists.flat(1);
             }
         });
-;
-        args[0] = capitalize(args[0].trim())
+
+        args[0] = capitalize(args[0].trim());
         args[1] = capitalize(args[1].trim());
 
         if (args[0].toLowerCase() === 's' || args[1].toLowerCase() === 's') {
@@ -57,8 +57,8 @@ module.exports = {
             return interaction.editReply('Spotify status not detected, please type in the artist/song name manually or fix your status!');
         }
 
-        let origArtistNames = args[0]
-        if (Array.isArray(origArtistNames)) origArtistNames = origArtistNames.join(' & ')
+        let origArtistNames = args[0];
+        if (Array.isArray(origArtistNames)) origArtistNames = origArtistNames.join(' & ');
         let origSongName = args[1];
         
         if (origSongName.includes('EP') || origSongName.includes('LP') || origSongName.toLowerCase().includes('the remixes')) {
