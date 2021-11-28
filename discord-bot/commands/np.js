@@ -18,11 +18,12 @@ module.exports = {
                 let yourReview = false;
                 let artistArray = sp_data[0];
                 let title = sp_data[1];
-                let displayArtists = sp_data[2];
+                let displayArtists = sp_data[2][0];
+                
 
                 const exampleEmbed = new Discord.MessageEmbed()
                 .setColor(`${interaction.member.displayHexColor}`)
-                .setTitle(`${displayArtists} - ${title}`)
+                .setTitle(`${displayArtists.split('; ').join(' & ')} - ${title}`)
                 .setAuthor(`${interaction.member.displayName}'s current song`, `${interaction.user.avatarURL({ format: "png", dynamic: false })}`);
 
                 artistArray[0] = capitalize(artistArray[0]);
