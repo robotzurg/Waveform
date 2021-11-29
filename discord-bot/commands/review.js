@@ -443,7 +443,7 @@ module.exports = {
                             ep_name = ep_name.join(' - ');
                             if (ep_name.includes('/10')) {
                                 ep_name = ep_name.replace('/10)', '');
-                                ep_name = ep_name.slice(0, -3).trim();
+                                ep_name = ep_name.slice(0, -4).trim();
                             }
                             if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && thumbnailImage === false) {
                                 thumbnailImage = msgEmbed.thumbnail.url;
