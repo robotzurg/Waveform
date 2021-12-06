@@ -66,7 +66,8 @@ module.exports = {
             return interaction.editReply('Spotify status not detected, please type in the artist/song name manually or fix your status!');
         }
 
-        let origArtistNames = args[0].join(' & ');
+        let origArtistNames = args[0];
+        if (Array.isArray(origArtistNames)) origArtistNames = origArtistNames.join(' & ');
         let songName = args[1];
 
         console.log(origArtistNames);

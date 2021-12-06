@@ -78,6 +78,11 @@ module.exports = {
         let featArtists = [];
         let rmxArtists = [];
         let starred = false;
+        let collector_time = 100000000;
+        let auto_merge = db.user_stats.get(interaction.user.id, 'auto_merge_to_ep');
+        if (auto_merge == true && db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
+            collector_time = 1000;
+        }
 
         // Setup buttons
         const row = new Discord.MessageActionRow()
@@ -277,7 +282,7 @@ module.exports = {
             interaction.editReply({ embeds: [reviewEmbed], components: [row, row2] });
 
             const filter = i => i.user.id === interaction.user.id;
-            const collector = int_channel.createMessageComponentCollector({ filter, time: 10000000 });
+            const collector = int_channel.createMessageComponentCollector({ filter, time: collector_time });
             let a_collector;
             let s_collector;
             let ra_collector;
@@ -443,7 +448,11 @@ module.exports = {
                             ep_name = ep_name.join(' - ');
                             if (ep_name.includes('/10')) {
                                 ep_name = ep_name.replace('/10)', '');
-                                ep_name = ep_name.slice(0, -4).trim();
+                                if (ep_name.includes('.5')) {
+                                    ep_name = ep_name.slice(0, -4).trim();
+                                } else {
+                                    ep_name = ep_name.slice(0, -3).trim();
+                                }
                             }
                             if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && thumbnailImage === false) {
                                 thumbnailImage = msgEmbed.thumbnail.url;
@@ -572,8 +581,118 @@ module.exports = {
                 }
             });
 
-            collector.on('end', async collected => {
-                console.log(`Collected ${collected.size} items`);
+            collector.on('end', async () => {
+                if (auto_merge == true && db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
+                    interaction.deleteReply();
+
+                    let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review')[0];
+                    let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+
+                    let msgEmbed;
+                    let mainArtists;
+                    let ep_name;
+                    let collab;
+                    let field_name;
+
+                    await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                        msgEmbed = msg.embeds[0];
+                        mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
+                        mainArtists = mainArtists.flat(1);
+                        ep_name = msgEmbed.title.split(' - ');
+                        ep_name.shift();
+                        console.log(ep_name);
+                        ep_name = ep_name.join(' - ');
+                        if (ep_name.includes('/10')) {
+                            ep_name = ep_name.replace('/10)', '');
+                            if (ep_name.includes('.5')) {
+                                ep_name = ep_name.slice(0, -4).trim();
+                            } else {
+                                ep_name = ep_name.slice(0, -3).trim();
+                            }
+                        }
+                        if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && thumbnailImage === false) {
+                            thumbnailImage = msgEmbed.thumbnail.url;
+                        }
+                    });
+
+                    // Review the song
+                    await review_song(interaction, fullArtistArray, songName, review, rating, rmxArtists, featArtists, thumbnailImage, taggedUser, ep_name);
+
+                    for (let j = 0; j < artistArray.length; j++) {
+                        db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
+                    }
+
+                    // Update user stats
+                    db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'recent_review');
+
+                    for (let ii = 0; ii < mainArtists.length; ii++) {
+                        // Update EP details
+                        db.reviewDB.push(mainArtists[ii], songName, `["${ep_name}"].songs`);
+                        if (ranking_pos != false) {
+                            db.reviewDB.push(mainArtists[ii], [ranking_pos, `${ranking_pos}. ${songName} (${rating}/10)`], `["${ep_name}"].["${interaction.user.id}"].ranking`);
+                        }
+                    }
+                    
+                    // Edit the EP embed
+                    await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                        collab = artistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
+                        if (starred === true) {
+                            field_name = `🌟 ${fullSongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
+                        } else {
+                            field_name = `${fullSongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
+                        }
+                        msgEmbed.fields.push({
+                            name: field_name,
+                            value: `${review}`,
+                            inline: false,
+                        });
+                        msg.edit({ embeds: [msgEmbed] });
+
+                        // Star reaction stuff for hall of fame
+                        if (rating === '10' && starred === true) {
+                            hall_of_fame_check(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
+                        }
+                    });
+
+                    if (db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`).length != 0) {
+                        await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
+                            let ep_ranking = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`);
+                            if (ep_ranking.length === 0) return rank_msg.delete();
+
+                            ep_ranking = ep_ranking.sort(function(a, b) {
+                                return a[0] - b[0];
+                            });
+                
+                            ep_ranking = ep_ranking.flat(1);
+                
+                            for (let ii = 0; ii <= ep_ranking.length; ii++) {
+                                ep_ranking.splice(ii, 1);
+                            }
+
+                            ep_ranking = `\`\`\`${ep_ranking.join('\n')}\`\`\``;
+                            let rankMsgEmbed = rank_msg.embeds[0];
+                            rankMsgEmbed.fields[0].value = ep_ranking;
+
+                            rank_msg.edit({ embeds: [rankMsgEmbed] });
+                        });
+                    } else {
+                        await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
+                            rank_msg.delete();
+                        }).catch(() => {
+                            console.log('Ranking not found, working as intended.');
+                        });    
+                    }
+
+                    // Set msg_id for this review to false, since its part of the EP review message
+                    for (let ii = 0; ii < fullArtistArray.length; ii++) {
+                        if (rmxArtists.length === 0) {
+                            db.reviewDB.set(fullArtistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`); 
+                        } else if (rmxArtists.includes(fullArtistArray[ii])) {
+                            db.reviewDB.set(fullArtistArray[ii], false, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
+                        }
+                    }
+                }
+
                 if (a_collector != undefined) a_collector.stop();
                 if (s_collector != undefined) s_collector.stop();
                 if (ra_collector != undefined) ra_collector.stop();
