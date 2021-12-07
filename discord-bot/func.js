@@ -126,6 +126,7 @@ module.exports = {
             
             // Used if both the artist and song object exist
             let review_object = {
+                url: false,
                 name: interaction.member.displayName, // For debug purposes
                 msg_id: false,
                 review: review,
@@ -230,8 +231,9 @@ module.exports = {
         }
     },
 
-    hall_of_fame_check: function(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage) {
+    hall_of_fame_check: function(interaction, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage) {
         db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${songName}`, 'star_list');
+
         for (let i = 0; i < fullArtistArray.length; i++) {
             db.reviewDB.set(fullArtistArray[i], true, `["${songName}"].["${interaction.user.id}"].starred`);
         }
@@ -303,8 +305,10 @@ module.exports = {
     },
 
     parse_spotify: function(activity) {
-        activity.state = activity.state.trim();
-        activity.details = activity.details.trim();
+        const { capitalize } = require('./func.js');
+
+        activity.state = capitalize(activity.state.trim());
+        activity.details = capitalize(activity.details.trim());
         let artists = activity.state;
         let artistArray = [activity.state];
         let rmxArtist = false;
@@ -360,6 +364,11 @@ module.exports = {
 
         if (activity.details.includes('ft. ')) {
             title = activity.details.split(' (ft. ');
+            activity.details = `${title[0]}`;
+        }
+
+        if (activity.details.includes('(with ')) {
+            title = activity.details.split(' (with ');
             activity.details = `${title[0]}`;
         }
 

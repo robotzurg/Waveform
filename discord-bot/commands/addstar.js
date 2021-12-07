@@ -61,20 +61,17 @@ module.exports = {
         }
 
         let thumbnailImage;
-        let artistsEmbed = origArtistArray;
-        console.log(origArtistArray);
         let vocalistsEmbed = [];
 
         if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
             if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
-                artistsEmbed = [artistArray[0]];
-                artistsEmbed.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
-                artistsEmbed = artistsEmbed.flat(1);
+                artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
+                artistArray = artistArray.flat(1);
                 if (rmxArtists.length != 0) {
-                    artistsEmbed = artistsEmbed.filter(v => !rmxArtists.includes(v));
+                    artistArray = artistArray.filter(v => !rmxArtists.includes(v));
                 }
 
-                artistsEmbed = artistsEmbed.join(' & ');
+                artistArray = artistArray.flat(1);
             }
         }
 
@@ -86,6 +83,8 @@ module.exports = {
                 vocalistsEmbed = vocalistsEmbed.join(' & ');
             }
         }
+
+        let artistsEmbed = artistArray;
 
         if (db.reviewDB.get(artistArray[0], `["${songName}"].art`) != false) {
             thumbnailImage = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
@@ -105,15 +104,15 @@ module.exports = {
             artistArray[i] = capitalize(artistArray[i]);
 
             if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`${artistArray[i]} not found in database.`);
-            if (db.reviewDB.get(artistArray[i], `["${songName}"]`) === undefined) return interaction.editReply(`${origArtistArray.join(' & ')} - ${songName} not found in database.`);
-            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`You haven't reviewed ${origArtistArray.join(' & ')} - ${songName}.`);
-            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) === true) return interaction.editReply(`You've already starred ${origArtistArray.join(' & ')} - ${songName}!`);
+            if (db.reviewDB.get(artistArray[i], `["${songName}"]`) === undefined) return interaction.editReply(`${artistsEmbed.join(' & ')} - ${songName} not found in database.`);
+            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`You haven't reviewed ${artistsEmbed.join(' & ')} - ${songName}.`);
+            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) === true) return interaction.editReply(`You've already starred ${artistsEmbed.join(' & ')} - ${songName}!`);
 
             db.reviewDB.set(artistArray[i], true, `["${songName}"].["${interaction.user.id}"].starred`);
         }
 
-        db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : '' }`, 'star_list');
-        interaction.editReply(`Star added to ${origArtistArray.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : '' }!`);
+        db.user_stats.push(interaction.user.id, `${artistsEmbed.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : '' }`, 'star_list');
+        interaction.editReply(`Star added to ${artistsEmbed.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : '' }!`);
         
         const songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
 
@@ -145,7 +144,7 @@ module.exports = {
             const hofEmbed = new Discord.MessageEmbed()
             
             .setColor(`#FFFF00`)
-            .setTitle(`${origArtistArray} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : ''}`)
+            .setTitle(`${artistsEmbed.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed})` : ''}`)
             .setDescription(`:star2: **This song currently has ${star_count} stars!** :star2:`)
             .addField('Starred Reviews:', star_array.join('\n'))
             .setImage(thumbnailImage);

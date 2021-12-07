@@ -126,6 +126,7 @@ module.exports = {
             }; 
 
             let reviewObject = {
+                url: false,
                 msg_id: false,
                 name: interaction.member.displayName,
                 rating: overall_rating,
@@ -212,10 +213,12 @@ module.exports = {
         if (!mailboxes.includes(interaction.channel.name)) {
             for (let i = 0; i < artistArray.length; i++) {
                 db.reviewDB.set(artistArray[i], msg.id, `["${ep_name}"].["${interaction.user.id}"].msg_id`);
+                db.reviewDB.set(artistArray[i], msg.url, `["${ep_name}"].["${interaction.user.id}"].url`);
             }
         } else {
             for (let i = 0; i < artistArray.length; i++) {
                 db.reviewDB.set(artistArray[i], false, `["${ep_name}"].["${interaction.user.id}"].msg_id`);
+                db.reviewDB.set(artistArray[i], msg.url, `["${ep_name}"].["${interaction.user.id}"].url`);
             }
         }
 

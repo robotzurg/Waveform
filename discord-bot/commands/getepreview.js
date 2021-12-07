@@ -62,9 +62,8 @@ module.exports = {
         if (ep_object === undefined) return interaction.editReply('EP not found. *(EP Object not found in database.)*');
         const ep_overall_rating = parseInt(db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].rating`));
         const ep_overall_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].review`);
-        console.log(ep_overall_rating);
-        console.log(ep_overall_review);
         let ep_ranking = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].ranking`);
+        let ep_url = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].url`);
         if (ep_ranking === undefined) ep_ranking = []; // This is handling for any odd scenarios where this never gets set
 
         let ep_art = db.reviewDB.get(artistArray[0], `${epName}.art`);
@@ -146,7 +145,11 @@ module.exports = {
             epEmbed.setFooter(`Sent by ${usrSentBy.displayName}`, `${usrSentBy.user.avatarURL({ format: "png" })}`);
         }
         
-        interaction.editReply({ embeds: [epEmbed] });
+        if (ep_url === undefined) {
+            interaction.editReply({ embeds: [epEmbed] });
+        } else {
+            interaction.editReply({ content: `[View EP/LP Review Message](${ep_url})`, embeds: [epEmbed] });
+        }
 
         if (db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"]`) != undefined) {
             if (ep_ranking.length != 0) {

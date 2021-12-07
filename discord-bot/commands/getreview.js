@@ -95,6 +95,7 @@ module.exports = {
         let rscore;
         let rsentby;
         let rstarred;
+        let rurl;
         let usrSentBy;
         let thumbnailImage;
         let artistsEmbed = origArtistNames;
@@ -130,6 +131,7 @@ module.exports = {
         rscore = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].rating`);
         rsentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].sentby`);
         rstarred = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].starred`);
+        rurl = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].url`);
         if (rsentby != false) {
             usrSentBy = await interaction.guild.members.cache.get(rsentby);              
         }
@@ -167,7 +169,7 @@ module.exports = {
             if (rreview != '-') reviewEmbed.addField('Rating: ', `**${rscore}/10**`, true);
 
             if (rsentby != false) {
-                reviewEmbed.setFooter(`Sent by ${usrSentBy.displayName}`, `${usrSentBy.user.avatarURL({ format: "png" })}`);
+                reviewEmbed.setFooter(`Sent by ${usrSentBy.displayName}${rurl != undefined}`, `${usrSentBy.user.avatarURL({ format: "png" })}`);
             } else if (epfrom != undefined && epfrom != false) {
                 if (db.reviewDB.get(artistArray[0], `["${epfrom}"].Image`) != false && db.reviewDB.get(artistArray[0], `["${epfrom}"].Image`) != undefined) {
                     reviewEmbed.setFooter(`from ${epfrom}`, db.reviewDB.get(artistArray[0], `["${epfrom}"].Image`));
@@ -176,6 +178,10 @@ module.exports = {
                 }
             }
             
-            interaction.editReply({ embeds: [reviewEmbed] });
+            if (rurl === undefined) {
+                interaction.editReply({ embeds: [reviewEmbed] });
+            } else {
+                interaction.editReply({ content: `[View Review Message](${rurl})`, embeds: [reviewEmbed] });
+            }
 	},
 };

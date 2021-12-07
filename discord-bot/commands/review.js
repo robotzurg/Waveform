@@ -483,7 +483,7 @@ module.exports = {
 
                             // Star reaction stuff for hall of fame
                             if (rating === '10' && starred === true) {
-                                hall_of_fame_check(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
+                                hall_of_fame_check(interaction, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
                             }
                         });
 
@@ -555,19 +555,20 @@ module.exports = {
                         
                         const msg = await interaction.fetchReply();
 
-                        // Setting the message id for the message we just sent (and check for mailbox, if so put as FALSE so we don't have to look for a non-existant message)
+                        // Setting the message id and url for the message we just sent (and check for mailbox, if so put as FALSE so we don't have to look for a non-existant message)
                         for (let ii = 0; ii < fullArtistArray.length; ii++) {
                             if (rmxArtists.length === 0) {
                                 db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
-                                console.log(db.reviewDB.get(fullArtistArray[ii], `["${songName}"].["${interaction.user.id}"].msg_id`));
+                                db.reviewDB.set(fullArtistArray[ii], msg.url, `["${songName}"].["${interaction.user.id}"].url`); 
                             } else if (rmxArtists.includes(fullArtistArray[ii])) {
-                                db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
+                                db.reviewDB.set(fullArtistArray[ii], msg.url, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].url`); 
                             }
                         }
 
                         // Star reaction stuff for hall of fame
-                        if (rating === '10' && starred === true) {
-                            hall_of_fame_check(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
+                        console.log(rating);
+                        if (rating === 10 && starred === true) {
+                            hall_of_fame_check(interaction, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
                         }
 
                         // Fix artwork on all reviews for this song
@@ -650,7 +651,7 @@ module.exports = {
 
                         // Star reaction stuff for hall of fame
                         if (rating === '10' && starred === true) {
-                            hall_of_fame_check(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
+                            hall_of_fame_check(interaction, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
                         }
                     });
 
@@ -708,19 +709,20 @@ module.exports = {
             db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${fullSongName}`, 'recent_review');
 
             await int_channel.send({ embeds: [reviewEmbed] }).then(msg => {
-                // Setting the message id for the message we just sent (and check for mailbox, if so put as FALSE so we don't have to look for a non-existant message)
+                // Setting the message id and url for the message we just sent (and check for mailbox, if so put as FALSE so we don't have to look for a non-existant message)
                 for (let ii = 0; ii < fullArtistArray.length; ii++) {
                     if (rmxArtists.length === 0) {
                         db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
-                        console.log(db.reviewDB.get(fullArtistArray[ii], `["${songName}"].["${interaction.user.id}"].msg_id`));
+                        db.reviewDB.set(fullArtistArray[ii], msg.url, `["${songName}"].["${interaction.user.id}"].url`); 
                     } else if (rmxArtists.includes(fullArtistArray[ii])) {
                         db.reviewDB.set(fullArtistArray[ii], msg.id, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].msg_id`); 
+                        db.reviewDB.set(fullArtistArray[ii], msg.url, `["${songName} (${rmxArtists.join(' & ')} Remix)"].["${interaction.user.id}"].url`); 
                     }
                 }
 
                 // Star reaction stuff for hall of fame
                 if (sp_star === true) {
-                    hall_of_fame_check(interaction, msg, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
+                    hall_of_fame_check(interaction, args, fullArtistArray, artistArray, rmxArtists, songName, thumbnailImage);
                 }
             });
         }

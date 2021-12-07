@@ -28,7 +28,6 @@
     "eslint": "^7.15.0",
     "express": "^4.17.1",
     "for-async": "^1.0.1",
-    "n": "^7.5.0",
     "node-cron": "^2.0.3",
     "node-gyp": "^7.1.2",
     "node.js": "^0.0.1-security",
@@ -40,6 +39,7 @@
     "spotify-url-info": "^2.2.3",
     "spotify-web-api-node": "^5.0.2",
     "sqlite3": "^5.0.0",
+    "timestamp-conv": "^2.2.0",
     "trello": "^0.10.0",
     "trello-node-api": "0.0.9",
     "uniq": "^1.0.1"

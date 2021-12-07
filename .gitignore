@@ -76,3 +76,4 @@ typings/
 .fusebox/
 discord-bot/config.json
 discord-bot/package-lock.json
+discord-bot/package.json
