@@ -1,5 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { capitalize } = require("../func.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -71,7 +72,10 @@ module.exports = {
             songName = `${songName} (${rmxArray.join(' & ')} Remix)`;
         }
 
+        songName = capitalize(songName);
+
         for (let i = 0; i < artistArray.length; i++) {
+            artistArray[i] = capitalize(artistArray[i]);
             if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`Artist ${artistArray[i]} not found!`);
             if (!db.reviewDB.get(artistArray[i], songName) === undefined) return interaction.editReply(`Song ${songName} not found!`);
             if (!db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`Review not found!`);
@@ -90,6 +94,7 @@ module.exports = {
         }
 
         let reviewMsgID = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].msg_id`);
+
 
         if (reviewMsgID != false) {
             let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
