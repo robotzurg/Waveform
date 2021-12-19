@@ -68,6 +68,7 @@ module.exports = {
                 }
 
                 artistArray = artistArray.flat(1);
+                artistArray = [...new Set(artistArray)];
             }
         }
 
@@ -92,20 +93,18 @@ module.exports = {
             artistArray = artistArray.flat(1);
         }
 
-        origArtistArray = args[0].split(' & ');
-
         for (let i = 0; i < artistArray.length; i++) {
             artistArray[i] = capitalize(artistArray[i]);
 
             if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`${artistArray[i]} not found in database.`);
             if (db.reviewDB.get(artistArray[i], `["${songName}"]`) === undefined) return interaction.editReply(`${artistsEmbed.join(' & ')} - ${songName} not found in database.`);
             if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`You haven't reviewed ${artistsEmbed.join(' & ')} - ${songName}.`);
+            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`) < 8) return interaction.editReply(`You haven't rated ${artistsEmbed.join(' & ')} - ${songName} an 8/10 or higher!`);
             if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) === false) return interaction.editReply(`You haven't starred ${artistsEmbed.join(' & ')} - ${songName}!`);
+
 
             db.reviewDB.set(artistArray[i], false, `["${songName}"].["${interaction.user.id}"].starred`);
         }
-
-        console.log(vocalistsEmbed);
 
         db.user_stats.remove(interaction.user.id, `${artistsEmbed.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : '' }`, 'star_list');
         interaction.editReply(`Unstarred ${artistsEmbed.join(' & ')} - ${songName}${vocalistsEmbed.length != 0 ? ` (ft. ${vocalistsEmbed.join(' & ')})` : '' }.`);

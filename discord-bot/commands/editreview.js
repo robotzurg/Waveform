@@ -56,6 +56,7 @@ module.exports = {
             if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
                 artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
                 artistArray = artistArray.flat(1);
+                artistArray = [...new Set(artistArray)];
             }
         }
 
@@ -63,6 +64,7 @@ module.exports = {
             if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`).length != 0) {
                 artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].vocals`));
                 artistArray = artistArray.flat(1);
+                artistArray = [...new Set(artistArray)];
             }
         }
 
@@ -81,6 +83,9 @@ module.exports = {
             if (!db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`Review not found!`);
 
             if (rating != null && rating != undefined) {
+                if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`) < 8 && db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) == true) {
+                    return interaction.editReply(`This review has a star on it, so you cannot change the rating to anything under 8.\nRemove the star with \`/unstar\` if you'd like to lower the rating!`);
+                } 
                 oldrating = db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`);
                 db.reviewDB.set(artistArray[i], parseFloat(rating), `["${songName}"].["${interaction.user.id}"].rating`);
             } 

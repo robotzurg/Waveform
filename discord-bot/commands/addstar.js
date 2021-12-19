@@ -72,6 +72,7 @@ module.exports = {
                 }
 
                 artistArray = artistArray.flat(1);
+                artistArray = [...new Set(artistArray)];
             }
         }
 
@@ -92,20 +93,19 @@ module.exports = {
             thumbnailImage = interaction.user.avatarURL({ format: "png" });
         }
 
-        if (vocalistsEmbed.length != 0) {
+        if (vocalistsEmbed.length != 0 && rmxArtists.length == 0) {
             artistArray.push(vocalistsEmbed);
             artistArray = artistArray.flat(1);
         }
 
-        // I have no freaking idea why I have to do this here, but I do
-        origArtistArray = args[0].split(' & ');
-
         for (let i = 0; i < artistArray.length; i++) {
             artistArray[i] = capitalize(artistArray[i]);
 
+            console.log(db.reviewDB.get(artistArray[i], `["${songName}"]`));
             if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`${artistArray[i]} not found in database.`);
             if (db.reviewDB.get(artistArray[i], `["${songName}"]`) === undefined) return interaction.editReply(`${artistsEmbed.join(' & ')} - ${songName} not found in database.`);
             if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`You haven't reviewed ${artistsEmbed.join(' & ')} - ${songName}.`);
+            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`) < 8) return interaction.editReply(`You haven't rated ${artistsEmbed.join(' & ')} - ${songName} an 8/10 or higher!`);
             if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) === true) return interaction.editReply(`You've already starred ${artistsEmbed.join(' & ')} - ${songName}!`);
 
             db.reviewDB.set(artistArray[i], true, `["${songName}"].["${interaction.user.id}"].starred`);

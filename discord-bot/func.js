@@ -3,31 +3,8 @@ const db = require("./db.js");
 const forAsync = require('for-async');
 
 module.exports = {
-    test: function() {
-        console.log('Test');
-    },
-
-    // The main reason this function exists is to provide a easier in-code solution for error handling Unknown interaction errors.
-    msg_delete_timeout: function(msg, dur, content = false) {
-        if (content === false) {
-            msg.delete({ timeout: dur }).catch(error => {
-                if (error.code !== Discord.Constants.APIErrors.UNKNOWN_MESSAGE) {
-                    console.error('Failed to delete the interaction:', error);
-                }
-            });
-        } else {
-            msg.channel.send(content).then(m => {
-                m.delete({ timeout: dur }).catch(error => {
-                    if (error.code !== Discord.Constants.APIErrors.UNKNOWN_MESSAGE) {
-                        console.error('Failed to delete the interaction:', error);
-                    }
-                });
-            });
-        }
-    },
 
     arrayRemove: function(arr, value) { 
-    
         return arr.filter(function(ele) { 
             return ele != value; 
         });
@@ -44,6 +21,100 @@ module.exports = {
 
         return string;
     },
+
+    get_user_reviews: function(songObj) {
+        let userArray = Object.keys(songObj);
+        userArray = userArray.filter(e => e !== 'ep');
+        userArray = userArray.filter(e => e !== 'art');
+        userArray = userArray.filter(e => e !== 'remixers');
+        userArray = userArray.filter(e => e !== 'collab');
+        userArray = userArray.filter(e => e !== 'vocals');
+        userArray = userArray.filter(e => e !== 'hof_id');
+        userArray = userArray.filter(e => e !== 'review_num');
+        return userArray;
+    },
+
+    parse_artist_song_data: function(interaction) {
+        const { capitalize } = require('./func.js');
+
+        let spotifyCheck = false;
+        let artistArg = capitalize(interaction.options.getString('artists'));
+        let songArg = capitalize(interaction.options.getString('song'));
+        let rmxArtistArray = [];
+        if (interaction.options.getString('remixers') != null) {
+            rmxArtistArray = [capitalize(interaction.options.getString('remixers')).split(' & ')];
+            rmxArtistArray = rmxArtistArray.flat(1);
+        }
+        let vocalistArray = [];
+
+        if (artistArg.toLowerCase() == 's' || songArg.toLowerCase() == 's') {
+            interaction.member.presence.activities.forEach((activity) => {
+                if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                    
+                    let sp_data = parse_spotify(activity);
+                    
+                    if (artistArg.toLowerCase() === 's') artistArg = sp_data[0];
+                    if (artistArg.toLowerCase() === 's') songArg = sp_data[1];
+                    spotifyCheck = true;
+                }
+            });
+        }
+
+        if (spotifyCheck === false && (artistArg.toLowerCase() === 's' || songArg.toLowerCase() === 's')) {
+            return interaction.editReply('Spotify status not detected, please type in the artist/song name manually or fix your status!');
+        }
+
+        let artistArray = [artistArg.split(' & ')];
+        artistArray = artistArray.flat(1);
+        let songName = songArg
+
+        // Handle remixes
+        if (rmxArtistArray.length != 0) {
+            songName = `${songArg} (${rmxArtistArray.join(' & ')} Remix)`;
+        }
+
+        // Check if all the artists exist
+        for (let i = 0; i < artistArray.length; i++) {
+            if (!db.reviewDB.has(artistArray[i])) {
+                return interaction.editReply(`The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.`);
+            }
+        }
+
+        for (let i = 0; i < rmxArtistArray.length; i++) {
+            if (!db.reviewDB.has(rmxArtistArray[i])) {
+                return interaction.editReply(`The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.`);
+            }
+        }
+
+        //Adjust (VIP) to VIP
+        if (songName.includes('(VIP)')) {
+            songName = songName.split(' (');
+            songName = `${songName[0]} ${songName[1].slice(0, -1)}`;
+        }
+
+        if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
+            if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
+                artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
+                artistArray = artistArray.flat(1);
+            }
+        }
+
+        if (db.reviewDB.get(rmxArtistArray[0], `["${songName}"].rmx_collab`) != undefined) {
+            if (db.reviewDB.get(rmxArtistArray[0], `["${songName}"].rmx_collab`).length != 0) {
+                rmxArtistArray.push(db.reviewDB.get(rmxArtistArray[0], `["${songName}"].rmx_collab`));
+                rmxArtistArray = rmxArtistArray.flat(1);
+            }
+        }
+
+        if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`) != undefined) {
+            if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`).length != 0) {
+                vocalistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].vocals`));
+                vocalistArray = vocalistArray.flat(1);
+            }
+        }
+
+        return artistArg, songArg, artistArray, songName, rmxArtistArray, vocalistArray 
+    }
 
     // Updates the art for embed messages, NOT in the database. That's done in the !add review commands themselves.
     update_art: function(interaction, first_artist, song_name, new_image) {
