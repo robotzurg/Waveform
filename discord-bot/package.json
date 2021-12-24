@@ -42,7 +42,8 @@
     "timestamp-conv": "^2.2.0",
     "trello": "^0.10.0",
     "trello-node-api": "0.0.9",
-    "uniq": "^1.0.1"
+    "uniq": "^1.0.1",
+    "wait": "^0.4.2"
   },
   "devDependencies": {
     "babel-eslint": "^10.1.0"

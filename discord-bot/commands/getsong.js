@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { average, get_user_reviews, parse_artist_song_data } = require('../func.js');
+const { average, get_user_reviews, parse_artist_song_data, sort } = require('../func.js');
 const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
@@ -9,7 +9,7 @@ module.exports = {
         .setName('getsong')
         .setDescription('Get all the data about a song and displays it in an embed message.')
         .addStringOption(option => 
-            option.setName('artist')
+            option.setName('artists')
                 .setDescription('The name of the artist(s).')
                 .setRequired(true))
 
@@ -27,12 +27,13 @@ module.exports = {
         
         let parsed_args = parse_artist_song_data(interaction);
 
-        let artistArg = parsed_args[0];
-        let songArg = parsed_args[1];
+        let origArtistArray = parsed_args[0];
         let artistArray = parsed_args[2];
         let songName = parsed_args[3];
         let rmxArtistArray = parsed_args[4];
         let vocalistArray = parsed_args[5];
+
+        if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
 
         let songObj;
         let songEP = false;
@@ -41,7 +42,8 @@ module.exports = {
         let starCount = 0;
 
         songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
-        if (songObj === undefined) return interaction.editReply(`The requested song \`${artistArg} - ${songName}\` does not exist.\nUse \`/getArtist\` to get a full list of this artist's songs.`);
+        if (songObj === undefined) { return interaction.editReply(`The requested song \`${origArtistArray} - ${songName}\` does not exist.` + 
+        `\nUse \`/getArtist\` to get a full list of this artist's songs.`); }
         songEP = songObj.ep;
         remixArray = songObj.remixers;
 
@@ -53,16 +55,17 @@ module.exports = {
         if (songEP === undefined || songEP === false) songEP = false;
         
         let userArray = get_user_reviews(songObj);
-        let userIDList = userArray;
+        let userIDList = userArray.slice(0); //.slice(0) is there to create a COPY, not a REFERENCE.
+        const song_art = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
 
         const rankNumArray = [];
         const songEmbed = new Discord.MessageEmbed()
             .setColor(`${interaction.member.displayHexColor}`);
 
             if (vocalistArray.length != 0) {
-                songEmbed.setTitle(`${artistArg} - ${songName} (ft. ${vocalistArray.join(' & ')})`);
+                songEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName} (ft. ${vocalistArray.join(' & ')})`);
             } else {
-                songEmbed.setTitle(`${artistArg} - ${songName}`);
+                songEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName}`);
             }
 
             for (let i = 0; i < userArray.length; i++) {
@@ -87,64 +90,31 @@ module.exports = {
             }
             
             if (rankNumArray.length != 0) {
-                if (starCount != 0) {
-                    songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***\n:star2: **This song has ${starCount} star${starCount === 1 ? '' : 's'}!** :star2:`);
-                } else {
-                    songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***`);
-                }
+                songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` + 
+                `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} star${starCount === 1 ? '' : 's'}!** :star2:`)}`);
             } else {
                 songEmbed.setDescription(`*The average rating of this song is N/A*`);
             }
 
             if (userArray != 0) { // Sort it by highest to lowest rating
-
-                userArray = userArray.sort(function(a, b) {
-                    return b[0] - a[0];
-                });
-
-                userIDList = userIDList.sort(function(a, b) {
-                    return b[0] - a[0];
-                });
-    
-                userArray = userArray.flat(1);
-                userIDList = userIDList.flat(1);
-    
-                for (let i = 0; i <= userArray.length; i++) {
-                    userArray.splice(i, 1);
-                }
-
-                for (let i = 0; i <= userIDList.length; i++) {
-                    userIDList.splice(i, 1);
-                }
-
-                let songText;
-                for (let i = 0; i < userArray.length; i++) {
-                    songText = userArray[i].split(' ');
-                    songText[0] = numReacts[i + 1];
-                    userArray[i] = songText.join(' ');
-                }
                 
-            
+                userArray = sort(userArray);
+                userIDList = sort(userIDList);
+                
                 songEmbed.addField('Reviews:', userArray.join('\n'));
             } else {
                 songEmbed.addField('Reviews:', 'No reviews :(');
             }
 
-            if (remixes.length != 0) {
-                songEmbed.addField('Remixes:', remixes.join('\n'));
-            } 
+            if (remixes.length != 0) songEmbed.addField('Remixes:', remixes.join('\n'));
 
-            if ((db.reviewDB.get(artistArray[0], `["${songName}"].art`)) === false) {
+            if (song_art == false) {
                 songEmbed.setThumbnail(interaction.user.avatarURL({ format: "png" }));
-                if (songEP != false) {
-                    songEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
-                }
             } else {
-                songEmbed.setThumbnail(db.reviewDB.get(artistArray[0], `["${songName}"].art`));
-                if (songEP != false) {
-                    songEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
-                }
+                songEmbed.setThumbnail(song_art);
             }
+
+            if (songEP != false) songEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
 
         // Button/Select Menu setup
         let select_options = [];
@@ -168,13 +138,11 @@ module.exports = {
             }
         }
 
-
         select_options.push({
             label: `Back`,
             description: `Go back to the main song data menu.`,
             value: `back`,
         });
-
 
         const row = new Discord.MessageActionRow()
             .addComponents(
@@ -185,9 +153,9 @@ module.exports = {
             );
 
         interaction.editReply({ embeds: [songEmbed], components: [row] });
+        let message = await interaction.fetchReply();
        
-        // const filter = i => i.user.id === interaction.user.id;
-		const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });
+		const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 60000 });
 
 		collector.on('collect', async i => {
 			if (i.customId === 'select') { // Select Menu
@@ -198,41 +166,46 @@ module.exports = {
                 
                 const taggedMember = await interaction.guild.members.fetch(i.values[0]);
                 const taggedUser = taggedMember.user;
+                const starred = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].starred`);
+                const review = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].review`);
+                const rating = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].rating`);
+                let sentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].sentby`);
+                const url = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].url`);
+                if (sentby != false) {
+                    sentby = await interaction.guild.members.cache.get(sentby);              
+                }
 
                 const reviewEmbed = new Discord.MessageEmbed()
                 .setColor(`${taggedMember.displayHexColor}`);
     
-                if (vocalistArray.length != 0) {
-                    if (db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].starred`) === false) {
-                        reviewEmbed.setTitle(`${artistArray.join(' & ')} - ${songName} (ft. ${vocalistArray})`);
-                    } else {
-                        reviewEmbed.setTitle(`:star2: ${artistArray.join(' & ')} - ${songName} (ft. ${vocalistArray}) :star2:`);
-                    }
+                if (starred === false) {
+                    reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray})` : ``}`);
                 } else {
-                    if (db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].starred`) === false) {
-                        reviewEmbed.setTitle(`${artistArray.join(' & ')} - ${songName}`);
-                    } else {
-                        reviewEmbed.setTitle(`:star2: ${artistArray.join(' & ')} - ${songName} :star2:`);
-                    }
+                    reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray})` : ``} :star2:`);
                 }
     
                 reviewEmbed.setAuthor(`${taggedMember.displayName}'s review`, `${taggedUser.avatarURL({ format: "png" })}`);
     
-                if (db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].review`) != '-') {
-                    reviewEmbed.setDescription(db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].review`));
+                if (review != '-') {
+                    reviewEmbed.setDescription(`${review}`);
                 } else {
-                    reviewEmbed.setDescription(`Rating: **${db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].rating`)}/10**`);
+                    reviewEmbed.setDescription(`Rating: **${rating}/10**`);
                 }
     
-                if ((db.reviewDB.get(artistArray[0], `["${songName}"].art`)) === false) {
-                    reviewEmbed.setThumbnail(interaction.user.avatarURL({ format: "png" }));
-                } else {
-                    reviewEmbed.setThumbnail(db.reviewDB.get(artistArray[0], `["${songName}"].art`));
+                reviewEmbed.setThumbnail((song_art == false) ? interaction.user.avatarURL({ format: "png" }) : song_art);
+                if (review != '-') reviewEmbed.addField('Rating: ', `**${rating}/10**`, true);
+
+                if (sentby != false) {
+                    reviewEmbed.setFooter(`Sent by ${sentby.displayName}${url != undefined}`, `${sentby.user.avatarURL({ format: "png" })}`);
+                } else if (songEP != undefined && songEP != false) {
+                    reviewEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
                 }
-    
-                if (db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].review`) != '-') reviewEmbed.addField('Rating: ', `**${db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].rating`)}/10**`, true);
-    
-                await i.update({ embeds: [reviewEmbed], components: [row] });
+                
+                if (url === undefined) {
+                    await i.update({ embeds: [reviewEmbed], components: [row] });
+                } else {
+                    await i.update({ content: `[View Review Message](${url})`, embeds: [reviewEmbed], components: [row] });
+                }
 
 			} 
 		});

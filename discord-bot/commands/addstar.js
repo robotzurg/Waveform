@@ -8,7 +8,7 @@ module.exports = {
 		.setName('addstar')
 		.setDescription('Add a star to a song!')
         .addStringOption(option => 
-            option.setName('artist')
+            option.setName('artists')
                 .setDescription('The name of the artist(s).')
                 .setRequired(true))
 

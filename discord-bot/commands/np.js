@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require('../db.js');
-const { capitalize, parse_spotify } = require('../func.js');
+const { capitalize, parse_spotify, get_user_reviews } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -31,19 +31,12 @@ module.exports = {
                 if (db.reviewDB.has(artistArray[0])) {
 
                     title = capitalize(title);
+                    let songObj = db.reviewDB.get(artistArray[0], `["${title}"]`);
 
-                    if (db.reviewDB.get(artistArray[0], `["${title}"]`) != undefined) {
+                    if (songObj != undefined) {
 
-                        let userArray = Object.keys(db.reviewDB.get(artistArray[0], `["${title}"]`));
-            
-                        userArray = userArray.filter(e => e !== 'ep');
-                        userArray = userArray.filter(e => e !== 'art');
-                        userArray = userArray.filter(e => e !== 'remixers');
-                        userArray = userArray.filter(e => e !== 'collab');
-                        userArray = userArray.filter(e => e !== 'vocals');
-                        userArray = userArray.filter(e => e !== 'hof_id');
-                        userArray = userArray.filter(e => e !== 'review_num');
-                        
+                        let userArray = get_user_reviews(songObj);
+
                         const rankNumArray = [];
                         let starNum = 0;
                         let yourStar = '';
