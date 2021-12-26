@@ -24,13 +24,27 @@ module.exports = {
         return string;
     },
 
-    sort: function(array) {
+    removeItemOnce: function(arr, value) {
+        let index = arr.indexOf(value);
+        if (index > -1) {
+          arr.splice(index, 1);
+        }
+        return arr;
+    },
+
+    sort: function(array, lowest_to_highest = false) {
         // This function sorts an array from highest to lowest based on this format:
         // [ [ num, whatever else ], [ num, whatever else] ]
 
-        array = array.sort(function(a, b) {
-            return b[0] - a[0];
-        });
+        if (lowest_to_highest == false) {
+            array = array.sort(function(a, b) {
+                return b[0] - a[0];
+            });
+        } else {
+            array = array.sort(function(a, b) {
+                return a[0] - b[0];
+            });
+        }
 
         array = array.flat(1);
 
@@ -363,10 +377,6 @@ module.exports = {
 
         db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${songName}`, 'star_list');
 
-        for (let i = 0; i < artistArray.length; i++) {
-            db.reviewDB.set(artistArray[i], true, `["${songName}"].["${interaction.user.id}"].starred`);
-        }
-
         const songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
 
         let star_array = [];
@@ -376,14 +386,13 @@ module.exports = {
         for (let i = 0; i < userArray.length; i++) {
             let star_check;
             star_check = db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].starred`);
+            console.log(`Hall of Fame Check ${star_check}`);
 
             if (star_check === true) {
                 star_count++;
                 star_array.push(`:star2: <@${userArray[i]}>`);
             }
         }
-
-        console.log(star_count);
 
         // Add to the hall of fame channel!
         if (star_count >= db.server_settings.get(interaction.guild.id, 'star_cutoff')) {

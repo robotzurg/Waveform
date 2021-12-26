@@ -41,6 +41,7 @@ module.exports = {
         }
 
         let star_check = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].starred`);
+        console.log(db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"]`));
 
         if (db.reviewDB.get(artistArray[0], `["${songName}"].art`) != false) {
             songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
@@ -55,7 +56,15 @@ module.exports = {
             if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`You haven't reviewed ${origArtistArray.join(' & ')} - ${songName}.`);
             if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`) < 8) return interaction.editReply(`You haven't rated ${origArtistArray.join(' & ')} - ${songName} an 8/10 or higher!`);
 
-            db.reviewDB.set(artistArray[i], (star_check == false) ? true : false, `["${songName}"].["${interaction.user.id}"].starred`);
+            if (star_check == true) {
+                await db.reviewDB.set(artistArray[i], false, `["${songName}"].["${interaction.user.id}"].starred`);
+                console.log(db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`));
+            } else if (star_check == false) {
+                db.reviewDB.set(artistArray[i], true, `["${songName}"].["${interaction.user.id}"].starred`);
+                console.log('Test');
+            } else {
+                return interaction.editReply('Error in the starring process, please tell Jeff');
+            }
         }
 
         if (star_check == false) {
@@ -72,11 +81,15 @@ module.exports = {
         let displaySongName = (`${origSongName}` + 
         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
         `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
+   
+        await hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt, true);
 
-        hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt, true);
-
-        let msgtoEdit = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].msg_id`);
-        console.log(msgtoEdit);
+        let msgtoEdit;
+        if (!songName.includes('EP')) {
+            msgtoEdit = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].msg_id`);
+        } else {
+            msgtoEdit = false;
+        }
 
         if (msgtoEdit != false && msgtoEdit != undefined) {
             let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));

@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { capitalize, update_art, review_song, hall_of_fame_check } = require('../func.js');
+const { capitalize, update_art, review_song, hall_of_fame_check, sort } = require('../func.js');
 const { mailboxes } = require('../arrays.json');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('util').promisify(setTimeout);
@@ -465,6 +465,27 @@ module.exports = {
                             if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt === false) {
                                 songArt = msgEmbed.thumbnail.url;
                             }
+                        }).catch(() => {
+                            channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                            channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                                msgEmbed = msg.embeds[0];
+                                mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
+                                mainArtists = mainArtists.flat(1);
+                                ep_name = msgEmbed.title.split(' - ');
+                                ep_name.shift();
+                                ep_name = ep_name.join(' - ');
+                                if (ep_name.includes('/10')) {
+                                    ep_name = ep_name.replace('/10)', '');
+                                    if (ep_name.includes('.5')) {
+                                        ep_name = ep_name.slice(0, -4).trim();
+                                    } else {
+                                        ep_name = ep_name.slice(0, -3).trim();
+                                    }
+                                }
+                                if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt === false) {
+                                    songArt = msgEmbed.thumbnail.url;
+                                }
+                            });
                         });
 
                         // Review the song
@@ -491,8 +512,37 @@ module.exports = {
 
                             // Star reaction stuff for hall of fame
                             if (rating >= 8 && starred === true) {
+                                for (let x = 0; x < artistArray.length; x++) {
+                                    db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
+                                }
+
                                 hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                             }
+                        }).catch(() => {
+                            channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                            channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                                collab = artistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
+                                if (starred === true) {
+                                    field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
+                                } else {
+                                    field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
+                                }
+                                msgEmbed.fields.push({
+                                    name: field_name,
+                                    value: `${review}`,
+                                    inline: false,
+                                });
+                                msg.edit({ embeds: [msgEmbed] });
+
+                                // Star reaction stuff for hall of fame
+                                if (rating >= 8 && starred === true) {
+                                    for (let x = 0; x < artistArray.length; x++) {
+                                        db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
+                                    }
+
+                                    hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
+                                }
+                            });
                         });
 
                         // Update user stats
@@ -511,27 +561,36 @@ module.exports = {
                                     let ep_ranking = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`);
                                     if (ep_ranking.length === 0) return rank_msg.delete();
 
-                                    ep_ranking = ep_ranking.sort(function(a, b) {
-                                        return a[0] - b[0];
-                                    });
-                        
-                                    ep_ranking = ep_ranking.flat(1);
-                        
-                                    for (let ii = 0; ii <= ep_ranking.length; ii++) {
-                                        ep_ranking.splice(ii, 1);
-                                    }
+                                    ep_ranking = sort(ep_ranking, true);
 
                                     ep_ranking = `\`\`\`${ep_ranking.join('\n')}\`\`\``;
                                     let rankMsgEmbed = rank_msg.embeds[0];
                                     rankMsgEmbed.fields[0].value = ep_ranking;
 
                                     rank_msg.edit({ embeds: [rankMsgEmbed] });
+                                }).catch(async () => {
+                                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                                    await channelsearch.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
+                                        let ep_ranking = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`);
+                                        if (ep_ranking.length === 0) return rank_msg.delete();
+
+                                        ep_ranking = sort(ep_ranking, true);
+
+                                        ep_ranking = `\`\`\`${ep_ranking.join('\n')}\`\`\``;
+                                        let rankMsgEmbed = rank_msg.embeds[0];
+                                        rankMsgEmbed.fields[0].value = ep_ranking;
+
+                                        rank_msg.edit({ embeds: [rankMsgEmbed] });
+                                    });
                                 });
                         } else {
                             await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
                                 rank_msg.delete();
-                            }).catch(() => {
-                                console.log('Ranking not found, working as intended.');
+                            }).catch(async () => {
+                                channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                                await channelsearch.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
+                                    rank_msg.delete();
+                                });
                             });    
                         }
 
@@ -567,6 +626,10 @@ module.exports = {
 
                         // Star reaction stuff for hall of fame
                         if (rating >= 8 && starred === true) {
+                            for (let x = 0; x < artistArray.length; x++) {
+                                db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
+                            }
+
                             hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                         }
 
@@ -605,6 +668,10 @@ module.exports = {
 
                 // Star reaction stuff for hall of fame
                 if (sp_star === true) {
+                    for (let x = 0; x < artistArray.length; x++) {
+                        db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
+                    }
+                    
                     hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                 }
             });
