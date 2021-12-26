@@ -15,6 +15,8 @@ module.exports = {
     },
 
     capitalize: function(string) {
+        if (string == null || string == false || string == undefined) return string;
+
         string = string.split(' ');
         string = string.map(a => a.charAt(0).toUpperCase() + a.slice(1));
         string = string.join(' ');
@@ -48,6 +50,7 @@ module.exports = {
         userArray = userArray.filter(e => e !== 'vocals');
         userArray = userArray.filter(e => e !== 'hof_id');
         userArray = userArray.filter(e => e !== 'review_num');
+        userArray = userArray.filter(e => e !== 'remix_collab');
         return userArray;
     },
 
@@ -71,7 +74,7 @@ module.exports = {
                     let sp_data = parse_spotify(activity);
                     
                     if (origArtistArray.toLowerCase() === 's') origArtistArray = sp_data[0];
-                    if (origArtistArray.toLowerCase() === 's') songArg = sp_data[1];
+                    if (songArg.toLowerCase() === 's') songArg = sp_data[1];
                     spotifyCheck = true;
                 }
             });
@@ -81,7 +84,12 @@ module.exports = {
             return interaction.editReply('Spotify status not detected, please type in the artist/song name manually or fix your status!');
         }
 
-        let artistArray = [origArtistArray.split(' & ')];
+        let artistArray;
+        if (!Array.isArray(origArtistArray)) {
+            artistArray = [origArtistArray.split(' & ')];
+        } else {
+            artistArray = origArtistArray.slice(0);
+        }
         artistArray = artistArray.flat(1);
         origArtistArray = artistArray.slice(0);
         let songName = songArg;
@@ -126,10 +134,11 @@ module.exports = {
             }
         }
 
-        if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`) != undefined) {
-            if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`).length != 0) {
-                vocalistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].vocals`));
+        if (db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`) != undefined) {
+            if (db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`).length != 0) {
+                vocalistArray.push(db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`));
                 vocalistArray = vocalistArray.flat(1);
+                console.log(vocalistArray);
                 // Add vocalistArray to artistArray so it can be used to edit data
                 artistArray.push(vocalistArray);
                 artistArray = artistArray.flat(1);
@@ -141,23 +150,15 @@ module.exports = {
 
     // Updates the art for embed messages, NOT in the database. That's done in the !add review commands themselves.
     update_art: function(interaction, first_artist, song_name, new_image) {
-        console.log('in here');
+        const { get_user_reviews } = require('./func.js');
+
         const imageSongObj = db.reviewDB.get(first_artist, `["${song_name}"]`);
             if (imageSongObj != undefined) {
                 let msgstoEdit = [];
                 let userIDs = [];
                 let count = -1;
 
-
-                let userArray = Object.keys(imageSongObj);
-                userArray = userArray.filter(e => e !== 'art');
-                userArray = userArray.filter(e => e !== 'remixers');
-                userArray = userArray.filter(e => e !== 'ep');
-                userArray = userArray.filter(e => e !== 'collab');
-                userArray = userArray.filter(e => e !== 'image');
-                userArray = userArray.filter(e => e !== 'vocals');
-                userArray = userArray.filter(e => e !== 'review_num');
-                userArray = userArray.filter(e => e !== 'hof_id');
+                let userArray = get_user_reviews(imageSongObj);
 
                 if (userArray.length != 0) {
                     userArray.forEach(user => {
@@ -198,25 +199,16 @@ module.exports = {
             }
     },
 
-    review_song: function(interaction, artistArray, origArtistArray, song, review, rating, rmxArtists, featArtists, song_art = false, user_who_sent, ep_name) {
+    review_song: function(interaction, artistArray, origArtistArray, song, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt = false, user_who_sent, ep_name) {
 
-        if (user_who_sent === undefined) {
+        if (user_who_sent === undefined || user_who_sent == null) {
             user_who_sent = false;
-        } else {
-            user_who_sent = user_who_sent.id;
-        }
+        } 
 
         for (let i = 0; i < artistArray.length; i++) {
 
             if (ep_name === undefined) ep_name = false;
-
-            let songName;
-
-            if (rmxArtists.includes(artistArray[i])) {
-                songName = song + ` (${rmxArtists.join(' & ')} Remix)`;
-            } else {
-                songName = song;
-            }
+            let songName = song;
             
             // Used if both the artist and song object exist
             let review_object = {
@@ -229,54 +221,25 @@ module.exports = {
                 sentby: user_who_sent,
             };
 
-            // Used if the song object or atist object don't already exist
+            // Used if the song object or artist object don't already exist
             let song_object = {
                 [songName]: { 
                     [`${interaction.user.id}`]: review_object,
                     remixers: [],
-                    art: song_art,
-                    collab: artistArray.filter(word => !featArtists.includes(word) && !rmxArtists.includes(word) && artistArray[i] != word), // Filter out the specific artist in question
-                    vocals: featArtists,
+                    remix_collab: (rmxArtistArray.length != 0 ? rmxArtistArray.filter(word => artistArray[i] != word) : []),
+                    art: songArt,
+                    collab: (rmxArtistArray.length == 0) ? artistArray.filter(word => !vocalistArray.includes(word) && !rmxArtistArray.includes(word) && artistArray[i] != word) : origArtistArray, 
+                    vocals: vocalistArray,
                     hof_id: false,
                     ep: ep_name,
                     review_num: 1,
                 },
             };
 
-            if (rmxArtists.length != 0) {
-                if (!rmxArtists.includes(artistArray[i])) {
-                    review_object = {};
-                    song_object = {
-                        [songName]: { 
-                            remixers: rmxArtists,
-                            art: song_art,
-                            collab: artistArray.filter(word => !featArtists.includes(word) && !rmxArtists.includes(word) && artistArray[i] != word), // Filter out the specific artist in question
-                            vocals: featArtists,
-                            hof_id: false,
-                            ep: ep_name,
-                            review_num: 0,
-                        },
-                    };
-
-                    if (db.reviewDB.has(artistArray[i])) {
-                        if (db.reviewDB.get(artistArray[i], `["${songName}"]`) != undefined) {
-                            if (rmxArtists.includes(artistArray[i])) db.reviewDB.math(artistArray[i], '+', 1, `["${songName}"].review_num`);
-                        }
-                    }
-                }
-            } else {
-                if (db.reviewDB.has(artistArray[i])) {
-                    if (db.reviewDB.get(artistArray[i], `["${songName}"]`) != undefined) {
-                        db.reviewDB.math(artistArray[i], '+', 1, `["${songName}"].review_num`);
-                    }
-                } 
-            }
-
             // If the artist db doesn't exist
             if (!db.reviewDB.has(artistArray[i])) {
 
                 db.reviewDB.set(artistArray[i], song_object);
-                db.reviewDB.set(artistArray[i], false, 'Image');
 
             } else if(db.reviewDB.get(artistArray[i], `["${songName}"]`) === undefined) { //If the artist db exists, check if the song db doesn't exist
                 const artistObj = db.reviewDB.get(artistArray[i]);
@@ -300,8 +263,7 @@ module.exports = {
 
                 Object.assign(songObj, newuserObj);
                 db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
-                db.reviewDB.set(artistArray[i], song_art, `["${songName}"].art`);
-
+                db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
             } else if (review_object.name != undefined) { // Otherwise if you have no review but the song and artist objects exist
 
                 const songObj = db.reviewDB.get(artistArray[i], `["${songName}"]`);
@@ -314,18 +276,88 @@ module.exports = {
                 //Inject the newsongobject into the songobject and then put it in the database
                 Object.assign(songObj, newuserObj);
                 db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
-                db.reviewDB.set(artistArray[i], song_art, `["${songName}"].art`);
+                db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
+                db.reviewDB.math(artistArray[i], '+', 1, `["${songName}"].review_num`);
 
-            } else { // This case only occurs when the remixer tab of the original song needs to be updated.
-                for (let r = 0; r < rmxArtists.length; r++) {
-                    db.reviewDB.push(artistArray[i], rmxArtists[r], `["${songName}"].remixers`);
-                }
             }
 
         }
+    
+        if (rmxArtistArray.length != 0) {
+            // This loop is for the original artists on a remix review
+            for (let i = 0; i < origArtistArray.length; i++) {
+                let song_object = {
+                    [origSongName]: { 
+                        remixers: [rmxArtistArray.join(' & ')],
+                        remix_collab: [],
+                        art: false,
+                        collab: origArtistArray.filter(word => origArtistArray[i] != word), // Filter out the specific artist in question
+                        vocals: vocalistArray,
+                        hof_id: false,
+                        ep: ep_name,
+                        review_num: 0,
+                    },
+                };
+
+                if (!db.reviewDB.has(origArtistArray[i])) {
+
+                    db.reviewDB.set(origArtistArray[i], song_object);
+    
+                } else if(db.reviewDB.get(origArtistArray[i], `["${origSongName}"]`) === undefined) { //If the artist db exists, check if the song db doesn't exist
+                    const artistObj = db.reviewDB.get(origArtistArray[i]);
+    
+                    //Create the object that will be injected into the Artist object
+                    const newsongObj = song_object;
+    
+                    //Inject the newsongobject into the artistobject and then put it in the database
+                    Object.assign(artistObj, newsongObj);
+                    db.reviewDB.set(origArtistArray[i], artistObj);
+    
+                } else {
+                    if (!db.reviewDB.get(origArtistArray[i], `["${origSongName}"].remixers`).includes(rmxArtistArray.join(' & '))) {
+                        db.reviewDB.push(origArtistArray[i], rmxArtistArray.join(' & '), `["${origSongName}"].remixers`);
+                    }
+                }
+            }
+
+            for (let i = 0; i < vocalistArray.length; i++) {
+                let song_object = {
+                    [origSongName]: { 
+                        remixers: [rmxArtistArray.join(' & ')],
+                        remix_collab: [],
+                        art: false,
+                        collab: origArtistArray, // Filter out the specific artist in question
+                        vocals: vocalistArray,
+                        hof_id: false,
+                        ep: ep_name,
+                        review_num: 0,
+                    },
+                };
+
+                if (!db.reviewDB.has(vocalistArray[i])) {
+
+                    db.reviewDB.set(vocalistArray[i], song_object);
+    
+                } else if(db.reviewDB.get(vocalistArray[i], `["${origSongName}"]`) === undefined) { //If the artist db exists, check if the song db doesn't exist
+                    const artistObj = db.reviewDB.get(vocalistArray[i]);
+    
+                    //Create the object that will be injected into the Artist object
+                    const newsongObj = song_object;
+    
+                    //Inject the newsongobject into the artistobject and then put it in the database
+                    Object.assign(artistObj, newsongObj);
+                    db.reviewDB.set(vocalistArray[i], artistObj);
+    
+                } else {
+                    if (!db.reviewDB.get(vocalistArray[i], `["${origSongName}"].remixers`).includes(rmxArtistArray.join(' & '))) {
+                        db.reviewDB.push(vocalistArray[i], rmxArtistArray.join(' & '), `["${origSongName}"].remixers`);
+                    }
+                }
+            }
+        }
     },
 
-    hall_of_fame_check: function(interaction, artistArray, origArtistArray, songName, displaySongName, song_art) {
+    hall_of_fame_check: function(interaction, artistArray, origArtistArray, songName, displaySongName, songArt, check_to_remove) {
         
         const { get_user_reviews } = require('./func.js');
 
@@ -351,6 +383,8 @@ module.exports = {
             }
         }
 
+        console.log(star_count);
+
         // Add to the hall of fame channel!
         if (star_count >= db.server_settings.get(interaction.guild.id, 'star_cutoff')) {
             const hofChannel = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel').slice(0, -1).slice(2));
@@ -360,7 +394,7 @@ module.exports = {
             .setTitle(`${origArtistArray} - ${displaySongName}`)
             .setDescription(`:star2: **This song currently has ${star_count} stars!** :star2:`)
             .addField('Starred Reviews:', star_array.join('\n'))
-            .setImage(song_art);
+            .setImage(songArt);
             hofEmbed.setFooter(`Use /getSong ${songName} to get more details about this song!`);
 
             if (!db.hall_of_fame.has(songName)) {
@@ -376,6 +410,15 @@ module.exports = {
                     hof_msg.edit({ embeds: [hofEmbed] });
                 });
             }
+        } else if (check_to_remove == true && db.reviewDB.get(artistArray[0], `["${songName}"].hof_id`) != false && db.reviewDB.get(artistArray[0], `["${songName}"].hof_id`) != undefined) {
+            const hofChannel = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel').slice(0, -1).slice(2));
+            hofChannel.messages.fetch(`${db.hall_of_fame.get(songName)}`).then(msg => {
+                msg.delete();
+                db.hall_of_fame.delete(songName);
+            }).catch(err => {
+                console.log('Message not found.');
+                console.log(err);
+            });
         }
     },
 

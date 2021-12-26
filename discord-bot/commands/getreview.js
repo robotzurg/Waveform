@@ -62,7 +62,7 @@ module.exports = {
         let rurl;
         let usrSentBy;
         let epfrom = db.reviewDB.get(artistArray[0], `["${songName}"].ep`);
-        let song_art = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+        let songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
 
         rname = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].name`);
         if (rname === undefined) return interaction.editReply(`No review found for \`${origArtistArray.join(' & ')} - ${songName}\`. *Note that for EP reviews, you need to use \`/getReviewEP\`.*`);
@@ -75,10 +75,10 @@ module.exports = {
             usrSentBy = await interaction.guild.members.cache.get(rsentby);              
         }
         
-        if (song_art != false) {
-            song_art = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+        if (songArt != false) {
+            songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
         } else {
-            song_art = taggedUser.avatarURL({ format: "png" });
+            songArt = taggedUser.avatarURL({ format: "png" });
         }
 
         const reviewEmbed = new Discord.MessageEmbed()
@@ -98,7 +98,7 @@ module.exports = {
                 reviewEmbed.setDescription(`Rating: **${rscore}/10**`);
             }
 
-            reviewEmbed.setThumbnail((song_art == false) ? interaction.user.avatarURL({ format: "png" }) : song_art);
+            reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ format: "png" }) : songArt);
             if (rreview != '-') reviewEmbed.addField('Rating: ', `**${rscore}/10**`, true);
 
             if (rsentby != false) {

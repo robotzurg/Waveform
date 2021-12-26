@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const forAsync = require('for-async');
-const { capitalize, parse_spotify } = require("../func.js");
+const { get_user_reviews, parse_artist_song_data } = require("../func.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const Discord = require("discord.js");
 
@@ -29,76 +29,29 @@ module.exports = {
                 .setRequired(false)),
 	admin: false,
 	async execute(interaction) {
-        let args = [];
-        let rmxArtists = [];
-        let spotifyCheck = false;
+        let parsed_args = parse_artist_song_data(interaction);
 
-        await interaction.options._hoistedOptions.forEach(async (value) => {
-            args.push(value.value);
-            if (value.name === 'remixers') {
-                value.value = capitalize(value.value);
-                rmxArtists.push(value.value.split(' & '));
-                rmxArtists = rmxArtists.flat(1);
-            }
-        });
-        
-		//Auto-adjustment to caps for each word
-        args[0] = capitalize(args[0].trim());
-        args[1] = capitalize(args[1].trim());
+        let origArtistArray = parsed_args[0];
+        let artistArray = parsed_args[2];
+        let songName = parsed_args[3];
+        let rmxArtistArray = parsed_args[4];
+        let vocalistArray = parsed_args[5];
+        let songArt = interaction.options.getString('art');
+        let newSong = false;
 
-        if (args[0].toLowerCase() === 's' || args[1].toLowerCase() === 's') {
+        if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
+
+        if (songArt.toLowerCase() === 's' || songArt.toLowerCase() === 'spotify') {
             interaction.member.presence.activities.forEach((activity) => {
                 if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
-                    let sp_data = parse_spotify(activity);
-                    
-                    if (args[0].toLowerCase() === 's') args[0] = sp_data[0];
-                    if (args[1].toLowerCase() === 's') args[1] = sp_data[1];
-                    spotifyCheck = true;
+                    songArt = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
                 }
             });
-        }
-
-        if (spotifyCheck === false && (args[0].toLowerCase() === 's' || args[1].toLowerCase() === 's')) {
-            return interaction.editReply('Spotify status not detected, please type in the artist/song name manually or fix your status!');
-        }
-
-        let thumbnailImage = args[2];
-        if (thumbnailImage.toLowerCase() === 's' || thumbnailImage.toLowerCase() === 'spotify') {
-            interaction.member.presence.activities.forEach((activity) => {
-                if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
-                    thumbnailImage = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
-                }
-            });
-        }
-  
-        let artistArray = args[0];
-        if (!Array.isArray(artistArray)) artistArray = args[0].split(' & ');
-        let songName = args[1];
-		let newSong = false;
-
-        // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
-        if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
-            if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
-                artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
-                artistArray = artistArray.flat(1);
-            }
-        }
-
-        if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`) != undefined) {
-            if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`).length != 0) {
-                artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].vocals`));
-                artistArray = artistArray.flat(1);
-            }
-        }
-
-        if (rmxArtists.length != 0) {
-            artistArray = rmxArtists;
-            songName = `${songName} (${rmxArtists.join(' & ')} Remix)`;
         }
 
 		if (newSong === false) {
 			for (let i = 0; i < artistArray.length; i++) {
-                db.reviewDB.set(artistArray[i], thumbnailImage, `["${songName}"].art`);
+                db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
 			}
 		}
 
@@ -109,21 +62,12 @@ module.exports = {
         let count = -1;
 
         if (imageSongObj != undefined) {
-            let userArray = Object.keys(imageSongObj);
-            userArray = userArray.filter(item => item !== 'art');
-            userArray = userArray.filter(item => item !== 'collab');
-            userArray = userArray.filter(item => item !== 'vocals');
-            userArray = userArray.filter(item => item !== 'remixers');
-            userArray = userArray.filter(item => item !== 'ep');
-            userArray = userArray.filter(item => item !== 'hof_id');
-            userArray = userArray.filter(item => item !== 'review_num');
-            userArray = userArray.filter(item => item !== 'songs');
-
+            
+            let userArray = get_user_reviews(imageSongObj);
 
             userArray.forEach(user => {
                 msgstoEdit.push(db.reviewDB.get(artistArray[0], `["${songName}"].["${user}"].msg_id`));
                 userIDs.push(user);
-                console.log(userIDs);
             });
 
             msgstoEdit = msgstoEdit.filter(item => item !== undefined);
@@ -139,14 +83,14 @@ module.exports = {
 
                         channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                             msgEmbed = msg.embeds[0];
-                            msgEmbed.setThumbnail(thumbnailImage);
+                            msgEmbed.setThumbnail(songArt);
                             msg.edit({ content: ' ', embeds: [msgEmbed] });
                             resolve();
                         }).catch(() => {
                             channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
                             channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                                 msgEmbed = msg.embeds[0];
-                                msgEmbed.setThumbnail(thumbnailImage);
+                                msgEmbed.setThumbnail(songArt);
                                 msg.edit({ content: ' ', embeds: [msgEmbed] });
                                 resolve();
                             });
@@ -171,7 +115,7 @@ module.exports = {
                                 console.log(msg);
                                 embed_data = msg.embeds;
                                 msgEmbed = embed_data[0];
-                                msgEmbed.image.url = thumbnailImage;
+                                msgEmbed.image.url = songArt;
                                 msg.edit({ embeds: [msgEmbed] });
                                 resolve();
                             });
@@ -184,8 +128,8 @@ module.exports = {
 
         let displayEmbed = new Discord.MessageEmbed()
         .setColor(`${interaction.member.displayHexColor}`)
-        .setDescription(`Art for **${artistArray.join(' & ')} - ${songName}** has been changed to the new art below.`)
-        .setImage(thumbnailImage);
+        .setDescription(`Art for **${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}** has been changed to the new art below.`)
+        .setImage(songArt);
 
 		return interaction.editReply({ embeds: [displayEmbed] });
 	},

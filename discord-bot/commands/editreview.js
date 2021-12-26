@@ -1,6 +1,7 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { capitalize } = require("../func.js");
+const wait = require('wait');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -32,23 +33,29 @@ module.exports = {
                 .setRequired(false)),
 	admin: true,
 	async execute(interaction) {
-        let artistArray = interaction.options.getString('artists');
-        let songName = interaction.options.getString('song');
+        let origArtistArray = capitalize(interaction.options.getString('artists')).split(' & ');
+        let artistArray = origArtistArray.slice(0);
+        let songName = capitalize(interaction.options.getString('song'));
         let rating = interaction.options.getString('rating');
         let review = interaction.options.getString('review');
         let user_who_sent = interaction.options.getUser('user_who_sent');
-        let rmxArray = interaction.options.getString('remixers');
+        let rmxArtistArray = interaction.options.getString('remixers');
         let taggedMember;
         let taggedUser;
         let oldrating;
         let oldreview;
+        let old_user_who_sent;
+        let user_sent_name;
+
+        if (rating == null && review == null && user_who_sent == null) {
+            interaction.editReply('You must supply either an edit to your review, rating, or the person who sent you the song!');
+        }
 
         if (user_who_sent != null && user_who_sent != undefined) {
             taggedMember = await interaction.guild.members.fetch(user_who_sent);
             taggedUser = taggedMember.user;
         }
 
-        artistArray = artistArray.split(' & ');
         if (!db.reviewDB.has(artistArray[0])) return interaction.editReply(`Artist ${artistArray[0]} not found!`);
 
         // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
@@ -68,24 +75,26 @@ module.exports = {
             }
         }
 
-        if (rmxArray != null && rmxArray != undefined) {
-            rmxArray = rmxArray.split(' & ');
-            artistArray = rmxArray;
-            songName = `${songName} (${rmxArray.join(' & ')} Remix)`;
+        if (rmxArtistArray != null && rmxArtistArray != undefined) {
+            rmxArtistArray = rmxArtistArray.split(' & ');
+            artistArray = rmxArtistArray;
+            songName = `${songName} (${rmxArtistArray.join(' & ')} Remix)`;
         }
 
-        songName = capitalize(songName);
-
         for (let i = 0; i < artistArray.length; i++) {
-            artistArray[i] = capitalize(artistArray[i]);
             if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`Artist ${artistArray[i]} not found!`);
             if (!db.reviewDB.get(artistArray[i], songName) === undefined) return interaction.editReply(`Song ${songName} not found!`);
             if (!db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`Review not found!`);
 
             if (rating != null && rating != undefined) {
                 if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`) < 8 && db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) == true) {
-                    return interaction.editReply(`This review has a star on it, so you cannot change the rating to anything under 8.\nRemove the star with \`/unstar\` if you'd like to lower the rating!`);
-                } 
+                    return interaction.editReply(`This review has a star on it, so you cannot change the rating to anything under 8.\nRemove the star with \`/setstar\` if you'd like to lower the rating!`);
+                }
+                
+                if (rating < 8 && db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) == true) {
+                    return interaction.editReply(`This review has a star on it, so you cannot change the rating to anything under 8.\nRemove the star with \`/setstar\` if you'd like to lower the rating!`);
+                }
+                
                 oldrating = db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`);
                 db.reviewDB.set(artistArray[i], parseFloat(rating), `["${songName}"].["${interaction.user.id}"].rating`);
             } 
@@ -95,11 +104,14 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], review, `["${songName}"].["${interaction.user.id}"].review`);
             }
 
-            if (user_who_sent != null && user_who_sent != undefined) db.reviewDB.set(artistArray[i], user_who_sent.id, `["${songName}"].["${interaction.user.id}"].user_who_sent`);
+            if (user_who_sent != null && user_who_sent != undefined) {
+                old_user_who_sent = db.reviewDB.set(artistArray[i], user_who_sent.id, `["${songName}"].["${interaction.user.id}"].user_who_sent`);
+                user_sent_name = await interaction.guild.members.fetch(user_who_sent);
+                db.reviewDB.set(artistArray[i], user_who_sent.id, `["${songName}"].["${interaction.user.id}"].user_who_sent`);
+            }
         }
 
         let reviewMsgID = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].msg_id`);
-
 
         if (reviewMsgID != false) {
             let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
@@ -157,8 +169,12 @@ module.exports = {
             } 
         }
 
-        interaction.editReply(`Here's what was edited on your review of **${artistArray.join(' & ')} - ${songName}**:` +
+        interaction.editReply(`Here's what was edited on your review of **${origArtistArray.join(' & ')} - ${songName}**:` +
         `\n${(oldrating != undefined) ? `\`${oldrating}/10\` changed to \`${rating}/10\`` : ``}` +
-        `\n${(oldreview != undefined) ? `Review was changed to \`${review}\`` : ``}`);
+        `\n${(oldreview != undefined) ? `Review was changed to \`${review}\`` : ``}` +
+        `\n${(old_user_who_sent != undefined) ? `User Who Sent was changed to \`${user_sent_name.displayName}\`` : ``}`);
+
+        await wait(30000);
+        await interaction.deleteReply();
     },
 };

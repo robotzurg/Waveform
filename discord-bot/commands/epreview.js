@@ -42,7 +42,8 @@ module.exports = {
 
         if (mailboxes.includes(interaction.channel.name)) return interaction.editReply('Mailboxes are NOT currently supported with EP Reviews.');
 
-        let artistArray = capitalize(interaction.options.getString('artists'));
+        let origArtistArray = capitalize(interaction.options.getString('artists')).split(' & ');
+        let artistArray = origArtistArray.slice(0);
         let ep_name = capitalize(interaction.options.getString('ep_name'));
         let art = interaction.options.getString('art');
         let overall_rating = interaction.options.getString('overall_rating');
@@ -51,12 +52,12 @@ module.exports = {
         let taggedMember = false;
         let taggedUser = false;
 
-        if (user_sent_by === null) {
+        if (user_sent_by == null) {
             user_sent_by = false;
         }
 
         if (art === null) {
-            art === false;
+            art = false;
         }
 
         if (overall_rating === null) {
@@ -67,22 +68,18 @@ module.exports = {
             overall_review = false;
         }
 
-        if (overall_review != null && overall_review != false && overall_review != undefined) {
-                if (overall_review.includes('\\n')) {
-                    overall_review = overall_review.split('\\n').join('\n');
-                }
+        if (overall_review != null) {
+            if (overall_review.includes('\\n')) {
+                overall_review = overall_review.split('\\n').join('\n');
+            }
         }
 
+        // Place EP by default if EP or LP is not included in the title.
         if (!ep_name.includes('EP') && !ep_name.includes('LP')) {
             ep_name = `${ep_name} EP`;
         }
 
-        artistArray = [artistArray.split(' & ')];
-        artistArray = artistArray.flat(1);
-
-        console.log(artistArray);
-
-        if (user_sent_by != null && user_sent_by != undefined) {
+        if (user_sent_by != null && user_sent_by != undefined && user_sent_by != false) {
             taggedMember = await interaction.guild.members.fetch(user_sent_by);
             taggedUser = taggedMember.user;
         }
@@ -112,6 +109,7 @@ module.exports = {
             let epObject = {
                 [ep_name]: {
                     [interaction.user.id]: {
+                        url: false,
                         msg_id: false,
                         name: interaction.member.displayName,
                         rating: overall_rating,
@@ -163,12 +161,10 @@ module.exports = {
         }
 
         // Change our "default avatar review image" to the artists image in the database, if one exists
-        if (db.reviewDB.has(artistArray[0]) && art === false) {
+        if (db.reviewDB.has(artistArray[0]) && art == false) {
             art = db.reviewDB.get(artistArray[0], `["${ep_name}"].art`);
             if (art === undefined || art === false) {
-                if (db.reviewDB.get(artistArray[0], 'Image') === false || db.reviewDB.get(artistArray[0], 'Image') === undefined) {
-                    art = interaction.user.avatarURL({ format: "png", dynamic: false });
-                }
+                art = interaction.user.avatarURL({ format: "png", dynamic: false });
             }
         } else if (art === false || art === undefined) {
             // Otherwise set our review art to the users avatar.

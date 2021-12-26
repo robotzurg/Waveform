@@ -73,17 +73,30 @@ module.exports = {
 
         // Init variables
         let origArtistArray = capitalize(interaction.options.getString('artists')).split(' & ');
+        let origSongName = capitalize(interaction.options.getString('song')); // for remixes later on
         let songName = capitalize(interaction.options.getString('song'));
         let rating = parseFloat(interaction.options.getString('rating'));
         let review = interaction.options.getString('review');
-        let song_art = interaction.options.getString('art');
-        let vocalistArray = capitalize(interaction.options.getString('vocalists')).split(' & ');
-        let rmxArtistArray = capitalize(interaction.options.getString('remixers')).split(' & ');
+        let songArt = interaction.options.getString('art');
+        let vocalistArray = capitalize(interaction.options.getString('vocalists'));
+        let rmxArtistArray = capitalize(interaction.options.getString('remixers'));
         let user_who_sent = interaction.options.getUser('user_who_sent');
         let ranking_pos = interaction.options.getString('ranking_pos');
         let starred = false;
         let taggedUser = false;
         let taggedMember = false;
+
+        if (vocalistArray == null) {
+            vocalistArray = [];
+        } else {
+            vocalistArray = vocalistArray.split(' & ');
+        }
+
+        if (rmxArtistArray == null) {
+            rmxArtistArray = [];
+        } else {
+            rmxArtistArray = rmxArtistArray.split(' & ');
+        }
 
         // Init variables for spotify link review
         if (sp_song != undefined && sp_song != null) {
@@ -91,7 +104,7 @@ module.exports = {
             songName = capitalize(sp_song);
             rating = parseFloat(sp_rating);
             review = sp_review;
-            song_art = sp_art;
+            songArt = sp_art;
             vocalistArray = capitalize(sp_vocalists).split(' & ');
             rmxArtistArray = capitalize(sp_remixers).split(' & ');
             user_who_sent = sp_user_who_sent;
@@ -115,6 +128,22 @@ module.exports = {
             ranking_pos = false;
         } else {
             ranking_pos = parseInt(ranking_pos);
+        }
+
+        // [] check, as the system requires [] to grab the remix artist with string slicing.
+        if (songName.includes('Remix)')) {
+            await interaction.editReply('Please use the Remixers argument for Remixers, do not include them in the song name!`');
+            await wait(10000);
+            return await interaction.deleteReply();
+        } else if (songName.includes('ft.') || songName.includes('feat.')) {
+            await interaction.editReply('Please use the Vocalists argument for Vocalists, do not include them in the song name!`');
+            await wait(10000);
+            return await interaction.deleteReply();
+        }
+
+        // Handle remixes
+        if (rmxArtistArray.length != 0) {
+            songName = `${songName} (${rmxArtistArray.join(' & ')} Remix)`;
         }
 
         // Auto merge EP review related variables (see automerge.js for more info)
@@ -180,30 +209,19 @@ module.exports = {
         }
         
         // Spotify check (checks for both "spotify" and "s" as the image link)
-        if (song_art != false && song_art != undefined) {
-            if (song_art.toLowerCase().includes('spotify') || song_art.toLowerCase() === 's') {
+        if (songArt != false && songArt != undefined) {
+            if (songArt.toLowerCase().includes('spotify') || songArt.toLowerCase() === 's') {
                 interaction.member.presence.activities.forEach((activity) => {
                     if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
-                        song_art = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
+                        songArt = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
                     }
                 });
             }
         }
 
         // Make sure we DON'T get any slip ups, where the bot lets spotify run through (if it can't find a status)
-        if (song_art != undefined && song_art != false) {
-            if (song_art.toLowerCase().includes('spotify') || song_art.toLowerCase() === 's') song_art = false;
-        }
-
-        // [] check, as the system requires [] to grab the remix artist with string slicing.
-        if (songName.includes('Remix)')) {
-            await interaction.editReply('Please use the Remixers argument for Remixers, do not include them in the song name!`');
-            await wait(10000);
-            return await interaction.deleteReply();
-        } else if (songName.includes('ft.') || songName.includes('feat.')) {
-            await interaction.editReply('Please use the Vocalists argument for Vocalists, do not include them in the song name!`');
-            await wait(10000);
-            return await interaction.deleteReply();
+        if (songArt != undefined && songArt != false) {
+            if (songArt.toLowerCase().includes('spotify') || songArt.toLowerCase() === 's') songArt = false;
         }
 
         if (isNaN(rating)) {
@@ -218,17 +236,18 @@ module.exports = {
         }
 
         // Create display song name variable
-        let displaySongName = (`${songName}` + 
+        let displaySongName = (`${origSongName}` + 
         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
         `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
 
         // Thumbnail image handling
-        if (song_art == false || song_art == null) {
+        if (songArt == false || songArt == null) {
             if (db.reviewDB.has(artistArray[0])) {
-                song_art = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+                songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
             }
-            if (song_art === undefined || song_art === false) { // If the above line of code returns undefined or false, use user pfp
-                song_art = interaction.user.avatarURL({ format: "png", dynamic: false });
+            if (songArt === undefined || songArt === false || songArt == null) { // If the above line of code returns undefined or false, use user pfp
+                songArt = interaction.user.avatarURL({ format: "png", dynamic: false });
+                console.log(songArt);
             }
         }
 
@@ -246,16 +265,16 @@ module.exports = {
             reviewEmbed.setDescription(`Rating: **${rating}/10**`);
         }
         
-        reviewEmbed.setThumbnail(song_art);
+        reviewEmbed.setThumbnail(songArt);
 
         if (taggedUser != false && taggedUser != undefined) {
             reviewEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
         }
 
         //Add review to database
-        //Quick thumbnail image check to assure we aren't putting in an avatar, song_art should be set to what we put in the database.
-        if (song_art === undefined || song_art === false || song_art.includes('avatar') === true || song_art === 'spotify' || song_art === 's') { 
-            song_art = false;
+        //Quick thumbnail image check to assure we aren't putting in an avatar, songArt should be set to what we put in the database.
+        if (songArt === undefined || songArt === false || songArt === 'spotify' || songArt === 's') { 
+            songArt = false;
         }
 
         // Send the embed rate message (normal command review)
@@ -292,13 +311,13 @@ module.exports = {
                             }
 
                             // Thumbnail image handling
-                            if (song_art == false || song_art == null) {
+                            if (songArt == false || songArt == null) {
                                 if (db.reviewDB.has(artistArray[0])) {
-                                    song_art = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
-                                    reviewEmbed.setThumbnail(song_art);
+                                    songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+                                    reviewEmbed.setThumbnail(songArt);
                                 }
-                                if (song_art == undefined) { // If the above line of code returns undefined, use continue with false
-                                    song_art = false;
+                                if (songArt == undefined) { // If the above line of code returns undefined, use continue with false
+                                    songArt = false;
                                 }
                             }
 
@@ -319,19 +338,19 @@ module.exports = {
                         s_collector = int_channel.createMessageCollector({ s_filter, max: 1, time: 60000 });
                         s_collector.on('collect', async m => {
                             songName = capitalize(m.content);
-                            displaySongName = (`${songName}` + 
+                            displaySongName = (`${origSongName}` + 
                             `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
                             `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
                             reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
 
                             // Thumbnail image handling
-                            if (song_art == false || song_art == null) {
+                            if (songArt == false || songArt == null) {
                                 if (db.reviewDB.has(artistArray[0])) {
-                                    song_art = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
-                                    reviewEmbed.setThumbnail(song_art);
+                                    songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+                                    reviewEmbed.setThumbnail(songArt);
                                 }
-                                if (song_art == undefined) { // If the above line of code returns undefined, use continue with false
-                                    song_art = false;
+                                if (songArt == undefined) { // If the above line of code returns undefined, use continue with false
+                                    songArt = false;
                                 }
                             }
 
@@ -443,13 +462,13 @@ module.exports = {
                                     ep_name = ep_name.slice(0, -3).trim();
                                 }
                             }
-                            if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && song_art === false) {
-                                song_art = msgEmbed.thumbnail.url;
+                            if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt === false) {
+                                songArt = msgEmbed.thumbnail.url;
                             }
                         });
 
                         // Review the song
-                        await review_song(interaction, artistArray, origArtistArray, songName, review, rating, rmxArtistArray, vocalistArray, song_art, taggedUser, ep_name);
+                        await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, ep_name);
 
                         for (let j = 0; j < artistArray.length; j++) {
                             db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
@@ -472,12 +491,12 @@ module.exports = {
 
                             // Star reaction stuff for hall of fame
                             if (rating >= 8 && starred === true) {
-                                hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, song_art);
+                                hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                             }
                         });
 
                         // Update user stats
-                        db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
+                        db.user_stats.set(interaction.user.id, `${origArtistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
 
                         for (let ii = 0; ii < mainArtists.length; ii++) {
                             // Update EP details
@@ -533,7 +552,7 @@ module.exports = {
                         await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [] });
 
                         // Review the song
-                        await review_song(interaction, artistArray, origArtistArray, songName, review, rating, rmxArtistArray, vocalistArray, song_art, taggedUser, false);
+                        await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser, false);
 
                         // Update user stats
                         db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
@@ -548,12 +567,12 @@ module.exports = {
 
                         // Star reaction stuff for hall of fame
                         if (rating >= 8 && starred === true) {
-                            hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, song_art);
+                            hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                         }
 
                         // Fix artwork on all reviews for this song
-                        if (song_art != false && db.reviewDB.has(artistArray[0])) {
-                            await update_art(interaction, artistArray[0], songName, song_art);
+                        if (songArt != false && db.reviewDB.has(artistArray[0])) {
+                            await update_art(interaction, artistArray[0], songName, songArt);
                         }
                     
                         // End the collector
@@ -572,7 +591,7 @@ module.exports = {
         } else { // Reviewing with the Spotify Link Review Context Menu
 
             // Review the song
-            await review_song(interaction, artistArray, origArtistArray, songName, review, rating, rmxArtistArray, vocalistArray, song_art, taggedUser, false);
+            await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser, false);
 
             // Update user stats
             db.user_stats.set(interaction.user.id, `${origArtistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
@@ -586,7 +605,7 @@ module.exports = {
 
                 // Star reaction stuff for hall of fame
                 if (sp_star === true) {
-                    hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, song_art);
+                    hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                 }
             });
         }

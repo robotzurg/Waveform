@@ -8,7 +8,7 @@ module.exports = {
         .setName('getepreview')
         .setDescription('Get an EP review from a user on the server that they have written!')
         .addStringOption(option => 
-            option.setName('artist')
+            option.setName('artists')
                 .setDescription('The name of the artist(s).')
                 .setRequired(true))
 
@@ -24,23 +24,17 @@ module.exports = {
     admin: false,
 	async execute(interaction) {
 
-        let args = [];
-        let taggedUser = interaction.user;
+        let origArtistArray = capitalize(interaction.options.getString('artists')).split(' & ');
+        let epName = capitalize(interaction.options.getString('ep_name'));
+        let taggedUser = interaction.options.getUser('user');
         let taggedMember = interaction.member;
 
-        await interaction.options._hoistedOptions.forEach(async (value) => {
-            args.push(value.value.trim());
-            if (value.name === 'user') {
-                taggedMember = await interaction.guild.members.fetch(value.value);
-                taggedUser = taggedMember.user;
-            }
-        });
-
-        args[0] = capitalize(args[0]);
-        args[1] = capitalize(args[1]);
-
-        let origArtistArray = args[0].split(' & ');
-        let epName = args[1];
+        if (taggedUser != null) {
+            taggedMember = await interaction.guild.members.fetch(taggedUser.id);
+        } else {
+            taggedUser = interaction.user;
+            taggedMember = interaction.member;
+        }
 
         let artistArray = origArtistArray;
 
@@ -81,13 +75,6 @@ module.exports = {
                 let songName = ep_songs[i];
                 artistsEmbed = [];
                 vocalistsEmbed = [];
-
-                // Look into adding in adding remix support later
-                /*if (songName.toString().toLowerCase().includes('remix')) {
-                    fullSongName = songName;
-                    songName = fullSongName.substring(0, fullSongName.length - 7).split(' [')[0];
-                    rmxArtist = fullSongName.substring(0, fullSongName.length - 7).split(' [')[1];
-                }*/
 
                 rname = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].name`);
                 if (rname === undefined) return interaction.editReply(`No review found for song ${songName}`);

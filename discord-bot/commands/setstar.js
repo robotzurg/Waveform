@@ -1,0 +1,182 @@
+const db = require("../db.js");
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const wait = require('wait');
+const { parse_artist_song_data, hall_of_fame_check } = require('../func.js');
+
+module.exports = {
+	data: new SlashCommandBuilder()
+		.setName('setstar')
+		.setDescription('Change review to be starred or not starred')
+        .addStringOption(option => 
+            option.setName('artists')
+                .setDescription('The name of the artist(s).')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('song')
+                .setDescription('The name of the song.')
+                .setRequired(true))
+
+        .addStringOption(option => 
+            option.setName('remixers')
+                .setDescription('Remix artists on the song.')
+                .setRequired(false)),
+    
+    admin: false,
+	async execute(interaction) {
+        let parsed_args = parse_artist_song_data(interaction);
+
+        let origArtistArray = parsed_args[0];
+        let origSongName = parsed_args[1];
+        let artistArray = parsed_args[2];
+        let songName = parsed_args[3];
+        let rmxArtistArray = parsed_args[4];
+        let vocalistArray = parsed_args[5];
+        let songArt;
+
+        if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
+
+        if (!db.reviewDB.has(artistArray[0])) {
+            return interaction.editReply('No artist found.');
+        }
+
+        let star_check = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].starred`);
+
+        if (db.reviewDB.get(artistArray[0], `["${songName}"].art`) != false) {
+            songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+        } else {
+            songArt = interaction.user.avatarURL({ format: "png" });
+        }
+
+        for (let i = 0; i < artistArray.length; i++) {
+
+            if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`${artistArray[i]} not found in database.`);
+            if (db.reviewDB.get(artistArray[i], `["${songName}"]`) === undefined) return interaction.editReply(`${origArtistArray.join(' & ')} - ${songName} not found in database.`);
+            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`You haven't reviewed ${origArtistArray.join(' & ')} - ${songName}.`);
+            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`) < 8) return interaction.editReply(`You haven't rated ${origArtistArray.join(' & ')} - ${songName} an 8/10 or higher!`);
+
+            db.reviewDB.set(artistArray[i], (star_check == false) ? true : false, `["${songName}"].["${interaction.user.id}"].starred`);
+        }
+
+        if (star_check == false) {
+            db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
+            interaction.editReply(`Star added to ${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }!`);
+        } else {
+            db.user_stats.remove(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
+            interaction.editReply(`Unstarred ${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }.`);
+        }
+        
+        
+        // Hall of Fame stuff
+        // Create display song name variable
+        let displaySongName = (`${origSongName}` + 
+        `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
+        `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
+
+        hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt, true);
+
+        let msgtoEdit = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].msg_id`);
+        console.log(msgtoEdit);
+
+        if (msgtoEdit != false && msgtoEdit != undefined) {
+            let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+            channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                let embed_data = msg.embeds;
+                let msgEmbed = embed_data[0];
+                let msgEmbedTitle = msgEmbed.title;
+                if (star_check == false) {
+                    if (!msgEmbedTitle.includes(':star2:')) {
+                        msgEmbed.title = `:star2: ${msgEmbedTitle} :star2:`;
+                    }
+                } else {
+                    if (msgEmbedTitle.includes(':star2:')) {
+                        while (msgEmbed.title.includes(':star2:')) {
+                            msgEmbed.title = msgEmbed.title.replace(':star2:', '');
+                        }
+                    }
+                }
+                msg.edit({ embeds: [msgEmbed] });
+            }).catch(() => {
+                channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                    let embed_data = msg.embeds;
+                    let msgEmbed = embed_data[0];
+                    let msgEmbedTitle = msgEmbed.title;
+                    if (star_check == false) {
+                        if (!msgEmbedTitle.includes(':star2:')) {
+                            msgEmbed.title = `:star2: ${msgEmbedTitle} :star2:`;
+                        }
+                    } else {
+                        if (msgEmbedTitle.includes(':star2:')) {
+                            while (msgEmbed.title.includes(':star2:')) {
+                                msgEmbed.title = msgEmbed.title.replace(':star2:', '');
+                            }
+                        }
+                    }
+                    msg.edit({ embeds: [msgEmbed] });
+                });
+            });
+        }
+
+        let ep_from = db.reviewDB.get(artistArray[0], `["${songName}"].ep`);
+        if (ep_from != false && ep_from != undefined) {
+            if (db.reviewDB.get(artistArray[0], `["${ep_from}"].["${interaction.user.id}"]`) != undefined) {
+                let epMsgToEdit = db.reviewDB.get(artistArray[0], `["${ep_from}"].["${interaction.user.id}"].msg_id`);
+
+                let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+                channelsearch.messages.fetch(`${epMsgToEdit}`).then(msg => {
+                    let msgEmbed = msg.embeds[0];
+                    let msg_embed_fields = msgEmbed.fields;
+                    let field_num = -1;
+                    for (let i = 0; i < msg_embed_fields.length; i++) {
+                        if (msg_embed_fields[i].name.includes(songName)) {
+                            field_num = i;
+                        }
+                    }
+
+                    if (!msg_embed_fields[field_num].name.includes('🌟')) {
+                        msg_embed_fields[field_num].name = `🌟 ${msg_embed_fields[field_num].name} 🌟`;
+                    }
+
+                    if (msg_embed_fields[field_num].name.includes('🌟')) {
+                        while (msg_embed_fields[field_num].name.includes('🌟')) {
+                            msg_embed_fields[field_num].name = msg_embed_fields[field_num].name.replace('🌟', '');
+                        }
+                    }
+
+                    msg.edit({ embeds: [msgEmbed] });
+                }).catch(() => {
+                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                    channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                        let msgEmbed = msg.embeds[0];
+                        let msg_embed_fields = msgEmbed.fields;
+                        let field_num = -1;
+                        for (let i = 0; i < msg_embed_fields.length; i++) {
+                            if (msg_embed_fields[i].name.includes(songName)) {
+                                field_num = i;
+                            }
+                        }
+
+                        if (star_check == false) {
+                            if (!msg_embed_fields[field_num].name.includes('🌟')) {
+                                msg_embed_fields[field_num].name = `🌟 ${msg_embed_fields[field_num].name} 🌟`;
+                            }
+                        } else {
+                            if (msg_embed_fields[field_num].name.includes('🌟')) {
+                                while (msg_embed_fields[field_num].name.includes('🌟')) {
+                                    msg_embed_fields[field_num].name = msg_embed_fields[field_num].name.replace('🌟', '');
+                                }
+                            }
+                        }
+                        
+
+                        msg.edit({ embeds: [msgEmbed] });
+                    });
+                });
+            } 
+        }
+
+        await wait(30000);
+        await interaction.deleteReply();
+    },
+};

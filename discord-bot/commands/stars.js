@@ -1,6 +1,5 @@
 const Discord = require('discord.js');
 const db = require('../db.js');
-const { get_args } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -13,15 +12,14 @@ module.exports = {
                 .setRequired(false)),
     admin: false,
 	async execute(interaction) {
-        let args = [];
-        args = get_args(interaction, args);
+        let user = interaction.options.getUser('user');
 
-        if (args.length === 0) args[0] = interaction.user.id;
+        if (user == null) user = interaction.user.id;
 
         let taggedMember;
 
-        if (args.length != 0) {
-            taggedMember = await interaction.guild.members.fetch(args[0]);
+        if (user == null) {
+            taggedMember = await interaction.guild.members.fetch(user);
         } else {
             taggedMember = interaction.member;
         }
@@ -30,7 +28,7 @@ module.exports = {
             .setColor(`${interaction.member.displayHexColor}`)
             .setThumbnail(taggedMember.user.avatarURL({ format: "png" }))
             .setTitle(`🌟 ${taggedMember.displayName}'s Stars 🌟`)
-            .setDescription(`${db.user_stats.get(args[0], `star_list`).join('\n')}`);
+            .setDescription(`${db.user_stats.get(user, `star_list`).join('\n')}`);
 
         console.log(starCommandEmbed.thumbnail.url);
 

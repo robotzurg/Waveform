@@ -56,7 +56,7 @@ module.exports = {
         
         let userArray = get_user_reviews(songObj);
         let userIDList = userArray.slice(0); //.slice(0) is there to create a COPY, not a REFERENCE.
-        const song_art = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+        const songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
 
         const rankNumArray = [];
         const songEmbed = new Discord.MessageEmbed()
@@ -108,10 +108,10 @@ module.exports = {
 
             if (remixes.length != 0) songEmbed.addField('Remixes:', remixes.join('\n'));
 
-            if (song_art == false) {
+            if (songArt == false) {
                 songEmbed.setThumbnail(interaction.user.avatarURL({ format: "png" }));
             } else {
-                songEmbed.setThumbnail(song_art);
+                songEmbed.setThumbnail(songArt);
             }
 
             if (songEP != false) songEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
@@ -179,9 +179,9 @@ module.exports = {
                 .setColor(`${taggedMember.displayHexColor}`);
     
                 if (starred === false) {
-                    reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray})` : ``}`);
+                    reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
                 } else {
-                    reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray})` : ``} :star2:`);
+                    reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``} :star2:`);
                 }
     
                 reviewEmbed.setAuthor(`${taggedMember.displayName}'s review`, `${taggedUser.avatarURL({ format: "png" })}`);
@@ -192,7 +192,7 @@ module.exports = {
                     reviewEmbed.setDescription(`Rating: **${rating}/10**`);
                 }
     
-                reviewEmbed.setThumbnail((song_art == false) ? interaction.user.avatarURL({ format: "png" }) : song_art);
+                reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ format: "png" }) : songArt);
                 if (review != '-') reviewEmbed.addField('Rating: ', `**${rating}/10**`, true);
 
                 if (sentby != false) {

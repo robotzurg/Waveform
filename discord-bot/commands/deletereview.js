@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { capitalize } = require("../func.js");
+const { parse_artist_song_data } = require("../func.js");
 const wait = require('util').promisify(setTimeout);
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
@@ -8,7 +8,7 @@ module.exports = {
 		.setName('deletereview')
 		.setDescription('Delete a review!')
         .addStringOption(option => 
-            option.setName('artist')
+            option.setName('artists')
                 .setDescription('The name of the artist(s).')
                 .setRequired(true))
 
@@ -23,52 +23,37 @@ module.exports = {
                 .setRequired(false)),
 	admin: false,
     async execute(interaction) {
-        let args = [];
-        let rmxArtists = [];
 
-        await interaction.options._hoistedOptions.forEach(async (value) => {
-            args.push(value.value);
-            if (value.name === 'remixers') {
-                rmxArtists.push(value.value.split(' & '));
-                rmxArtists = rmxArtists.flat(1);
-            }
-        });
-        
-        //Auto-adjustment to caps for each word
-        args[0] = capitalize(args[0]);
-        args[1] = capitalize(args[1]);
+        let parsed_args = parse_artist_song_data(interaction);
 
-        args[0] = args[0].trim();
-        args[1] = args[1].trim();
+        let origArtistArray = parsed_args[0];
+        let artistArray = parsed_args[2];
+        let songName = parsed_args[3];
+        let rmxArtistArray = parsed_args[4];
+        let vocalistArray = parsed_args[5];
+
+        if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
 
         let userToDelete = interaction.user;
-        let artistArray = args[0].split(' & ');
         let rname;
-        let songName = args[1];
-
-        if (rmxArtists.length != 0) {
-            artistArray = rmxArtists;
-            songName = `${songName} (${rmxArtists.join(' & ')} Remix)`;
-        } 
-
-        // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
-        if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
-            if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
-                artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
-                artistArray = artistArray.flat(1);
-            }
-        }
-
-        if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`) != undefined) {
-            if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`).length != 0) {
-                artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].vocals`));
-                artistArray = artistArray.flat(1);
-            }
-        }
 
         // Update user stats
         if (db.user_stats.get(interaction.user.id, 'recent_review').includes(songName)) {
             db.user_stats.set(interaction.user.id, 'N/A', 'recent_review');
+        }
+
+        let reviewMsgID = db.reviewDB.get(artistArray[0], `["${songName}"].["${userToDelete.id}"].msg_id`);
+
+        if (reviewMsgID != false && reviewMsgID != undefined) {
+            let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+            channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
+                await msg.delete();
+            }).catch(() => {
+                channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
+                    msg.delete();
+                });
+            });
         }
 
         let songObj;
@@ -79,29 +64,15 @@ module.exports = {
             if (rname === undefined) break;
 
             songObj = db.reviewDB.get(artistArray[i], `["${songName}"]`);
-            let reviewMsgID = db.reviewDB.get(artistArray[i], `["${songName}"].["${userToDelete.id}"].msg_id`);
-            console.log(reviewMsgID);
 
             delete songObj[`${userToDelete.id}`];
             songObj[`review_num`] -= 1;
 
-            if (reviewMsgID != false && reviewMsgID != undefined) {
-                let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
-                channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
-                    msg.delete();
-                }).catch(() => {
-                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                    channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
-                        msg.delete();
-                    });
-                });
-            }
-
             db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
         }
 
-        await interaction.editReply(`Deleted <@${userToDelete.id}>'s review of ${args[0]} - ${songName}.`);
-        await wait(5000);
+        await interaction.editReply(`Deleted <@${userToDelete.id}>'s review of ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}.`);
+        await wait(30000);
         await interaction.deleteReply();
 	},
 };
