@@ -194,7 +194,6 @@ module.exports = {
                 artistEmbed.setDescription(`No reviewed songs. :(`);
             }
 
-        console.log(interaction);
         interaction.editReply({ embeds: [artistEmbed] });
 	},
 };
