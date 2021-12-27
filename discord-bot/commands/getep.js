@@ -22,7 +22,7 @@ module.exports = {
         let origArtistArray = capitalize(interaction.options.getString('artists')).split(' & ');
         let epName = capitalize(interaction.options.getString('ep_name'));
 
-        let artistArray = origArtistArray.split(' & ');
+        let artistArray = origArtistArray;
 
         const artistObj = db.reviewDB.get(artistArray[0]);
         if (artistObj === undefined) {

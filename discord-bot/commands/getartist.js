@@ -67,8 +67,6 @@ module.exports = {
                 epReviewNum = epReviewNum.filter(x => x != 'collab');
                 epReviewNum = epReviewNum.filter(x => x != 'songs');
 
-                console.log(epReviewNum);
-
                 for (let s = 0; s < epReviewNum; s++) {
                     if (db.reviewDB.get(artist, `["${epKeyArray[i]}"].["${epReviewNum[s]}"].starred` == true)) epStarNum += 1;
                 }
@@ -196,6 +194,7 @@ module.exports = {
                 artistEmbed.setDescription(`No reviewed songs. :(`);
             }
 
+        console.log(interaction);
         interaction.editReply({ embeds: [artistEmbed] });
 	},
 };

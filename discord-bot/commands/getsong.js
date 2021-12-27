@@ -196,7 +196,7 @@ module.exports = {
                 if (review != '-') reviewEmbed.addField('Rating: ', `**${rating}/10**`, true);
 
                 if (sentby != false) {
-                    reviewEmbed.setFooter(`Sent by ${sentby.displayName}${url != undefined}`, `${sentby.user.avatarURL({ format: "png" })}`);
+                    reviewEmbed.setFooter(`Sent by ${sentby.displayName}`, `${sentby.user.avatarURL({ format: "png" })}`);
                 } else if (songEP != undefined && songEP != false) {
                     reviewEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
                 }
