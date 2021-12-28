@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { parse_artist_song_data } = require("../func.js");
+const { parse_artist_song_data, hall_of_fame_check } = require("../func.js");
 const wait = require('util').promisify(setTimeout);
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
@@ -27,6 +27,7 @@ module.exports = {
         let parsed_args = parse_artist_song_data(interaction);
 
         let origArtistArray = parsed_args[0];
+        let origSongName = parsed_args[1];
         let artistArray = parsed_args[2];
         let songName = parsed_args[3];
         let rmxArtistArray = parsed_args[4];
@@ -64,6 +65,18 @@ module.exports = {
             if (rname === undefined) break;
 
             songObj = db.reviewDB.get(artistArray[i], `["${songName}"]`);
+
+            if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].starred`) == true) {
+                // Create display song name variable
+                let displaySongName = (`${origSongName}` + 
+                `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
+                `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
+                
+                db.user_stats.remove(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
+                db.reviewDB.set(artistArray[i], false, `["${songName}"].["${interaction.user.id}"].starred`);   
+                hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName,
+                    db.reviewDB.get(artistArray[0], `["${songName}"].art`), true);
+            }
 
             delete songObj[`${userToDelete.id}`];
             songObj[`review_num`] -= 1;

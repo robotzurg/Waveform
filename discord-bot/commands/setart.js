@@ -39,15 +39,23 @@ module.exports = {
         let songArt = interaction.options.getString('art');
         let newSong = false;
 
+        console.log(origArtistArray);
+
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
 
-        if (songArt.toLowerCase() === 's' || songArt.toLowerCase() === 'spotify') {
-            interaction.member.presence.activities.forEach((activity) => {
+        if (songArt.toLowerCase() === 's') {
+            await interaction.member.presence.activities.forEach(async (activity) => {
                 if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
                     songArt = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
+                } else {
+                    if (songArt == 's') {
+                        songArt = false;
+                    }
                 }
             });
         }
+
+        if (songArt == false) return interaction.editReply('You aren\'t playing a spotify song, or your discord spotify status isn\'t working!');
 
 		if (newSong === false) {
 			for (let i = 0; i < artistArray.length; i++) {

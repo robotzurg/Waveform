@@ -58,10 +58,8 @@ module.exports = {
 
             if (star_check == true) {
                 await db.reviewDB.set(artistArray[i], false, `["${songName}"].["${interaction.user.id}"].starred`);
-                console.log(db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`));
             } else if (star_check == false) {
                 db.reviewDB.set(artistArray[i], true, `["${songName}"].["${interaction.user.id}"].starred`);
-                console.log('Test');
             } else {
                 return interaction.editReply('Error in the starring process, please tell Jeff');
             }

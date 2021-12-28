@@ -67,7 +67,7 @@ module.exports = {
                 epReviewNum = epReviewNum.filter(x => x != 'collab');
                 epReviewNum = epReviewNum.filter(x => x != 'songs');
 
-                for (let s = 0; s < epReviewNum; s++) {
+                for (let s = 0; s < epReviewNum.length; s++) {
                     if (db.reviewDB.get(artist, `["${epKeyArray[i]}"].["${epReviewNum[s]}"].starred` == true)) epStarNum += 1;
                 }
 

@@ -273,7 +273,7 @@ module.exports = {
 
         //Add review to database
         //Quick thumbnail image check to assure we aren't putting in an avatar, songArt should be set to what we put in the database.
-        if (songArt === undefined || songArt === false || songArt === 'spotify' || songArt === 's') { 
+        if (songArt === undefined || songArt === false || songArt.includes('avatar') || songArt === 'spotify' || songArt === 's') { 
             songArt = false;
         }
 
@@ -516,6 +516,7 @@ module.exports = {
                                     db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
                                 }
 
+                                db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
                                 hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                             }
                         }).catch(() => {
@@ -540,6 +541,7 @@ module.exports = {
                                         db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
                                     }
 
+                                    db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
                                     hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                                 }
                             });
@@ -630,6 +632,7 @@ module.exports = {
                                 db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
                             }
 
+                            db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
                             hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                         }
 
@@ -672,6 +675,7 @@ module.exports = {
                         db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
                     }
                     
+                    db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
                     hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                 }
             });

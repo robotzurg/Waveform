@@ -52,8 +52,11 @@ module.exports = {
             reviewNum = reviewNum.filter(e => e !== 'art');
             reviewNum = reviewNum.filter(e => e !== 'songs');
             reviewNum = reviewNum.filter(e => e !== 'collab');
+            let userArray = reviewNum.slice(0);
 
             for (let i = 0; i < reviewNum.length; i++) {
+                let userObj = db.reviewDB.get(artistArray[0], `["${epName}"].["${reviewNum[i]}"]`);
+                userArray[i] = `<@${reviewNum[i]}>${(userObj.rating != false) ? ` \`${userObj.rating}/10\`` : ``}`;
                 rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${reviewNum[i]}"].rating`);
                 if (rating != false && rating != undefined && !isNaN(rating)) {
                    epRankArray.push(parseFloat(rating));
@@ -89,9 +92,11 @@ module.exports = {
             }
 
             if (epRankArray.length != 0) {
-                epEmbed.setDescription(`*The average overall user rating of this EP is* ***${Math.round(average(epRankArray) * 10) / 10}!***\n*The total average rating of all songs on this EP is* ***${Math.round(average(songRankArray) * 10) / 10}!***`);
+                epEmbed.setDescription(`*The average overall user rating of this EP is* ***${Math.round(average(epRankArray) * 10) / 10}!***\n*The total average rating of all songs on this EP is* ***${Math.round(average(songRankArray) * 10) / 10}!***` + 
+                `\n${userArray.join('\n')}`);
             } else {
-                epEmbed.setDescription(`*This EP has no overall user ratings.*\n*The total average rating of all songs on this EP is* ***${Math.round(average(songRankArray) * 10) / 10}!***`);
+                epEmbed.setDescription(`*This EP has no overall user ratings.*\n*The total average rating of all songs on this EP is* ***${Math.round(average(songRankArray) * 10) / 10}!***` +
+                `\n${userArray.join('\n')}`);
             }
 
         interaction.editReply({ embeds: [epEmbed] });

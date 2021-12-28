@@ -138,6 +138,8 @@ module.exports = {
                 origArtistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
                 artistArray = artistArray.flat(1);
                 origArtistArray = artistArray.flat(1);
+                artistArray = [...new Set(artistArray)];
+                origArtistArray = [...new Set(origArtistArray)];
             }
         }
 
@@ -375,8 +377,6 @@ module.exports = {
         
         const { get_user_reviews } = require('./func.js');
 
-        db.user_stats.push(interaction.user.id, `${artistArray.join(' & ')} - ${songName}`, 'star_list');
-
         const songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
 
         let star_array = [];
@@ -386,7 +386,6 @@ module.exports = {
         for (let i = 0; i < userArray.length; i++) {
             let star_check;
             star_check = db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].starred`);
-            console.log(`Hall of Fame Check ${star_check}`);
 
             if (star_check === true) {
                 star_count++;
