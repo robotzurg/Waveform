@@ -1,5 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
+const getAppleMusicLink = require('get-apple-music-link');
 const { average, get_user_reviews, parse_artist_song_data, sort } = require('../func.js');
 const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 const { SlashCommandBuilder } = require('@discordjs/builders');
@@ -151,6 +152,17 @@ module.exports = {
                     .setPlaceholder('See other reviews by clicking on me!')
                     .addOptions(select_options),
             );
+
+        // Spotify / Apple Music stuff
+         
+        getAppleMusicLink.track(`${songName}`, `${origArtistArray[0]}`, function(res, err) {
+            if(err) {
+                console.log("not found");
+            }
+            else{
+                console.log(res);
+            }
+        });
 
         interaction.editReply({ embeds: [songEmbed], components: [row] });
         let message = await interaction.fetchReply();
