@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { capitalize } = require("../func.js");
+const { capitalize, get_user_reviews } = require("../func.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const forAsync = require('for-async');
 
@@ -43,15 +43,7 @@ module.exports = {
         let count = -1;
         let userIDs = [];
 
-        let userArray = Object.keys(song_obj);
-        userArray = userArray.filter(item => item !== 'art');
-        userArray = userArray.filter(item => item !== 'collab');
-        userArray = userArray.filter(item => item !== 'vocals');
-        userArray = userArray.filter(item => item !== 'remixers');
-        userArray = userArray.filter(item => item !== 'ep');
-        userArray = userArray.filter(item => item !== 'hof_id');
-        userArray = userArray.filter(item => item !== 'review_num');
-        userArray = userArray.filter(item => item !== 'songs');
+        let userArray = get_user_reviews(song_obj);
 
 
         userArray.forEach(user => {

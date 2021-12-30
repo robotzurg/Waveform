@@ -17,7 +17,7 @@ module.exports = {
                 .setDescription('The name of the EP.')
                 .setRequired(true)),
     admin: false,
-	execute(interaction) {
+	async execute(interaction) {
 
         let origArtistArray = capitalize(interaction.options.getString('artists')).split(' & ');
         let epName = capitalize(interaction.options.getString('ep_name'));
@@ -34,9 +34,9 @@ module.exports = {
             return interaction.editReply('No EP found.');
         }
 
-        let epThumbnail = db.reviewDB.get(artistArray[0], `["${epName}"].art`);
-        if (epThumbnail === undefined || epThumbnail === false) {
-            epThumbnail = interaction.user.avatarURL({ format: "png", dynamic: false });
+        let ep_art = db.reviewDB.get(artistArray[0], `["${epName}"].art`);
+        if (ep_art === undefined || ep_art === false) {
+            ep_art = interaction.user.avatarURL({ format: "png", dynamic: false });
         }
 
         let rankNumArray = [];
@@ -53,6 +53,7 @@ module.exports = {
             reviewNum = reviewNum.filter(e => e !== 'songs');
             reviewNum = reviewNum.filter(e => e !== 'collab');
             let userArray = reviewNum.slice(0);
+            let userIDList = userArray.slice(0);
 
             for (let i = 0; i < reviewNum.length; i++) {
                 let userObj = db.reviewDB.get(artistArray[0], `["${epName}"].["${reviewNum[i]}"]`);
@@ -69,7 +70,7 @@ module.exports = {
                 let songArtist = artistArray[0];
 
                 let songObj = db.reviewDB.get(songArtist, `["${songArray[i]}"]`);
-                epEmbed.setThumbnail(epThumbnail);
+                epEmbed.setThumbnail(ep_art);
 
                 epnum++;
 
@@ -99,6 +100,159 @@ module.exports = {
                 `\n${userArray.join('\n')}`);
             }
 
-        interaction.editReply({ embeds: [epEmbed] });
+            // Button/Select Menu setup
+        let select_options = [];
+        let taggedMemberSel;
+        let taggedUserSel;
+
+        for (let i = 0; i < userIDList.length; i++) {
+            taggedMemberSel = await interaction.guild.members.fetch(userIDList[i])
+            // eslint-disable-next-line no-unused-vars
+            .catch(x => taggedMemberSel = 'Invalid Member (They have left the server)');
+            if (taggedMemberSel != 'Invalid Member (They have left the server)') {
+                taggedUserSel = taggedMemberSel.user;
+            }
+
+            if (taggedMemberSel != 'Invalid Member (They have left the server)') {
+                select_options.push({
+                    label: `${taggedMemberSel.displayName}`,
+                    description: `${taggedMemberSel.displayName}'s review of the EP/LP.`,
+                    value: `${taggedUserSel.id}`,
+                });
+            }
+        }
+
+        select_options.push({
+            label: `Back`,
+            description: `Go back to the main song data menu.`,
+            value: `back`,
+        });
+
+        const row = new Discord.MessageActionRow()
+            .addComponents(
+                new Discord.MessageSelectMenu()
+                    .setCustomId('select')
+                    .setPlaceholder('See other reviews by clicking on me!')
+                    .addOptions(select_options),
+            );
+
+        interaction.editReply({ embeds: [epEmbed], components: [row] });
+        let message = await interaction.fetchReply();
+       
+		const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 60000 });
+
+		collector.on('collect', async select => {
+
+            if (select.values[0] === 'back') { // Back Selection
+                return await select.update({ embeds: [epEmbed], components: [row] });
+            }
+
+            // let ep_ranking = db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].ranking`);
+            let ep_url = db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].url`);
+            let ep_overall_rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].rating`);
+            let ep_overall_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].review`);
+            let rname;
+            let rreview;
+            let rscore;
+            let rsentby;
+            let rstarred;
+            let usrSentBy;
+
+            const epReviewEmbed = new Discord.MessageEmbed();
+            if (songArray.length != 0) {
+                for (let i = 0; i < songArray.length; i++) {
+                    let songName = songArray[i];
+                    let artistsEmbed = [];
+                    let vocalistsEmbed = [];
+    
+                    rname = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].name`);
+                    if (rname === undefined) return interaction.editReply(`No review found for song ${songName}`);
+                    rreview = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].review`);
+                    rscore = `${db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].rating`)}/10`;
+                    rsentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].sentby`);
+                    rstarred = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].starred`);
+                    if (rsentby != false) {
+                        usrSentBy = interaction.guild.members.cache.get(rsentby);              
+                    }
+    
+                    // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
+                    if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
+                        if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
+                            artistsEmbed = [];
+                            artistsEmbed.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
+                            artistsEmbed = artistsEmbed.flat(1);
+                            artistsEmbed = artistsEmbed.join(' & ');
+                        }
+                    }
+            
+                    if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`) != undefined) {
+                        if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`).length != 0) {
+                            vocalistsEmbed = [];
+                            vocalistsEmbed.push(db.reviewDB.get(artistArray[0], `["${songName}"].vocals`));
+                            vocalistsEmbed = vocalistsEmbed.flat(1);
+                            vocalistsEmbed = vocalistsEmbed.join(' & ');
+                        }
+                    }
+    
+                    epReviewEmbed.addField(`${rstarred === true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `${rreview}`);
+                }
+            }
+            
+            epReviewEmbed.setColor(`${taggedMemberSel.displayHexColor}`);
+            epReviewEmbed.setTitle(`${origArtistArray} - ${epName}`);
+            epReviewEmbed.setAuthor(rsentby != false ? `${rname}'s mailbox review` : `${rname}'s review`, `${taggedUserSel.avatarURL({ format: "png" })}`);
+    
+            if (ep_overall_rating != false && ep_overall_review != false) {
+                epReviewEmbed.setTitle(`${origArtistArray} - ${epName} (${ep_overall_rating}/10)`);
+                epReviewEmbed.setDescription(`*${ep_overall_review}*`);
+            } else if (ep_overall_rating != false) {
+                epReviewEmbed.setTitle(`${origArtistArray} - ${epName} (${ep_overall_rating}/10)`);
+            } else if (ep_overall_review != false) {
+                epReviewEmbed.setDescription(`*${ep_overall_review}*`);
+            }
+    
+            if (epName.includes('EP')) {
+                epReviewEmbed.setAuthor(rsentby != false && rsentby != undefined && songArray.length != 0 ? `${rname}'s mailbox EP review` : `${rname}'s EP review`, `${taggedUserSel.avatarURL({ format: "png", dynamic: false })}`);
+            } else if (epName.includes('LP')) {
+                epReviewEmbed.setAuthor(rsentby != false && rsentby != undefined && songArray.length != 0 ? `${rname}'s mailbox LP review` : `${rname}'s LP review`, `${taggedUserSel.avatarURL({ format: "png", dynamic: false })}`);
+            }
+            epReviewEmbed.setThumbnail(ep_art);
+            if (rsentby != false && rsentby != undefined && ep_overall_rating === false) {
+                epReviewEmbed.setFooter(`Sent by ${usrSentBy.displayName}`, `${usrSentBy.user.avatarURL({ format: "png" })}`);
+            }
+            
+            if (ep_url === undefined) {
+                select.update({ embeds: [epReviewEmbed], components: [row] });
+            } else {
+                select.update({ content: `[View EP/LP Review Message](${ep_url})`, embeds: [epReviewEmbed], components: [row] });
+            }
+    
+            /*if (db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].ranking`).length != 0) {
+                if (ep_ranking.length != 0) {
+                    const rankingEmbed = new Discord.MessageEmbed()
+                    .setColor(`${taggedMemberSel.displayHexColor}`);
+    
+                    ep_ranking = ep_ranking.sort(function(a, b) {
+                        return a[0] - b[0];
+                    });
+        
+                    ep_ranking = ep_ranking.flat(1);
+        
+                    for (let ii = 0; ii <= ep_ranking.length; ii++) {
+                        ep_ranking.splice(ii, 1);
+                    }
+    
+                    rankingEmbed.addField(`Ranking:`, `\`\`\`${ep_ranking.join('\n')}\`\`\``);
+    
+                    interaction.channel.send({ embeds: [rankingEmbed] });
+                } 
+            }*/
+            // Add the above later
+        });
+
+        collector.on('end', async () => {
+            await interaction.editReply({ embeds: [epEmbed], components: [] });
+        });
+    
 	},
 };

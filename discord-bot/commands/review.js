@@ -334,11 +334,11 @@ module.exports = {
                         await i.deferUpdate();
                         await i.editReply({ content: 'Type in the Song Name (NO FT. OR REMIXERS SHOULD BE INCLUDED)', components: [] });
 
-                        const s_filter = m => m.author.id === interaction.user.id;
+                        const s_filter = m => m.author.id == interaction.user.id;
                         s_collector = int_channel.createMessageCollector({ s_filter, max: 1, time: 60000 });
                         s_collector.on('collect', async m => {
                             songName = capitalize(m.content);
-                            displaySongName = (`${origSongName}` + 
+                            displaySongName = (`${songName}` + 
                             `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
                             `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
                             reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);

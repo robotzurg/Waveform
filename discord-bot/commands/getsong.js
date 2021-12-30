@@ -210,8 +210,7 @@ module.exports = {
 			} 
 		});
 
-		collector.on('end', async collected => {
-            console.log(`Collected ${collected.size} items`);
+		collector.on('end', async () => {
             await interaction.editReply({ embeds: [songEmbed], components: [] });
         });
 	},
