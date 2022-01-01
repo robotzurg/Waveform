@@ -4,6 +4,7 @@ const getAppleMusicLink = require('get-apple-music-link');
 const { average, get_user_reviews, parse_artist_song_data, sort } = require('../func.js');
 const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const play = require('play-dl');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -25,7 +26,15 @@ module.exports = {
                 .setRequired(false)),
 	admin: false,
 	async execute(interaction) {
-        
+
+        play.getFreeClientID().then((clientID) => {
+            play.setToken({
+              soundcloud : {
+                  client_id : clientID,
+              },
+            });
+        });
+
         let parsed_args = parse_artist_song_data(interaction);
 
         let origArtistArray = parsed_args[0];
@@ -63,6 +72,7 @@ module.exports = {
         const songEmbed = new Discord.MessageEmbed()
             .setColor(`${interaction.member.displayHexColor}`);
 
+            console.log(vocalistArray);
             if (vocalistArray.length != 0) {
                 songEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName} (ft. ${vocalistArray.join(' & ')})`);
             } else {
@@ -155,16 +165,15 @@ module.exports = {
 
         // Spotify / Apple Music stuff
          
-        getAppleMusicLink.track(`${songName}`, `${origArtistArray[0]}`, function(res, err) {
+        await getAppleMusicLink.track(`${songName}`, `${origArtistArray[0]}`, function(res, err) {
             if(err) {
-                console.log("not found");
+                interaction.editReply({ embeds: [songEmbed], components: [row] });
             }
             else{
-                console.log(res);
+                interaction.editReply({ /*content: `[Apple Music Link](${res})`,*/ embeds: [songEmbed], components: [row] });
             }
         });
 
-        interaction.editReply({ embeds: [songEmbed], components: [row] });
         let message = await interaction.fetchReply();
        
 		const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 60000 });
@@ -223,7 +232,14 @@ module.exports = {
 		});
 
 		collector.on('end', async () => {
-            await interaction.editReply({ embeds: [songEmbed], components: [] });
+            await getAppleMusicLink.track(`${songName}`, `${origArtistArray[0]}`, function(res, err) {
+                if(err) {
+                    interaction.editReply({ embeds: [songEmbed], components: [row] });
+                }
+                else{
+                    interaction.editReply({ /*content: `[Apple Music Link](${res})`*/ embeds: [songEmbed], components: [row] });
+                }
+            });
         });
 	},
 };

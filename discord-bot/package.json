@@ -34,6 +34,7 @@
     "node.js": "^0.0.1-security",
     "num-words": "^1.2.2",
     "nvm": "^0.0.4",
+    "play-dl": "^1.6.9",
     "ramda": "^0.27.1",
     "sequelize": "^6.3.5",
     "spotify": "^0.3.0",
