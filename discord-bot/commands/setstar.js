@@ -8,8 +8,9 @@ module.exports = {
 		.setName('setstar')
 		.setDescription('Change review to be starred or not starred')
         .addStringOption(option => 
-            option.setName('artists')
+            option.setName('artist')
                 .setDescription('The name of the artist(s).')
+                .setAutocomplete(true)
                 .setRequired(true))
 
         .addStringOption(option => 

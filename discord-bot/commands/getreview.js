@@ -8,8 +8,9 @@ module.exports = {
         .setName('getreview')
         .setDescription('Get a review someone has written in the database!')
         .addStringOption(option => 
-            option.setName('artists')
+            option.setName('artist')
                 .setDescription('The name of the artist(s).')
+                .setAutocomplete(true)
                 .setRequired(true))
 
         .addStringOption(option => 

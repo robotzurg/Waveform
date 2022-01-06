@@ -10,8 +10,9 @@ module.exports = {
         .setName('review')
         .setDescription('Review a song using Waveform.')
         .addStringOption(option => 
-            option.setName('artists')
+            option.setName('artist')
                 .setDescription('The name of the artist(s). (DO NOT PUT ANY REMIXERS OR VOCALISTS HERE, ONLY PRODUCTION ARTISTS)')
+                .setAutocomplete(true)
                 .setRequired(true))
 
         .addStringOption(option => 
@@ -72,7 +73,7 @@ module.exports = {
         }
 
         // Init variables
-        let origArtistArray = capitalize(interaction.options.getString('artists')).split(' & ');
+        let origArtistArray = capitalize(interaction.options.getString('artist')).split(' & ');
         let origSongName = capitalize(interaction.options.getString('song')); // for remixes later on
         let songName = capitalize(interaction.options.getString('song'));
         let rating = parseFloat(interaction.options.getString('rating'));

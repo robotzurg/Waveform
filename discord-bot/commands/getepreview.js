@@ -8,8 +8,9 @@ module.exports = {
         .setName('getepreview')
         .setDescription('Get an EP review from a user on the server that they have written!')
         .addStringOption(option => 
-            option.setName('artists')
+            option.setName('artist')
                 .setDescription('The name of the artist(s).')
+                .setAutocomplete(true)
                 .setRequired(true))
 
         .addStringOption(option => 
@@ -24,7 +25,7 @@ module.exports = {
     admin: false,
 	async execute(interaction) {
 
-        let origArtistArray = capitalize(interaction.options.getString('artists')).split(' & ');
+        let origArtistArray = capitalize(interaction.options.getString('artist')).split(' & ');
         let epName = capitalize(interaction.options.getString('ep_name'));
         let taggedUser = interaction.options.getUser('user');
         let taggedMember = interaction.member;

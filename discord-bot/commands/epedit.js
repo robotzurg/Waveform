@@ -8,8 +8,9 @@ module.exports = {
         .setName('epedit')
         .setDescription('Edit/add data to an EP/LP review')
         .addStringOption(option => 
-            option.setName('artists')
+            option.setName('artist')
                 .setDescription('The name of the MAIN EP/LP artist(s). (separate with &, Do not put any one-off collaborators here.)')
+                .setAutocomplete(true)
                 .setRequired(true))
         .addStringOption(option => 
             option.setName('ep_name')
@@ -25,7 +26,7 @@ module.exports = {
                 .setRequired(false)),
 	admin: false,
 	async execute(interaction) {
-        let origArtistArray = capitalize(interaction.options.getString('artists')).split(' & ');
+        let origArtistArray = capitalize(interaction.options.getString('artist')).split(' & ');
         let artistArray = origArtistArray.slice(0);
         let ep_name = capitalize(interaction.options.getString('ep_name'));
         let ep_rating = interaction.options.getString('ep_rating');

@@ -72,7 +72,7 @@ module.exports = {
         const { capitalize, parse_spotify } = require('./func.js');
 
         let spotifyCheck = false;
-        let origArtistArray = capitalize(interaction.options.getString('artists'));
+        let origArtistArray = capitalize(interaction.options.getString('artist'));
         let songArg = capitalize(interaction.options.getString('song'));
         let rmxArtistArray = [];
         if (interaction.options.getString('remixers') != null) {

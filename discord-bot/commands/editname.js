@@ -10,6 +10,7 @@ module.exports = {
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist.')
+                .setAutocomplete(true)
                 .setRequired(true))
         .addStringOption(option => 
             option.setName('old_song')

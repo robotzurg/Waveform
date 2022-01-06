@@ -8,8 +8,9 @@ module.exports = {
         .setName('epreview')
         .setDescription('Review an EP or LP in Waveform.')
         .addStringOption(option => 
-            option.setName('artists')
+            option.setName('artist')
                 .setDescription('The name of the MAIN EP/LP artist(s). (separate with &, Do not put any one-off collaborators here.)')
+                .setAutocomplete(true)
                 .setRequired(true))
 
         .addStringOption(option => 
@@ -39,7 +40,7 @@ module.exports = {
 	admin: false,
 	async execute(interaction) {
 
-        let origArtistArray = capitalize(interaction.options.getString('artists')).split(' & ');
+        let origArtistArray = capitalize(interaction.options.getString('artist')).split(' & ');
         let artistArray = origArtistArray.slice(0);
         let ep_name = capitalize(interaction.options.getString('ep_name'));
         let art = interaction.options.getString('art');

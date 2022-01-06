@@ -4,15 +4,15 @@ const getAppleMusicLink = require('get-apple-music-link');
 const { average, get_user_reviews, parse_artist_song_data, sort } = require('../func.js');
 const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const play = require('play-dl');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('getsong')
         .setDescription('Get all the data about a song and displays it in an embed message.')
         .addStringOption(option => 
-            option.setName('artists')
+            option.setName('artist')
                 .setDescription('The name of the artist(s).')
+                .setAutocomplete(true)
                 .setRequired(true))
 
         .addStringOption(option => 
@@ -26,14 +26,6 @@ module.exports = {
                 .setRequired(false)),
 	admin: false,
 	async execute(interaction) {
-
-        play.getFreeClientID().then((clientID) => {
-            play.setToken({
-              soundcloud : {
-                  client_id : clientID,
-              },
-            });
-        });
 
         let parsed_args = parse_artist_song_data(interaction);
 

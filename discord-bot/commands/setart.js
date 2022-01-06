@@ -9,8 +9,9 @@ module.exports = {
         .setName('setart')
         .setDescription('Put in some art for a song (or EP/LP) in the database!')
         .addStringOption(option => 
-            option.setName('artists')
+            option.setName('artist')
                 .setDescription('The name of the artist(s).')
+                .setAutocomplete(true)
                 .setRequired(true))
 
         .addStringOption(option => 

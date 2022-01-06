@@ -8,8 +8,9 @@ module.exports = {
         .setName('getep')
         .setDescription('Get all the songs from a specific EP and display them in an embed message.')
         .addStringOption(option => 
-            option.setName('artists')
+            option.setName('artist')
                 .setDescription('The name of the artist(s).')
+                .setAutocomplete(true)
                 .setRequired(true))
 
         .addStringOption(option => 
@@ -19,7 +20,7 @@ module.exports = {
     admin: false,
 	async execute(interaction) {
 
-        let origArtistArray = capitalize(interaction.options.getString('artists')).split(' & ');
+        let origArtistArray = capitalize(interaction.options.getString('artist')).split(' & ');
         let epName = capitalize(interaction.options.getString('ep_name'));
 
         let artistArray = origArtistArray;

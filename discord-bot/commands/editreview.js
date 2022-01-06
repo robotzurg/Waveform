@@ -8,8 +8,9 @@ module.exports = {
         .setName('editreview')
         .setDescription('Edit a song review.')
         .addStringOption(option => 
-            option.setName('artists')
+            option.setName('artist')
                 .setDescription('The artists of the song you would like to edit the review of (No Remixers Here).')
+                .setAutocomplete(true)
                 .setRequired(true))
         .addStringOption(option => 
             option.setName('song')
@@ -33,7 +34,7 @@ module.exports = {
                 .setRequired(false)),
 	admin: true,
 	async execute(interaction) {
-        let origArtistArray = capitalize(interaction.options.getString('artists')).split(' & ');
+        let origArtistArray = capitalize(interaction.options.getString('artist')).split(' & ');
         let artistArray = origArtistArray.slice(0);
         let songName = capitalize(interaction.options.getString('song'));
         let rating = interaction.options.getString('rating');
