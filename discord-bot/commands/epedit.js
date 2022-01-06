@@ -1,7 +1,7 @@
 const db = require("../db.js");
 const { capitalize } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { default: wait } = require("wait");
+const wait = require("wait");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -67,6 +67,32 @@ module.exports = {
             }
 
             msg.edit({ embeds: [msgEmbed] });
+        }).catch(() => {
+            channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+            channelsearch.messages.fetch(`${db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].msg_id`)}`).then(msg => {
+                let msgEmbed = msg.embeds[0];
+
+                if (ep_rating != null) {
+                    old_ep_rating = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].rating`);
+                    msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${ep_rating}/10)`);
+                    for (let i = 0; i < artistArray.length; i++) {
+                        db.reviewDB.set(artistArray[i], parseFloat(ep_rating), `["${ep_name}"].["${interaction.user.id}"].rating`);
+                    }
+                }
+                
+                if (ep_review != null) {
+                    old_ep_review = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].review`);
+                    if (ep_review.includes('\\n')) {
+                        ep_review = ep_review.split('\\n').join('\n');
+                    }
+                    msgEmbed.setDescription(`*${ep_review}*`);
+                    for (let i = 0; i < artistArray.length; i++) {
+                        db.reviewDB.set(artistArray[i], ep_review, `["${ep_name}"].["${interaction.user.id}"].review`);
+                    }
+                }
+
+                msg.edit({ embeds: [msgEmbed] });
+            });
         });
 
         interaction.editReply(`Here's what was edited on your review of **${artistArray.join(' & ')} - ${ep_name}**:` +

@@ -148,10 +148,6 @@ module.exports = {
 
         // Auto merge EP review related variables (see automerge.js for more info)
         let collector_time = 100000000;
-        let auto_merge = db.user_stats.get(interaction.user.id, 'auto_merge_to_ep');
-        if (auto_merge == true && db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
-            collector_time = 1000;
-        }
 
         // Setup buttons
         const row = new Discord.MessageActionRow()
@@ -421,12 +417,14 @@ module.exports = {
                         await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
                     } break;
                     case 'delete': {
+                        await i.deferUpdate();
+
+                        interaction.deleteReply();
                         if (a_collector != undefined) a_collector.stop();
                         if (s_collector != undefined) s_collector.stop();
                         if (ra_collector != undefined) ra_collector.stop();
                         if (re_collector != undefined) re_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
-                        interaction.deleteReply();
                     } break;
                     case 'ep_done': { // EP review handling
                         await i.deferUpdate();
@@ -497,7 +495,7 @@ module.exports = {
 
                         // Edit the EP embed
                         await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                            collab = artistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
+                            collab = origArtistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
                             if (starred === true) {
                                 field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
                             } else {
@@ -592,7 +590,7 @@ module.exports = {
                                 channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
                                 await channelsearch.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
                                     rank_msg.delete();
-                                });
+                                }).catch(async () => {});
                             });    
                         }
 
@@ -613,7 +611,7 @@ module.exports = {
                         await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [] });
 
                         // Review the song
-                        await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser, false);
+                        await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, false);
 
                         // Update user stats
                         db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
@@ -657,7 +655,7 @@ module.exports = {
         } else { // Reviewing with the Spotify Link Review Context Menu
 
             // Review the song
-            await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser, false);
+            await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, false);
 
             // Update user stats
             db.user_stats.set(interaction.user.id, `${origArtistArray.join(' & ')} - ${displaySongName}`, 'recent_review');

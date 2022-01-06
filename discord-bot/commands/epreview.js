@@ -1,7 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { capitalize } = require('../func.js');
-const { mailboxes } = require('../arrays.json');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -40,15 +39,13 @@ module.exports = {
 	admin: false,
 	async execute(interaction) {
 
-        if (mailboxes.includes(interaction.channel.name)) return interaction.editReply('Mailboxes are NOT currently supported with EP Reviews.');
-
         let origArtistArray = capitalize(interaction.options.getString('artists')).split(' & ');
         let artistArray = origArtistArray.slice(0);
         let ep_name = capitalize(interaction.options.getString('ep_name'));
         let art = interaction.options.getString('art');
         let overall_rating = interaction.options.getString('overall_rating');
         let overall_review = interaction.options.getString('overall_review');
-        let user_sent_by = interaction.options.getString('user_sent_by');
+        let user_sent_by = interaction.options.getUser('user_who_sent');
         let taggedMember = false;
         let taggedUser = false;
 
@@ -68,7 +65,7 @@ module.exports = {
             overall_review = false;
         }
 
-        if (overall_review != null) {
+        if (overall_review != false) {
             if (overall_review.includes('\\n')) {
                 overall_review = overall_review.split('\\n').join('\n');
             }
@@ -79,10 +76,15 @@ module.exports = {
             ep_name = `${ep_name} EP`;
         }
 
-        if (user_sent_by != null && user_sent_by != undefined && user_sent_by != false) {
-            taggedMember = await interaction.guild.members.fetch(user_sent_by);
-            taggedUser = taggedMember.user;
+        console.log(user_sent_by);
+
+        if (user_sent_by.id != null && user_sent_by.id != undefined && user_sent_by.id != false) {
+            taggedMember = await interaction.guild.members.fetch(user_sent_by.id);
+            taggedUser = user_sent_by;
         }
+
+        console.log(taggedUser);
+        console.log(taggedMember);
 
         // Spotify check (checks for both "spotify" and "s" as the image link)
         if (art != false && art != undefined) {
@@ -103,9 +105,6 @@ module.exports = {
         // Add in the EP object/review
         for (let i = 0; i < artistArray.length; i++) {
 
-            console.log(artistArray);
-            console.log(artistArray[i]);
-
             let epObject = {
                 [ep_name]: {
                     [interaction.user.id]: {
@@ -114,7 +113,7 @@ module.exports = {
                         name: interaction.member.displayName,
                         rating: overall_rating,
                         review: overall_review,
-                        sentby: user_sent_by,
+                        sentby: taggedUser.id,
                         ranking: [],
                     },
                     art: art,
@@ -129,7 +128,7 @@ module.exports = {
                 name: interaction.member.displayName,
                 rating: overall_rating,
                 review: overall_review,
-                sentby: user_sent_by,
+                sentby: taggedUser.id,
                 ranking: [],
             };
 
@@ -188,7 +187,7 @@ module.exports = {
             epEmbed.setDescription(`*${overall_review}*`);
         }
 
-        if (taggedUser != false && taggedUser != undefined) {
+        if (user_sent_by != false) {
             epEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
         }
 
@@ -206,16 +205,9 @@ module.exports = {
         });
 
         // Set message ids
-        if (!mailboxes.includes(interaction.channel.name)) {
-            for (let i = 0; i < artistArray.length; i++) {
-                db.reviewDB.set(artistArray[i], msg.id, `["${ep_name}"].["${interaction.user.id}"].msg_id`);
-                db.reviewDB.set(artistArray[i], msg.url, `["${ep_name}"].["${interaction.user.id}"].url`);
-            }
-        } else {
-            for (let i = 0; i < artistArray.length; i++) {
-                db.reviewDB.set(artistArray[i], false, `["${ep_name}"].["${interaction.user.id}"].msg_id`);
-                db.reviewDB.set(artistArray[i], msg.url, `["${ep_name}"].["${interaction.user.id}"].url`);
-            }
+        for (let i = 0; i < artistArray.length; i++) {
+            db.reviewDB.set(artistArray[i], msg.id, `["${ep_name}"].["${interaction.user.id}"].msg_id`);
+            db.reviewDB.set(artistArray[i], msg.url, `["${ep_name}"].["${interaction.user.id}"].url`);
         }
 
     },
