@@ -5,6 +5,7 @@ const { token } = require('./config.json');
 const db = require('./db');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
+const { capitalize } = require('./func.js');
 
 // create a new Discord client and give it some variables
 const { Client, Intents } = require('discord.js');
@@ -59,6 +60,22 @@ client.once('ready', async () => {
 
 // Listen for interactions (INTERACTION COMMAND HANDLER)
 client.on('interactionCreate', async interaction => {
+
+    if (interaction.isAutocomplete()) {
+        let artist_names = db.reviewDB.keyArray();
+
+        let letter_filter = function(v) {
+            let msg = capitalize(interaction.options.getString('artist'));
+            let search_segment = v.slice(0, msg.length);
+            return msg == search_segment;
+        };
+
+        // Search filters
+        artist_names = artist_names.filter(letter_filter);
+        artist_names = artist_names.slice(0, 25);
+        artist_names = artist_names.map(v => v = { name: capitalize(v), value: capitalize(v) });
+        interaction.respond(artist_names);
+     }
 
 	if (!interaction.isCommand() && !interaction.isContextMenu()) return;
 
