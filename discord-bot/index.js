@@ -62,20 +62,49 @@ client.once('ready', async () => {
 client.on('interactionCreate', async interaction => {
 
     if (interaction.isAutocomplete()) {
-        let artist_names = db.reviewDB.keyArray();
+        let focused = interaction.options._hoistedOptions;
+        let val_artist = focused[0].value;
+        let val_song;
+        if (focused[1] != undefined) {
+            val_song = focused[1].value;
+        }
+        focused = focused.filter(v => v.focused == true);
 
         let letter_filter = function(v) {
-            let msg = capitalize(interaction.options.getString('artist'));
-            let search_segment = v.slice(0, msg.length);
+            let msg = interaction.options.getString(focused[0].name).toLowerCase();
+            let search_segment = v.slice(0, focused[0].value.length).toLowerCase();
             return msg == search_segment;
         };
+        
+        if (focused[0].name == 'artist') {
+            let artist_names = db.reviewDB.keyArray();
 
-        // Search filters
-        artist_names = artist_names.filter(letter_filter);
-        artist_names = artist_names.slice(0, 25);
-        artist_names = artist_names.map(v => v = { name: capitalize(v), value: capitalize(v) });
-        interaction.respond(artist_names);
-     }
+            // Search filters
+            artist_names = artist_names.filter(letter_filter);
+            artist_names = artist_names.slice(artist_names.length - 25, artist_names.length).reverse();
+            artist_names = artist_names.map(v => v = { name: capitalize(v), value: capitalize(v) });
+            interaction.respond(artist_names);
+        } else if (focused[0].name == 'song') {
+            let artist_songs = db.reviewDB.get(val_artist);
+            if (artist_songs == undefined) return;
+            artist_songs = Object.keys(artist_songs);
+            artist_songs = artist_songs.filter(v => v != 'Image');
+
+            // Search filters
+            artist_songs = artist_songs.filter(letter_filter);
+            artist_songs = artist_songs.slice(0, 25);
+            artist_songs = artist_songs.map(v => v = { name: capitalize(v), value: capitalize(v) });
+            interaction.respond(artist_songs);
+        } else if (focused[0].name == 'remixers') {
+            let artist_remixers = db.reviewDB.get(val_artist, `["${val_song}"].remixers`);
+            if (artist_remixers == undefined) return;
+
+            artist_remixers = artist_remixers.filter(letter_filter);
+            artist_remixers = artist_remixers.slice(0, 25);
+            artist_remixers = artist_remixers.map(v => v = { name: capitalize(v), value: capitalize(v) });
+            interaction.respond(artist_remixers);
+        }
+    }
 
 	if (!interaction.isCommand() && !interaction.isContextMenu()) return;
 

@@ -16,11 +16,13 @@ module.exports = {
         .addStringOption(option => 
             option.setName('song')
                 .setDescription('The name of the song.')
+                .setAutocomplete(true)
                 .setRequired(true))
 
         .addStringOption(option => 
             option.setName('remixers')
                 .setDescription('Remix artists on the song, use this to delete remix reviews.')
+                .setAutocomplete(true)
                 .setRequired(false)),
 	admin: false,
     async execute(interaction) {

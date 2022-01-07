@@ -18,6 +18,7 @@ module.exports = {
         .addStringOption(option => 
             option.setName('song')
                 .setDescription('The name of the song. (Do not include any features or remixers in here!)')
+                .setAutocomplete(true)
                 .setRequired(true))
 
         .addStringOption(option => 
@@ -43,6 +44,7 @@ module.exports = {
         .addStringOption(option => 
             option.setName('remixers')
                 .setDescription('Put remixers here, if you reviewing a remix of the original song. (NOT IN ARTISTS ARGUMENT)')
+                .setAutocomplete(true)
                 .setRequired(false))
     
         .addUserOption(option => 

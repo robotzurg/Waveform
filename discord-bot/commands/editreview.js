@@ -15,6 +15,7 @@ module.exports = {
         .addStringOption(option => 
             option.setName('song')
                 .setDescription('The song you would like to edit the review of.')
+                .setAutocomplete(true)
                 .setRequired(true))
         .addStringOption(option => 
             option.setName('rating')
@@ -31,6 +32,7 @@ module.exports = {
         .addStringOption(option => 
             option.setName('remixers')
                 .setDescription('Remixers that remixed the song you are editing the review of.')
+                .setAutocomplete(true)
                 .setRequired(false)),
 	admin: true,
 	async execute(interaction) {

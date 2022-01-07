@@ -17,6 +17,7 @@ module.exports = {
         .addStringOption(option => 
             option.setName('song')
                 .setDescription('The name of the song/EP/LP.')
+                .setAutocomplete(true)
                 .setRequired(true))
 
         .addStringOption(option => 
@@ -27,6 +28,7 @@ module.exports = {
         .addStringOption(option => 
             option.setName('remixers')
                 .setDescription('The remixers on the song, if this is a remix.')
+                .setAutocomplete(true)
                 .setRequired(false)),
 	admin: false,
 	async execute(interaction) {

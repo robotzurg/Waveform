@@ -18,11 +18,13 @@ module.exports = {
         .addStringOption(option => 
             option.setName('song')
                 .setDescription('The name of the song.')
+                .setAutocomplete(true)
                 .setRequired(true))
             
         .addStringOption(option => 
             option.setName('remixers')
                 .setDescription('Remix artists on the song, if any.')
+                .setAutocomplete(true)
                 .setRequired(false)),
 	admin: false,
 	async execute(interaction) {
@@ -83,10 +85,10 @@ module.exports = {
                     rankNumArray.push(parseFloat(rating));
 
                     if (starred === true) {
-                        userArray[i] = [parseFloat(rating) + 1, `${numReacts[i + 1]} :star2: <@${userArray[i]}> \`${rating}/10\``];
+                        userArray[i] = [parseFloat(rating) + 1, `:star2: <@${userArray[i]}> \`${rating}/10\``];
                         userIDList[i] = [parseFloat(rating) + 1, userIDList[i]];
                     } else {
-                        userArray[i] = [parseFloat(rating), `${numReacts[i + 1]} <@${userArray[i]}> \`${rating}/10\``];
+                        userArray[i] = [parseFloat(rating), `<@${userArray[i]}> \`${rating}/10\``];
                         userIDList[i] = [parseFloat(rating), userIDList[i]];
                     }
                 }
@@ -103,6 +105,10 @@ module.exports = {
                 
                 userArray = sort(userArray);
                 userIDList = sort(userIDList);
+
+                for (let i = 0; i < userArray.length; i++) {
+                    userArray[i] = `${numReacts[i + 1]} `.concat(userArray[i]);
+                }
                 
                 songEmbed.addField('Reviews:', userArray.join('\n'));
             } else {
@@ -226,10 +232,10 @@ module.exports = {
 		collector.on('end', async () => {
             await getAppleMusicLink.track(`${songName}`, `${origArtistArray[0]}`, function(res, err) {
                 if(err) {
-                    interaction.editReply({ embeds: [songEmbed], components: [row] });
+                    interaction.editReply({ embeds: [songEmbed], components: [] });
                 }
                 else{
-                    interaction.editReply({ /*content: `[Apple Music Link](${res})`*/ embeds: [songEmbed], components: [row] });
+                    interaction.editReply({ /*content: `[Apple Music Link](${res})`*/ embeds: [songEmbed], components: [] });
                 }
             });
         });
