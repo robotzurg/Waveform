@@ -5,7 +5,6 @@ const { token } = require('./config.json');
 const db = require('./db');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
-const { capitalize } = require('./func.js');
 
 // create a new Discord client and give it some variables
 const { Client, Intents } = require('discord.js');
@@ -78,14 +77,38 @@ client.on('interactionCreate', async interaction => {
         
         if (focused[0].name == 'artist') {
             let artist_names = db.reviewDB.keyArray();
+            let artist_collab;
 
             // Search filters
             artist_names = artist_names.filter(letter_filter);
             artist_names = artist_names.slice(artist_names.length - 25, artist_names.length).reverse();
-            artist_names = artist_names.map(v => v = { name: capitalize(v), value: capitalize(v) });
+            artist_names = artist_names.map(v => v = { name: v, value: v });
+
+            if (artist_names.length == 1) {
+                artist_collab = Object.keys(db.reviewDB.get(artist_names[0].name));
+                artist_collab = artist_collab.filter(v => v != 'Image');
+                if (artist_collab != undefined) {
+                    for (let i = 0; i < artist_collab.length; i++) {
+                        if (artist_collab[i].includes('Remix')) {
+                            artist_collab[i] = [];
+                            continue;
+                        }
+                        artist_collab[i] = db.reviewDB.get(artist_names[0].name, `["${artist_collab[i]}"].collab`);
+                        if (artist_collab[i].length > 1) {
+                            artist_collab[i] = artist_collab[i].join(' & ');
+                        }
+                    }
+                    artist_collab = artist_collab.flat(1);
+                    artist_collab = artist_collab.filter(v => v != undefined);
+                    artist_collab = artist_collab.map(v => v = { name: `${artist_names[0].name} & ${v}`, value: `${artist_names[0].name} & ${v}` });
+                    artist_names.push(artist_collab);
+                    artist_names = artist_names.flat(1);
+                }
+            }
+
             interaction.respond(artist_names);
-        } else if (focused[0].name == 'song') {
-            let artist_songs = db.reviewDB.get(val_artist);
+        } else if (focused[0].name == 'song' || focused[0].name == 'old_song') {
+            let artist_songs = db.reviewDB.get(val_artist.split(' & ')[0]);
             if (artist_songs == undefined) return;
             artist_songs = Object.keys(artist_songs);
             artist_songs = artist_songs.filter(v => v != 'Image');
@@ -93,7 +116,7 @@ client.on('interactionCreate', async interaction => {
             // Search filters
             artist_songs = artist_songs.filter(letter_filter);
             artist_songs = artist_songs.slice(0, 25);
-            artist_songs = artist_songs.map(v => v = { name: capitalize(v), value: capitalize(v) });
+            artist_songs = artist_songs.map(v => v = { name: v, value: v });
             interaction.respond(artist_songs);
         } else if (focused[0].name == 'remixers') {
             let artist_remixers = db.reviewDB.get(val_artist, `["${val_song}"].remixers`);
@@ -101,7 +124,7 @@ client.on('interactionCreate', async interaction => {
 
             artist_remixers = artist_remixers.filter(letter_filter);
             artist_remixers = artist_remixers.slice(0, 25);
-            artist_remixers = artist_remixers.map(v => v = { name: capitalize(v), value: capitalize(v) });
+            artist_remixers = artist_remixers.map(v => v = { name: v, value: v });
             interaction.respond(artist_remixers);
         }
     }

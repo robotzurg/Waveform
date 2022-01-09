@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require('../db.js');
-const { capitalize, parse_spotify, get_user_reviews } = require('../func.js');
+const { parse_spotify, get_user_reviews } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -26,11 +26,8 @@ module.exports = {
                 .setTitle(`${displayArtists.split('; ').join(' & ')} - ${title}`)
                 .setAuthor(`${interaction.member.displayName}'s current song`, `${interaction.user.avatarURL({ format: "png", dynamic: false })}`);
 
-                artistArray[0] = capitalize(artistArray[0]);
-
                 if (db.reviewDB.has(artistArray[0])) {
 
-                    title = capitalize(title);
                     let songObj = db.reviewDB.get(artistArray[0], `["${title}"]`);
 
                     if (songObj != undefined) {

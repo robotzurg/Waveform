@@ -1,6 +1,5 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { capitalize } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -40,9 +39,9 @@ module.exports = {
 	admin: false,
 	async execute(interaction) {
 
-        let origArtistArray = capitalize(interaction.options.getString('artist')).split(' & ');
+        let origArtistArray = interaction.options.getString('artist').split(' & ');
         let artistArray = origArtistArray.slice(0);
-        let ep_name = capitalize(interaction.options.getString('ep_name'));
+        let ep_name = interaction.options.getString('ep_name');
         let art = interaction.options.getString('art');
         let overall_rating = interaction.options.getString('overall_rating');
         let overall_review = interaction.options.getString('overall_review');

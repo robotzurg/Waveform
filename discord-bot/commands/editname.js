@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { capitalize, get_user_reviews } = require("../func.js");
+const { get_user_reviews } = require("../func.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const forAsync = require('for-async');
 
@@ -15,16 +15,17 @@ module.exports = {
         .addStringOption(option => 
             option.setName('old_song')
                 .setDescription('The old name of the song.')
+                .setAutocomplete(true)
                 .setRequired(true))
         .addStringOption(option => 
             option.setName('new_song')
                 .setDescription('The new name of the song.')
                 .setRequired(true)),
-    admin: true,
+    admin: false,
 	async execute(interaction) {
-        let artistArray = capitalize(interaction.options.getString('artist'));
-        const old_song = capitalize(interaction.options.getString('old_song'));
-        const new_song = capitalize(interaction.options.getString('new_song'));
+        let artistArray = interaction.options.getString('artist');
+        const old_song = interaction.options.getString('old_song');
+        const new_song = interaction.options.getString('new_song');
 
         artistArray = artistArray.split(' & ');
 
@@ -46,7 +47,6 @@ module.exports = {
 
         let userArray = get_user_reviews(song_obj);
 
-
         userArray.forEach(user => {
             msgstoEdit.push(db.reviewDB.get(artistArray[0], `["${new_song}"].["${user}"].msg_id`));
             userIDs.push(user);
@@ -54,6 +54,7 @@ module.exports = {
 
         msgstoEdit = msgstoEdit.filter(item => item !== undefined);
         msgstoEdit = msgstoEdit.filter(item => item !== false);
+        msgstoEdit = msgstoEdit.filter(item => item !== null);
         if (msgstoEdit.length > 0) { 
 
             forAsync(msgstoEdit, async function(item) {
@@ -83,7 +84,7 @@ module.exports = {
                             }
                             msg.edit({ content: ' ', embeds: [msgEmbed] });
                             resolve();
-                        });
+                        }).catch(err => { console.log(err); });
                     });
                 });
             });

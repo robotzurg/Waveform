@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { capitalize, average, parse_spotify, get_user_reviews, sort, removeItemOnce } = require('../func.js');
+const { average, parse_spotify, get_user_reviews, sort, removeItemOnce } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -17,7 +17,7 @@ module.exports = {
 	execute(interaction) {
 
         let spotifyCheck;
-        let artist = capitalize(interaction.options.getString('artist'));
+        let artist = interaction.options.getString('artist');
         
         // Spotify Check
         if (artist.toLowerCase() === 's') {

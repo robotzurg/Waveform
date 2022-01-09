@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { capitalize, update_art, review_song, hall_of_fame_check, sort } = require('../func.js');
+const { update_art, review_song, hall_of_fame_check, sort } = require('../func.js');
 const { mailboxes } = require('../arrays.json');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('util').promisify(setTimeout);
@@ -75,14 +75,14 @@ module.exports = {
         }
 
         // Init variables
-        let origArtistArray = capitalize(interaction.options.getString('artist')).split(' & ');
-        let origSongName = capitalize(interaction.options.getString('song')); // for remixes later on
-        let songName = capitalize(interaction.options.getString('song'));
+        let origArtistArray = interaction.options.getString('artist').split(' & ');
+        let origSongName = interaction.options.getString('song'); // for remixes later on
+        let songName = interaction.options.getString('song');
         let rating = parseFloat(interaction.options.getString('rating'));
         let review = interaction.options.getString('review');
         let songArt = interaction.options.getString('art');
-        let vocalistArray = capitalize(interaction.options.getString('vocalists'));
-        let rmxArtistArray = capitalize(interaction.options.getString('remixers'));
+        let vocalistArray = interaction.options.getString('vocalists');
+        let rmxArtistArray = interaction.options.getString('remixers');
         let user_who_sent = interaction.options.getUser('user_who_sent');
         let ranking_pos = interaction.options.getString('ranking_pos');
         let starred = false;
@@ -103,13 +103,13 @@ module.exports = {
 
         // Init variables for spotify link review
         if (sp_song != undefined && sp_song != null) {
-            origArtistArray = capitalize(sp_artist).split(' & ');
-            songName = capitalize(sp_song);
+            origArtistArray = sp_artist.split(' & ');
+            songName = sp_song;
             rating = parseFloat(sp_rating);
             review = sp_review;
             songArt = sp_art;
-            vocalistArray = capitalize(sp_vocalists).split(' & ');
-            rmxArtistArray = capitalize(sp_remixers).split(' & ');
+            vocalistArray = sp_vocalists.split(' & ');
+            rmxArtistArray = sp_remixers.split(' & ');
             user_who_sent = sp_user_who_sent;
             ranking_pos = false;
             starred = sp_star;
@@ -297,7 +297,7 @@ module.exports = {
                         const a_filter = m => m.author.id === interaction.user.id;
                         a_collector = int_channel.createMessageCollector({ a_filter, max: 1, time: 60000 });
                         a_collector.on('collect', async m => {
-                            origArtistArray = capitalize(m.content).split(' & ');
+                            origArtistArray = m.content.split(' & ');
                             if (rmxArtistArray.length != 0) {
                                 artistArray = [origArtistArray, vocalistArray];
                                 artistArray = artistArray.flat(1);
@@ -336,7 +336,7 @@ module.exports = {
                         const s_filter = m => m.author.id == interaction.user.id;
                         s_collector = int_channel.createMessageCollector({ s_filter, max: 1, time: 60000 });
                         s_collector.on('collect', async m => {
-                            songName = capitalize(m.content);
+                            songName = m.content;
                             displaySongName = (`${songName}` + 
                             `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
                             `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);

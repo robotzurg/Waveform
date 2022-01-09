@@ -1,5 +1,5 @@
+/* eslint-disable no-unreachable */
 const { getPreview } = require('spotify-url-info');
-const { capitalize } = require('../func.js');
 const Discord = require('discord.js');
 
 // This command is a RIGHT CLICK CONTEXT MENU COMMAND, NOT A SLASH COMMAND!
@@ -28,6 +28,8 @@ module.exports = {
 										'\nThis feature only works with Spotify links.');
 		}
 
+		return interaction.editReply('This command is temporarily disabled.');
+
 		let artists;
 		let song;
 		let art;
@@ -38,8 +40,8 @@ module.exports = {
 
 		getPreview(msg.content)
 			.then(async data => {
-				artists = capitalize(data.artist);
-				song = capitalize(data.title);
+				artists = data.artist;
+				song = data.title;
 				vocalists = undefined;
                 if (song.includes('Remix') || song.includes('remix')) return interaction.editReply('Remixes are not currently supported with this feature.\n' + 'This is due to issues with Spotify formatting on them.');
                 if (song.includes('(with')) return interaction.editReply('This song is not reviewable with this command. Please use the regular method.');

@@ -1,5 +1,4 @@
 const db = require("../db.js");
-const { capitalize } = require("../func.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 //const forAsync = require('for-async');
 
@@ -17,8 +16,8 @@ module.exports = {
                 .setRequired(true)),
     admin: true,
 	async execute(interaction) {
-        const old_artist = capitalize(interaction.options.getString('old_artist'));
-        const new_artist = capitalize(interaction.options.getString('new_artist'));
+        const old_artist = interaction.options.getString('old_artist');
+        const new_artist = interaction.options.getString('new_artist');
 
         if (old_artist === new_artist) return interaction.editReply('Old and new artist names can\'t be the same thing!');
         if (!db.reviewDB.has(old_artist)) return interaction.editReply('This artist doesn\'t exist in the database.');

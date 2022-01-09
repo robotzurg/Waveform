@@ -1,5 +1,4 @@
 const db = require("../db.js");
-const { capitalize } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require("wait");
 
@@ -26,9 +25,9 @@ module.exports = {
                 .setRequired(false)),
 	admin: false,
 	async execute(interaction) {
-        let origArtistArray = capitalize(interaction.options.getString('artist')).split(' & ');
+        let origArtistArray = interaction.options.getString('artist').split(' & ');
         let artistArray = origArtistArray.slice(0);
-        let ep_name = capitalize(interaction.options.getString('ep_name'));
+        let ep_name = interaction.options.getString('ep_name');
         let ep_rating = interaction.options.getString('ep_rating');
         let ep_review = interaction.options.getString('ep_review');
         let old_ep_rating;

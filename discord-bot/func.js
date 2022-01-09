@@ -69,14 +69,14 @@ module.exports = {
     },
 
     parse_artist_song_data: function(interaction) {
-        const { capitalize, parse_spotify } = require('./func.js');
+        const { parse_spotify } = require('./func.js');
 
         let spotifyCheck = false;
-        let origArtistArray = capitalize(interaction.options.getString('artist'));
-        let songArg = capitalize(interaction.options.getString('song'));
+        let origArtistArray = interaction.options.getString('artist');
+        let songArg = interaction.options.getString('song');
         let rmxArtistArray = [];
         if (interaction.options.getString('remixers') != null) {
-            rmxArtistArray = [capitalize(interaction.options.getString('remixers')).split(' & ')];
+            rmxArtistArray = [interaction.options.getString('remixers').split(' & ')];
             rmxArtistArray = rmxArtistArray.flat(1);
         }
         let vocalistArray = [];
@@ -444,10 +444,9 @@ module.exports = {
     },
 
     parse_spotify: function(activity) {
-        const { capitalize } = require('./func.js');
 
-        activity.state = capitalize(activity.state.trim());
-        activity.details = capitalize(activity.details.trim());
+        activity.state = activity.state.trim();
+        activity.details = activity.details.trim();
         let artists = activity.state;
         let artistArray = [activity.state];
         let rmxArtist = false;

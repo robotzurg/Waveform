@@ -1,5 +1,4 @@
 const db = require("../db.js");
-const { capitalize } = require("../func.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -15,7 +14,7 @@ module.exports = {
 		let args = [];
 
         await interaction.options._hoistedOptions.forEach(async (value) => {
-            args.push(capitalize(value.value));
+            args.push(value.value);
         });
 
 		db.reviewDB.delete(args[0]);
