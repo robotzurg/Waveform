@@ -72,7 +72,7 @@ module.exports = {
         }
 
         // Place EP by default if EP or LP is not included in the title.
-        if (!ep_name.includes('EP') && !ep_name.includes('LP')) {
+        if (!ep_name.includes(' EP') && !ep_name.includes(' LP')) {
             ep_name = `${ep_name} EP`;
         }
 
@@ -81,10 +81,9 @@ module.exports = {
         if (user_sent_by.id != null && user_sent_by.id != undefined && user_sent_by.id != false) {
             taggedMember = await interaction.guild.members.fetch(user_sent_by.id);
             taggedUser = user_sent_by;
+        } else {
+            taggedUser = false;
         }
-
-        console.log(taggedUser);
-        console.log(taggedMember);
 
         // Spotify check (checks for both "spotify" and "s" as the image link)
         if (art != false && art != undefined) {

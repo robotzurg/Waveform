@@ -38,7 +38,7 @@ module.exports = {
 
         let artistArray = origArtistArray;
 
-        if (!epName.includes('EP') && !epName.includes('LP')) epName = `${epName} EP`;
+        if (!epName.includes(' EP') && !epName.includes(' LP')) epName = `${epName} EP`;
 
         const artistObj = db.reviewDB.get(artistArray[0]);
         if (artistObj === undefined) {

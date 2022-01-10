@@ -39,8 +39,8 @@ module.exports = {
         const artistImage = artistObj.Image;
         let songArray = Object.keys(artistObj);
         songArray = songArray.filter(item => item !== 'Image');
-        let epKeyArray = songArray.filter(item => item.includes('LP') || item.includes('EP'));
-        songArray = songArray.filter(item => !item.includes('LP') && !item.includes('EP'));
+        let epKeyArray = songArray.filter(item => item.includes(' LP') || item.includes(' EP'));
+        songArray = songArray.filter(item => !item.includes(' LP') && !item.includes(' EP'));
         let reviewNum;
         let singleArray = [];
         let remixArray = [];
@@ -79,6 +79,7 @@ module.exports = {
                 let epData = [`**${epKeyArray[i]}` + 
                 `${(epCollabArray.length != 0) ? ` (with ${epCollabArray.join(' & ')})` : ``} ${epDetails}**`];
                 let epSongs = db.reviewDB.get(artist, `["${epKeyArray[i]}"].songs`);
+                if (epSongs == undefined) epSongs = [];
 
                 for (let ii = 0; ii < epSongs.length; ii++) {
                     starNum = 0;
