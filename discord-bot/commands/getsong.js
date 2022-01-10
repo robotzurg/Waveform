@@ -219,6 +219,20 @@ module.exports = {
                 } else if (songEP != undefined && songEP != false) {
                     reviewEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
                 }
+
+                let reviewMsgID = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].msg_id`);
+                console.log(reviewMsgID);
+                if (reviewMsgID != false && reviewMsgID != undefined) {
+                    let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+                    await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
+                        reviewEmbed.setTimestamp(msg.createdTimestamp);
+                    }).catch(async () => {
+                        channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(i.values[0], 'mailbox'));
+                        await channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
+                            reviewEmbed.setTimestamp(msg.createdTimestamp);
+                        }).catch(() => {});
+                    });
+                }
                 
                 if (url === undefined) {
                     await i.update({ embeds: [reviewEmbed], components: [row] });

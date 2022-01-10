@@ -81,7 +81,7 @@ client.on('interactionCreate', async interaction => {
 
             // Search filters
             artist_names = artist_names.filter(letter_filter);
-            artist_names = artist_names.slice(artist_names.length - 25, artist_names.length).reverse();
+            if (artist_names.length > 25) artist_names = artist_names.slice(artist_names.length - 25, artist_names.length).reverse();
             artist_names = artist_names.map(v => v = { name: v, value: v });
 
             if (artist_names.length == 1) {
@@ -113,9 +113,10 @@ client.on('interactionCreate', async interaction => {
             let artist_songs = db.reviewDB.get(val_artist.split(' & ')[0]);
             if (artist_songs == undefined) return;
             artist_songs = Object.keys(artist_songs);
+            let collab_artist_songs = [];
             artist_songs = artist_songs.filter(v => v != 'Image');
-            artist_songs = artist_songs.filter(v => !v.includes('EP'));
-            artist_songs = artist_songs.filter(v => !v.includes('LP'));
+            artist_songs = artist_songs.filter(v => !v.includes(' EP'));
+            artist_songs = artist_songs.filter(v => !v.includes(' LP'));
 
             for (let i = 0; i < artist_songs.length; i++) {
                 let val_artist_array = val_artist.split(' & ');
@@ -123,23 +124,31 @@ client.on('interactionCreate', async interaction => {
                     break;
                 } else {
                     if (db.reviewDB.get(val_artist_array[0], `["${artist_songs[i]}"].collab`).includes(`${val_artist_array[1]}`)) {
-                        artist_songs = [artist_songs[i]];
-                        break;
+                        collab_artist_songs.push(artist_songs[i]);
                     }
                 }
             }
 
-            // Search filters
-            artist_songs = artist_songs.filter(letter_filter);
-            artist_songs = artist_songs.slice(artist_songs.length - 25, artist_songs.length).reverse();
-            artist_songs = artist_songs.map(v => v = { name: v, value: v });
-            interaction.respond(artist_songs);
+            if (collab_artist_songs.length == 0) {
+                // Search filters
+                console.log(artist_songs);
+                artist_songs = artist_songs.filter(letter_filter);
+                if (artist_songs.length > 25) artist_songs = artist_songs.slice(0, 25);
+                artist_songs = artist_songs.map(v => v = { name: v, value: v });
+                interaction.respond(artist_songs);
+            } else {
+                // Search filters
+                collab_artist_songs = collab_artist_songs.filter(letter_filter);
+                if (collab_artist_songs.length > 25) collab_artist_songs = collab_artist_songs.slice(0, 25);
+                collab_artist_songs = collab_artist_songs.map(v => v = { name: v, value: v });
+                interaction.respond(collab_artist_songs);
+            }
         } else if (focused[0].name == 'remixers') {
             let artist_remixers = db.reviewDB.get(val_artist, `["${val_song}"].remixers`);
             if (artist_remixers == undefined) return;
 
             artist_remixers = artist_remixers.filter(letter_filter);
-            artist_remixers = artist_remixers.slice(0, 25);
+            if (artist_remixers.length > 25) artist_remixers = artist_remixers.slice(artist_remixers.length - 25, artist_remixers.length);
             artist_remixers = artist_remixers.map(v => v = { name: v, value: v });
             interaction.respond(artist_remixers);
         }

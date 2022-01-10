@@ -133,6 +133,19 @@ module.exports = {
         if (rsentby != false && rsentby != undefined && ep_overall_rating === false) {
             epEmbed.setFooter(`Sent by ${usrSentBy.displayName}`, `${usrSentBy.user.avatarURL({ format: "png" })}`);
         }
+
+        let reviewMsgID = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].msg_id`);
+            if (reviewMsgID != false && reviewMsgID != undefined) {
+                let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+                await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
+                    epEmbed.setTimestamp(msg.createdTimestamp);
+                }).catch(() => {
+                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(taggedUser.id, 'mailbox'));
+                    channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
+                        epEmbed.setTimestamp(msg.createdTimestamp);
+                    }).catch(() => {});
+                });
+            }
         
         if (ep_url === undefined) {
             interaction.editReply({ embeds: [epEmbed] });
