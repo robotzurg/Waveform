@@ -64,6 +64,7 @@ client.on('interactionCreate', async interaction => {
         let focused = interaction.options._hoistedOptions;
         let val_artist = focused[0].value;
         let val_song;
+        let artist_collab;
         if (focused[1] != undefined) {
             val_song = focused[1].value;
         }
@@ -75,9 +76,8 @@ client.on('interactionCreate', async interaction => {
             return msg == search_segment;
         };
         
-        if (focused[0].name == 'artist') {
+        if (focused[0].name == 'artist' || focused[0].name == 'vocalist') {
             let artist_names = db.reviewDB.keyArray();
-            let artist_collab;
 
             // Search filters
             artist_names = artist_names.filter(letter_filter);
@@ -94,12 +94,14 @@ client.on('interactionCreate', async interaction => {
                             continue;
                         }
                         artist_collab[i] = db.reviewDB.get(artist_names[0].name, `["${artist_collab[i]}"].collab`);
+                        if (artist_collab[i] == undefined) artist_collab[i] = [];
                         if (artist_collab[i].length > 1) {
                             artist_collab[i] = artist_collab[i].join(' & ');
                         }
                     }
                     artist_collab = artist_collab.flat(1);
                     artist_collab = artist_collab.filter(v => v != undefined);
+                    artist_collab = [...new Set(artist_collab)];
                     artist_collab = artist_collab.map(v => v = { name: `${artist_names[0].name} & ${v}`, value: `${artist_names[0].name} & ${v}` });
                     artist_names.push(artist_collab);
                     artist_names = artist_names.flat(1);
@@ -112,10 +114,24 @@ client.on('interactionCreate', async interaction => {
             if (artist_songs == undefined) return;
             artist_songs = Object.keys(artist_songs);
             artist_songs = artist_songs.filter(v => v != 'Image');
+            artist_songs = artist_songs.filter(v => !v.includes('EP'));
+            artist_songs = artist_songs.filter(v => !v.includes('LP'));
+
+            for (let i = 0; i < artist_songs.length; i++) {
+                let val_artist_array = val_artist.split(' & ');
+                if (val_artist_array.length <= 1) {
+                    break;
+                } else {
+                    if (db.reviewDB.get(val_artist_array[0], `["${artist_songs[i]}"].collab`).includes(`${val_artist_array[1]}`)) {
+                        artist_songs = [artist_songs[i]];
+                        break;
+                    }
+                }
+            }
 
             // Search filters
             artist_songs = artist_songs.filter(letter_filter);
-            artist_songs = artist_songs.slice(0, 25);
+            artist_songs = artist_songs.slice(artist_songs.length - 25, artist_songs.length).reverse();
             artist_songs = artist_songs.map(v => v = { name: v, value: v });
             interaction.respond(artist_songs);
         } else if (focused[0].name == 'remixers') {

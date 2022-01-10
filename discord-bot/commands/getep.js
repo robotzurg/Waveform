@@ -248,7 +248,6 @@ module.exports = {
                     interaction.channel.send({ embeds: [rankingEmbed] });
                 } 
             }*/
-            // Add the above later
         });
 
         collector.on('end', async () => {

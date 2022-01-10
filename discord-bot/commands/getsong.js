@@ -2,7 +2,7 @@ const Discord = require('discord.js');
 const db = require("../db.js");
 const getAppleMusicLink = require('get-apple-music-link');
 const { average, get_user_reviews, parse_artist_song_data, sort } = require('../func.js');
-const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟'];
+const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '**11**', '**12**', '**13**', '**14**', '**15**', '**16**', '**17**', '**18**', '**19**', '**20**'];
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {

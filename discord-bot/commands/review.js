@@ -37,8 +37,9 @@ module.exports = {
                 .setRequired(false))
             
         .addStringOption(option => 
-            option.setName('vocalists')
+            option.setName('vocalist')
                 .setDescription('Vocalists who feature on the song (use & to separate multiple)')
+                .setAutocomplete(true)
                 .setRequired(false))
 
         .addStringOption(option => 
@@ -81,7 +82,7 @@ module.exports = {
         let rating = parseFloat(interaction.options.getString('rating'));
         let review = interaction.options.getString('review');
         let songArt = interaction.options.getString('art');
-        let vocalistArray = interaction.options.getString('vocalists');
+        let vocalistArray = interaction.options.getString('vocalist');
         let rmxArtistArray = interaction.options.getString('remixers');
         let user_who_sent = interaction.options.getUser('user_who_sent');
         let ranking_pos = interaction.options.getString('ranking_pos');
@@ -311,8 +312,9 @@ module.exports = {
 
                             // Thumbnail image handling
                             if (songArt == false || songArt == null) {
-                                if (db.reviewDB.has(artistArray[0])) {
-                                    songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+                                if (db.reviewDB.has(m.content.split(' & ')[0])) {
+                                    songArt = db.reviewDB.get(m.content.split(' & ')[0], `["${songName}"].art`);
+                                    console.log(songArt);
                                     reviewEmbed.setThumbnail(songArt);
                                 }
                                 if (songArt == undefined) { // If the above line of code returns undefined, use continue with false

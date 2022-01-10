@@ -399,11 +399,11 @@ module.exports = {
             const hofEmbed = new Discord.MessageEmbed()
             
             .setColor(`#FFFF00`)
-            .setTitle(`${origArtistArray} - ${displaySongName}`)
+            .setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`)
             .setDescription(`:star2: **This song currently has ${star_count} stars!** :star2:`)
             .addField('Starred Reviews:', star_array.join('\n'))
             .setImage(songArt);
-            hofEmbed.setFooter(`Use /getSong ${songName} to get more details about this song!`);
+            hofEmbed.setFooter(`Use /getsong to get more details about this song!`);
 
             if (!db.hall_of_fame.has(songName)) {
                 hofChannel.send({ embeds: [hofEmbed] }).then(hof_msg => {

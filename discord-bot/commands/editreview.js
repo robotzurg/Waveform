@@ -1,6 +1,7 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('wait');
+const { parse_artist_song_data } = require("../func.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -35,13 +36,21 @@ module.exports = {
                 .setRequired(false)),
 	admin: true,
 	async execute(interaction) {
-        let origArtistArray = interaction.options.getString('artist').split(' & ');
-        let artistArray = origArtistArray.slice(0);
-        let songName = interaction.options.getString('song');
+        let parsed_args = parse_artist_song_data(interaction);
+
+        let origArtistArray = parsed_args[0];
+        let origSongName = parsed_args[1];
+        let artistArray = parsed_args[2];
+        let songName = parsed_args[3];
+        let rmxArtistArray = parsed_args[4];
+        let vocalistArray = parsed_args[5];
+
+        if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
+
         let rating = interaction.options.getString('rating');
         let review = interaction.options.getString('review');
-        let user_who_sent = interaction.options.getUser('user_who_sent');
-        let rmxArtistArray = interaction.options.getString('remixers');
+        let user_who_sent = interaction.options.getString('user_who_sent');
+
         let taggedMember;
         let taggedUser;
         let oldrating;
@@ -59,29 +68,6 @@ module.exports = {
         }
 
         if (!db.reviewDB.has(artistArray[0])) return interaction.editReply(`Artist ${artistArray[0]} not found!`);
-
-        // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
-        if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
-            if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
-                artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
-                artistArray = artistArray.flat(1);
-                artistArray = [...new Set(artistArray)];
-            }
-        }
-
-        if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`) != undefined) {
-            if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`).length != 0) {
-                artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].vocals`));
-                artistArray = artistArray.flat(1);
-                artistArray = [...new Set(artistArray)];
-            }
-        }
-
-        if (rmxArtistArray != null && rmxArtistArray != undefined) {
-            rmxArtistArray = rmxArtistArray.split(' & ');
-            artistArray = rmxArtistArray;
-            songName = `${songName} (${rmxArtistArray.join(' & ')} Remix)`;
-        }
 
         for (let i = 0; i < artistArray.length; i++) {
             if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`Artist ${artistArray[i]} not found!`);
@@ -171,7 +157,11 @@ module.exports = {
             } 
         }
 
-        interaction.editReply(`Here's what was edited on your review of **${origArtistArray.join(' & ')} - ${songName}**:` +
+        let displaySongName = (`${origSongName}` + 
+                `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
+                `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
+
+        interaction.editReply(`Here's what was edited on your review of **${origArtistArray.join(' & ')} - ${displaySongName}**:` +
         `\n${(oldrating != undefined) ? `\`${oldrating}/10\` changed to \`${rating}/10\`` : ``}` +
         `\n${(oldreview != undefined) ? `Review was changed to \`${review}\`` : ``}` +
         `\n${(old_user_who_sent != undefined) ? `User Who Sent was changed to \`${user_sent_name.displayName}\`` : ``}`);
