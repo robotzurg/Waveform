@@ -515,5 +515,4 @@ module.exports = {
         return [artistArray, title, displayArtists];
     },
     
-    
 };
