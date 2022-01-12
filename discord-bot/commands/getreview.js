@@ -85,6 +85,8 @@ module.exports = {
             songArt = taggedUser.avatarURL({ format: "png" });
         }
 
+        if (rreview == 'No written review.' || rreview == "This was from a ranking, so there is no written review for this song.") rreview = '-';
+
         const reviewEmbed = new Discord.MessageEmbed()
             .setColor(`${taggedMember.displayHexColor}`);
 

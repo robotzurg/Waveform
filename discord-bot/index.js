@@ -131,7 +131,6 @@ client.on('interactionCreate', async interaction => {
 
             if (collab_artist_songs.length == 0) {
                 // Search filters
-                console.log(artist_songs);
                 artist_songs = artist_songs.filter(letter_filter);
                 if (artist_songs.length > 25) artist_songs = artist_songs.slice(0, 25);
                 artist_songs = artist_songs.map(v => v = { name: v, value: v });

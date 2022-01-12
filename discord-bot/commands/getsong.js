@@ -37,6 +37,7 @@ module.exports = {
         let rmxArtistArray = parsed_args[4];
         let vocalistArray = parsed_args[5];
 
+        if (rmxArtistArray == undefined) rmxArtistArray = [];
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
 
         let songObj;
