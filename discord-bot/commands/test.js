@@ -1,6 +1,7 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Canvas, loadImage, FontLibrary } = require('skia-canvas');
+const { get_user_reviews } = require("../func.js");
 
 const applyText = (canvas, text) => {
 	const context = canvas.getContext('2d');
@@ -17,6 +18,25 @@ const applyText = (canvas, text) => {
 
 	// Return the result to use in the actual canvas
 	return context.font;
+};
+
+const findMostDuplicate = (array) => {
+    let valObj = {}, max_length = 0, rep_arr = [];
+
+    array.forEach(function(el) {
+    if (Object.prototype.hasOwnProperty.call(valObj, el)) {
+        valObj[el] += 1;
+        max_length = (valObj[el] > max_length) ? valObj[el] : max_length;
+    }
+    else{
+        valObj[el] = 1;
+    }
+    });
+
+    Object.keys(valObj).forEach(function(val) {
+        (valObj[val] >= max_length) && (rep_arr.push([val, valObj[val]]));
+    });
+    return rep_arr;
 };
 
 module.exports = {
@@ -39,6 +59,46 @@ module.exports = {
             taggedMember = interaction.member;
             taggedUser = interaction.user;
         }
+
+        let starCount = 0;
+        let reviewCount = 0;
+        let epReviewCount = 0;
+        let lpReviewCount = 0;
+        let tenCount = 0;
+        let zeroCount = 0;
+        let mostArtist = 0;
+        let recentStar = 0;
+        let artistCount = [];
+        let songSkip = [];
+
+        let artistArray = db.reviewDB.keyArray();
+
+        for (let i = 0; i < artistArray.length; i++) {
+            let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
+            for (let j = 0; j < songArray.length; j++) {
+                let userArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"]`);
+                userArray = get_user_reviews(userArray);
+                userArray = userArray.filter(v => v == taggedUser.id);
+                if (userArray.length != 0) artistCount.push(artistArray[i]);
+                if (songSkip.includes(songArray[j])) continue;
+
+                for (let k = 0; k < userArray.length; k++) {
+                    let userData = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].["${userArray[k]}"]`);
+                    reviewCount += 1;
+                    if (songArray[j].includes(' EP')) epReviewCount += 1;
+                    if (songArray[j].includes(' LP')) lpReviewCount += 1;
+                    if (userData.starred == true) {
+                        starCount += 1;
+                        recentStar = `${artistArray[i]} - ${songArray[j]}`;
+                    }
+                    if (parseFloat(userData.rating) == 10) tenCount += 1;
+                    if (parseFloat(userData.rating) == 0) zeroCount += 1;
+                }
+                songSkip.push(songArray[j]);
+            }
+        }
+
+        mostArtist = findMostDuplicate(artistCount);
 
         FontLibrary.use("main", [
             "./LEMONMILK-Light.otf",
@@ -92,19 +152,23 @@ module.exports = {
         ctx.font = `40px main_reg`;
         ctx.fillText('Favorite Genres', canvas.width / 2, 485 - offset);
         ctx.font = `25px main`;
-        ctx.fillText(`Psytrance`, canvas.width / 2, 525 - offset);
-        ctx.fillText(`Future Bass`, canvas.width / 2, 565 - offset);
-        ctx.fillText(`Hardstyle`, canvas.width / 2, 605 - offset);
+        let genreList = db.user_stats.get(taggedUser.id, 'fav_genres');
+        while (genreList.length < 3) {
+            genreList.push('N/A');
+        }
+        for (let i = 0; i < genreList.length; i++) {
+            ctx.fillText(genreList[i], canvas.width / 2, 525 + (i * 40) - offset);
+        }
 
         ctx.font = `40px main_reg`;
         ctx.fillText('Most Reviewed Artist', canvas.width / 2, 685 - offset);
         ctx.font = `25px main`;
-        ctx.fillText(`Virtual Riot`, canvas.width / 2, 725 - offset);
+        ctx.fillText(`${mostArtist[0][0]} (${mostArtist[0][1]} Reviews)`, canvas.width / 2, 725 - offset);
 
         ctx.font = `40px main_reg`;
         ctx.fillText('Recently Starred', canvas.width / 2, 805 - offset);
         ctx.font = `25px main`;
-        ctx.fillText(`Grant & MYRNE - Fault`, canvas.width / 2, 845 - offset);
+        ctx.fillText(`${recentStar}`, canvas.width / 2, 845 - offset);
 
         // Recent Review / Recent Stars lists
 
@@ -117,12 +181,12 @@ module.exports = {
         ctx.font = `40px main_reg`;
         ctx.fillText('General Stats', stats_x, stats_y);
         ctx.font = `30px main`;
-        ctx.fillText(`Stars: 50`, stats_x, stats_y + 40);
-        ctx.fillText(`Reviews: 50`, stats_x, stats_y + 80);
-        ctx.fillText(`EP Reviews: 50`, stats_x, stats_y + 120);
-        ctx.fillText(`LP Reviews: 10`, stats_x, stats_y + 160);
-        ctx.fillText(`10/10: 25`, stats_x, stats_y + 200);
-        ctx.fillText(`0/10: 0`, stats_x, stats_y + 240);
+        ctx.fillText(`Stars: ${starCount}`, stats_x, stats_y + 40);
+        ctx.fillText(`Reviews: ${reviewCount}`, stats_x, stats_y + 80);
+        ctx.fillText(`EP Reviews: ${epReviewCount}`, stats_x, stats_y + 120);
+        ctx.fillText(`LP Reviews: ${lpReviewCount}`, stats_x, stats_y + 160);
+        ctx.fillText(`10/10: ${tenCount}`, stats_x, stats_y + 200);
+        ctx.fillText(`0/10: ${zeroCount}`, stats_x, stats_y + 240);
 
         // Draw Waveform Logo
         const waveformLogo = await loadImage('./images/Waveform_Logo_Transparent.png');
@@ -134,7 +198,7 @@ module.exports = {
         ctx.beginPath();
 
         // Start the arc to form a circle
-        ctx.arc(121 + avatar.width / 2, 31 + avatar.height / 2, 65, 0, Math.PI * 2, true);
+        ctx.arc(132 + avatar.width / 2, 31 + avatar.height / 2, 65, 0, Math.PI * 2, true);
 
         // Put the pen down
         ctx.closePath();
@@ -143,7 +207,7 @@ module.exports = {
         ctx.clip();
         
         // Draw avatar
-        ctx.drawImage(avatar, 121, 31);
+        ctx.drawImage(avatar, 132, 31);
 
         // render to files using a background thread
         async function render() {
