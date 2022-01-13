@@ -37,7 +37,7 @@
     "play-dl": "^1.6.9",
     "ramda": "^0.27.1",
     "sequelize": "^6.3.5",
-    "skia-canvas": "^0.9.27",
+    "skia-canvas": "^0.9.28",
     "spotify": "^0.3.0",
     "spotify-finder": "^2.1.1",
     "spotify-url-info": "^2.2.3",
