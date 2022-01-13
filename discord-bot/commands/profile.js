@@ -3,12 +3,12 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Canvas, loadImage, FontLibrary } = require('skia-canvas');
 const { get_user_reviews } = require("../func.js");
 
-const applyText = (fontSize, cutoff, canvas, text) => {
+const applyText = (font, fontSize, cutoff, canvas, text) => {
 	const context = canvas.getContext('2d');
 
 	do {
 		// Assign the font to the context and decrement it so it can be measured again
-		context.font = `${fontSize -= 2}px main_med`;
+		context.font = `${fontSize -= 1}px ${font}`;
 		// Compare pixel width of the text to the canvas minus the approximate avatar size
 	} while (context.measureText(text).width > cutoff);
 
@@ -63,7 +63,7 @@ module.exports = {
         let tenCount = 0;
         let zeroCount = 0;
         let mostArtist = 0;
-        let recentStar = 0;
+        let recentStar = "N/A";
         let artistCount = [];
         let songSkip = [];
 
@@ -95,6 +95,9 @@ module.exports = {
         }
 
         mostArtist = findMostDuplicate(artistCount);
+        let replRecentStar = db.user_stats.get(taggedUser.id, 'star_list');
+        replRecentStar = replRecentStar[replRecentStar.length - 1];
+        if (replRecentStar != undefined) recentStar = replRecentStar;
 
         FontLibrary.use("main", [
             "./LEMONMILK-Light.otf",
@@ -124,7 +127,7 @@ module.exports = {
 
         const avatar = await loadImage(taggedUser.displayAvatarURL({ format: 'png' }));
 
-        ctx.font = applyText(50, canvas.width - 650, canvas, taggedMember.displayName);
+        ctx.font = applyText('main_med', 50, canvas.width - 650, canvas, taggedMember.displayName);
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'left';
         ctx.fillText(`${taggedMember.displayName}`, 285, 30 + avatar.height / 2);
@@ -137,12 +140,12 @@ module.exports = {
         
         ctx.font = `40px main_reg`;
         ctx.fillText('Favorite Song', canvas.width / 2, 250 - offset);
-        ctx.font = `25px main`;
+        ctx.font = applyText('main', 25, 540, canvas, db.user_stats.get(taggedUser.id, 'fav_song'));
         ctx.fillText(`${db.user_stats.get(taggedUser.id, 'fav_song')}`, canvas.width / 2, 290 - offset);
 
         ctx.font = `40px main_reg`;
         ctx.fillText('Least Favorite Song', canvas.width / 2, 365 - offset);
-        ctx.font = `25px main`;
+        ctx.font = applyText('main', 25, 620, canvas, db.user_stats.get(taggedUser.id, 'least_fav_song'));
         ctx.fillText(`${db.user_stats.get(taggedUser.id, 'least_fav_song')}`, canvas.width / 2, 405 - offset);
 
         ctx.font = `40px main_reg`;
@@ -163,7 +166,7 @@ module.exports = {
 
         ctx.font = `40px main_reg`;
         ctx.fillText('Recently Starred', canvas.width / 2, 805 - offset);
-        ctx.font = `25px main`;
+        ctx.font = applyText('main', 25, 585, canvas, recentStar);
         ctx.fillText(`${recentStar}`, canvas.width / 2, 845 - offset);
 
         // Recent Review / Recent Stars lists
