@@ -95,6 +95,7 @@ module.exports = {
         }
 
         mostArtist = findMostDuplicate(artistCount);
+
         let replRecentStar = db.user_stats.get(taggedUser.id, 'star_list');
         replRecentStar = replRecentStar[replRecentStar.length - 1];
         if (replRecentStar != undefined) recentStar = replRecentStar;
