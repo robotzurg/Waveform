@@ -143,13 +143,15 @@ client.on('interactionCreate', async interaction => {
                 interaction.respond(collab_artist_songs);
             }
         } else if (focused[0].name == 'remixers') {
-            let artist_remixers = db.reviewDB.get(val_artist, `["${val_song}"].remixers`);
-            if (artist_remixers == undefined) return;
+            if (db.reviewDB.has(val_artist.split(' & ')[0])) {
+                let artist_remixers = db.reviewDB.get(val_artist.split(' & ')[0], `["${val_song}"].remixers`);
+                if (artist_remixers == undefined) return;
 
-            artist_remixers = artist_remixers.filter(letter_filter);
-            if (artist_remixers.length > 25) artist_remixers = artist_remixers.slice(artist_remixers.length - 25, artist_remixers.length);
-            artist_remixers = artist_remixers.map(v => v = { name: v, value: v });
-            interaction.respond(artist_remixers);
+                artist_remixers = artist_remixers.filter(letter_filter);
+                if (artist_remixers.length > 25) artist_remixers = artist_remixers.slice(artist_remixers.length - 25, artist_remixers.length);
+                artist_remixers = artist_remixers.map(v => v = { name: v, value: v });
+                interaction.respond(artist_remixers);
+            }
         }
     }
 

@@ -38,33 +38,37 @@ module.exports = {
                         let starNum = 0;
                         let yourStar = '';
 
-                            for (let i = 0; i < userArray.length; i++) {
-                                
-                                if (userArray[i] === `${interaction.user.id}`) {
-                                    yourReview = db.reviewDB.get(artistArray[0], `["${title}"].["${userArray[i]}"].rating`);
-                                    console.log(yourReview);
-                                }
-                                if (userArray[i] != 'ep') {
-                                    let rating;
-                                    rating = db.reviewDB.get(artistArray[0], `["${title}"].["${userArray[i]}"].rating`);
-
-                                    if (db.reviewDB.get(artistArray[0], `["${title}"].["${userArray[i]}"].starred`) === true) {
-                                        starNum++;
-                                        console.log(userArray[i]);
-                                        if (userArray[i] === `${interaction.user.id}`) {
-                                            yourStar = '⭐'; //Added to the end of your rating tab
-                                        }
-                                    }
-
-                                    rankNumArray.push(parseFloat(rating));
-                                    userArray[i] = [rating, `${userArray[i]} \`${rating}\``];
-                                }
+                        for (let i = 0; i < userArray.length; i++) {
+                            
+                            if (userArray[i] === `${interaction.user.id}`) {
+                                yourReview = db.reviewDB.get(artistArray[0], `["${title}"].["${userArray[i]}"].rating`);
+                                console.log(yourReview);
                             }
+                            if (userArray[i] != 'ep') {
+                                let rating;
+                                rating = db.reviewDB.get(artistArray[0], `["${title}"].["${userArray[i]}"].rating`);
+
+                                if (db.reviewDB.get(artistArray[0], `["${title}"].["${userArray[i]}"].starred`) === true) {
+                                    starNum++;
+                                    console.log(userArray[i]);
+                                    if (userArray[i] === `${interaction.user.id}`) {
+                                        yourStar = '⭐'; //Added to the end of your rating tab
+                                    }
+                                }
+
+                                rankNumArray.push(parseFloat(rating));
+                                userArray[i] = [rating, `${userArray[i]} \`${rating}\``];
+                            }
+                        }
 
                         exampleEmbed.setDescription(`Reviews: \`${userArray.length} reviews\`\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}${yourReview != false ? `\nYour Rating: \`${yourReview}/10${yourStar}\`` : ''}\n<:spotify:899365299814559784> [Spotify](${url})`);
 
-                        if (db.reviewDB.get(artistArray[0], `["${title}"].ep`) != undefined && db.reviewDB.get(artistArray[0], `["${title}"].ep`) != false) {
-                            exampleEmbed.setFooter(`from ${db.reviewDB.get(artistArray[0], `["${title}"].ep`)}`, db.reviewDB.get(artistArray[0], `["${db.reviewDB.get(artistArray[0], `["${title}"].ep`)}"].art`));
+                        if (songObj.ep != undefined && songObj.ep != false) {
+                            if (db.reviewDB.get(artistArray[0], `["${songObj.ep}"].art`) != false) {
+                                exampleEmbed.setFooter(`from ${songObj.ep}`, db.reviewDB.get(artistArray[0], `["${db.reviewDB.get(artistArray[0], `["${title}"].ep`)}"].art`));
+                            } else {
+                                exampleEmbed.setFooter(`from ${songObj.ep}`);
+                            }
                         }
                     } else {
                         exampleEmbed.setDescription(`This song has not been reviewed in the database.\n<:spotify:899365299814559784> [Spotify](${url})`);
