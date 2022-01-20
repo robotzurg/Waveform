@@ -8,6 +8,10 @@ module.exports = {
 	admin: false,
 	async execute(interaction) {
         db.user_stats.set(interaction.user.id, false, 'current_ep_review');
-        interaction.deleteReply();
+        try {
+            await interaction.deleteReply();
+        } catch (err) {
+            console.log(err);
+        }
     },
 };

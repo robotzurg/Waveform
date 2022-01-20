@@ -153,6 +153,13 @@ module.exports = {
                     if (review != null && review != undefined) msg_embed_fields[field_num].value = review;
 
                     msg.edit({ embeds: [msgEmbed] });
+                }).catch(err => {
+                    interaction.editReply(`Waveform ran into an error.\n<@122568101995872256> has been notified and will fix this as soon as possible!`);
+                    let error_channel = interaction.guild.channels.cache.get('933610135719395329');
+                    interaction.fetchReply().then(msg => {
+                        error_channel.send(`Waveform Error!\nMessage Link with Error: <${msg.url}>`);
+                    });
+                    console.log(err);
                 });
             } 
         }
@@ -167,6 +174,10 @@ module.exports = {
         `\n${(old_user_who_sent != undefined) ? `User Who Sent was changed to \`${user_sent_name.displayName}\`` : ``}`);
 
         await wait(30000);
-        await interaction.deleteReply();
+        try {
+            await interaction.deleteReply();
+        } catch (err) {
+            console.log(err);
+        }
     },
 };

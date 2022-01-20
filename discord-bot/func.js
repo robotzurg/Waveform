@@ -166,7 +166,7 @@ module.exports = {
 
     // Updates the art for embed messages, NOT in the database. That's done in the !add review commands themselves.
     update_art: function(interaction, first_artist, song_name, new_image) {
-        const { get_user_reviews } = require('./func.js');
+        const { get_user_reviews, handle_error } = require('./func.js');
 
         const imageSongObj = db.reviewDB.get(first_artist, `["${song_name}"]`);
             if (imageSongObj != undefined) {
@@ -207,6 +207,8 @@ module.exports = {
                                         msg.edit({ content: ' ', embeds: [msgEmbed] });
                                         resolve();
                                     });
+                                }).catch((err) => {
+                                    handle_error(interaction, err);
                                 });
                             });
                         });
@@ -375,7 +377,7 @@ module.exports = {
 
     hall_of_fame_check: function(interaction, artistArray, origArtistArray, songName, displaySongName, songArt, check_to_remove) {
         
-        const { get_user_reviews } = require('./func.js');
+        const { get_user_reviews, handle_error } = require('./func.js');
 
         const songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
 
@@ -411,11 +413,14 @@ module.exports = {
                     for (let i = 0; i < artistArray.length; i++) {
                         db.reviewDB.set(artistArray[i], hof_msg.id, `["${songName}"].hof_id`);
                     }
-    
+                }).catch((err) => {
+                    handle_error(interaction, err);
                 });
             } else {
                 hofChannel.messages.fetch(`${db.hall_of_fame.get(songName)}`).then(hof_msg => {
                     hof_msg.edit({ embeds: [hofEmbed] });
+                }).catch((err) => {
+                    handle_error(interaction, err);
                 });
             }
         } else if (check_to_remove == true && db.reviewDB.get(artistArray[0], `["${songName}"].hof_id`) != false && db.reviewDB.get(artistArray[0], `["${songName}"].hof_id`) != undefined) {
@@ -423,10 +428,7 @@ module.exports = {
             hofChannel.messages.fetch(`${db.hall_of_fame.get(songName)}`).then(msg => {
                 msg.delete();
                 db.hall_of_fame.delete(songName);
-            }).catch(err => {
-                console.log('Message not found.');
-                console.log(err);
-            });
+            }).catch(() => {});
         }
     },
 
@@ -513,6 +515,19 @@ module.exports = {
         title = activity.details;
 
         return [artistArray, title, displayArtists];
+    },
+
+    handle_error: function(interaction, err) {
+        interaction.editReply({ content: `Waveform ran into an error.\n<@122568101995872256> has been notified and will fix this as soon as possible!`, 
+        embeds: [], components: [] });
+        let error_channel = interaction.guild.channels.cache.get('933610135719395329');
+        interaction.fetchReply().then(msg => {
+            error_channel.send(`Waveform Error!\n**${err}**\nMessage Link with Error: <${msg.url}>`);
+        }).catch(() => {
+            console.log('The actual error handler errored! That\'s a new one.');
+        });
+
+        console.log(err);
     },
     
 };

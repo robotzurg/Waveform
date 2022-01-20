@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const forAsync = require('for-async');
-const { get_user_reviews, parse_artist_song_data } = require("../func.js");
+const { get_user_reviews, parse_artist_song_data, handle_error } = require("../func.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const Discord = require("discord.js");
 
@@ -92,7 +92,7 @@ module.exports = {
                         let msgtoEdit = item;
                         let msgEmbed;
 
-                        channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                        channelsearch.messages.fetch(msgtoEdit).then(msg => {
                             msgEmbed = msg.embeds[0];
                             msgEmbed.setThumbnail(songArt);
                             msg.edit({ content: ' ', embeds: [msgEmbed] });
@@ -104,6 +104,8 @@ module.exports = {
                                 msgEmbed.setThumbnail(songArt);
                                 msg.edit({ content: ' ', embeds: [msgEmbed] });
                                 resolve();
+                            }).catch(err => {
+                                handle_error(interaction, err);
                             });
                         });
                     });
@@ -129,6 +131,8 @@ module.exports = {
                                 msgEmbed.image.url = songArt;
                                 msg.edit({ embeds: [msgEmbed] });
                                 resolve();
+                            }).catch(err => {
+                                handle_error(interaction, err);
                             });
                         });
                     });

@@ -231,7 +231,7 @@ module.exports = {
                     channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(taggedUserSel.id, 'mailbox'));
                     channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
                         epEmbed.setTimestamp(msg.createdTimestamp);
-                    }).catch(() => {});
+                    }).catch(() => {}); // No error log here, as this is what assures that no error happens upon no timestamp found, for legacy reviews
                 });
             }
             
@@ -264,7 +264,11 @@ module.exports = {
         });
 
         collector.on('end', async () => {
-            await interaction.editReply({ embeds: [epEmbed], components: [] });
+            try {
+                await interaction.editReply({ embeds: [epEmbed], components: [] });
+            } catch (err) {
+                console.log(err);
+            }
         });
     
 	},

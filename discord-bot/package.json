@@ -29,6 +29,7 @@
     "express": "^4.17.1",
     "for-async": "^1.0.1",
     "get-apple-music-link": "^1.0.0",
+    "lodash": "^4.17.21",
     "node-cron": "^2.0.3",
     "node-gyp": "^7.1.2",
     "node.js": "^0.0.1-security",

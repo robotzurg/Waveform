@@ -113,7 +113,7 @@ module.exports = {
                     channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(taggedUser.id, 'mailbox'));
                     channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
                         reviewEmbed.setTimestamp(msg.createdTimestamp);
-                    }).catch(() => {});
+                    }).catch(() => {}); // No error handling here as this is to make sure that legacy reviews go through okay, if they have msg_id false.
                 });
             }
 

@@ -1,6 +1,7 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require("wait");
+const { handle_error } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -93,7 +94,12 @@ module.exports = {
                 }
 
                 msg.edit({ embeds: [msgEmbed] });
+            }).catch((err) => {
+                handle_error(interaction, err);
             });
+
+        }).catch((err) => {
+            handle_error(interaction, err);
         });
 
         interaction.editReply(`Here's what was edited on your review of **${artistArray.join(' & ')} - ${ep_name}**:` +
@@ -101,6 +107,10 @@ module.exports = {
         `\n${(old_ep_review != undefined) ? `Review was changed to \`${ep_review}\`` : ``}`);
         
         await wait(30000);
-        await interaction.deleteReply();
+        try {
+            await interaction.deleteReply();
+        } catch (err) {
+            console.log(err);
+        }
     },
 };

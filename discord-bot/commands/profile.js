@@ -172,9 +172,6 @@ module.exports = {
 
         // Recent Review / Recent Stars lists
 
-        /*let stats_x = 240;
-        let stats_y = 330;*/
-
         let stats_x = 210;
         let stats_y = 250;
 

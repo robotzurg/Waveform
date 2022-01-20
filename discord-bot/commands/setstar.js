@@ -1,7 +1,7 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('wait');
-const { parse_artist_song_data, hall_of_fame_check } = require('../func.js');
+const { parse_artist_song_data, hall_of_fame_check, handle_error } = require('../func.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -64,7 +64,7 @@ module.exports = {
             } else if (star_check == false) {
                 db.reviewDB.set(artistArray[i], true, `["${songName}"].["${interaction.user.id}"].starred`);
             } else {
-                return interaction.editReply('Error in the starring process, please tell Jeff');
+                handle_error(interaction, `Error in starring process`);
             }
         }
 
@@ -128,7 +128,12 @@ module.exports = {
                         }
                     }
                     msg.edit({ embeds: [msgEmbed] });
+                }).catch((err) => {
+                    handle_error(interaction, err);
                 });
+
+            }).catch((err) => {
+                handle_error(interaction, err);
             });
         }
 
@@ -185,7 +190,11 @@ module.exports = {
                         
 
                         msg.edit({ embeds: [msgEmbed] });
+                    }).catch((err) => {
+                        handle_error(interaction, err);
                     });
+                }).catch((err) => {
+                    handle_error(interaction, err);
                 });
             } 
         }

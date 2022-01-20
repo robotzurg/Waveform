@@ -89,6 +89,10 @@ module.exports = {
 
         await interaction.editReply(`Deleted <@${userToDelete.id}>'s review of ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}.`);
         await wait(30000);
-        await interaction.deleteReply();
+        try {
+            await interaction.deleteReply();
+        } catch (err) {
+            console.log(err);
+        }
 	},
 };

@@ -245,14 +245,7 @@ module.exports = {
 		});
 
 		collector.on('end', async () => {
-            await getAppleMusicLink.track(`${songName}`, `${origArtistArray[0]}`, function(res, err) {
-                if(err) {
-                    interaction.editReply({ embeds: [songEmbed], components: [] });
-                }
-                else{
-                    interaction.editReply({ /*content: `[Apple Music Link](${res})`*/ embeds: [songEmbed], components: [] });
-                }
-            });
+            interaction.editReply({ embeds: [songEmbed], components: [] });
         });
 	},
 };

@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { update_art, review_song, hall_of_fame_check, sort } = require('../func.js');
+const { update_art, review_song, hall_of_fame_check, sort, handle_error } = require('../func.js');
 const { mailboxes } = require('../arrays.json');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('util').promisify(setTimeout);
@@ -138,11 +138,21 @@ module.exports = {
         if (songName.includes('Remix)')) {
             await interaction.editReply('Please use the Remixers argument for Remixers, do not include them in the song name!`');
             await wait(10000);
-            return await interaction.deleteReply();
+            try {
+                await interaction.deleteReply();
+                return;
+            } catch (err) {
+                console.log(err);
+            }
         } else if (songName.includes('ft.') || songName.includes('feat.')) {
             await interaction.editReply('Please use the Vocalists argument for Vocalists, do not include them in the song name!`');
             await wait(10000);
-            return await interaction.deleteReply();
+            try {
+                await interaction.deleteReply();
+                return;
+            } catch (err) {
+                console.log(err);
+            }
         }
 
         // Handle remixes
@@ -227,7 +237,12 @@ module.exports = {
         if (isNaN(rating)) {
             await interaction.editReply('Your rating is not a number! Make sure NOT to include /10, just do the number, like "8".');
             await wait(10000);
-            return await interaction.deleteReply();
+            try {
+                await interaction.deleteReply();
+                return;
+            } catch (err) {
+                console.log(err);
+            }
         }
 
         // \n parse handling
@@ -424,7 +439,12 @@ module.exports = {
                     case 'delete': {
                         await i.deferUpdate();
 
-                        interaction.deleteReply();
+                        try {
+                            await interaction.deleteReply();
+                        } catch (err) {
+                            console.log(err);
+                        }
+
                         if (a_collector != undefined) a_collector.stop();
                         if (s_collector != undefined) s_collector.stop();
                         if (ra_collector != undefined) ra_collector.stop();
@@ -488,7 +508,11 @@ module.exports = {
                                 if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt === false) {
                                     songArt = msgEmbed.thumbnail.url;
                                 }
+                            }).catch((err) => {
+                                handle_error(interaction, err);
                             });
+                        }).catch((err) => {
+                            handle_error(interaction, err);
                         });
 
                         // Review the song
@@ -548,6 +572,8 @@ module.exports = {
                                     hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                                 }
                             });
+                        }).catch((err) => {
+                            handle_error(interaction, err);
                         });
 
                         // Update user stats
@@ -586,7 +612,11 @@ module.exports = {
                                         rankMsgEmbed.fields[0].value = ep_ranking;
 
                                         rank_msg.edit({ embeds: [rankMsgEmbed] });
+                                    }).catch((err) => {
+                                        handle_error(interaction, err);
                                     });
+                                }).catch((err) => {
+                                    handle_error(interaction, err);
                                 });
                         } else {
                             await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
@@ -681,6 +711,8 @@ module.exports = {
                     db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
                     hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                 }
+            }).catch((err) => {
+                handle_error(interaction, err);
             });
         }
     },
