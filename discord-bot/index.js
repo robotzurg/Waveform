@@ -84,7 +84,7 @@ client.on('interactionCreate', async interaction => {
             if (artist_names.length > 25) artist_names = artist_names.slice(artist_names.length - 25, artist_names.length).reverse();
             artist_names = artist_names.map(v => v = { name: v, value: v });
 
-            if (artist_names.length == 1) {
+            if (artist_names.length == 1 && interaction.commandName != 'getartist') {
                 artist_collab = Object.keys(db.reviewDB.get(artist_names[0].name));
                 artist_collab = artist_collab.filter(v => v != 'Image');
                 if (artist_collab != undefined) {
@@ -142,6 +142,7 @@ client.on('interactionCreate', async interaction => {
                 collab_artist_songs = collab_artist_songs.map(v => v = { name: v, value: v });
                 interaction.respond(collab_artist_songs);
             }
+
         } else if (focused[0].name == 'remixers') {
             if (db.reviewDB.has(val_artist.split(' & ')[0])) {
                 let artist_remixers = db.reviewDB.get(val_artist.split(' & ')[0], `["${val_song}"].remixers`);

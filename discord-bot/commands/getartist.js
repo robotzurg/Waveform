@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const db = require("../db.js");
 const { average, parse_spotify, get_user_reviews, sort, removeItemOnce } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const _ = require('lodash');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -14,7 +15,7 @@ module.exports = {
                 .setRequired(true)),
 
     admin: false,
-	execute(interaction) {
+	async execute(interaction) {
 
         let spotifyCheck;
         let artist = interaction.options.getString('artist');
@@ -43,13 +44,49 @@ module.exports = {
         songArray = songArray.filter(item => !item.includes(' LP') && !item.includes(' EP'));
         let reviewNum;
         let singleArray = [];
+        let pagedSingleArray = [];
         let remixArray = [];
+        let pagedRemixArray = [];
         let epArray = [];
+        let pagedEpArray = [];
 
         let rankNumArray = [];
         let starNum = 0; // Total number of individual song stars for each song
         let fullStarNum = 0; // Total number of stars
         let star_check = [];
+        let focusedArray = pagedSingleArray;
+        let page_num = 0;
+        let pages_active = false;
+
+        // Setup buttons
+        const type_buttons = new Discord.MessageActionRow()
+        .addComponents(
+            new Discord.MessageButton()
+                .setCustomId('singles')
+                .setLabel('View Singles')
+                .setStyle('SUCCESS'),
+            new Discord.MessageButton()
+                .setCustomId('ep')
+                .setLabel('View EP/LPs')
+                .setStyle('SECONDARY'),
+            new Discord.MessageButton()
+                .setCustomId('remixes')
+                .setLabel('View Remixes')
+                .setStyle('SECONDARY'),
+        );
+
+        // Setup bottom row
+        const page_arrows = new Discord.MessageActionRow()
+        .addComponents(
+            new Discord.MessageButton()
+                .setCustomId('left')
+                .setStyle('PRIMARY')
+                .setEmoji('⬅️'),
+            new Discord.MessageButton()
+                .setCustomId('right')
+                .setStyle('PRIMARY')
+                .setEmoji('➡️'),
+        );
 
 		const artistEmbed = new Discord.MessageEmbed()
             .setColor(`${interaction.member.displayHexColor}`)
@@ -111,7 +148,7 @@ module.exports = {
                         songDetails = `\`${reviewNum} review${reviewNum > 1 || reviewNum === 0 ? 's' : ''}\`${starNum != 0 ? ` \`${starNum} ⭐\`` : ''}`;
                     }
 
-                    epData.push([`-${epSongs[ii]}` + 
+                    epData.push([`• ${epSongs[ii]}` + 
                     `${(collabArray.length != 0) ? ` (with ${collabArray.join(' & ')})` : ``}` + 
                     `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` + 
                     ` ${songDetails}`]);
@@ -154,11 +191,11 @@ module.exports = {
                 }
 
                 if (songArray[i].includes('Remix')) {
-                    remixArray.push([(star_check.includes(songArray[i])) ? 99999 : reviewNum, `-${collabArray.join(' & ')} - ${songArray[i]} ${songDetails}`]);
+                    remixArray.push([(star_check.includes(songArray[i])) ? 99999 : reviewNum, `• ${collabArray.join(' & ')} - ${songArray[i]} ${songDetails}`]);
                     // Escape character the stars so that they don't italicize the texts
                     remixArray[remixArray.length - 1][1] = remixArray[remixArray.length - 1][1].replace('*', '\\*');
                 } else { // Singles
-                    singleArray.push([(star_check.includes(songArray[i])) ? 99999 : reviewNum, `-${songArray[i]}` + 
+                    singleArray.push([(star_check.includes(songArray[i])) ? 99999 : reviewNum, `• ${songArray[i]}` + 
                     `${(collabArray.length != 0) ? ` (with ${collabArray.join(' & ')})` : ``}` + 
                     `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` + 
                     ` ${songDetails}`]);
@@ -169,21 +206,41 @@ module.exports = {
 
             if (singleArray.length != 0) {
                 singleArray = sort(singleArray);
-                artistEmbed.addField('Singles:', singleArray.join('\n'));
-            }
+                pagedSingleArray = _.chunk(singleArray, 10);
 
+                if (pagedSingleArray.length <= 1) {
+                    artistEmbed.addField('Singles:', singleArray.join('\n'));
+                } else {
+                    artistEmbed.addField('Singles:', pagedSingleArray[0].join('\n'));
+                    artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedSingleArray.length}` });
+                }
+            }
+            
             if (epArray.length != 0) {
-                artistEmbed.addField('EPs/LPs:', epArray.join('\n'));
-            }
+                pagedEpArray = _.chunk(epArray, 1);
 
-            if (remixArray.length != 0) {
+                if (pagedSingleArray.length <= 1) {
+                    artistEmbed.addField('EP/LPs:', epArray[0].join('\n'));
+                } else {
+                    artistEmbed.addField('EP/LPs:', pagedEpArray[0].join('\n'));
+                    artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedEpArray.length}` });
+                }
+            }
+            
+            if (remixArray != 0) {
                 remixArray = sort(remixArray);
-                artistEmbed.addField('Remixes:', remixArray.join('\n'));
-            }
+                pagedRemixArray = _.chunk(remixArray, 10);
 
+                if (pagedRemixArray.length <= 1) {
+                    artistEmbed.addField('Remixes:', remixArray[0].join('\n'));
+                } else {
+                    artistEmbed.addField('Remixes:', pagedRemixArray[0].join('\n'));
+                    artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedRemixArray.length}` });
+                }
+            }
 
             if (rankNumArray != 0) { // If we pull songs but we don't have any reviews in any of the artists songs
-                if (singleArray.length != 0 || remixArray.length != 0) { // If there is no songs in the artists database
+                if (singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) { // If there is no songs in the artists database
                     if (fullStarNum != 0) { // If the artist has stars on any of their songs
                         artistEmbed.setDescription(`*The average rating of this artist is* ***${Math.round(average(rankNumArray) * 10) / 10}!***\n:star2: **This artist has ${fullStarNum} total stars!** :star2:`);
                     } else {
@@ -196,6 +253,24 @@ module.exports = {
                 artistEmbed.setDescription(`No reviewed songs. :(`);
             }
 
-        interaction.editReply({ embeds: [artistEmbed] });
+        interaction.editReply({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
+
+        if (pages_active == true) {
+            let message = await interaction.fetchReply();
+        
+            const collector = message.createMessageComponentCollector({ time: 60000 });
+
+            collector.on('collect', async i => {
+                /*(i.customId == 'left') ? page_num -= 1 : page_num += 1;
+                page_num = _.clamp(page_num, 0, paged_star_list.length - 1);*/
+                artistEmbed.setDescription(focusedArray[page_num]);
+                artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
+                i.update({ embeds: [artistEmbed] });
+            });
+
+            collector.on('end', async () => {
+                interaction.editReply({ embeds: [artistEmbed], components: [] });
+            });
+        }
 	},
 };
