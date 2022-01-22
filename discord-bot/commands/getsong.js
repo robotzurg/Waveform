@@ -181,7 +181,7 @@ module.exports = {
 			if (i.customId === 'select') { // Select Menu
 
                 if (i.values[0] === 'back') { // Back Selection
-                    return await i.update({ embeds: [songEmbed], components: [row] });
+                    return await i.update({ content: ` `, embeds: [songEmbed], components: [row] });
                 }
                 
                 const taggedMember = await interaction.guild.members.fetch(i.values[0]);
@@ -245,7 +245,7 @@ module.exports = {
 		});
 
 		collector.on('end', async () => {
-            interaction.editReply({ embeds: [songEmbed], components: [] });
+            interaction.editReply({ content: ` `, embeds: [songEmbed], components: [] });
         });
 	},
 };

@@ -56,7 +56,8 @@ module.exports = {
         let star_check = [];
         let focusedArray = pagedSingleArray;
         let page_num = 0;
-        let pages_active = false;
+        let pages_active = [false, false, false]; // 0: Singles, 1: EP/LPs, 2: Remixes
+        let focusedName = "Singles";
 
         // Setup buttons
         const type_buttons = new Discord.MessageActionRow()
@@ -64,7 +65,7 @@ module.exports = {
             new Discord.MessageButton()
                 .setCustomId('singles')
                 .setLabel('View Singles')
-                .setStyle('SUCCESS'),
+                .setStyle('SECONDARY'),
             new Discord.MessageButton()
                 .setCustomId('ep')
                 .setLabel('View EP/LPs')
@@ -207,45 +208,58 @@ module.exports = {
             if (singleArray.length != 0) {
                 singleArray = sort(singleArray);
                 pagedSingleArray = _.chunk(singleArray, 10);
-
-                if (pagedSingleArray.length <= 1) {
-                    artistEmbed.addField('Singles:', singleArray.join('\n'));
-                } else {
-                    artistEmbed.addField('Singles:', pagedSingleArray[0].join('\n'));
-                    artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedSingleArray.length}` });
+                if (pagedSingleArray.length > 1) {
+                    pages_active[0] = true;
                 }
+
+            } else {
+                type_buttons.components[0].setDisabled(true);
             }
-            
+
             if (epArray.length != 0) {
                 pagedEpArray = _.chunk(epArray, 1);
-
-                if (pagedSingleArray.length <= 1) {
-                    artistEmbed.addField('EP/LPs:', epArray[0].join('\n'));
-                } else {
-                    artistEmbed.addField('EP/LPs:', pagedEpArray[0].join('\n'));
-                    artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedEpArray.length}` });
+                if (pagedEpArray.length > 1) {
+                    pages_active[1] = true;
                 }
+            } else {
+                type_buttons.components[1].setDisabled(true);
             }
             
-            if (remixArray != 0) {
+            if (remixArray.length != 0) {
                 remixArray = sort(remixArray);
                 pagedRemixArray = _.chunk(remixArray, 10);
-
-                if (pagedRemixArray.length <= 1) {
-                    artistEmbed.addField('Remixes:', remixArray[0].join('\n'));
-                } else {
-                    artistEmbed.addField('Remixes:', pagedRemixArray[0].join('\n'));
-                    artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedRemixArray.length}` });
+                if (pagedRemixArray.length > 1) {
+                    pages_active[2] = true;
                 }
+            } else {
+                type_buttons.components[2].setDisabled(true);
             }
 
-            if (rankNumArray != 0) { // If we pull songs but we don't have any reviews in any of the artists songs
-                if (singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) { // If there is no songs in the artists database
+            // These if loops are an easy way to determine which to show upon startup, if the singles are first it'll end the if else stuff early, vice versa with the others.
+            if (singleArray.length != 0) {
+                focusedName = 'Singles';
+                focusedArray = pagedSingleArray;
+                type_buttons.components[0].style = 'SUCCESS';
+            } else if (epArray.length != 0) {
+                focusedName = 'EP/LPs';
+                focusedArray = pagedEpArray;
+                type_buttons.components[1].style = 'SUCCESS';
+            } else if (remixArray.length != 0) {
+                focusedName = 'Remixes';
+                focusedArray = pagedRemixArray;
+                type_buttons.components[2].style = 'SUCCESS';
+            }
+
+            if (rankNumArray.length != 0) { 
+                if (singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) {
                     if (fullStarNum != 0) { // If the artist has stars on any of their songs
                         artistEmbed.setDescription(`*The average rating of this artist is* ***${Math.round(average(rankNumArray) * 10) / 10}!***\n:star2: **This artist has ${fullStarNum} total stars!** :star2:`);
                     } else {
                         artistEmbed.setDescription(`*The average rating of this artist is* ***${Math.round(average(rankNumArray) * 10) / 10}!***`);
                     }
+
+                    artistEmbed.addField(focusedName, focusedArray[0].join('\n'));
+                    artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
                 } else {
                     artistEmbed.setDescription(`No reviewed songs. :(`);
                 }
@@ -253,24 +267,65 @@ module.exports = {
                 artistEmbed.setDescription(`No reviewed songs. :(`);
             }
 
-        interaction.editReply({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
-
-        if (pages_active == true) {
-            let message = await interaction.fetchReply();
-        
-            const collector = message.createMessageComponentCollector({ time: 60000 });
-
-            collector.on('collect', async i => {
-                /*(i.customId == 'left') ? page_num -= 1 : page_num += 1;
-                page_num = _.clamp(page_num, 0, paged_star_list.length - 1);*/
-                artistEmbed.setDescription(focusedArray[page_num]);
-                artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
-                i.update({ embeds: [artistEmbed] });
-            });
-
-            collector.on('end', async () => {
-                interaction.editReply({ embeds: [artistEmbed], components: [] });
-            });
+        if (pages_active[0] == true) {
+            interaction.editReply({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
+        } else {
+            interaction.editReply({ embeds: [artistEmbed], components: [type_buttons] });
         }
+
+        let message = await interaction.fetchReply();
+        let do_arrows = false;
+        
+        const collector = message.createMessageComponentCollector({ time: 60000 });
+
+        collector.on('collect', async i => {
+            do_arrows = false;
+
+            switch (i.customId) {
+                case 'left': page_num -= 1; do_arrows = true; break;
+                case 'right': page_num += 1; do_arrows = true; break;
+                case 'singles':
+                    focusedArray = pagedSingleArray;
+                    focusedName = "Singles";
+                    type_buttons.components[0].style = 'SUCCESS';
+                    type_buttons.components[1].style = 'SECONDARY';
+                    type_buttons.components[2].style = 'SECONDARY';
+                    if (pages_active[0] == true) do_arrows = true;
+                    page_num = 0; break;
+                case 'ep':
+                    focusedArray = pagedEpArray;
+                    focusedName = "EPs/LPs";
+                    type_buttons.components[0].style = 'SECONDARY';
+                    type_buttons.components[1].style = 'SUCCESS';
+                    type_buttons.components[2].style = 'SECONDARY';
+                    if (pages_active[1] == true) do_arrows = true;
+                    page_num = 0; break;
+                case 'remixes':
+                    focusedArray = pagedRemixArray;
+                    focusedName = "Remixes";
+                    type_buttons.components[0].style = 'SECONDARY';
+                    type_buttons.components[1].style = 'SECONDARY';
+                    type_buttons.components[2].style = 'SUCCESS';
+                    if (pages_active[2] == true) do_arrows = true;
+                    page_num = 0; break;
+            }
+
+            page_num = _.clamp(page_num, 0, focusedArray.length - 1);
+            artistEmbed.fields[0].name = focusedName;
+            artistEmbed.fields[0].value = focusedArray[page_num].join('\n');
+            artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
+
+            if (do_arrows == false) { 
+                artistEmbed.footer = null;
+                i.update({ embeds: [artistEmbed], components: [type_buttons] });
+            } else {
+                i.update({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
+            }
+
+        });
+
+        collector.on('end', async () => {
+            interaction.editReply({ embeds: [artistEmbed], components: [] });
+        });
 	},
 };
