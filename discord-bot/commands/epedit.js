@@ -74,8 +74,8 @@ module.exports = {
                 let msgEmbed = msg.embeds[0];
 
                 if (ep_rating != null) {
-                    old_ep_rating = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].rating`);
-                    console.log(old_ep_rating);
+                    old_ep_rating = `${db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].rating`)}/10`;
+                    if (old_ep_rating == 'false/10') old_ep_rating = "N/A";
                     msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${ep_rating}/10)`);
                     for (let i = 0; i < artistArray.length; i++) {
                         db.reviewDB.set(artistArray[i], parseFloat(ep_rating), `["${ep_name}"].["${interaction.user.id}"].rating`);
@@ -103,7 +103,7 @@ module.exports = {
         });
 
         interaction.editReply(`Here's what was edited on your review of **${artistArray.join(' & ')} - ${ep_name}**:` +
-        `\n${(old_ep_rating != undefined) ? `\`${old_ep_rating}/10\` changed to \`${ep_rating}/10\`` : ``}` +
+        `\n${(old_ep_rating != undefined) ? `\`${old_ep_rating}\` changed to \`${ep_rating}/10\`` : ``}` +
         `\n${(old_ep_review != undefined) ? `Review was changed to \`${ep_review}\`` : ``}`);
         
         await wait(30000);
