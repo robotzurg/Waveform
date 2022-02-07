@@ -39,6 +39,8 @@ module.exports = {
 	admin: false,
 	async execute(interaction) {
 
+        return interaction.editReply('This command is temporarily disabled.');
+
         let origArtistArray = interaction.options.getString('artist').split(' & ');
         let artistArray = origArtistArray.slice(0);
         let ep_name = interaction.options.getString('ep_name');

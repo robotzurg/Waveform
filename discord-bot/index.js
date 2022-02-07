@@ -127,6 +127,7 @@ client.on('interactionCreate', async interaction => {
                 if (val_artist_array.length <= 1) {
                     break;
                 } else {
+                    if (db.reviewDB.get(val_artist_array[0], `["${artist_songs[i]}"].collab`) == undefined) return interaction.respond([]);
                     if (db.reviewDB.get(val_artist_array[0], `["${artist_songs[i]}"].collab`).includes(`${val_artist_array[1]}`)) {
                         collab_artist_songs.push(artist_songs[i]);
                     }
