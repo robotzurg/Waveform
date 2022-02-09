@@ -1,5 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { handle_error } = require("../func.js");
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -11,6 +12,8 @@ module.exports = {
                 .setRequired(true)),
     admin: true,
 	async execute(interaction) {
+        try {
+
 		let args = [];
 
         await interaction.options._hoistedOptions.forEach(async (value) => {
@@ -19,5 +22,10 @@ module.exports = {
 
 		db.reviewDB.delete(args[0]);
 		interaction.editReply(`${args[0]} deleted from the database.`);
+
+        } catch (err) {
+            let error = new Error(err).stack;
+            handle_error(interaction, error);
+        }
 	},
 };

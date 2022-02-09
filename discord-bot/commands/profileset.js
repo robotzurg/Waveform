@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { get_args } = require('../func.js');
+const { get_args, handle_error } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -19,6 +19,8 @@ module.exports = {
                 .setRequired(true)),
 	admin: false,
 	async execute(interaction) {
+        try {
+
         let args = [];
         args = get_args(interaction, args);
 
@@ -33,6 +35,11 @@ module.exports = {
             if (splitGenres.length > 3) return interaction.editReply('Favorite genres are limited to a max of 3 entries. Do not put more then this.');
             db.user_stats.set(interaction.user.id, splitGenres, 'fav_genres');
             interaction.editReply(`Set favorite genres to ${splitGenres.join(' & ')}!`);
+        }
+
+        } catch (err) {
+            let error = new Error(err).stack;
+            handle_error(interaction, error);
         }
     },
 };

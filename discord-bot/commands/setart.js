@@ -32,7 +32,13 @@ module.exports = {
                 .setRequired(false)),
 	admin: false,
 	async execute(interaction) {
+        try {
+
         let parsed_args = parse_artist_song_data(interaction);
+
+        if (parsed_args == -1) {
+            return;
+        }
 
         let origArtistArray = parsed_args[0];
         let artistArray = parsed_args[2];
@@ -147,5 +153,10 @@ module.exports = {
         .setImage(songArt);
 
 		return interaction.editReply({ embeds: [displayEmbed] });
+
+        } catch (err) {
+            let error = new Error(err).stack;
+            handle_error(interaction, error);
+        }
 	},
 };

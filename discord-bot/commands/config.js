@@ -21,6 +21,7 @@ module.exports = {
                 .setRequired(false)),
     admin: true,
 	execute(interaction) {
+
         let args = [];     
         interaction.options._hoistedOptions.forEach((value) => {
             args.push(value.value);
@@ -70,5 +71,6 @@ module.exports = {
 
             }
         }
+
 	},
 };

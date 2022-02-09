@@ -27,7 +27,13 @@ module.exports = {
     
     admin: false,
 	async execute(interaction) {
+        try {
+
         let parsed_args = parse_artist_song_data(interaction);
+
+        if (parsed_args == -1) {
+            return;
+        }
 
         let origArtistArray = parsed_args[0];
         let origSongName = parsed_args[1];
@@ -201,5 +207,10 @@ module.exports = {
 
         await wait(30000);
         await interaction.deleteReply();
+
+        } catch (err) {
+            let error = new Error(err).stack;
+            handle_error(interaction, error);
+        }
     },
 };

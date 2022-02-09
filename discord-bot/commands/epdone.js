@@ -1,5 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { handle_error } = require("../func.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -7,11 +8,16 @@ module.exports = {
         .setDescription('Finish an EP/LP review'),
 	admin: false,
 	async execute(interaction) {
-        db.user_stats.set(interaction.user.id, false, 'current_ep_review');
         try {
-            await interaction.deleteReply();
+            db.user_stats.set(interaction.user.id, false, 'current_ep_review');
+            try {
+                await interaction.deleteReply();
+            } catch (err) {
+                console.log(err);
+            }
         } catch (err) {
-            console.log(err);
+            let error = new Error(err).stack;
+            handle_error(interaction, error);
         }
     },
 };

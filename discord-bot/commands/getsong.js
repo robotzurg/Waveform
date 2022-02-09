@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const getAppleMusicLink = require('get-apple-music-link');
-const { average, get_user_reviews, parse_artist_song_data, sort } = require('../func.js');
+const { average, get_user_reviews, parse_artist_song_data, sort, handle_error } = require('../func.js');
 const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '**11**', '**12**', '**13**', '**14**', '**15**', '**16**', '**17**', '**18**', '**19**', '**20**'];
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
@@ -28,8 +28,13 @@ module.exports = {
                 .setRequired(false)),
 	admin: false,
 	async execute(interaction) {
+        try {
 
-        let parsed_args = parse_artist_song_data(interaction);
+        let parsed_args = await parse_artist_song_data(interaction);
+
+        if (parsed_args == -1) {
+            return;
+        }
 
         let origArtistArray = parsed_args[0];
         let artistArray = parsed_args[2];
@@ -46,7 +51,7 @@ module.exports = {
         let remixes = [];
         let starCount = 0;
 
-        songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
+        songObj = db.reviewDB.get(origArtistArray[0], `["${songName}"]`);
         if (songObj === undefined) { return interaction.editReply(`The requested song \`${origArtistArray} - ${songName}\` does not exist.` + 
         `\nUse \`/getArtist\` to get a full list of this artist's songs.`); }
         songEP = songObj.ep;
@@ -65,66 +70,66 @@ module.exports = {
 
         const rankNumArray = [];
         const songEmbed = new Discord.MessageEmbed()
-            .setColor(`${interaction.member.displayHexColor}`);
+        .setColor(`${interaction.member.displayHexColor}`);
 
-            console.log(vocalistArray);
-            if (vocalistArray.length != 0) {
-                songEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName} (ft. ${vocalistArray.join(' & ')})`);
-            } else {
-                songEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName}`);
+        console.log(vocalistArray);
+        if (vocalistArray.length != 0) {
+            songEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName} (ft. ${vocalistArray.join(' & ')})`);
+        } else {
+            songEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName}`);
+        }
+
+        for (let i = 0; i < userArray.length; i++) {
+            if (userArray[i] != 'EP') {
+                let rating;
+                let starred = false;
+                rating = db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].rating`);
+                if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].starred`) === true) {
+                    starCount++;
+                    starred = true;
+                }
+                rankNumArray.push(parseFloat(rating));
+
+                if (starred === true) {
+                    userArray[i] = [parseFloat(rating) + 1, `:star2: <@${userArray[i]}> \`${rating}/10\``];
+                    userIDList[i] = [parseFloat(rating) + 1, userIDList[i]];
+                } else {
+                    userArray[i] = [parseFloat(rating), `<@${userArray[i]}> \`${rating}/10\``];
+                    userIDList[i] = [parseFloat(rating), userIDList[i]];
+                }
             }
+        }
+        
+        if (rankNumArray.length != 0) {
+            songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` + 
+            `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} star${starCount === 1 ? '' : 's'}!** :star2:`)}`);
+        } else {
+            songEmbed.setDescription(`*The average rating of this song is N/A*`);
+        }
+
+        if (userArray != 0) { // Sort it by highest to lowest rating
+            
+            userArray = sort(userArray);
+            userIDList = sort(userIDList);
 
             for (let i = 0; i < userArray.length; i++) {
-                if (userArray[i] != 'EP') {
-                    let rating;
-                    let starred = false;
-                    rating = db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].rating`);
-                    if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].starred`) === true) {
-                        starCount++;
-                        starred = true;
-                    }
-                    rankNumArray.push(parseFloat(rating));
-
-                    if (starred === true) {
-                        userArray[i] = [parseFloat(rating) + 1, `:star2: <@${userArray[i]}> \`${rating}/10\``];
-                        userIDList[i] = [parseFloat(rating) + 1, userIDList[i]];
-                    } else {
-                        userArray[i] = [parseFloat(rating), `<@${userArray[i]}> \`${rating}/10\``];
-                        userIDList[i] = [parseFloat(rating), userIDList[i]];
-                    }
-                }
+                userArray[i] = `${numReacts[i + 1]} `.concat(userArray[i]);
             }
             
-            if (rankNumArray.length != 0) {
-                songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` + 
-                `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} star${starCount === 1 ? '' : 's'}!** :star2:`)}`);
-            } else {
-                songEmbed.setDescription(`*The average rating of this song is N/A*`);
-            }
+            songEmbed.addField('Reviews:', userArray.join('\n'));
+        } else {
+            songEmbed.addField('Reviews:', 'No reviews :(');
+        }
 
-            if (userArray != 0) { // Sort it by highest to lowest rating
-                
-                userArray = sort(userArray);
-                userIDList = sort(userIDList);
+        if (remixes.length != 0) songEmbed.addField('Remixes:', remixes.join('\n'));
 
-                for (let i = 0; i < userArray.length; i++) {
-                    userArray[i] = `${numReacts[i + 1]} `.concat(userArray[i]);
-                }
-                
-                songEmbed.addField('Reviews:', userArray.join('\n'));
-            } else {
-                songEmbed.addField('Reviews:', 'No reviews :(');
-            }
+        if (songArt == false) {
+            songEmbed.setThumbnail(interaction.user.avatarURL({ format: "png" }));
+        } else {
+            songEmbed.setThumbnail(songArt);
+        }
 
-            if (remixes.length != 0) songEmbed.addField('Remixes:', remixes.join('\n'));
-
-            if (songArt == false) {
-                songEmbed.setThumbnail(interaction.user.avatarURL({ format: "png" }));
-            } else {
-                songEmbed.setThumbnail(songArt);
-            }
-
-            if (songEP != false) songEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
+        if (songEP != false) songEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
 
         // Button/Select Menu setup
         let select_options = [];
@@ -163,7 +168,7 @@ module.exports = {
             );
 
         // Spotify / Apple Music stuff
-         
+        
         await getAppleMusicLink.track(`${songName}`, `${origArtistArray[0]}`, function(res, err) {
             if(err) {
                 interaction.editReply({ embeds: [songEmbed], components: [row] });
@@ -174,11 +179,11 @@ module.exports = {
         });
 
         let message = await interaction.fetchReply();
-       
-		const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 60000 });
 
-		collector.on('collect', async i => {
-			if (i.customId === 'select') { // Select Menu
+        const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 60000 });
+
+        collector.on('collect', async i => {
+            if (i.customId === 'select') { // Select Menu
 
                 if (i.values[0] === 'back') { // Back Selection
                     return await i.update({ content: ` `, embeds: [songEmbed], components: [row] });
@@ -241,11 +246,16 @@ module.exports = {
                     await i.update({ content: `[View Review Message](${url})`, embeds: [reviewEmbed], components: [row] });
                 }
 
-			} 
-		});
+            } 
+        });
 
-		collector.on('end', async () => {
+        collector.on('end', async () => {
             interaction.editReply({ content: ` `, embeds: [songEmbed], components: [] });
         });
+
+        } catch (err) {
+            let error = new Error(err).stack;
+            handle_error(interaction, error);
+        }
 	},
 };

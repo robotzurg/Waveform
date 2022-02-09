@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { parse_artist_song_data, hall_of_fame_check } = require("../func.js");
+const { parse_artist_song_data, hall_of_fame_check, handle_error } = require("../func.js");
 const wait = require('util').promisify(setTimeout);
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
@@ -27,7 +27,13 @@ module.exports = {
 	admin: false,
     async execute(interaction) {
 
+        try {
+
         let parsed_args = parse_artist_song_data(interaction);
+
+        if (parsed_args == -1) {
+            return;
+        }
 
         let origArtistArray = parsed_args[0];
         let origSongName = parsed_args[1];
@@ -93,6 +99,11 @@ module.exports = {
             await interaction.deleteReply();
         } catch (err) {
             console.log(err);
+        }
+
+        } catch (err) {
+            let error = new Error(err).stack;
+            handle_error(interaction, error);
         }
 	},
 };

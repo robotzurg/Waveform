@@ -60,6 +60,8 @@ module.exports = {
 	admin: false,
 	async execute(interaction, sp_artist, sp_song, sp_rating, sp_review, sp_art, sp_vocalists, sp_remixers, sp_user_who_sent, sp_star) {
 
+        try {
+
         // This variable is here so that we can start a review from anywhere else (for Spotify Link Review)
         let int_channel = interaction.channel;
 
@@ -714,6 +716,11 @@ module.exports = {
             }).catch((err) => {
                 handle_error(interaction, err);
             });
+        }
+
+        } catch (err) {
+            let error = new Error(err).stack;
+            handle_error(interaction, error);
         }
     },
 };

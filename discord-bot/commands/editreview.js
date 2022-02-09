@@ -1,7 +1,7 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('wait');
-const { parse_artist_song_data } = require("../func.js");
+const { parse_artist_song_data, handle_error } = require("../func.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -36,7 +36,13 @@ module.exports = {
                 .setRequired(false)),
 	admin: true,
 	async execute(interaction) {
+        try {
+
         let parsed_args = parse_artist_song_data(interaction);
+
+        if (parsed_args == -1) {
+            return;
+        }
 
         let origArtistArray = parsed_args[0];
         let origSongName = parsed_args[1];
@@ -178,6 +184,11 @@ module.exports = {
             await interaction.deleteReply();
         } catch (err) {
             console.log(err);
+        }
+
+        } catch (err) {
+            let error = new Error(err).stack;
+            handle_error(interaction, error);
         }
     },
 };

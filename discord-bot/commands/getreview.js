@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { parse_artist_song_data } = require('../func.js');
+const { parse_artist_song_data, handle_error } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -29,65 +29,69 @@ module.exports = {
                 .setDescription('Remix artists on the song.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-                
 	admin: false,
 	async execute(interaction) {
-        let parsed_args = parse_artist_song_data(interaction);
+        try {
+            let parsed_args = parse_artist_song_data(interaction);
 
-        let origArtistArray = parsed_args[0];
-        let artistArray = parsed_args[2];
-        let songName = parsed_args[3];
-        let rmxArtistArray = parsed_args[4];
-        let vocalistArray = parsed_args[5];
+            if (parsed_args == -1) {
+                return;
+            }
 
-        if (rmxArtistArray.length != 0) {
-            artistArray = rmxArtistArray;
-        } 
+            let origArtistArray = parsed_args[0];
+            let artistArray = parsed_args[2];
+            let songName = parsed_args[3];
+            let rmxArtistArray = parsed_args[4];
+            let vocalistArray = parsed_args[5];
 
-        if (!db.reviewDB.has(artistArray[0])) {
-            return interaction.editReply(`The artist \`${artistArray[0]}\` was not found in the database.`);
-        }
+            if (rmxArtistArray.length != 0) {
+                artistArray = rmxArtistArray;
+            } 
 
-        let taggedUser = interaction.options.getUser('user');
-        let taggedMember;
-        if (taggedUser == null) {
-            taggedUser = interaction.user;
-            taggedMember = interaction.member;
-        } else {
-            taggedMember = await interaction.guild.members.fetch(taggedUser.id);
-        }
+            if (!db.reviewDB.has(artistArray[0])) {
+                return interaction.editReply(`The artist \`${artistArray[0]}\` was not found in the database.`);
+            }
 
-        let rname;
-        let rreview;
-        let rscore;
-        let rsentby;
-        let rstarred;
-        let rurl;
-        let usrSentBy;
-        let rtimestamp;
-        let epfrom = db.reviewDB.get(artistArray[0], `["${songName}"].ep`);
-        let songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+            let taggedUser = interaction.options.getUser('user');
+            let taggedMember;
+            if (taggedUser == null) {
+                taggedUser = interaction.user;
+                taggedMember = interaction.member;
+            } else {
+                taggedMember = await interaction.guild.members.fetch(taggedUser.id);
+            }
 
-        rname = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].name`);
-        if (rname === undefined) return interaction.editReply(`No review found for \`${origArtistArray.join(' & ')} - ${songName}\`. *Note that for EP reviews, you need to use \`/getReviewEP\`.*`);
-        rreview = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].review`);
-        rscore = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].rating`);
-        rsentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].sentby`);
-        rstarred = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].starred`);
-        rurl = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].url`);
-        if (rsentby != false) {
-            usrSentBy = await interaction.guild.members.cache.get(rsentby);              
-        }
-        
-        if (songArt != false) {
-            songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
-        } else {
-            songArt = taggedUser.avatarURL({ format: "png" });
-        }
+            let rname;
+            let rreview;
+            let rscore;
+            let rsentby;
+            let rstarred;
+            let rurl;
+            let usrSentBy;
+            let rtimestamp;
+            let epfrom = db.reviewDB.get(artistArray[0], `["${songName}"].ep`);
+            let songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
 
-        if (rreview == 'No written review.' || rreview == "This was from a ranking, so there is no written review for this song.") rreview = '-';
+            rname = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].name`);
+            if (rname === undefined) return interaction.editReply(`No review found for \`${origArtistArray.join(' & ')} - ${songName}\`. *Note that for EP reviews, you need to use \`/getReviewEP\`.*`);
+            rreview = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].review`);
+            rscore = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].rating`);
+            rsentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].sentby`);
+            rstarred = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].starred`);
+            rurl = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].url`);
+            if (rsentby != false) {
+                usrSentBy = await interaction.guild.members.cache.get(rsentby);              
+            }
+            
+            if (songArt != false) {
+                songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+            } else {
+                songArt = taggedUser.avatarURL({ format: "png" });
+            }
 
-        const reviewEmbed = new Discord.MessageEmbed()
+            if (rreview == 'No written review.' || rreview == "This was from a ranking, so there is no written review for this song.") rreview = '-';
+
+            const reviewEmbed = new Discord.MessageEmbed()
             .setColor(`${taggedMember.displayHexColor}`);
 
             if (rstarred === false) {
@@ -131,5 +135,9 @@ module.exports = {
             } else {
                 interaction.editReply({ content: `[View Review Message](${rurl})`, embeds: [reviewEmbed] });
             }
+        } catch (err) {
+            let error = new Error(err).stack;
+            handle_error(interaction, error);
+        }
 	},
 };

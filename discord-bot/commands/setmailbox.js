@@ -1,5 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const { handle_error } = require("../func.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -15,6 +16,8 @@ module.exports = {
                 .setRequired(true)),
 	admin: true,
 	async execute(interaction) {
+        try {
+
         const usr = interaction.options.getUser('user');
         const mailbox_channel = interaction.options.getChannel('channel');
 
@@ -22,5 +25,10 @@ module.exports = {
         db.server_settings.push(interaction.guild.id, mailbox_channel.name, 'mailboxes');
 
         interaction.editReply(`User ID: ${usr.id}'s Mailbox set to ${mailbox_channel}.`);
+
+        } catch (err) {
+            let error = new Error(err).stack;
+            handle_error(interaction, error);
+        }
     },
 };

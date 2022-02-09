@@ -2,6 +2,7 @@ const Discord = require('discord.js');
 const db = require('../db.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const _ = require('lodash');
+const { handle_error } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,6 +14,9 @@ module.exports = {
                 .setRequired(false)),
     admin: false,
 	async execute(interaction) {
+
+        try {
+        
         let user = interaction.options.getUser('user');
 
         if (user == null) user = interaction.user;
@@ -76,6 +80,11 @@ module.exports = {
             collector.on('end', async () => {
                 interaction.editReply({ embeds: [starCommandEmbed], components: [] });
             });
+        }
+
+        } catch (err) {
+            let error = new Error(err).stack;
+            handle_error(interaction, error);
         }
 	},
 };

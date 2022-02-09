@@ -95,7 +95,8 @@ module.exports = {
         }
 
         if (spotifyCheck === false && (origArtistArray.toLowerCase() === 's' || songArg.toLowerCase() === 's')) {
-            return interaction.editReply('Spotify status not detected, please type in the artist/song name manually or fix your status!');
+            interaction.editReply('Spotify status not detected, please type in the artist/song name manually or fix your status!');
+            return -1;
         }
 
         let artistArray;
@@ -104,8 +105,10 @@ module.exports = {
         } else {
             artistArray = origArtistArray.slice(0);
         }
+
         artistArray = artistArray.flat(1);
         origArtistArray = artistArray.slice(0);
+
         let songName = songArg;
 
         // Handle remixes
@@ -116,13 +119,15 @@ module.exports = {
         // Check if all the artists exist
         for (let i = 0; i < artistArray.length; i++) {
             if (!db.reviewDB.has(artistArray[i])) {
-                return interaction.editReply(`The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.`);
+                interaction.editReply(`The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.`);
+                return -1;
             }
         }
 
         for (let i = 0; i < rmxArtistArray.length; i++) {
             if (!db.reviewDB.has(rmxArtistArray[i])) {
-                return interaction.editReply(`The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.`);
+                interaction.editReply(`The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.`);
+                return -1;
             }
         }
 
@@ -518,7 +523,7 @@ module.exports = {
     },
 
     handle_error: function(interaction, err) {
-        interaction.editReply({ content: `Waveform ran into an error.\n<@122568101995872256> has been notified and will fix this as soon as possible!`, 
+        interaction.editReply({ content: `Waveform ran into an error. Don't worry, the bot is still online!\n<@122568101995872256> has been notified and will fix this as soon as possible!`, 
         embeds: [], components: [] });
         let error_channel = interaction.guild.channels.cache.get('933610135719395329');
         interaction.fetchReply().then(msg => {
