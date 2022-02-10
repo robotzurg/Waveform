@@ -5,11 +5,10 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('test')
         .setDescription('Test :)'),
-	admin: true,
 	async execute(interaction) {
         try {
 
-        interaction.editReply('Test :)');
+            interaction.editReply('Test');
 
         } catch (err) {
             let error = new Error(err).stack;

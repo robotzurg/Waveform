@@ -4,6 +4,8 @@ const { update_art, review_song, hall_of_fame_check, sort, handle_error } = requ
 const { mailboxes } = require('../arrays.json');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('util').promisify(setTimeout);
+const Spotify = require('node-spotify-api');
+require('dotenv').config();
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -219,8 +221,24 @@ module.exports = {
                 );
             }
         }
+
+        // Grab art from server spotify
+        if (songArt == false || songArt == undefined || songArt == null) {
+            const client_id = process.env.SPOTIFY_API_ID; // Your client id
+            const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
+            const song = `${origArtistArray.join(' ')} ${songName}`;
+
+            const spotify = new Spotify({
+                id: client_id,
+                secret: client_secret,
+            });
+
+            await spotify.search({ type: "track", query: song }).then(function(data) {   
+                songArt = data.tracks.items[0].album.images[0].url;
+            });
+        }
         
-        // Spotify check (checks for both "spotify" and "s" as the image link)
+        // Discord Profile Spotify check (checks for both "spotify" and "s" as the image link)
         if (songArt != false && songArt != undefined) {
             if (songArt.toLowerCase().includes('spotify') || songArt.toLowerCase() === 's') {
                 interaction.member.presence.activities.forEach((activity) => {
@@ -264,7 +282,6 @@ module.exports = {
             }
             if (songArt === undefined || songArt === false || songArt == null) { // If the above line of code returns undefined or false, use user pfp
                 songArt = interaction.user.avatarURL({ format: "png", dynamic: false });
-                console.log(songArt);
             }
         }
 
@@ -331,7 +348,6 @@ module.exports = {
                             if (songArt == false || songArt == null) {
                                 if (db.reviewDB.has(m.content.split(' & ')[0])) {
                                     songArt = db.reviewDB.get(m.content.split(' & ')[0], `["${songName}"].art`);
-                                    console.log(songArt);
                                     reviewEmbed.setThumbnail(songArt);
                                 }
                                 if (songArt == undefined) { // If the above line of code returns undefined, use continue with false
