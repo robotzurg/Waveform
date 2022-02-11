@@ -226,6 +226,7 @@ module.exports = {
         if (songArt == false || songArt == undefined || songArt == null) {
             const client_id = process.env.SPOTIFY_API_ID; // Your client id
             const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
+            console.log(client_id);
             const song = `${origArtistArray.join(' ')} ${songName}`;
 
             const spotify = new Spotify({
@@ -233,8 +234,12 @@ module.exports = {
                 secret: client_secret,
             });
 
-            await spotify.search({ type: "track", query: song }).then(function(data) {   
-                songArt = data.tracks.items[0].album.images[0].url;
+            await spotify.search({ type: "track", query: song }).then(function(data) {  
+                if (data.tracks.items.length == 0) {
+                        songArt = false;
+                } else {
+                        songArt = data.tracks.items[0].album.images[0].url;
+                }
             });
         }
         
