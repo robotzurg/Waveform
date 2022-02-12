@@ -1,7 +1,7 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Canvas, loadImage, FontLibrary } = require('skia-canvas');
-const { get_user_reviews, handle_error } = require("../func.js");
+const { get_user_reviews, handle_error, find_most_duplicate } = require("../func.js");
 const _ = require('lodash');
 
 const applyText = (font, fontSize, cutoff, canvas, text) => {
@@ -16,27 +16,6 @@ const applyText = (font, fontSize, cutoff, canvas, text) => {
 	// Return the result to use in the actual canvas
 	return context.font;
 };
-
-const findMostDuplicate = (array) => {
-    let valObj = {}, max_length = 0, rep_arr = [];
-
-    array.forEach(function(el) {
-    if (Object.prototype.hasOwnProperty.call(valObj, el)) {
-        valObj[el] += 1;
-        max_length = (valObj[el] > max_length) ? valObj[el] : max_length;
-    }
-    else{
-        valObj[el] = 1;
-    }
-    });
-
-    Object.keys(valObj).forEach(function(val) {
-        (valObj[val] >= max_length) && (rep_arr.push([val, valObj[val]]));
-    });
-    return rep_arr;
-};
-
-
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -128,7 +107,7 @@ module.exports = {
                 }
             }
 
-            mostArtist = findMostDuplicate(artistCount);
+            mostArtist = find_most_duplicate(artistCount);
             ratingList = ratingList.filter(v => !Number.isNaN(v));
             ratingAvg = _.mean(ratingList);
 

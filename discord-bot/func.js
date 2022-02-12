@@ -131,12 +131,6 @@ module.exports = {
             }
         }
 
-        //Adjust (VIP) to VIP
-        if (songName.includes('(VIP)')) {
-            songName = songName.split(' (');
-            songName = `${songName[0]} ${songName[1].slice(0, -1)}`;
-        }
-
         if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
             if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
                 artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
@@ -497,11 +491,6 @@ module.exports = {
             activity.details = `${title[0]} VIP`;
         }
 
-        if (activity.details.includes('(VIP)')) {
-            title = activity.details.split(' (V');
-            activity.details = `${title[0]} VIP`;
-        }
-
         if (activity.details.includes('feat.')) {
             title = activity.details.split(' (feat. ');
             activity.details = `${title[0]}`;
@@ -534,4 +523,24 @@ module.exports = {
 
         console.log(err);
     },
+
+    find_most_duplicate: function(array) {
+        let valObj = {}, max_length = 0, rep_arr = [];
+    
+        array.forEach(function(el) {
+        if (Object.prototype.hasOwnProperty.call(valObj, el)) {
+            valObj[el] += 1;
+            max_length = (valObj[el] > max_length) ? valObj[el] : max_length;
+        }
+        else{
+            valObj[el] = 1;
+        }
+        });
+    
+        Object.keys(valObj).forEach(function(val) {
+            (valObj[val] >= max_length) && (rep_arr.push([val, valObj[val]]));
+        });
+        return rep_arr;
+    },
+    
 };
