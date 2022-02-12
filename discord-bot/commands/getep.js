@@ -54,6 +54,7 @@ module.exports = {
                 reviewNum = reviewNum.filter(e => e !== 'art');
                 reviewNum = reviewNum.filter(e => e !== 'songs');
                 reviewNum = reviewNum.filter(e => e !== 'collab');
+                reviewNum = reviewNum.filter(e => e !== 'review_num');
                 let userArray = reviewNum.slice(0);
                 let userIDList = userArray.slice(0);
 
