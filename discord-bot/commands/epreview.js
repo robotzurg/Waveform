@@ -40,7 +40,6 @@ module.exports = {
 	admin: false,
 	async execute(interaction) {
         try {
-            return interaction.editReply('This command is temporarily disabled.');
 
             let origArtistArray = interaction.options.getString('artist').split(' & ');
             let artistArray = origArtistArray.slice(0);
@@ -62,6 +61,8 @@ module.exports = {
 
             if (overall_rating === null) {
                 overall_rating = false;
+            } else {
+                overall_rating = parseFloat(overall_rating);
             }
 
             if (overall_review === null) {
@@ -79,13 +80,11 @@ module.exports = {
                 ep_name = `${ep_name} EP`;
             }
 
-            console.log(user_sent_by);
-
             if (user_sent_by.id != null && user_sent_by.id != undefined && user_sent_by.id != false) {
                 taggedMember = await interaction.guild.members.fetch(user_sent_by.id);
-                taggedUser = user_sent_by;
+                taggedUser = user_sent_by.id;
             } else {
-                taggedUser = false;
+                taggedUser = { id: false };
             }
 
             // Spotify check (checks for both "spotify" and "s" as the image link)
@@ -98,6 +97,15 @@ module.exports = {
                     });
                 }
             }
+
+            // Setup buttons
+            const row = new Discord.MessageActionRow()
+            .addComponents(
+                new Discord.MessageButton()
+                    .setCustomId('push')
+                    .setLabel('Push Review Without Songs')
+                    .setStyle('SUCCESS'),
+            );
 
             // Make sure we DON'T get any slip ups, where the bot lets spotify run through (if it can't find a status)
             if (art != undefined && art != false) {
@@ -137,7 +145,6 @@ module.exports = {
                 if (!db.reviewDB.has(artistArray[i])) {
 
                     db.reviewDB.set(artistArray[i], epObject);
-                    db.reviewDB.set(artistArray[i], false, 'Image');
 
                 } else if (db.reviewDB.get(artistArray[i], `["${ep_name}"]`) === undefined) {
 
@@ -155,7 +162,9 @@ module.exports = {
 
                     Object.assign(db_song_obj, new_user_obj);
                     db.reviewDB.set(artistArray[i], db_song_obj, `["${ep_name}"]`);
-                    db.reviewDB.set(artistArray[i], art, `["${ep_name}"].art`);
+                    if (art != undefined && art != false && art != null && !art.includes('avatar')) {
+                        db.reviewDB.set(artistArray[i], art, `["${ep_name}"].art`);
+                    }
 
                 }
 
@@ -193,7 +202,11 @@ module.exports = {
                 epEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
             }
 
-            interaction.editReply({ embeds: [epEmbed] });
+            if (overall_rating == false && overall_review == false) {
+                interaction.editReply({ embeds: [epEmbed], components: [] });
+            } else {
+                interaction.editReply({ embeds: [epEmbed], components: [row] });
+            }
 
             const rankingEmbed = new Discord.MessageEmbed()
             .setColor(`${interaction.member.displayHexColor}`)
@@ -201,8 +214,10 @@ module.exports = {
 
             // Grab message id to put in user_stats and the ep object
             const msg = await interaction.fetchReply();
+            let rank_msg_obj;
 
             await interaction.channel.send({ embeds: [rankingEmbed] }).then(async rank_msg => {
+                rank_msg_obj = rank_msg;
                 db.user_stats.set(interaction.user.id, [msg.id, rank_msg.id, artistArray], 'current_ep_review');
             });
 
@@ -211,6 +226,26 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], msg.id, `["${ep_name}"].["${interaction.user.id}"].msg_id`);
                 db.reviewDB.set(artistArray[i], msg.url, `["${ep_name}"].["${interaction.user.id}"].url`);
             }
+
+            const collector = msg.createMessageComponentCollector({ time: 60000 });
+
+            collector.on('collect', async i => {
+
+                if (i.customId == 'push') {
+                    db.user_stats.set(interaction.user.id, false, 'current_ep_review');
+                    if (overall_review != false) epEmbed.setDescription(`${overall_review}`);
+                    if (overall_rating != false) epEmbed.addField(`Rating`, `**${overall_rating}/10**`);
+                    epEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name}`);
+                    rank_msg_obj.delete();
+                    i.update({ embeds: [epEmbed], components: [] });
+                }
+
+            });
+
+            collector.on('end', async () => {
+                interaction.editReply({ embeds: [epEmbed], components: [] });
+            });
+
         } catch (err) {
             let error = new Error(err).stack;
             handle_error(interaction, error);

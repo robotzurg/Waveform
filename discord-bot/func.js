@@ -160,6 +160,8 @@ module.exports = {
             }
         }
 
+        origArtistArray = origArtistArray.filter(v => !vocalistArray.includes(v));
+
         return [origArtistArray, songArg, artistArray, songName, rmxArtistArray, vocalistArray];
     },
 

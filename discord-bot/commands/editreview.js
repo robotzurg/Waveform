@@ -65,7 +65,7 @@ module.exports = {
         let user_sent_name;
 
         if (rating == null && review == null && user_who_sent == null) {
-            interaction.editReply('You must supply either an edit to your review, rating, or the person who sent you the song!');
+            return interaction.editReply('You must supply either an edit to your review, rating, or the person who sent you the song!');
         }
 
         if (user_who_sent != null && user_who_sent != undefined) {
@@ -137,11 +137,22 @@ module.exports = {
             });
         }
 
-        let ep_from = db.reviewDB.get(artistArray[0], `["${songName}"].ep`);
-        if (ep_from != false && ep_from != undefined) {
-            if (db.reviewDB.get(artistArray[0], `["${ep_from}"].["${interaction.user.id}"]`) != undefined) {
-                let epMsgToEdit = db.reviewDB.get(artistArray[0], `["${ep_from}"].["${interaction.user.id}"].msg_id`);
+        let primArtist = artistArray[0];
+        let epMsgToEdit = false;
+        let ep_from = false;
 
+        for (let i = 0; i < artistArray.length; i++) {
+            ep_from = db.reviewDB.get(primArtist, `["${songName}"].ep`);
+            epMsgToEdit = db.reviewDB.get(artistArray[i], `["${ep_from}"].["${interaction.user.id}"].msg_id`);
+            if (epMsgToEdit != false && epMsgToEdit != undefined && epMsgToEdit != null) {
+                primArtist = artistArray[i];
+                break;
+            } 
+        }
+
+        if (ep_from != false && ep_from != undefined) {
+            if (db.reviewDB.get(primArtist, `["${ep_from}"].["${interaction.user.id}"]`) != undefined) {
+                let displayArtists = origArtistArray.filter(v => v != primArtist);
                 let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
                 channelsearch.messages.fetch(`${epMsgToEdit}`).then(msg => {
                     let msgEmbed = msg.embeds[0];
@@ -155,20 +166,15 @@ module.exports = {
 
                     if (rating != null && rating != undefined) {
                         if (msg_embed_fields[field_num].name.includes('🌟')) {
-                            msg_embed_fields[field_num].name = `🌟 ${displaySongName} (${rating}/10) 🌟`;
+                            msg_embed_fields[field_num].name = `🌟 ${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``} (${rating}/10) 🌟`;
                         } else {
-                            msg_embed_fields[field_num].name = `${displaySongName} (${rating}/10)`;
+                            msg_embed_fields[field_num].name = `${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``} (${rating}/10)`;
                         }
                     } 
                     if (review != null && review != undefined) msg_embed_fields[field_num].value = review;
 
                     msg.edit({ embeds: [msgEmbed] });
                 }).catch(err => {
-                    interaction.editReply(`Waveform ran into an error.\n<@122568101995872256> has been notified and will fix this as soon as possible!`);
-                    let error_channel = interaction.guild.channels.cache.get('933610135719395329');
-                    interaction.fetchReply().then(msg => {
-                        error_channel.send(`Waveform Error!\nMessage Link with Error: <${msg.url}>`);
-                    });
                     console.log(err);
                 });
             } 

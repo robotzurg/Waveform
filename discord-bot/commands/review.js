@@ -94,6 +94,15 @@ module.exports = {
         let taggedUser = false;
         let taggedMember = false;
 
+        if (songName.includes(' EP') || songName.includes(' LP')) {
+            for (let i = 0; i < origArtistArray.length; i++) {
+                if (origArtistArray[i] == 'og') {
+                    origArtistArray[i] = db.user_stats.get(interaction.user.id, `current_ep_review`)[2].split(' & ');
+                    origArtistArray = origArtistArray.flat(1);
+                }   
+            }
+        }
+
         if (vocalistArray == null) {
             vocalistArray = [];
         } else {

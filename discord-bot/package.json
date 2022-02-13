@@ -2,7 +2,6 @@
   "name": "discord-bot",
   "version": "1.0.0",
   "description": "discord bot stuff for music discord",
-  "main": "discord-bot",
   "scripts": {
     "test": "test"
   },
