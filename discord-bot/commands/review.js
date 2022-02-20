@@ -245,9 +245,9 @@ module.exports = {
 
             await spotify.search({ type: "track", query: song }).then(function(data) {  
                 if (data.tracks.items.length == 0) {
-                        songArt = false;
+                    songArt = false;
                 } else {
-                        songArt = data.tracks.items[0].album.images[0].url;
+                    songArt = data.tracks.items[0].album.images[0].url;
                 }
             });
         }
@@ -567,7 +567,7 @@ module.exports = {
                                 value: `${review}`,
                                 inline: false,
                             });
-                            msg.edit({ embeds: [msgEmbed] });
+                            msg.edit({ embeds: [msgEmbed], components: [] });
 
                             // Star reaction stuff for hall of fame
                             if (rating >= 8 && starred === true) {
@@ -592,7 +592,7 @@ module.exports = {
                                     value: `${review}`,
                                     inline: false,
                                 });
-                                msg.edit({ embeds: [msgEmbed] });
+                                msg.edit({ embeds: [msgEmbed], components: [] });
 
                                 // Star reaction stuff for hall of fame
                                 if (rating >= 8 && starred === true) {
@@ -668,13 +668,6 @@ module.exports = {
 
                     } break;
                     case 'done': { // Send the review to the database
-                        await i.deferUpdate(); 
-
-                        if (a_collector != undefined) a_collector.stop();
-                        if (s_collector != undefined) s_collector.stop();
-                        if (ra_collector != undefined) ra_collector.stop();
-                        if (re_collector != undefined) re_collector.stop();
-                        if (collector != undefined) collector.stop(); // Collector for all buttons
                         await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [] });
 
                         // Review the song

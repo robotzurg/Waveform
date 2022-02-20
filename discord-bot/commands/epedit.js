@@ -15,6 +15,7 @@ module.exports = {
         .addStringOption(option => 
             option.setName('ep_name')
                 .setDescription('The name of the EP/LP. (INCLUDE EP OR LP IN THE TITLE!)')
+                .setAutocomplete(true)
                 .setRequired(true))
         .addStringOption(option => 
             option.setName('ep_rating')

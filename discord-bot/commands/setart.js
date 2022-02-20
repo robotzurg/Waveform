@@ -3,6 +3,8 @@ const forAsync = require('for-async');
 const { get_user_reviews, parse_artist_song_data, handle_error } = require("../func.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const Discord = require("discord.js");
+const Spotify = require('node-spotify-api');
+require('dotenv').config();
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -22,8 +24,8 @@ module.exports = {
 
         .addStringOption(option => 
             option.setName('art')
-                .setDescription('Art for the song/EP/LP. (put spotify or s here if you want to use your spotify status.)')
-                .setRequired(true))
+                .setDescription('Art for the song/EP/LP. (leave blank for spotify searching)')
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('remixers')
@@ -48,8 +50,6 @@ module.exports = {
         let songArt = interaction.options.getString('art');
         let newSong = false;
 
-        console.log(origArtistArray);
-
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
 
         if (songArt.toLowerCase() === 's') {
@@ -62,9 +62,27 @@ module.exports = {
                     }
                 }
             });
+        } else if (songArt == null) {
+            const client_id = process.env.SPOTIFY_API_ID; // Your client id
+            const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
+            console.log(client_id);
+            const song = `${origArtistArray.join(' ')} ${songName}`;
+
+            const spotify = new Spotify({
+                id: client_id,
+                secret: client_secret,
+            });
+
+            await spotify.search({ type: "track", query: song }).then(function(data) {  
+                if (data.tracks.items.length == 0) {
+                    songArt = false;
+                } else {
+                    songArt = data.tracks.items[0].album.images[0].url;
+                }
+            });
         }
 
-        if (songArt == false) return interaction.editReply('You aren\'t playing a spotify song, or your discord spotify status isn\'t working!');
+        if (songArt == false) return interaction.editReply('You aren\'t playing a spotify song, or your discord spotify status isn\'t working!\nThis also could appear if you attempted to search spotify for a song art, and nothing was found!');
 
 		if (newSong === false) {
 			for (let i = 0; i < artistArray.length; i++) {

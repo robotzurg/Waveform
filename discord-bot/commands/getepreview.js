@@ -16,6 +16,7 @@ module.exports = {
         .addStringOption(option => 
             option.setName('ep_name')
                 .setDescription('The name of the EP/LP.')
+                .setAutocomplete(true)
                 .setRequired(true))
             
         .addUserOption(option => 
