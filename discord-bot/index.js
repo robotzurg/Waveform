@@ -121,6 +121,7 @@ client.on('interactionCreate', async interaction => {
                 artist_songs = Object.keys(artist_songs);
                 let collab_artist_songs = [];
                 artist_songs = artist_songs.filter(v => v != 'Image');
+                artist_songs = artist_songs.reverse();
                 if (focused[0].name != 'ep_name') {
                     artist_songs = artist_songs.filter(v => !v.includes(' EP'));
                     artist_songs = artist_songs.filter(v => !v.includes(' LP'));

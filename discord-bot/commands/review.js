@@ -235,7 +235,6 @@ module.exports = {
         if (songArt == false || songArt == undefined || songArt == null) {
             const client_id = process.env.SPOTIFY_API_ID; // Your client id
             const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
-            console.log(client_id);
             const song = `${origArtistArray.join(' ')} ${songName}`;
 
             const spotify = new Spotify({
@@ -389,7 +388,12 @@ module.exports = {
                             displaySongName = (`${songName}` + 
                             `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
                             `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
-                            reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+
+                            if (starred == false) {
+                                reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+                            } else {
+                                reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
+                            }
 
                             // Thumbnail image handling
                             if (songArt == false || songArt == null) {
@@ -668,10 +672,10 @@ module.exports = {
 
                     } break;
                     case 'done': { // Send the review to the database
-                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [] });
+                        await i.update({ content: ' ', embeds: [reviewEmbed], components: [] });
 
                         // Review the song
-                        await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, false);
+                        review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, false);
 
                         // Update user stats
                         db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
@@ -696,7 +700,7 @@ module.exports = {
 
                         // Fix artwork on all reviews for this song
                         if (songArt != false && db.reviewDB.has(artistArray[0])) {
-                            await update_art(interaction, artistArray[0], songName, songArt);
+                            update_art(interaction, artistArray[0], songName, songArt);
                         }
                     
                         // End the collector
