@@ -1,5 +1,2 @@
 # Auto detect text files and perform LF normalization
 * text=auto
-enmap.sqlite merge=ours
-enmap.sqlite-shm merge=ours
-enmap.sqlite-wal merge=ours
