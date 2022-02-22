@@ -77,4 +77,6 @@ typings/
 discord-bot/config.json
 discord-bot/package-lock.json
 discord-bot/package.json
-discord-bot/data/
+discord-bot/enmap.sqlite
+discord-bot/enmap.sqlite-shm
+discord-bot/enmap.sqlite-wal
