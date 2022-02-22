@@ -195,22 +195,24 @@ module.exports = {
                                 let msgtoEdit = item;
                                 let msgEmbed;
 
-                                channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                    msgEmbed = msg.embeds[0];
-                                    msgEmbed.setThumbnail(new_image);
-                                    msg.edit({ content: ' ', embeds: [msgEmbed] });
-                                    resolve();
-                                }).catch(() => {
-                                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
+                                if (channelsearch != undefined) {
                                     channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                                         msgEmbed = msg.embeds[0];
                                         msgEmbed.setThumbnail(new_image);
                                         msg.edit({ content: ' ', embeds: [msgEmbed] });
                                         resolve();
+                                    }).catch(() => {
+                                        channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
+                                        channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                                            msgEmbed = msg.embeds[0];
+                                            msgEmbed.setThumbnail(new_image);
+                                            msg.edit({ content: ' ', embeds: [msgEmbed] });
+                                            resolve();
+                                        });
+                                    }).catch((err) => {
+                                        handle_error(interaction, err);
                                     });
-                                }).catch((err) => {
-                                    handle_error(interaction, err);
-                                });
+                                }
                             });
                         });
                     }
@@ -519,11 +521,10 @@ module.exports = {
         let error_channel = interaction.guild.channels.cache.get('933610135719395329');
         interaction.fetchReply().then(msg => {
             error_channel.send(`Waveform Error!\n**${err}**\nMessage Link with Error: <${msg.url}>`);
+            console.log(err);
         }).catch(() => {
-            console.log('The actual error handler errored! That\'s a new one.');
+            console.log(err);
         });
-
-        console.log(err);
     },
 
     find_most_duplicate: function(array) {

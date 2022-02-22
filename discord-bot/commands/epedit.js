@@ -72,33 +72,35 @@ module.exports = {
                 msg.edit({ embeds: [msgEmbed] });
             }).catch(() => {
                 channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                channelsearch.messages.fetch(`${db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].msg_id`)}`).then(msg => {
-                    let msgEmbed = msg.embeds[0];
+                if (channelsearch != undefined) {
+                    channelsearch.messages.fetch(`${db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].msg_id`)}`).then(msg => {
+                        let msgEmbed = msg.embeds[0];
 
-                    if (ep_rating != null) {
-                        old_ep_rating = `${db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].rating`)}/10`;
-                        if (old_ep_rating == 'false/10') old_ep_rating = "N/A";
-                        msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${ep_rating}/10)`);
-                        for (let i = 0; i < artistArray.length; i++) {
-                            db.reviewDB.set(artistArray[i], parseFloat(ep_rating), `["${ep_name}"].["${interaction.user.id}"].rating`);
+                        if (ep_rating != null) {
+                            old_ep_rating = `${db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].rating`)}/10`;
+                            if (old_ep_rating == 'false/10') old_ep_rating = "N/A";
+                            msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${ep_rating}/10)`);
+                            for (let i = 0; i < artistArray.length; i++) {
+                                db.reviewDB.set(artistArray[i], parseFloat(ep_rating), `["${ep_name}"].["${interaction.user.id}"].rating`);
+                            }
                         }
-                    }
-                    
-                    if (ep_review != null) {
-                        old_ep_review = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].review`);
-                        if (ep_review.includes('\\n')) {
-                            ep_review = ep_review.split('\\n').join('\n');
+                        
+                        if (ep_review != null) {
+                            old_ep_review = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].review`);
+                            if (ep_review.includes('\\n')) {
+                                ep_review = ep_review.split('\\n').join('\n');
+                            }
+                            msgEmbed.setDescription(`*${ep_review}*`);
+                            for (let i = 0; i < artistArray.length; i++) {
+                                db.reviewDB.set(artistArray[i], ep_review, `["${ep_name}"].["${interaction.user.id}"].review`);
+                            }
                         }
-                        msgEmbed.setDescription(`*${ep_review}*`);
-                        for (let i = 0; i < artistArray.length; i++) {
-                            db.reviewDB.set(artistArray[i], ep_review, `["${ep_name}"].["${interaction.user.id}"].review`);
-                        }
-                    }
 
-                    msg.edit({ embeds: [msgEmbed] });
-                }).catch((err) => {
-                    handle_error(interaction, err);
-                });
+                        msg.edit({ embeds: [msgEmbed] });
+                    }).catch((err) => {
+                        handle_error(interaction, err);
+                    });
+                }
 
             }).catch((err) => {
                 handle_error(interaction, err);

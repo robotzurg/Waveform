@@ -80,3 +80,8 @@ discord-bot/package.json
 data/enmap.sqlite
 data/enmap.sqlite-shm
 data/enmap.sqlite-wal
+discord-bot/data/enmap.sqlite
+discord-bot/data/enmap.sqlite-shm
+discord-bot/data/enmap.sqlite-wal
+*.sqlite-shm
+*.sqlite-wal

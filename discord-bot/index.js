@@ -1,7 +1,7 @@
 // require the discord.js module
 const fs = require('fs');
 const Discord = require('discord.js');
-const { token } = require('./config.json');
+const { token_dev } = require('./config.json');
 const db = require('./db');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
@@ -22,7 +22,10 @@ const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('
 const mainClientId = '828651073136361472';
 // eslint-disable-next-line no-unused-vars
 const devClientId = "945476486171865128";
-const guildId = '680864893552951306';
+// eslint-disable-next-line no-unused-vars
+const mainGuildId = '680864893552951306';
+// eslint-disable-next-line no-unused-vars
+const devGuildId = "945476095048814652";
 
 for (const file of commandFiles) {
 	const command = require(`./commands/${file}`);
@@ -37,14 +40,14 @@ for (const file of commandFiles) {
     }
 }
 
-const rest = new REST({ version: '9' }).setToken(token);
+const rest = new REST({ version: '9' }).setToken(token_dev);
 
 (async () => {
 	try {
 		console.log('Started refreshing application (/) commands.');
 
 		await rest.put(
-			Routes.applicationGuildCommands(mainClientId, guildId),
+			Routes.applicationGuildCommands(devClientId, devGuildId),
 			{ body: registerCommands },
 		);
 
@@ -195,20 +198,5 @@ client.on('interactionCreate', async interaction => {
     
 });
 
-
-// Listen for messages
-client.on('messageCreate', async message => {
-
-    //Review Chat Filter
-    if (db.server_settings.get(message.guild.id, 'review_filter') === true && `<#${message.channel.id}>` === db.server_settings.get(message.guild.id, 'review_channel')) {
-        if (message.content.includes('(') || message.content.includes('!') || message.author.bot) {
-            // Leave Empty
-        } else {
-            message.delete();
-        }
-    }
-
-});
-
 // login to Discord
-client.login(token);
+client.login(token_dev);

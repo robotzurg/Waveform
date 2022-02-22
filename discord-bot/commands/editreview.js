@@ -113,28 +113,30 @@ module.exports = {
 
         if (reviewMsgID != false) {
             let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
-            channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
-                let embed_data = msg.embeds;
-                let msgEmbed = embed_data[0];
-
-                if (rating != null && rating != undefined) msgEmbed.fields[0].value = `**${rating}/10**`;
-                if (review != null && review != undefined) msgEmbed.setDescription(review);
-                if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
-
-                msg.edit({ embeds: [msgEmbed] });
-            }).catch(() => {
-                channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+            if (channelsearch != undefined) {
                 channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
                     let embed_data = msg.embeds;
                     let msgEmbed = embed_data[0];
-    
+
                     if (rating != null && rating != undefined) msgEmbed.fields[0].value = `**${rating}/10**`;
                     if (review != null && review != undefined) msgEmbed.setDescription(review);
                     if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
-    
+
                     msg.edit({ embeds: [msgEmbed] });
+                }).catch(() => {
+                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                    channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
+                        let embed_data = msg.embeds;
+                        let msgEmbed = embed_data[0];
+        
+                        if (rating != null && rating != undefined) msgEmbed.fields[0].value = `**${rating}/10**`;
+                        if (review != null && review != undefined) msgEmbed.setDescription(review);
+                        if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
+        
+                        msg.edit({ embeds: [msgEmbed] });
+                    });
                 });
-            });
+            }
         }
 
         let primArtist = artistArray[0];

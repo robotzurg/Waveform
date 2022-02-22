@@ -27,6 +27,16 @@ module.exports = {
             args.push(value.value);
         });
 
+        if (!db.server_settings.has(interaction.guild.id)) {
+            db.server_settings.set(interaction.guild.id, {
+                "hall_of_fame_channel": `<#${interaction.channel.id}>`,
+                "review_channel": `<#${interaction.channel.id}>`,
+                "review_filter": false,
+                "star_cutoff": 3,
+                "mailboxes": [],
+            });
+        }
+
         if (!args.length) {
             const reviewChannel = db.server_settings.get(interaction.guild.id, 'review_channel');
             const hofChannel = db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel');

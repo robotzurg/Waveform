@@ -75,16 +75,18 @@ module.exports = {
                         resolve();
                     }).catch(() => {
                         channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
-                        channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                            msgEmbed = msg.embeds[0];
-                            if (msgEmbed.title.includes('🌟')) {
-                                msgEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${new_song} 🌟`);
-                            } else {
-                                msgEmbed.setTitle(`${artistArray.join(' & ')} - ${new_song}`);
-                            }
-                            msg.edit({ content: ' ', embeds: [msgEmbed] });
-                            resolve();
-                        }).catch(err => { console.log(err); });
+                        if (channelsearch != undefined) {
+                            channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                                msgEmbed = msg.embeds[0];
+                                if (msgEmbed.title.includes('🌟')) {
+                                    msgEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${new_song} 🌟`);
+                                } else {
+                                    msgEmbed.setTitle(`${artistArray.join(' & ')} - ${new_song}`);
+                                }
+                                msg.edit({ content: ' ', embeds: [msgEmbed] });
+                                resolve();
+                            }).catch(err => { console.log(err); });
+                        }
                     });
                 });
             });
