@@ -17,7 +17,7 @@ module.exports = {
 	async execute(interaction) {
         try {
 
-            interaction.editReply('Test');
+            interaction.editReply('Test!!!');
 
         } catch (err) {
             let error = new Error(err).stack;

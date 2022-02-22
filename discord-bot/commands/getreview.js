@@ -115,9 +115,11 @@ module.exports = {
                     reviewEmbed.setTimestamp(msg.createdTimestamp);
                 }).catch(() => {
                     channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(taggedUser.id, 'mailbox'));
-                    channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
-                        reviewEmbed.setTimestamp(msg.createdTimestamp);
-                    }).catch(() => {}); // No error handling here as this is to make sure that legacy reviews go through okay, if they have msg_id false.
+                    if (channelsearch != undefined) {
+                        channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
+                            reviewEmbed.setTimestamp(msg.createdTimestamp);
+                        }).catch(() => {}); // No error handling here as this is to make sure that legacy reviews go through okay, if they have msg_id false.
+                    }
                 });
             }
 
@@ -136,6 +138,7 @@ module.exports = {
                 interaction.editReply({ content: `[View Review Message](${rurl})`, embeds: [reviewEmbed] });
             }
         } catch (err) {
+            console.log(err);
             let error = new Error(err).stack;
             handle_error(interaction, error);
         }

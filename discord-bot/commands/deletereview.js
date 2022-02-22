@@ -60,9 +60,11 @@ module.exports = {
                 await msg.delete();
             }).catch(() => {
                 channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
-                    msg.delete();
-                });
+                if (channelsearch != undefined) {
+                    channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
+                        msg.delete();
+                    });
+                }
             });
         }
 
