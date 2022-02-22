@@ -224,6 +224,7 @@ module.exports = {
             render();
 
         } catch (err) {
+            console.log(err);
             let error = new Error(err).stack;
             handle_error(interaction, error);
         }
