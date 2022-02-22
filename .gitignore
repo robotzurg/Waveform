@@ -85,3 +85,7 @@ discord-bot/data/enmap.sqlite-shm
 discord-bot/data/enmap.sqlite-wal
 *.sqlite-shm
 *.sqlite-wal
+*.sqlite-shm
+discord-bot/data/enmap.sqlite-shm
+discord-bot/data/enmap.sqlite-wal
+*.sqlite-wal
