@@ -1,7 +1,7 @@
 // require the discord.js module
 const fs = require('fs');
 const Discord = require('discord.js');
-const { token } = require('./config.json');
+const { token_dev } = require('./config.json');
 const db = require('./db');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
@@ -40,14 +40,14 @@ for (const file of commandFiles) {
     }
 }
 
-const rest = new REST({ version: '9' }).setToken(token);
+const rest = new REST({ version: '9' }).setToken(token_dev);
 
 (async () => {
 	try {
 		console.log('Started refreshing application (/) commands.');
 
 		await rest.put(
-			Routes.applicationGuildCommands(mainClientId, mainGuildId),
+			Routes.applicationGuildCommands(devClientId, devGuildId),
 			{ body: registerCommands },
 		);
 
@@ -199,4 +199,4 @@ client.on('interactionCreate', async interaction => {
 });
 
 // login to Discord
-client.login(token);
+client.login(token_dev);
