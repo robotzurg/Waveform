@@ -18,6 +18,7 @@ const registerCommands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
 // Place your client and guild ids here
+// eslint-disable-next-line no-unused-vars
 const mainClientId = '828651073136361472';
 const devClientId = "945476486171865128";
 const guildId = '680864893552951306';
