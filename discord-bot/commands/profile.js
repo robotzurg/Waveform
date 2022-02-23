@@ -69,8 +69,12 @@ module.exports = {
 
                 for (let j = 0; j < songArray.length; j++) {
                     let userArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"]`);
-                    userArray = get_user_reviews(userArray);
-                    userArray = userArray.filter(v => v == taggedUser.id);
+                    if (userArray != null && userArray != undefined) {
+                        userArray = get_user_reviews(userArray);
+                        userArray = userArray.filter(v => v == taggedUser.id);
+                    } else {
+                        userArray = [];
+                    }
                     if (userArray.length != 0) artistCount.push(artistArray[i]);
                     if (songSkip.includes(`${artistArray[i]} - ${songArray[j]}`)) continue;
 

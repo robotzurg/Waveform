@@ -195,24 +195,22 @@ module.exports = {
                                 let msgtoEdit = item;
                                 let msgEmbed;
 
-                                if (channelsearch != undefined) {
+                                channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                                    msgEmbed = msg.embeds[0];
+                                    msgEmbed.setThumbnail(new_image);
+                                    msg.edit({ content: ' ', embeds: [msgEmbed] });
+                                    resolve();
+                                }).catch(() => {
+                                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
                                     channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                                         msgEmbed = msg.embeds[0];
                                         msgEmbed.setThumbnail(new_image);
                                         msg.edit({ content: ' ', embeds: [msgEmbed] });
                                         resolve();
-                                    }).catch(() => {
-                                        channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
-                                        channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                            msgEmbed = msg.embeds[0];
-                                            msgEmbed.setThumbnail(new_image);
-                                            msg.edit({ content: ' ', embeds: [msgEmbed] });
-                                            resolve();
-                                        });
-                                    }).catch((err) => {
-                                        handle_error(interaction, err);
                                     });
-                                }
+                                }).catch((err) => {
+                                    handle_error(interaction, err);
+                                });
                             });
                         });
                     }
