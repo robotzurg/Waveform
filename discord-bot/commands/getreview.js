@@ -127,7 +127,7 @@ module.exports = {
             if (rreview != '-') reviewEmbed.addField('Rating: ', `**${rscore}/10**`, true);
 
             if (rsentby != false) {
-                reviewEmbed.setFooter(`Sent by ${usrSentBy.displayName}${rurl != undefined}`, `${usrSentBy.user.avatarURL({ format: "png" })}`);
+                reviewEmbed.setFooter(`Sent by ${usrSentBy.displayName}`, `${usrSentBy.user.avatarURL({ format: "png" })}`);
             } else if (epfrom != undefined && epfrom != false) {
                 reviewEmbed.setFooter(`from ${epfrom}`, db.reviewDB.get(artistArray[0], `["${epfrom}"].art`));
             }

@@ -198,5 +198,24 @@ client.on('interactionCreate', async interaction => {
     
 });
 
+client.on('guildMemberAdd', async (member) => {
+
+    if (!db.user_stats.has(member.user.id)) {
+        db.user_stats.set(member.user.id, {
+            "current_ep_review": false,
+            "fav_genres": [],
+            "fav_song": "N/A",
+            "least_fav_song": "N/A",
+            "mailbox": false,
+            "name": `${member.user.username}`,
+            "recent_review": "N/A",
+            "star_list": [],
+            "local_tags": [],
+        });
+    }
+
+});
+
+
 // login to Discord
 client.login(token_dev);

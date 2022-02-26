@@ -43,6 +43,7 @@ module.exports = {
             songArray = songArray.filter(item => item !== 'Image');
             let epKeyArray = songArray.filter(item => item.includes(' LP') || item.includes(' EP'));
             songArray = songArray.filter(item => !item.includes(' LP') && !item.includes(' EP'));
+            songArray = songArray.map(item => item.replace('\\', '\\\\'));
             let reviewNum;
             let singleArray = [];
             let pagedSingleArray = [];
@@ -166,6 +167,7 @@ module.exports = {
                     starNum = 0;
                     const songObj = db.reviewDB.get(artist, `["${songArray[i]}"]`);
                     reviewNum = parseInt(db.reviewDB.get(artist, `["${songArray[i]}"].review_num`));
+                    console.log(songArray[i]);
                     let reviews = get_user_reviews(songObj);
                     
                     for (let ii = 0; ii < reviews.length; ii++) {
@@ -329,6 +331,7 @@ module.exports = {
                 interaction.editReply({ embeds: [artistEmbed], components: [] });
             });
         } catch (err) {
+            console.log(err);
             let error = new Error(err).stack;
             handle_error(interaction, error);
         }
