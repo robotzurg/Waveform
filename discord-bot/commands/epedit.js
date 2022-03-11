@@ -117,7 +117,7 @@ module.exports = {
                 console.log(err);
             }
         } catch (err) {
-            let error = new Error(err).stack;
+            let error = err;
             handle_error(interaction, error);
         }
     },

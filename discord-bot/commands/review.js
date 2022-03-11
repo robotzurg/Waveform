@@ -231,6 +231,13 @@ module.exports = {
             }
         }
 
+        // Thumbnail image handling
+        if (songArt == false || songArt == null || songArt == undefined) {
+            if (db.reviewDB.has(artistArray[0])) {
+                songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+            }
+        }
+
         // Grab art from server spotify
         if (songArt == false || songArt == undefined || songArt == null) {
             const client_id = process.env.SPOTIFY_API_ID; // Your client id
@@ -259,12 +266,8 @@ module.exports = {
                         songArt = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
                     }
                 });
+                if (songArt.toLowerCase().includes('spotify') || songArt.toLowerCase() === 's') songArt = false; // final passthrough check
             }
-        }
-
-        // Make sure we DON'T get any slip ups, where the bot lets spotify run through (if it can't find a status)
-        if (songArt != undefined && songArt != false) {
-            if (songArt.toLowerCase().includes('spotify') || songArt.toLowerCase() === 's') songArt = false;
         }
 
         if (isNaN(rating)) {
@@ -288,16 +291,6 @@ module.exports = {
         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
         `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
 
-        // Thumbnail image handling
-        if (songArt == false || songArt == null) {
-            if (db.reviewDB.has(artistArray[0])) {
-                songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
-            }
-            if (songArt === undefined || songArt === false || songArt == null) { // If the above line of code returns undefined or false, use user pfp
-                songArt = interaction.user.avatarURL({ format: "png", dynamic: false });
-            }
-        }
-
         // Start creation of embed
         let reviewEmbed = new Discord.MessageEmbed()
         .setColor(`${interaction.member.displayHexColor}`)
@@ -312,7 +305,12 @@ module.exports = {
             reviewEmbed.setDescription(`Rating: **${rating}/10**`);
         }
         
-        reviewEmbed.setThumbnail(songArt);
+        if (songArt == false) {
+            reviewEmbed.setThumbnail(interaction.user.avatarURL({ format: "png", dynamic: false }));
+        } else {
+            reviewEmbed.setThumbnail(songArt);
+        }
+        
 
         if (taggedUser != false && taggedUser != undefined) {
             reviewEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
@@ -746,7 +744,7 @@ module.exports = {
         }
 
         } catch (err) {
-            let error = new Error(err).stack;
+            let error = err;
             handle_error(interaction, error);
         }
     },

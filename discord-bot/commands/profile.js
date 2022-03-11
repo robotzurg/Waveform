@@ -229,7 +229,7 @@ module.exports = {
 
         } catch (err) {
             console.log(err);
-            let error = new Error(err).stack;
+            let error = err;
             handle_error(interaction, error);
         }
     },

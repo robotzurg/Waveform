@@ -24,7 +24,7 @@ module.exports = {
 		interaction.editReply(`${args[0]} deleted from the database.`);
 
         } catch (err) {
-            let error = new Error(err).stack;
+            let error = err;
             handle_error(interaction, error);
         }
 	},
