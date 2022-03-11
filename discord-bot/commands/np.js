@@ -21,7 +21,6 @@ module.exports = {
                     let title = sp_data[1];
                     let displayArtists = sp_data[2][0];
                     
-
                     const exampleEmbed = new Discord.MessageEmbed()
                     .setColor(`${interaction.member.displayHexColor}`)
                     .setTitle(`${displayArtists.split('; ').join(' & ')} - ${title}`)
@@ -92,7 +91,7 @@ module.exports = {
             
             if (sent === false) return interaction.editReply('You aren\'t playing a song on Spotify.');
         } catch (err) {
-            let error = new Error(err).stack;
+            let error = err;
             handle_error(interaction, error);
         }
 	},

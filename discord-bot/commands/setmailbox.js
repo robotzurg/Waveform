@@ -27,7 +27,7 @@ module.exports = {
         interaction.editReply(`User ID: ${usr.id}'s Mailbox set to ${mailbox_channel}.`);
 
         } catch (err) {
-            let error = new Error(err).stack;
+            let error = err;
             handle_error(interaction, error);
         }
     },

@@ -9,7 +9,7 @@ require('dotenv').config();
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('setart')
-        .setDescription('Put in some art for a song (or EP/LP) in the database!')
+        .setDescription('Put in some art for a song (or EP/LP) in the database! Using no art argument pulls art from Spotify!')
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
@@ -48,24 +48,13 @@ module.exports = {
         let rmxArtistArray = parsed_args[4];
         let vocalistArray = parsed_args[5];
         let songArt = interaction.options.getString('art');
-        let newSong = false;
+        let newSong = (db.reviewDB.get(artistArray[0], `["${songName}"]`) != undefined);
 
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
-
-        if (songArt.toLowerCase() === 's') {
-            await interaction.member.presence.activities.forEach(async (activity) => {
-                if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
-                    songArt = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
-                } else {
-                    if (songArt == 's') {
-                        songArt = false;
-                    }
-                }
-            });
-        } else if (songArt == null) {
+        
+        if (songArt == null) {
             const client_id = process.env.SPOTIFY_API_ID; // Your client id
             const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
-            console.log(client_id);
             const song = `${origArtistArray.join(' ')} ${songName}`;
 
             const spotify = new Spotify({
@@ -80,15 +69,27 @@ module.exports = {
                     songArt = data.tracks.items[0].album.images[0].url;
                 }
             });
+        } else if (songArt.toLowerCase() === 's') {
+            await interaction.member.presence.activities.forEach(async (activity) => {
+                if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                    songArt = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
+                } else {
+                    if (songArt == 's') {
+                        songArt = false;
+                    }
+                }
+            });
         }
 
         if (songArt == false) return interaction.editReply('You aren\'t playing a spotify song, or your discord spotify status isn\'t working!\nThis also could appear if you attempted to search spotify for a song art, and nothing was found!');
 
-		if (newSong === false) {
+		if (newSong == true) {
 			for (let i = 0; i < artistArray.length; i++) {
                 db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
 			}
-		}
+		} else {
+            return interaction.editReply('This song does not exist in the database, you can only use this command with songs that exist in the database!');
+        }
 
         // Fix artwork on all reviews for this song
         const imageSongObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
@@ -175,7 +176,7 @@ module.exports = {
 		return interaction.editReply({ embeds: [displayEmbed] });
 
         } catch (err) {
-            let error = new Error(err).stack;
+            let error = err;
             handle_error(interaction, error);
         }
 	},

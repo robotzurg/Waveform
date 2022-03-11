@@ -254,7 +254,7 @@ module.exports = {
         });
 
         } catch (err) {
-            let error = new Error(err).stack;
+            let error = err;
             handle_error(interaction, error);
         }
 	},

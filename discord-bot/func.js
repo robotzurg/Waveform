@@ -56,7 +56,9 @@ module.exports = {
     },
 
     get_user_reviews: function(songObj) {
+        if (songObj == undefined && songObj == null) return [];
         let userArray = Object.keys(songObj);
+
         userArray = userArray.filter(e => e !== 'ep');
         userArray = userArray.filter(e => e !== 'art');
         userArray = userArray.filter(e => e !== 'remixers');
@@ -514,11 +516,12 @@ module.exports = {
     },
 
     handle_error: function(interaction, err) {
-        interaction.editReply({ content: `Waveform ran into an error. Don't worry, the bot is still online!\n<@122568101995872256> has been notified and will fix this as soon as possible!`, 
+        interaction.editReply({ content: `Waveform ran into an error. Don't worry, the bot is still online!`, 
         embeds: [], components: [] });
-        let error_channel = interaction.guild.channels.cache.get('933610135719395329');
+        let error_channel = interaction.guild.channels.cache.get('945510459988115509');
+        let error = String(err.stack);
         interaction.fetchReply().then(msg => {
-            error_channel.send(`Waveform Error!\n**${err}**\nMessage Link with Error: <${msg.url}>`);
+            error_channel.send(`Waveform Error!\n**${error}**\nMessage Link with Error: <${msg.url}>`);
             console.log(err);
         }).catch(() => {
             console.log(err);

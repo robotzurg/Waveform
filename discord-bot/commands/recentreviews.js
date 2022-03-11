@@ -32,6 +32,7 @@ module.exports = {
         let count = 0;
 
         let artistArray = db.reviewDB.keyArray();
+        artistArray.reverse();
 
         for (let i = 0; i < artistArray.length; i++) {
             let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
@@ -77,7 +78,8 @@ module.exports = {
                     if (songArray[j].includes(' Remix)')) primArtist = collabArray.shift();
 
                     reviewList.push(`**[${primArtist}${(collabArray.length != 0) ? ` & ${collabArray.join(' & ')}` : ``} - ` + 
-                    `${songArray[j]}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}](https://www.google.com)** **(${userData.rating}/10)**`);
+                    `${songArray[j]}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}](https://www.google.com)** **(${userData.rating}/10)**` +
+                    `${userData.starred == true ? ` 🌟` : ``}`);
                 }
 
                 for (let v = 0; v < allArtists.length; v++) {
@@ -87,8 +89,6 @@ module.exports = {
                 }
             }
         }
-
-        reviewList.sort();
 
         let pagedRatingList = _.chunk(reviewList, 10);
         let page_num = 0;
@@ -140,7 +140,7 @@ module.exports = {
         }
 
         } catch (err) {
-            let error = new Error(err).stack;
+            let error = err;
             handle_error(interaction, error);
         }
     },
