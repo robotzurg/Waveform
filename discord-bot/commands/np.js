@@ -19,11 +19,11 @@ module.exports = {
                     let yourReview = false;
                     let artistArray = sp_data[0];
                     let title = sp_data[1];
-                    let displayArtists = sp_data[2][0];
-                    
+                    let displayArtists = sp_data[2];
+
                     const exampleEmbed = new Discord.MessageEmbed()
                     .setColor(`${interaction.member.displayHexColor}`)
-                    .setTitle(`${displayArtists.split('; ').join(' & ')} - ${title}`)
+                    .setTitle(`${displayArtists.join(' & ')} - ${title}`)
                     .setAuthor(`${interaction.member.displayName}'s current song`, `${interaction.user.avatarURL({ format: "png", dynamic: false })}`);
 
                     if (db.reviewDB.has(artistArray[0])) {

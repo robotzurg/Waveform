@@ -464,6 +464,7 @@ module.exports = {
                 artists.pop();
             }
             artistArray = artists;
+            displayArtists = artists;
             artists = artists.join(' & ');
         }
 
@@ -473,12 +474,13 @@ module.exports = {
                 artists.pop();
             }
             artistArray = artists;
+            displayArtists = artists;
             artists = artists.join(' & ');
         }
-        
-        // Fix some formatting for a couple things
-        if (activity.details.includes('- Extended Mix')) {
-            activity.details = activity.details.replace('- Extended Mix', `(Extended Mix)`);
+
+        if (activity.details.includes('VIP') && activity.details.includes('-')) {
+            title = activity.details.split(' - ');
+            activity.details = `${title[0]} VIP`;
         }
 
         if (activity.details.includes('Remix') && activity.details.includes('-')) {
@@ -490,28 +492,34 @@ module.exports = {
             artistArray = artistArray.flat(1);
         }
 
-        if (activity.details.includes('VIP') && activity.details.includes('-')) {
-            title = activity.details.split(' - ');
-            activity.details = `${title[0]} VIP`;
-        }
-
         if (activity.details.includes('feat.')) {
             title = activity.details.split(' (feat. ');
-            activity.details = `${title[0]}`;
+            if (activity.details.includes('Remix')) {
+                activity.details = `${title[0]} (${rmxArtist} Remix)`;
+            } else {
+                activity.details = `${title[0]}`;
+            }
         }
 
         if (activity.details.includes('ft. ')) {
             title = activity.details.split(' (ft. ');
-            activity.details = `${title[0]}`;
+            if (activity.details.includes('Remix')) {
+                activity.details = `${title[0]} (${rmxArtist} Remix)`;
+            } else {
+                activity.details = `${title[0]}`;
+            }
         }
 
         if (activity.details.includes('(with ')) {
             title = activity.details.split(' (with ');
-            activity.details = `${title[0]}`;
+            if (activity.details.includes('Remix')) {
+                activity.details = `${title[0]} (${rmxArtist} Remix)`;
+            } else {
+                activity.details = `${title[0]}`;
+            }
         }
 
         title = activity.details;
-
         return [artistArray, title, displayArtists];
     },
 

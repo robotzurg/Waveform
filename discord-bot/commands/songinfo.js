@@ -30,16 +30,25 @@ module.exports = {
                 }
                 
                 try {
-                    let artists = data.tracks.items[0].album.artists;
+                    let results = data.tracks.items;
+                    let songData = data.tracks.items[0];
+                    for (let i = 0; i < results.length; i++) {
+                        if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].album.name.toLowerCase()}` == `${song.toLowerCase()}`) {
+                            songData = results[i];
+                            break;
+                        }
+                    }
+                    let artists = songData.album.artists;
                     let artistArray = [];
                     artistArray = artists.map(v => v.name);
 
                     interaction.editReply(`Data for \`${song}\`\n` + 
-                    `\nResult: **${artistArray.join(' & ')} - ${data.tracks.items[0].album.name}**` +
-                    `\nReleased on: **${data.tracks.items[0].album.release_date}**` +
-                    `\n<:spotify:899365299814559784> [Spotify Link](<${data.tracks.items[0].album.external_urls.spotify}>)` + 
-                    `\n${data.tracks.items[0].album.images[0].url}`);
+                    `\nResult: **${artistArray.join(' & ')} - ${songData.album.name}**` +
+                    `\nReleased on: **${songData.album.release_date}**` +
+                    `\n<:spotify:899365299814559784> [Spotify Link](<${songData.album.external_urls.spotify}>)` + 
+                    `\n${songData.album.images[0].url}`);
                 } catch (err) {
+                    console.log(err);
                     interaction.editReply(`Couldn't find art for this query: \`${song}\`.`);
                 }
             });
