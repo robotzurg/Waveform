@@ -1,13 +1,13 @@
-const db = require("./db.js");
+const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const Discord = require('discord.js');
-const { get_user_reviews, handle_error } = require("./func.js");
+const { get_user_reviews, handle_error } = require("../func.js");
 const _ = require('lodash');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('recentreviews')
-        .setDescription('View a list of the last 50 reviews you (or another user) made!')
+        .setName('allratings')
+        .setDescription('View an ordered list of all of your ratings in the bot!')
         .addUserOption(option => 
             option.setName('user')
                 .setDescription('User whose list you want to see. Defaults to yourself.')
@@ -28,18 +28,13 @@ module.exports = {
 
         let artistCount = [];
         let songSkip = [];
-        let reviewList = [];
-        let count = 0;
+        let ratingList = {};
 
         let artistArray = db.reviewDB.keyArray();
-        artistArray.reverse();
 
         for (let i = 0; i < artistArray.length; i++) {
             let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
             songArray = songArray.filter(v => v != 'Image');
-            if (count >= 50) {
-                break;
-            }
 
             for (let j = 0; j < songArray.length; j++) {
                 let userArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"]`);
@@ -66,20 +61,14 @@ module.exports = {
                 allArtists = allArtists.flat(1);
 
                 for (let k = 0; k < userArray.length; k++) {
-
-                    count += 1;
-                    if (count >= 50) {
-                        break;
-                    }
-
                     let userData = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].["${userArray[k]}"]`);
-                    let primArtist = artistArray[i];
-                    if (vocalistArray.includes(artistArray[i])) primArtist = collabArray.shift();
-                    if (songArray[j].includes(' Remix)')) primArtist = collabArray.shift();
-
-                    reviewList.push(`**[${primArtist}${(collabArray.length != 0) ? ` & ${collabArray.join(' & ')}` : ``} - ` + 
-                    `${songArray[j]}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}](https://www.google.com)** **(${userData.rating}/10)**` +
-                    `${userData.starred == true ? ` 🌟` : ``}`);
+                    userData.rating = userData.rating.toString();
+                    if (isNaN(userData.rating)) continue;
+                    if (!(userData.rating in ratingList)) {
+                        ratingList[userData.rating] = 1;
+                    } else {
+                        ratingList[userData.rating] += 1;
+                    }
                 }
 
                 for (let v = 0; v < allArtists.length; v++) {
@@ -90,7 +79,11 @@ module.exports = {
             }
         }
 
-        let pagedRatingList = _.chunk(reviewList, 10);
+        if (Object.keys(ratingList).length == 0) return interaction.editReply(`You have never rated a song before!`);
+        
+        ratingList = Object.entries(ratingList).sort((a, b) => b[1] - a[1]);
+
+        let pagedRatingList = _.chunk(ratingList, 10);
         let page_num = 0;
         const row = new Discord.MessageActionRow()
         .addComponents(
@@ -107,7 +100,7 @@ module.exports = {
         for (let i = 0; i < pagedRatingList.length; i++) {
 
             for (let j = 0; j < pagedRatingList[i].length; j++) {
-                pagedRatingList[i][j] = `• ` + pagedRatingList[i][j];
+                pagedRatingList[i][j] = `• ${pagedRatingList[i][j][0]}: \`${pagedRatingList[i][j][1]}\``;
             }
 
             pagedRatingList[i] = pagedRatingList[i].join('\n');
@@ -116,11 +109,15 @@ module.exports = {
         const ratingListEmbed = new Discord.MessageEmbed()
             .setColor(`${interaction.member.displayHexColor}`)
             .setThumbnail(taggedUser.avatarURL({ format: "png" }))
-            .setAuthor({ name: `50 most recent reviews by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ format: "png" }) })
+            .setAuthor({ name: `All ratings by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ format: "png" }) })
             .setDescription(pagedRatingList[page_num]);
-
-        ratingListEmbed.setFooter({ text: `Page 1 / ${pagedRatingList.length}` });
-        interaction.editReply({ embeds: [ratingListEmbed], components: [row] });
+            if (pagedRatingList.length > 1) {
+                ratingListEmbed.setFooter({ text: `Page 1 / ${pagedRatingList.length}` });
+                interaction.editReply({ embeds: [ratingListEmbed], components: [row] });
+            } else {
+                interaction.editReply({ embeds: [ratingListEmbed], components: [] });
+            }
+        
         if (pagedRatingList.length > 1) {
             let message = await interaction.fetchReply();
         

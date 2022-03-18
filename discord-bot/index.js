@@ -90,6 +90,11 @@ client.on('interactionCreate', async interaction => {
                 // Search filters
                 artist_names = artist_names.filter(letter_filter);
                 if (artist_names.length > 25) artist_names = artist_names.slice(artist_names.length - 25, artist_names.length).reverse();
+                let index = artist_names.indexOf(focused[0].value);
+                if (index > 0) {
+                    artist_names.unshift(artist_names.splice(index, 1)[0]);
+                }
+                
                 artist_names = artist_names.map(v => v = { name: v, value: v });
 
                 if (artist_names.length == 1 && interaction.commandName != 'getartist') {

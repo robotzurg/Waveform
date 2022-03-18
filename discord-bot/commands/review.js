@@ -242,7 +242,7 @@ module.exports = {
         if (songArt == false || songArt == undefined || songArt == null) {
             const client_id = process.env.SPOTIFY_API_ID; // Your client id
             const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
-            const song = `${origArtistArray.join(' ')} ${songName}`;
+            const song = `${origArtistArray[0]} ${songName}`;
 
             const spotify = new Spotify({
                 id: client_id,
@@ -250,10 +250,20 @@ module.exports = {
             });
 
             await spotify.search({ type: "track", query: song }).then(function(data) {  
-                if (data.tracks.items.length == 0) {
+
+                let results = data.tracks.items;
+                let songData = data.tracks.items[0];
+                for (let i = 0; i < results.length; i++) {
+                    if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].album.name.toLowerCase()}` == `${song.toLowerCase()}`) {
+                        songData = results[i];
+                        break;
+                    }
+                }
+
+                if (results.length == 0) {
                     songArt = false;
                 } else {
-                    songArt = data.tracks.items[0].album.images[0].url;
+                    songArt = songData.album.images[0].url;
                 }
             });
         }
