@@ -222,5 +222,5 @@ client.on('guildMemberAdd', async (member) => {
 });
 
 
-// login to Discord
+// login to Discord as the bot
 client.login(token);
