@@ -62,8 +62,8 @@ module.exports = {
 
                 for (let k = 0; k < userArray.length; k++) {
                     let userData = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].["${userArray[k]}"]`);
+                    if (userData.rating == undefined || userData.rating == null || userData.rating == false) continue;
                     userData.rating = userData.rating.toString();
-                    if (isNaN(userData.rating)) continue;
                     if (!(userData.rating in ratingList)) {
                         ratingList[userData.rating] = 1;
                     } else {

@@ -526,7 +526,7 @@ module.exports = {
     handle_error: function(interaction, err) {
         interaction.editReply({ content: `Waveform ran into an error. Don't worry, the bot is still online!`, 
         embeds: [], components: [] });
-        let error_channel = interaction.guild.channels.cache.get('945510459988115509');
+        let error_channel = interaction.guild.channels.cache.get('933610135719395329');
         let error = String(err.stack);
         interaction.fetchReply().then(msg => {
             error_channel.send(`Waveform Error!\n**${error}**\nMessage Link with Error: <${msg.url}>`);
