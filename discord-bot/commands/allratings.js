@@ -62,7 +62,7 @@ module.exports = {
 
                 for (let k = 0; k < userArray.length; k++) {
                     let userData = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].["${userArray[k]}"]`);
-                    if (userData.rating == undefined || userData.rating == null || userData.rating == false) continue;
+                    if (userData.rating == undefined || userData.rating == null) continue;
                     userData.rating = userData.rating.toString();
                     if (!(userData.rating in ratingList)) {
                         ratingList[userData.rating] = 1;
@@ -81,7 +81,7 @@ module.exports = {
 
         if (Object.keys(ratingList).length == 0) return interaction.editReply(`You have never rated a song before!`);
         
-        ratingList = Object.entries(ratingList).sort((a, b) => b[1] - a[1]);
+        ratingList = Object.entries(ratingList).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]));
 
         let pagedRatingList = _.chunk(ratingList, 10);
         let page_num = 0;

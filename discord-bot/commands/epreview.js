@@ -111,7 +111,7 @@ module.exports = {
                 const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
                 let search = ep_name.replace(' EP', '');
                 search = search.replace(' LP', '');
-                const song = `${origArtistArray.join(' ')} ${search}`;
+                const song = `${origArtistArray[0]} ${search}`;
 
                 const spotify = new Spotify({
                     id: client_id,
@@ -119,10 +119,21 @@ module.exports = {
                 });
 
                 await spotify.search({ type: "track", query: song }).then(function(data) {  
-                    if (data.tracks.items.length == 0) {
+                    let results = data.tracks.items;
+                    let songData = data.tracks.items[0];
+                    for (let i = 0; i < results.length; i++) {
+                        if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].album.name.toLowerCase()}` == `${song.toLowerCase()}`) {
+                            songData = results[i];
+                            break;
+                        } else if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].name.toLowerCase()}` == `${song.toLowerCase()}`) {
+                            songData = results[i];
+                        }
+                    }
+
+                    if (results.length == 0) {
                         art = false;
                     } else {
-                        art = data.tracks.items[0].album.images[0].url;
+                        art = songData.album.images[0].url;
                     }
                 });
             }

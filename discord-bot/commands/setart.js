@@ -70,6 +70,8 @@ module.exports = {
                     if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].album.name.toLowerCase()}` == `${song.toLowerCase()}`) {
                         songData = results[i];
                         break;
+                    } else if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].name.toLowerCase()}` == `${song.toLowerCase()}`) {
+                        songData = results[i];
                     }
                 }
 

@@ -33,9 +33,12 @@ module.exports = {
                     let results = data.tracks.items;
                     let songData = data.tracks.items[0];
                     for (let i = 0; i < results.length; i++) {
+                        console.log(`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].album.name.toLowerCase()}`, `${song.toLowerCase()}`);
                         if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].album.name.toLowerCase()}` == `${song.toLowerCase()}`) {
                             songData = results[i];
                             break;
+                        } else if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].name.toLowerCase()}` == `${song.toLowerCase()}`) {
+                            songData = results[i];
                         }
                     }
                     let artists = songData.album.artists;
