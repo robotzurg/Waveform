@@ -67,7 +67,11 @@ module.exports = {
             userArray = userArray.filter(item => item == taggedUser.id);
             if (userArray.length != 0) {
                 if (songObj[taggedUser.id].rating != undefined && songObj[taggedUser.id].rating != null) {
-                    reviewObj[songArray[i]] = songObj[taggedUser.id].rating;
+                    if (songObj[taggedUser.id].starred == false) {
+                        reviewObj[songArray[i]] = songObj[taggedUser.id].rating;
+                    } else {
+                        reviewObj[`🌟 ${songArray[i]}`] = songObj[taggedUser.id].rating + 1;
+                    }
                 }
             } 
         }

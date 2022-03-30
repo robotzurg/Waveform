@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { update_art, review_song, hall_of_fame_check, sort, handle_error } = require('../func.js');
+const { update_art, review_song, hall_of_fame_check, handle_error } = require('../func.js');
 const { mailboxes } = require('../arrays.json');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('util').promisify(setTimeout);
@@ -53,11 +53,6 @@ module.exports = {
         .addUserOption(option => 
             option.setName('user_who_sent')
                 .setDescription('User who sent you this song in Mailbox. Ignore if not a mailbox review.')
-                .setRequired(false))
-
-        .addIntegerOption(option => 
-            option.setName('ranking_pos')
-                .setDescription('If this is a ranking, put the position in the ranking here (Ignore if not an EP review)')
                 .setRequired(false)),
 	admin: false,
 	async execute(interaction, sp_artist, sp_song, sp_rating, sp_review, sp_art, sp_vocalists, sp_remixers, sp_user_who_sent, sp_star) {
@@ -89,17 +84,20 @@ module.exports = {
         let vocalistArray = interaction.options.getString('vocalist');
         let rmxArtistArray = interaction.options.getString('remixers');
         let user_who_sent = interaction.options.getUser('user_who_sent');
-        let ranking_pos = interaction.options.getInteger('ranking_pos');
+        let ranking_pos = null;
         let starred = false;
         let taggedUser = false;
         let taggedMember = false;
 
-        if (songName.includes(' EP') || songName.includes(' LP')) {
-            for (let i = 0; i < origArtistArray.length; i++) {
-                if (origArtistArray[i] == 'og') {
-                    origArtistArray[i] = db.user_stats.get(interaction.user.id, `current_ep_review`)[2].split(' & ');
-                    origArtistArray = origArtistArray.flat(1);
-                }   
+        // EP/LP check to see if "og" is listed as the artist name, so replace it with EP/LP artist
+        if (db.user_stats.get(interaction.user.id, 'current_ep_review')[2] != undefined) {
+            if (db.user_stats.get(interaction.user.id, 'current_ep_review')[2].includes(' EP') || db.user_stats.get(interaction.user.id, 'current_ep_review')[2].includes(' LP')) {
+                for (let i = 0; i < origArtistArray.length; i++) {
+                    if (origArtistArray[i].toLowerCase() == 'og') {
+                        origArtistArray[i] = db.user_stats.get(interaction.user.id, `current_ep_review`)[1];
+                        origArtistArray = origArtistArray.flat(1);
+                    }   
+                }
             }
         }
 
@@ -207,17 +205,7 @@ module.exports = {
         );
 
         // Setup bottom row
-        const row2 = new Discord.MessageActionRow()
-        .addComponents(
-            new Discord.MessageButton()
-                .setCustomId('done')
-                .setLabel('Send to Database')
-                .setStyle('SUCCESS'),
-            new Discord.MessageButton()
-                .setCustomId('delete')
-                .setLabel('Delete')
-                .setStyle('DANGER'),
-        );
+        const row2 = new Discord.MessageActionRow();
 
         // If we're in an EP/LP review, stick in a button to push to EP review.
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
@@ -229,7 +217,23 @@ module.exports = {
                     .setStyle('SUCCESS'),
                 );
             }
+        } else {
+            row2.addComponents( 
+                new Discord.MessageButton()
+                .setCustomId('done')
+                .setLabel('Send to Database')
+                .setStyle('SUCCESS'),
+            );
         }
+
+        // Add the delete button
+        row2.addComponents(
+            new Discord.MessageButton()
+                .setCustomId('delete')
+                .setLabel('Delete')
+                .setStyle('DANGER'),
+        );
+
 
         // Thumbnail image handling
         if (songArt == false || songArt == null || songArt == undefined) {
@@ -307,7 +311,7 @@ module.exports = {
         let reviewEmbed = new Discord.MessageEmbed()
         .setColor(`${interaction.member.displayHexColor}`)
         .setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`)
-        .setAuthor(`${interaction.member.displayName}'s review`, `${interaction.user.avatarURL({ format: "png", dynamic: false })}`);
+        .setAuthor({ name: `${interaction.member.displayName}'s review`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` });
 
         // Using - for the review changes how the embed is created.
         if (review != '-') {
@@ -515,8 +519,14 @@ module.exports = {
                         let ep_name;
                         let collab;
                         let field_name;
+                        let type = db.user_stats.get(interaction.user.id, 'current_ep_review')[3]; // Type A is when embed length is under 2000 characters, type B is when its over 2000
 
+                        // Review the song
+                        await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, ep_name);
+
+                        // Edit the EP embed
                         await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+
                             msgEmbed = msg.embeds[0];
                             mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
                             mainArtists = mainArtists.flat(1);
@@ -531,56 +541,52 @@ module.exports = {
                                     ep_name = ep_name.slice(0, -3).trim();
                                 }
                             }
+
+                            for (let j = 0; j < artistArray.length; j++) {
+                                db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
+                            }
+
                             if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt === false) {
                                 songArt = msgEmbed.thumbnail.url;
                             }
-                        }).catch(() => {
-                            channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                            channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                msgEmbed = msg.embeds[0];
-                                mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
-                                mainArtists = mainArtists.flat(1);
-                                ep_name = msgEmbed.title.split(' - ');
-                                ep_name.shift();
-                                ep_name = ep_name.join(' - ');
-                                if (ep_name.includes('/10')) {
-                                    ep_name = ep_name.replace('/10)', '');
-                                    if (ep_name.includes('.5')) {
-                                        ep_name = ep_name.slice(0, -4).trim();
-                                    } else {
-                                        ep_name = ep_name.slice(0, -3).trim();
-                                    }
-                                }
-                                if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt === false) {
-                                    songArt = msgEmbed.thumbnail.url;
-                                }
-                            }).catch((err) => {
-                                handle_error(interaction, err);
-                            });
-                        }).catch((err) => {
-                            handle_error(interaction, err);
-                        });
 
-                        // Review the song
-                        await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, ep_name);
-
-                        for (let j = 0; j < artistArray.length; j++) {
-                            db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
-                        }
-
-                        // Edit the EP embed
-                        await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                             collab = origArtistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
                             if (starred === true) {
                                 field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
                             } else {
                                 field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
                             }
-                            msgEmbed.fields.push({
-                                name: field_name,
-                                value: `${review}`,
-                                inline: false,
-                            });
+
+                            if (msgEmbed.length > 3000 && type == 'A') {
+                                for (let j = 0; j < msgEmbed.fields.length; j++) {
+                                    msgEmbed.fields[j].value = `*Review hidden to save space*`;
+                                }
+                                db.user_stats.set(interaction.user.id, 'B', 'current_ep_review[3]');
+                                type = 'B';
+                            }
+
+                            if (type == 'A') {
+                                if (review.length <= 1000) {
+                                    msgEmbed.fields.push({
+                                        name: field_name,
+                                        value: `${review}`,
+                                        inline: false,
+                                    });
+                                } else {
+                                    msgEmbed.fields.push({
+                                        name: field_name,
+                                        value: `*Review hidden to save space*`,
+                                        inline: false,
+                                    });
+                                }
+                            } else {
+                                msgEmbed.fields.push({
+                                    name: field_name,
+                                    value: `*Review hidden to save space*`,
+                                    inline: false,
+                                });
+                            }
+
                             msg.edit({ embeds: [msgEmbed], components: [] });
 
                             // Star reaction stuff for hall of fame
@@ -595,17 +601,67 @@ module.exports = {
                         }).catch(() => {
                             channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
                             channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+
+                                msgEmbed = msg.embeds[0];
+                                mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
+                                mainArtists = mainArtists.flat(1);
+                                ep_name = msgEmbed.title.split(' - ');
+                                ep_name.shift();
+                                ep_name = ep_name.join(' - ');
+                                if (ep_name.includes('/10')) {
+                                    ep_name = ep_name.replace('/10)', '');
+                                    if (ep_name.includes('.5')) {
+                                        ep_name = ep_name.slice(0, -4).trim();
+                                    } else {
+                                        ep_name = ep_name.slice(0, -3).trim();
+                                    }
+                                }
+
+                                for (let j = 0; j < artistArray.length; j++) {
+                                    db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
+                                }
+
+                                if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt === false) {
+                                    songArt = msgEmbed.thumbnail.url;
+                                }
+
                                 collab = artistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
                                 if (starred === true) {
                                     field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
                                 } else {
                                     field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
                                 }
-                                msgEmbed.fields.push({
-                                    name: field_name,
-                                    value: `${review}`,
-                                    inline: false,
-                                });
+                                
+                                if (msgEmbed.length > 3000 && type == 'A') {
+                                    for (let j = 0; j < msgEmbed.fields.length; j++) {
+                                        msgEmbed.fields[j].value = `*Review hidden to save space*`;
+                                    }
+                                    db.user_stats.set(interaction.user.id, 'B', 'current_ep_review[3]');
+                                    type = 'B';
+                                }
+    
+                                if (type == 'A') {
+                                    if (review.length <= 1000) {
+                                        msgEmbed.fields.push({
+                                            name: field_name,
+                                            value: `${review}`,
+                                            inline: false,
+                                        });
+                                    } else {
+                                        msgEmbed.fields.push({
+                                            name: field_name,
+                                            value: `*Review hidden to save space*`,
+                                            inline: false,
+                                        });
+                                    }
+                                } else {
+                                    msgEmbed.fields.push({
+                                        name: field_name,
+                                        value: `*Review hidden to save space*`,
+                                        inline: false,
+                                    });
+                                }
+
                                 msg.edit({ embeds: [msgEmbed], components: [] });
 
                                 // Star reaction stuff for hall of fame
@@ -631,48 +687,6 @@ module.exports = {
                             if (ranking_pos != false) {
                                 db.reviewDB.push(mainArtists[ii], [ranking_pos, `${ranking_pos}. ${songName} (${rating}/10)`], `["${ep_name}"].["${interaction.user.id}"].ranking`);
                             }
-                        }
-
-                        if (db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`).length != 0) {
-                                await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
-                                    let ep_ranking = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`);
-                                    if (ep_ranking.length === 0) return rank_msg.delete();
-
-                                    ep_ranking = sort(ep_ranking, true);
-
-                                    ep_ranking = `\`\`\`${ep_ranking.join('\n')}\`\`\``;
-                                    let rankMsgEmbed = rank_msg.embeds[0];
-                                    rankMsgEmbed.fields[0].value = ep_ranking;
-
-                                    rank_msg.edit({ embeds: [rankMsgEmbed] });
-                                }).catch(async () => {
-                                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                                    await channelsearch.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
-                                        let ep_ranking = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].ranking`);
-                                        if (ep_ranking.length === 0) return rank_msg.delete();
-
-                                        ep_ranking = sort(ep_ranking, true);
-
-                                        ep_ranking = `\`\`\`${ep_ranking.join('\n')}\`\`\``;
-                                        let rankMsgEmbed = rank_msg.embeds[0];
-                                        rankMsgEmbed.fields[0].value = ep_ranking;
-
-                                        rank_msg.edit({ embeds: [rankMsgEmbed] });
-                                    }).catch((err) => {
-                                        handle_error(interaction, err);
-                                    });
-                                }).catch((err) => {
-                                    handle_error(interaction, err);
-                                });
-                        } else {
-                            await interaction.channel.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
-                                rank_msg.delete();
-                            }).catch(async () => {
-                                channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                                await channelsearch.messages.fetch(db.user_stats.get(interaction.user.id, 'current_ep_review')[1]).then(rank_msg => {
-                                    rank_msg.delete();
-                                }).catch(async () => {});
-                            });    
                         }
 
                         // Set msg_id for this review to false, since its part of the EP review message

@@ -160,7 +160,7 @@ module.exports = {
             collector.on('collect', async select => {
 
                 if (select.values[0] === 'back') { // Back Selection
-                    return await select.update({ embeds: [epEmbed], components: [row] });
+                    return await select.update({ content: ' ', embeds: [epEmbed], components: [row] });
                 }
 
                 // let ep_ranking = db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].ranking`);
@@ -184,6 +184,7 @@ module.exports = {
                         rname = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].name`);
                         if (rname === undefined) return interaction.editReply(`No review found for song ${songName}`);
                         rreview = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].review`);
+                        if (rreview.length > 1000) rreview = '*Review hidden to save space*';
                         rscore = `${db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].rating`)}/10`;
                         rsentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].sentby`);
                         rstarred = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].starred`);
@@ -216,7 +217,7 @@ module.exports = {
                 
                 epReviewEmbed.setColor(`${taggedMemberSel.displayHexColor}`);
                 epReviewEmbed.setTitle(`${origArtistArray} - ${epName}`);
-                epReviewEmbed.setAuthor(rsentby != false ? `${rname}'s mailbox review` : `${rname}'s review`, `${taggedUserSel.avatarURL({ format: "png" })}`);
+                epReviewEmbed.setAuthor({ name: rsentby != false ? `${rname}'s mailbox review` : `${rname}'s review`, iconURL: `${taggedUserSel.avatarURL({ format: "png" })}` });
         
                 if (ep_overall_rating != false && ep_overall_review != false) {
                     epReviewEmbed.setTitle(`${origArtistArray} - ${epName} (${ep_overall_rating}/10)`);
@@ -228,9 +229,9 @@ module.exports = {
                 }
         
                 if (epName.includes('EP')) {
-                    epReviewEmbed.setAuthor(rsentby != false && rsentby != undefined && songArray.length != 0 ? `${rname}'s mailbox EP review` : `${rname}'s EP review`, `${taggedUserSel.avatarURL({ format: "png", dynamic: false })}`);
+                    epReviewEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && songArray.length != 0 ? `${rname}'s mailbox EP review` : `${rname}'s EP review`, iconURL: `${taggedUserSel.avatarURL({ format: "png", dynamic: false })}` });
                 } else if (epName.includes('LP')) {
-                    epReviewEmbed.setAuthor(rsentby != false && rsentby != undefined && songArray.length != 0 ? `${rname}'s mailbox LP review` : `${rname}'s LP review`, `${taggedUserSel.avatarURL({ format: "png", dynamic: false })}`);
+                    epReviewEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && songArray.length != 0 ? `${rname}'s mailbox LP review` : `${rname}'s LP review`, iconURL: `${taggedUserSel.avatarURL({ format: "png", dynamic: false })}` });
                 }
                 epReviewEmbed.setThumbnail(ep_art);
                 if (rsentby != false && rsentby != undefined && ep_overall_rating === false) {
@@ -241,13 +242,23 @@ module.exports = {
                 if (reviewMsgID != false && reviewMsgID != undefined) {
                     let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
                     await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
-                        epEmbed.setTimestamp(msg.createdTimestamp);
+                        epReviewEmbed.setTimestamp(msg.createdTimestamp);
                     }).catch(() => {
                         channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(taggedUserSel.id, 'mailbox'));
-                        channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
-                            epEmbed.setTimestamp(msg.createdTimestamp);
-                        }).catch(() => {}); // No error log here, as this is what assures that no error happens upon no timestamp found, for legacy reviews
+                        if (channelsearch != undefined) {
+                            channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
+                                epReviewEmbed.setTimestamp(msg.createdTimestamp);
+                            }).catch(() => {});
+                        }
                     });
+                }
+
+                
+
+                if (epReviewEmbed.length > 3000) {
+                    for (let i = 0; i < epReviewEmbed.fields.length; i++) {
+                        epReviewEmbed.fields[i].value = `*Review hidden to save space*`;
+                    }
                 }
                 
                 if (ep_url === undefined) {
@@ -255,27 +266,7 @@ module.exports = {
                 } else {
                     select.update({ content: `[View EP/LP Review Message](${ep_url})`, embeds: [epReviewEmbed], components: [row] });
                 }
-        
-                /*if (db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].ranking`).length != 0) {
-                    if (ep_ranking.length != 0) {
-                        const rankingEmbed = new Discord.MessageEmbed()
-                        .setColor(`${taggedMemberSel.displayHexColor}`);
-        
-                        ep_ranking = ep_ranking.sort(function(a, b) {
-                            return a[0] - b[0];
-                        });
-            
-                        ep_ranking = ep_ranking.flat(1);
-            
-                        for (let ii = 0; ii <= ep_ranking.length; ii++) {
-                            ep_ranking.splice(ii, 1);
-                        }
-        
-                        rankingEmbed.addField(`Ranking:`, `\`\`\`${ep_ranking.join('\n')}\`\`\``);
-        
-                        interaction.channel.send({ embeds: [rankingEmbed] });
-                    } 
-                }*/
+    
             });
 
             collector.on('end', async () => {

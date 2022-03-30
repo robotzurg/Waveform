@@ -24,7 +24,7 @@ module.exports = {
                     const exampleEmbed = new Discord.MessageEmbed()
                     .setColor(`${interaction.member.displayHexColor}`)
                     .setTitle(`${displayArtists.join(' & ')} - ${title}`)
-                    .setAuthor(`${interaction.member.displayName}'s current song`, `${interaction.user.avatarURL({ format: "png", dynamic: false })}`);
+                    .setAuthor({ name: `${interaction.member.displayName}'s current song`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` });
 
                     if (db.reviewDB.has(artistArray[0])) {
 

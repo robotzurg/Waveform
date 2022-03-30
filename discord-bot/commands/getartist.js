@@ -270,6 +270,8 @@ module.exports = {
                     artistEmbed.setDescription(`No reviewed songs. :(`);
                 }
 
+                console.log(artistEmbed.length);
+
             if (pages_active[0] == true) {
                 interaction.editReply({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
             } else {

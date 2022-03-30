@@ -62,17 +62,17 @@ module.exports = {
                 user_sent_by = false;
             }
 
-            if (art === null) {
+            if (art == null) {
                 art = false;
             }
 
-            if (overall_rating === null) {
+            if (overall_rating == null) {
                 overall_rating = false;
             } else {
                 overall_rating = parseFloat(overall_rating);
             }
 
-            if (overall_review === null) {
+            if (overall_review == null) {
                 overall_review = false;
             }
 
@@ -163,6 +163,10 @@ module.exports = {
                 row2 = new Discord.MessageActionRow()
                 .addComponents(
                     new Discord.MessageButton()
+                        .setCustomId('begin')
+                        .setLabel('Begin EP/LP Review')
+                        .setStyle('SUCCESS'),
+                    new Discord.MessageButton()
                         .setCustomId('delete')
                         .setLabel('Delete')
                         .setStyle('DANGER'),
@@ -171,8 +175,12 @@ module.exports = {
                 row2 = new Discord.MessageActionRow()
                 .addComponents(
                     new Discord.MessageButton()
+                        .setCustomId('begin')
+                        .setLabel('Begin EP/LP Review')
+                        .setStyle('SUCCESS'),
+                    new Discord.MessageButton()
                         .setCustomId('done')
-                        .setLabel('Send to Database without Song Reviews')
+                        .setLabel('Send to Database')
                         .setStyle('SUCCESS'),
                     new Discord.MessageButton()
                         .setCustomId('delete')
@@ -260,7 +268,7 @@ module.exports = {
             const epEmbed = new Discord.MessageEmbed()
             .setColor(`${interaction.member.displayHexColor}`)
             .setTitle(`${artistArray.join(' & ')} - ${ep_name}`)
-            .setAuthor(`${ep_name.includes('LP') ? `${interaction.member.displayName}'s LP review` : `${interaction.member.displayName}'s EP review`}`, `${interaction.user.avatarURL({ format: "png", dynamic: false })}`);
+            .setAuthor({ name: `${ep_name.includes('LP') ? `${interaction.member.displayName}'s LP review` : `${interaction.member.displayName}'s EP review`}`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` });
 
             epEmbed.setThumbnail(art);
 
@@ -279,18 +287,10 @@ module.exports = {
 
             interaction.editReply({ embeds: [epEmbed], components: [row, row2] });
 
-            const rankingEmbed = new Discord.MessageEmbed()
-            .setColor(`${interaction.member.displayHexColor}`)
-            .addField(`Ranking`, `This part of the review will be updated/deleted as needed.`);
-
             // Grab message id to put in user_stats and the ep object
             const msg = await interaction.fetchReply();
-            let rank_msg_obj;
 
-            await interaction.channel.send({ embeds: [rankingEmbed] }).then(async rank_msg => {
-                rank_msg_obj = rank_msg;
-                db.user_stats.set(interaction.user.id, [msg.id, rank_msg.id, artistArray], 'current_ep_review');
-            });
+            db.user_stats.set(interaction.user.id, [msg.id, artistArray, ep_name, 'A'], 'current_ep_review');            
 
             // Set message ids
             for (let i = 0; i < artistArray.length; i++) {
@@ -402,8 +402,6 @@ module.exports = {
                                 }
                             }
 
-                            
-                            rank_msg_obj.delete();
                             await interaction.deleteReply();
                         } catch (err) {
                             console.log(err);
@@ -415,7 +413,6 @@ module.exports = {
                         db.user_stats.set(interaction.user.id, false, 'current_ep_review');
                     } break;
                     case 'done': {
-
                         await i.deferUpdate(); 
 
                         if (ra_collector != undefined) ra_collector.stop();
@@ -430,8 +427,14 @@ module.exports = {
                         } else {
                             epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${ep_name} 🌟`);
                         }
-                        rank_msg_obj.delete();
                         i.editReply({ embeds: [epEmbed], components: [] });
+                    } break;
+                    case 'begin': {
+                        if (ra_collector != undefined) ra_collector.stop();
+                        if (re_collector != undefined) re_collector.stop();
+                        if (collector != undefined) collector.stop(); // Collector for all buttons
+
+                        i.update({ embeds: [epEmbed], components: [] });
                     } break;
                 }
             });

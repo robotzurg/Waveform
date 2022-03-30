@@ -171,7 +171,7 @@ module.exports = {
                             msg_embed_fields[field_num].name = `${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``} (${rating}/10)`;
                         }
                     } 
-                    if (review != null && review != undefined) msg_embed_fields[field_num].value = review;
+                    if (review != null && review != undefined && msg_embed_fields[field_num].value != '*Review hidden to save space*') msg_embed_fields[field_num].value = review;
 
                     msg.edit({ embeds: [msgEmbed] });
                 }).catch(err => {
