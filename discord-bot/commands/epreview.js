@@ -44,8 +44,6 @@ module.exports = {
 	async execute(interaction) {
         try {
 
-            if (interaction.user.id != '122568101995872256') return interaction.editReply('This command is currently disabled.');
-
             let origArtistArray = interaction.options.getString('artist').split(' & ');
             let artistArray = origArtistArray.slice(0);
             let ep_name = interaction.options.getString('ep_name');
