@@ -111,6 +111,19 @@ module.exports = {
         artistArray = artistArray.flat(1);
         origArtistArray = artistArray.slice(0);
 
+        
+        if (db.user_stats.get(interaction.user.id, 'current_ep_review')[2] != undefined) {
+            if (db.user_stats.get(interaction.user.id, 'current_ep_review')[2].includes(' EP') || db.user_stats.get(interaction.user.id, 'current_ep_review')[2].includes(' LP')) {
+                for (let i = 0; i < origArtistArray.length; i++) {
+                    if (origArtistArray[i].toLowerCase() == 'og') {
+                        origArtistArray[i] = db.user_stats.get(interaction.user.id, `current_ep_review`)[1];
+                        origArtistArray = origArtistArray.flat(1);
+                        artistArray = origArtistArray.slice(0);
+                    }   
+                }
+            }
+        }
+
         let songName = songArg;
 
         // Handle remixes
@@ -408,7 +421,7 @@ module.exports = {
             .setDescription(`:star2: **This song currently has ${star_count} stars!** :star2:`)
             .addField('Starred Reviews:', star_array.join('\n'))
             .setImage(songArt);
-            hofEmbed.setFooter(`Use /getsong to get more details about this song!`);
+            hofEmbed.setFooter({ text: `Use /getsong to get more details about this song!` });
 
             if (!db.hall_of_fame.has(songName)) {
                 hofChannel.send({ embeds: [hofEmbed] }).then(hof_msg => {

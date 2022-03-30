@@ -15,7 +15,7 @@ module.exports = {
 
         .addStringOption(option => 
             option.setName('song')
-                .setDescription('The name of the song.')
+                .setDescription('The name of the song or EP/LP.')
                 .setAutocomplete(true)
                 .setRequired(true))
 

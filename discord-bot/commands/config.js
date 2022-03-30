@@ -76,7 +76,6 @@ module.exports = {
 
                 if (isNaN(parseInt(args[1]))) return interaction.editReply('Parameter must be a number.');
                 db.server_settings.set(interaction.guild.id, parseInt(args[1]), 'star_cutoff');
-                console.log('test!!');
                 return interaction.editReply(`Successfully set the hall of fame star cutoff to \`${args[1]}\`.`);
 
             }

@@ -100,7 +100,7 @@ module.exports = {
                 reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray})` : ``} :star2:`);
             }
 
-            reviewEmbed.setAuthor(`${taggedMember.displayName}'s review`, `${taggedUser.avatarURL({ format: "png" })}`);
+            reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ format: "png" })}` });
 
             if (rreview != '-') {
                 reviewEmbed.setDescription(`${rreview}`);
@@ -127,12 +127,14 @@ module.exports = {
             if (rreview != '-') reviewEmbed.addField('Rating: ', `**${rscore}/10**`, true);
 
             if (rsentby != false) {
-                reviewEmbed.setFooter(`Sent by ${usrSentBy.displayName}`, `${usrSentBy.user.avatarURL({ format: "png" })}`);
+                reviewEmbed.setFooter({ text: `Sent by ${usrSentBy.displayName}`, iconURL: `${usrSentBy.user.avatarURL({ format: "png" })}` });
             } else if (epfrom != undefined && epfrom != false) {
-                reviewEmbed.setFooter(`from ${epfrom}`, db.reviewDB.get(artistArray[0], `["${epfrom}"].art`));
+                reviewEmbed.setFooter({ text: `from ${epfrom}`, iconURL: db.reviewDB.get(artistArray[0], `["${epfrom}"].art`) });
             }
             
-            if (rurl === undefined && rtimestamp === undefined) {
+            console.log(rurl);
+
+            if ((rurl === undefined && rtimestamp === undefined) || rurl == false) {
                 interaction.editReply({ embeds: [reviewEmbed] });
             } else {
                 interaction.editReply({ content: `[View Review Message](${rurl})`, embeds: [reviewEmbed] });
