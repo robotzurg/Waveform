@@ -68,9 +68,9 @@ module.exports = {
             if (userArray.length != 0) {
                 if (songObj[taggedUser.id].rating != undefined && songObj[taggedUser.id].rating != null) {
                     if (songObj[taggedUser.id].starred == false) {
-                        reviewObj[songArray[i]] = songObj[taggedUser.id].rating;
+                        reviewObj[songArray[i]] = parseFloat(songObj[taggedUser.id].rating);
                     } else {
-                        reviewObj[`🌟 ${songArray[i]}`] = songObj[taggedUser.id].rating + 1;
+                        reviewObj[`🌟 ${songArray[i]}`] = parseFloat(songObj[taggedUser.id].rating) + 1;
                     }
                 }
             } 
@@ -81,6 +81,11 @@ module.exports = {
         }
 
         reviewedArray = Object.entries(reviewObj).sort((a, b) => b[1] - a[1]);
+        for (let i = 0; i < reviewedArray.length; i++) {
+            if (reviewedArray[i][1] > 10) {
+                reviewedArray[i][1] -= 1;
+            }
+        }
 
         let pagedReviewList = _.chunk(reviewedArray, 10);
         let page_num = 0;
