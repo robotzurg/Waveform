@@ -42,6 +42,9 @@ module.exports = {
                 ep_art = interaction.user.avatarURL({ format: "png", dynamic: false });
             }
 
+            let tags = db.reviewDB.get(artistArray[0], `["${epName}"].tags`);
+            if (tags == undefined) tags = [];
+
             let rankNumArray = [];
             let epRankArray = [];
             let songRankArray = [];
@@ -58,8 +61,6 @@ module.exports = {
                 reviewNum = reviewNum.filter(e => e !== 'review_num');
                 let userArray = reviewNum.slice(0);
                 let userIDList = userArray.slice(0);
-
-                console.log(reviewNum);
 
                 for (let i = 0; i < reviewNum.length; i++) {
                     let userObj = db.reviewDB.get(artistArray[0], `["${epName}"].["${reviewNum[i]}"]`);
@@ -116,6 +117,8 @@ module.exports = {
                     }
                 }
 
+                if (tags.length != 0) epEmbed.addField('Tags:', `\`${tags.join(', ')}\``);
+
                 // Button/Select Menu setup
             let select_options = [];
             let taggedMemberSel;
@@ -155,7 +158,7 @@ module.exports = {
             interaction.editReply({ embeds: [epEmbed], components: [row] });
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 60000 });
+            const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 120000 });
 
             collector.on('collect', async select => {
 
@@ -255,7 +258,7 @@ module.exports = {
 
                 
 
-                if (epReviewEmbed.length > 3000) {
+                if (epReviewEmbed.length > 3500) {
                     for (let i = 0; i < epReviewEmbed.fields.length; i++) {
                         epReviewEmbed.fields[i].value = `*Review hidden to save space*`;
                     }

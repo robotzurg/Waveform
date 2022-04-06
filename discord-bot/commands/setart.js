@@ -25,7 +25,7 @@ module.exports = {
         .addStringOption(option => 
             option.setName('art')
                 .setDescription('Art for the song/EP/LP. (leave blank for spotify searching)')
-                .setRequired(true))
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('remixers')

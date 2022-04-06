@@ -87,7 +87,7 @@ module.exports = {
 
             if (user_sent_by.id != null && user_sent_by.id != undefined && user_sent_by.id != false) {
                 taggedMember = await interaction.guild.members.fetch(user_sent_by.id);
-                taggedUser = user_sent_by.id;
+                taggedUser = user_sent_by;
             } else {
                 taggedUser = { id: false };
             }
@@ -279,7 +279,7 @@ module.exports = {
                 epEmbed.setDescription(`*${overall_review}*`);
             }
 
-            if (user_sent_by != false) {
+            if (taggedUser.id != false) {
                 epEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
             }
 
@@ -331,7 +331,7 @@ module.exports = {
                         await i.editReply({ content: 'Type in the new overall EP/LP review.', components: [] });
 
                         const re_filter = m => m.author.id === interaction.user.id;
-                        re_collector = interaction.channel.createMessageCollector({ re_filter, max: 1, time: 60000 });
+                        re_collector = interaction.channel.createMessageCollector({ re_filter, max: 1, time: 120000 });
                         re_collector.on('collect', async m => {
                             overall_review = m.content;
 

@@ -156,7 +156,7 @@ module.exports = {
                 });
             }
             
-            if (epEmbed.length > 3000) {
+            if (epEmbed.length > 3500) {
                 for (let i = 0; i < epEmbed.fields.length; i++) {
                     epEmbed.fields[i].value = `*Review hidden to save space*`;
                 }

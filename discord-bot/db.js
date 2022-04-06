@@ -6,4 +6,5 @@ module.exports = {
   hall_of_fame: new Enmap({ name: "hall_of_fame" }),
   user_stats: new Enmap({ name: "user_stats" }),
   reviewdb_old: new Enmap({ name: "reviewdb_old" }),
+  tags: new Enmap({ name: "tags" }),
 };
