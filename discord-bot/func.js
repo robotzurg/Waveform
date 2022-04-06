@@ -67,6 +67,7 @@ module.exports = {
         userArray = userArray.filter(e => e !== 'hof_id');
         userArray = userArray.filter(e => e !== 'review_num');
         userArray = userArray.filter(e => e !== 'remix_collab');
+        userArray = userArray.filter(e => e !== 'tags');
         return userArray;
     },
 

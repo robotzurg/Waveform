@@ -77,7 +77,7 @@ module.exports = {
         }
 
         if (Object.keys(reviewObj).length == 0) {
-            return interaction.editReply(`You have never rated a song by this artist before!`);
+            return interaction.editReply(`${taggedMember.displayName} has never rated a song by this artist before!`);
         }
 
         reviewedArray = Object.entries(reviewObj).sort((a, b) => b[1] - a[1]);

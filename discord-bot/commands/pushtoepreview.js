@@ -114,7 +114,7 @@ module.exports = {
                     field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
                 }
 
-                if (msgEmbed.length > 3000 && type == 'A') {
+                if (msgEmbed.length > 3500 && type == 'A') {
                     for (let j = 0; j < msgEmbed.fields.length; j++) {
                         msgEmbed.fields[j].value = `*Review hidden to save space*`;
                     }
@@ -189,7 +189,7 @@ module.exports = {
                         field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
                     }
                     
-                    if (msgEmbed.length > 3000 && type == 'A') {
+                    if (msgEmbed.length > 3500 && type == 'A') {
                         for (let j = 0; j < msgEmbed.fields.length; j++) {
                             msgEmbed.fields[j].value = `*Review hidden to save space*`;
                         }

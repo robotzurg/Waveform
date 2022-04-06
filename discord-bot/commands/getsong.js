@@ -52,10 +52,12 @@ module.exports = {
         let starCount = 0;
 
         songObj = db.reviewDB.get(origArtistArray[0], `["${songName}"]`);
-        if (songObj === undefined) { return interaction.editReply(`The requested song \`${origArtistArray} - ${songName}\` does not exist.` + 
+        if (songObj === undefined) { return interaction.editReply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
         `\nUse \`/getArtist\` to get a full list of this artist's songs.`); }
         songEP = songObj.ep;
         remixArray = songObj.remixers;
+        let tags = songObj.tags;
+        if (tags == undefined) tags = [];
 
         if (remixArray.length != 0) {
             for (let i = 0; i < remixArray.length; i++) {
@@ -72,7 +74,6 @@ module.exports = {
         const songEmbed = new Discord.MessageEmbed()
         .setColor(`${interaction.member.displayHexColor}`);
 
-        console.log(vocalistArray);
         if (vocalistArray.length != 0) {
             songEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName} (ft. ${vocalistArray.join(' & ')})`);
         } else {
@@ -122,6 +123,7 @@ module.exports = {
         }
 
         if (remixes.length != 0) songEmbed.addField('Remixes:', remixes.join('\n'));
+        if (tags.length != 0) songEmbed.addField('Tags:', `\`${tags.join(', ')}\``);
 
         if (songArt == false) {
             songEmbed.setThumbnail(interaction.user.avatarURL({ format: "png" }));
@@ -180,7 +182,7 @@ module.exports = {
 
         let message = await interaction.fetchReply();
 
-        const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 60000 });
+        const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 120000 });
 
         collector.on('collect', async i => {
             if (i.customId === 'select') { // Select Menu

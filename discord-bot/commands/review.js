@@ -49,7 +49,7 @@ module.exports = {
                 .setDescription('Put remixers here, if you reviewing a remix of the original song. (NOT IN ARTISTS ARGUMENT)')
                 .setAutocomplete(true)
                 .setRequired(false))
-    
+
         .addUserOption(option => 
             option.setName('user_who_sent')
                 .setDescription('User who sent you this song in Mailbox. Ignore if not a mailbox review.')
@@ -452,7 +452,7 @@ module.exports = {
                         await i.editReply({ content: 'Type in the new review.', components: [] });
 
                         const re_filter = m => m.author.id === interaction.user.id;
-                        re_collector = int_channel.createMessageCollector({ re_filter, max: 1, time: 60000 });
+                        re_collector = int_channel.createMessageCollector({ re_filter, max: 1, time: 120000 });
                         re_collector.on('collect', async m => {
                             review = m.content;
 
@@ -557,7 +557,7 @@ module.exports = {
                                 field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
                             }
 
-                            if (msgEmbed.length > 3000 && type == 'A') {
+                            if (msgEmbed.length > 3500 && type == 'A') {
                                 for (let j = 0; j < msgEmbed.fields.length; j++) {
                                     msgEmbed.fields[j].value = `*Review hidden to save space*`;
                                 }
@@ -632,7 +632,7 @@ module.exports = {
                                     field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
                                 }
                                 
-                                if (msgEmbed.length > 3000 && type == 'A') {
+                                if (msgEmbed.length > 3500 && type == 'A') {
                                     for (let j = 0; j < msgEmbed.fields.length; j++) {
                                         msgEmbed.fields[j].value = `*Review hidden to save space*`;
                                     }
@@ -718,7 +718,7 @@ module.exports = {
                                 db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
                             }
 
-                            db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
+                            db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
                             hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                         }
 
