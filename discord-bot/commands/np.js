@@ -61,7 +61,7 @@ module.exports = {
                                 }
                             }
 
-                            exampleEmbed.setDescription(`Reviews: \`${userArray.length} reviews\`\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}${yourReview != false ? `\nYour Rating: \`${yourReview}/10${yourStar}\`` : ''}\n<:spotify:899365299814559784> [Spotify](${url})`);
+                            exampleEmbed.setDescription(`Reviews: \`${userArray.length} reviews\`\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}${yourReview != false ? `\nYour Rating: \`${yourReview}/10${yourStar}\`` : ''}\n<:spotify:961509833499115580> [Spotify](${url})`);
 
                             if (songObj.ep != undefined && songObj.ep != false) {
                                 if (db.reviewDB.get(artistArray[0], `["${songObj.ep}"].art`) != false) {
@@ -71,12 +71,12 @@ module.exports = {
                                 }
                             }
                         } else {
-                            exampleEmbed.setDescription(`This song has not been reviewed in the database.\n<:spotify:899365299814559784> [Spotify](${url})`);
+                            exampleEmbed.setDescription(`This song has not been reviewed in the database.\n<:spotify:961509833499115580> [Spotify](${url})`);
                         }
 
                     } else {
                         if (!title.toLowerCase().includes('remix')) {
-                            exampleEmbed.setDescription(`This artist has not been reviewed in the database.\n<:spotify:899365299814559784> [Spotify](${url})`);
+                            exampleEmbed.setDescription(`This artist has not been reviewed in the database.\n<:spotify:961509833499115580> [Spotify](${url})`);
                         }
                     }
 
