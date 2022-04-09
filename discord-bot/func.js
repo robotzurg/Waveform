@@ -147,6 +147,15 @@ module.exports = {
             }
         }
 
+        // VIP adjustment
+        if (songName.includes('- VIP') || songName.includes('(VIP)')) {
+            if (songName.includes('- VIP')) {
+                songName = songName.replace('- VIP', 'VIP');
+            } else {
+                songName = songName.replace('(VIP)', 'VIP');
+            }
+        }
+
         if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
             if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
                 artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
@@ -492,11 +501,6 @@ module.exports = {
             artists = artists.join(' & ');
         }
 
-        if (activity.details.includes('VIP') && activity.details.includes('-')) {
-            title = activity.details.split(' - ');
-            activity.details = `${title[0]} VIP`;
-        }
-
         if (activity.details.includes('Remix') && activity.details.includes('-')) {
             title = activity.details.split(' - ');
             rmxArtist = title[1].slice(0, -6);
@@ -530,6 +534,14 @@ module.exports = {
                 activity.details = `${title[0]} (${rmxArtist} Remix)`;
             } else {
                 activity.details = `${title[0]}`;
+            }
+        }
+
+        if (activity.details.includes('- VIP') || activity.details.includes('(VIP)')) {
+            if (activity.details.includes('- VIP')) {
+                activity.details = activity.details.replace('- VIP', 'VIP');
+            } else {
+                activity.details = activity.details.replace('(VIP)', 'VIP');
             }
         }
 

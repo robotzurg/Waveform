@@ -123,7 +123,6 @@ module.exports = {
         }
 
         if (remixes.length != 0) songEmbed.addField('Remixes:', remixes.join('\n'));
-        if (tags.length != 0) songEmbed.addField('Tags:', `\`${tags.join(', ')}\``);
 
         if (songArt == false) {
             songEmbed.setThumbnail(interaction.user.avatarURL({ format: "png" }));
@@ -131,7 +130,12 @@ module.exports = {
             songEmbed.setThumbnail(songArt);
         }
 
-        if (songEP != false) songEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
+        if (songEP != false) {
+            songEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
+            if (tags.length != 0) songEmbed.addField('Tags:', `\`${tags.join(', ')}\``);
+        } else if (tags.length != 0) {
+            songEmbed.setFooter({ text: `Tags: ${tags.join(', ')}` });
+        }
 
         // Button/Select Menu setup
         let select_options = [];
