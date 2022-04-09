@@ -1,7 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { update_art, review_song, hall_of_fame_check, handle_error } = require('../func.js');
-const { mailboxes } = require('../arrays.json');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('util').promisify(setTimeout);
 const Spotify = require('node-spotify-api');
@@ -61,6 +60,7 @@ module.exports = {
 
         // This variable is here so that we can start a review from anywhere else (for Spotify Link Review)
         let int_channel = interaction.channel;
+        let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
 
         // If we do a Spotify Link Review, we have to change the channel focus to #reviews.
         if (sp_song != undefined) {
@@ -111,6 +111,16 @@ module.exports = {
             rmxArtistArray = [];
         } else {
             rmxArtistArray = rmxArtistArray.split(' & ');
+        }
+
+        if (songName.includes('- VIP') || songName.includes('(VIP)')) {
+            if (songName.includes('- VIP')) {
+                origSongName = origSongName.replace('- VIP', 'VIP');
+                songName = songName.replace('- VIP', 'VIP');
+            } else {
+                songName = songName.replace('(VIP)', 'VIP');
+                origSongName = origSongName.replace('(VIP)', 'VIP');
+            }
         }
 
         // Init variables for spotify link review
@@ -356,8 +366,8 @@ module.exports = {
                     case 'artist': {
                         await i.deferUpdate();
                         await i.editReply({ content: 'Type in the Artist Name(s) (separated with &, DO NOT PUT REMIXERS OR FEATURE VOCALISTS HERE!)', components: [] });
-                        const a_filter = m => m.author.id === interaction.user.id;
-                        a_collector = int_channel.createMessageCollector({ a_filter, max: 1, time: 60000 });
+                        const a_filter = m => m.author.id == interaction.user.id;
+                        a_collector = int_channel.createMessageCollector({ filter: a_filter, max: 1, time: 60000 });
                         a_collector.on('collect', async m => {
                             origArtistArray = m.content.split(' & ');
                             if (rmxArtistArray.length != 0) {
@@ -396,7 +406,7 @@ module.exports = {
                         await i.editReply({ content: 'Type in the Song Name (NO FT. OR REMIXERS SHOULD BE INCLUDED)', components: [] });
 
                         const s_filter = m => m.author.id == interaction.user.id;
-                        s_collector = int_channel.createMessageCollector({ s_filter, max: 1, time: 60000 });
+                        s_collector = int_channel.createMessageCollector({ filter: s_filter, max: 1, time: 60000 });
                         s_collector.on('collect', async m => {
                             songName = m.content;
                             displaySongName = (`${songName}` + 
@@ -434,7 +444,7 @@ module.exports = {
                         await i.editReply({ content: 'Type in the rating (DO NOT ADD /10!)', components: [] });
 
                         const ra_filter = m => m.author.id === interaction.user.id;
-                        ra_collector = int_channel.createMessageCollector({ ra_filter, max: 1, time: 60000 });
+                        ra_collector = int_channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                         ra_collector.on('collect', async m => {
                             rating = parseFloat(m.content);
                             reviewEmbed.fields[0] = { name : 'Rating', value : `**${rating}/10**` };
@@ -452,7 +462,7 @@ module.exports = {
                         await i.editReply({ content: 'Type in the new review.', components: [] });
 
                         const re_filter = m => m.author.id === interaction.user.id;
-                        re_collector = int_channel.createMessageCollector({ re_filter, max: 1, time: 120000 });
+                        re_collector = int_channel.createMessageCollector({ filter: re_filter, max: 1, time: 120000 });
                         re_collector.on('collect', async m => {
                             review = m.content;
 

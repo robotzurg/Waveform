@@ -205,11 +205,13 @@ module.exports = {
                             rating: overall_rating,
                             review: overall_review,
                             sentby: taggedUser.id,
+                            no_songs: false,
                             ranking: [],
                         },
                         art: art,
                         collab: artistArray.filter(word => artistArray[i] != word),
                         songs: [],
+                        tags: [],
                     },
                 }; 
 
@@ -221,6 +223,7 @@ module.exports = {
                     rating: overall_rating,
                     review: overall_review,
                     sentby: taggedUser.id,
+                    no_songs: false,
                     ranking: [],
                 };
 
@@ -309,7 +312,7 @@ module.exports = {
                         await i.editReply({ content: 'Type in the overall EP/LP rating (DO NOT ADD `/10`!)', components: [] });
 
                         const ra_filter = m => m.author.id === interaction.user.id;
-                        ra_collector = interaction.channel.createMessageCollector({ ra_filter, max: 1, time: 60000 });
+                        ra_collector = interaction.channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                         ra_collector.on('collect', async m => {
                             overall_rating = parseFloat(m.content);
                             epEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${overall_rating}/10)`);
@@ -331,7 +334,7 @@ module.exports = {
                         await i.editReply({ content: 'Type in the new overall EP/LP review.', components: [] });
 
                         const re_filter = m => m.author.id === interaction.user.id;
-                        re_collector = interaction.channel.createMessageCollector({ re_filter, max: 1, time: 120000 });
+                        re_collector = interaction.channel.createMessageCollector({ filter: re_filter, max: 1, time: 120000 });
                         re_collector.on('collect', async m => {
                             overall_review = m.content;
 
@@ -417,7 +420,10 @@ module.exports = {
                         if (re_collector != undefined) re_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
-                        db.user_stats.set(interaction.user.id, false, 'current_ep_review');
+                        for (let j = 0; j < artistArray.length; j++) {
+                            db.reviewDB.set(artistArray[j], true, `["${ep_name}"].["${interaction.user.id}"].no_songs`);
+                        }
+
                         if (overall_review != false) epEmbed.setDescription(`${overall_review}`);
                         if (overall_rating != false) epEmbed.addField(`Rating`, `**${overall_rating}/10**`);
                         if (starred == false) {
@@ -425,6 +431,7 @@ module.exports = {
                         } else {
                             epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${ep_name} 🌟`);
                         }
+        
                         i.editReply({ embeds: [epEmbed], components: [] });
                     } break;
                     case 'begin': {

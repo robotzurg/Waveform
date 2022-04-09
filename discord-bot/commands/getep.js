@@ -52,13 +52,15 @@ module.exports = {
 
             const epEmbed = new Discord.MessageEmbed()
                 .setColor(`${interaction.member.displayHexColor}`)
-                .setTitle(`${origArtistArray} - ${epName} tracks`);
+                .setTitle(`${origArtistArray} - ${epName} tracks`)
+                .setThumbnail(ep_art);
 
                 let reviewNum = Object.keys(db.reviewDB.get(artistArray[0], `["${epName}"]`));
                 reviewNum = reviewNum.filter(e => e !== 'art');
                 reviewNum = reviewNum.filter(e => e !== 'songs');
                 reviewNum = reviewNum.filter(e => e !== 'collab');
                 reviewNum = reviewNum.filter(e => e !== 'review_num');
+                reviewNum = reviewNum.filter(e => e !== 'tags');
                 let userArray = reviewNum.slice(0);
                 let userIDList = userArray.slice(0);
 
@@ -66,10 +68,8 @@ module.exports = {
                     let userObj = db.reviewDB.get(artistArray[0], `["${epName}"].["${reviewNum[i]}"]`);
                     userArray[i] = `<@${reviewNum[i]}>${(userObj.rating != false) ? ` \`${userObj.rating}/10\`` : ``}`;
                     rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${reviewNum[i]}"].rating`);
-                    console.log(rating);
                     if (rating != false && rating != undefined && !isNaN(rating)) {
                         epRankArray.push(parseFloat(rating));
-                        console.log(epRankArray);
                     }
                 }
                 
@@ -79,7 +79,6 @@ module.exports = {
                     let songArtist = artistArray[0];
 
                     let songObj = db.reviewDB.get(songArtist, `["${songArray[i]}"]`);
-                    epEmbed.setThumbnail(ep_art);
 
                     epnum++;
 
@@ -117,7 +116,7 @@ module.exports = {
                     }
                 }
 
-                if (tags.length != 0) epEmbed.addField('Tags:', `\`${tags.join(', ')}\``);
+                if (tags.length != 0) epEmbed.setFooter({ text: `Tags: ${tags.join(', ')}` });
 
                 // Button/Select Menu setup
             let select_options = [];
@@ -166,16 +165,25 @@ module.exports = {
                     return await select.update({ content: ' ', embeds: [epEmbed], components: [row] });
                 }
 
+                const taggedMember = await interaction.guild.members.fetch(select.values[0]);
+                const taggedUser = taggedMember.user;
+
                 // let ep_ranking = db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].ranking`);
-                let ep_url = db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].url`);
-                let ep_overall_rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].rating`);
-                let ep_overall_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].review`);
-                let rname;
+                let ep_url = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].url`);
+                let ep_overall_rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].rating`);
+                let ep_overall_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].review`);
+                let no_songs_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].no_songs`);
+                let ep_sent_by = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].sentby`);
+                if (no_songs_review == undefined) no_songs_review = false; // Undefined handling for EP/LP reviews without this
+                let ep_starred = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].starred`);
                 let rreview;
                 let rscore;
                 let rsentby;
                 let rstarred;
-                let usrSentBy;
+
+                if (ep_sent_by != undefined && ep_sent_by != false) {
+                    ep_sent_by = await interaction.guild.members.fetch(ep_sent_by);
+                }
 
                 const epReviewEmbed = new Discord.MessageEmbed();
                 if (songArray.length != 0) {
@@ -184,16 +192,11 @@ module.exports = {
                         let artistsEmbed = [];
                         let vocalistsEmbed = [];
         
-                        rname = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].name`);
-                        if (rname === undefined) return interaction.editReply(`No review found for song ${songName}`);
-                        rreview = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].review`);
+                        rreview = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].review`);
                         if (rreview.length > 1000) rreview = '*Review hidden to save space*';
-                        rscore = `${db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].rating`)}/10`;
-                        rsentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].sentby`);
-                        rstarred = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUserSel.id}"].starred`);
-                        if (rsentby != false) {
-                            usrSentBy = interaction.guild.members.cache.get(rsentby);              
-                        }
+                        rscore = `${db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].rating`)}/10`;
+                        rsentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].sentby`);
+                        rstarred = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].starred`);
         
                         // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
                         if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
@@ -213,41 +216,48 @@ module.exports = {
                                 vocalistsEmbed = vocalistsEmbed.join(' & ');
                             }
                         }
-        
-                        epReviewEmbed.addField(`${rstarred === true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `${rreview}`);
+
+                        if (no_songs_review == false) epReviewEmbed.addField(`${rstarred === true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `${rreview}`);
                     }
                 }
                 
-                epReviewEmbed.setColor(`${taggedMemberSel.displayHexColor}`);
-                epReviewEmbed.setTitle(`${origArtistArray} - ${epName}`);
-                epReviewEmbed.setAuthor({ name: rsentby != false ? `${rname}'s mailbox review` : `${rname}'s review`, iconURL: `${taggedUserSel.avatarURL({ format: "png" })}` });
+                epReviewEmbed.setColor(`${taggedMember.displayHexColor}`);
+                epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName}` : `🌟 ${origArtistArray.join(' & ')} - ${epName} 🌟`);
         
                 if (ep_overall_rating != false && ep_overall_review != false) {
-                    epReviewEmbed.setTitle(`${origArtistArray} - ${epName} (${ep_overall_rating}/10)`);
-                    epReviewEmbed.setDescription(`*${ep_overall_review}*`);
+                    if (no_songs_review == false) {
+                        epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
+                    } else {
+                        epReviewEmbed.addField(`Rating`, `**${ep_overall_rating}/10**`);
+                    }
+                    epReviewEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
                 } else if (ep_overall_rating != false) {
-                    epReviewEmbed.setTitle(`${origArtistArray} - ${epName} (${ep_overall_rating}/10)`);
+                    if (no_songs_review == false) {
+                        epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
+                    } else {
+                        epEmbed.addField(`Rating`, `**${ep_overall_rating}/10**`);
+                    }
                 } else if (ep_overall_review != false) {
-                    epReviewEmbed.setDescription(`*${ep_overall_review}*`);
+                    epReviewEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
                 }
         
                 if (epName.includes('EP')) {
-                    epReviewEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && songArray.length != 0 ? `${rname}'s mailbox EP review` : `${rname}'s EP review`, iconURL: `${taggedUserSel.avatarURL({ format: "png", dynamic: false })}` });
+                    epReviewEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && songArray.length != 0 ? `${taggedMember.displayName}'s mailbox EP review` : `${taggedMember.displayName}'s EP review`, iconURL: `${taggedUser.avatarURL({ format: "png", dynamic: false })}` });
                 } else if (epName.includes('LP')) {
-                    epReviewEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && songArray.length != 0 ? `${rname}'s mailbox LP review` : `${rname}'s LP review`, iconURL: `${taggedUserSel.avatarURL({ format: "png", dynamic: false })}` });
+                    epReviewEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && songArray.length != 0 ? `${taggedMember.displayName}'s mailbox LP review` : `${taggedMember.displayName}'s LP review`, iconURL: `${taggedUser.avatarURL({ format: "png", dynamic: false })}` });
                 }
                 epReviewEmbed.setThumbnail(ep_art);
-                if (rsentby != false && rsentby != undefined && ep_overall_rating === false) {
-                    epReviewEmbed.setFooter(`Sent by ${usrSentBy.displayName}`, `${usrSentBy.user.avatarURL({ format: "png" })}`);
+                if (ep_sent_by != false && ep_sent_by != undefined) {
+                    epReviewEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}`, iconURL: `${ep_sent_by.user.avatarURL({ format: "png" })}` });
                 }
 
-                let reviewMsgID = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUserSel.id}"].msg_id`);
+                let reviewMsgID = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].msg_id`);
                 if (reviewMsgID != false && reviewMsgID != undefined) {
                     let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
                     await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
                         epReviewEmbed.setTimestamp(msg.createdTimestamp);
                     }).catch(() => {
-                        channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(taggedUserSel.id, 'mailbox'));
+                        channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(taggedUser.id, 'mailbox'));
                         if (channelsearch != undefined) {
                             channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
                                 epReviewEmbed.setTimestamp(msg.createdTimestamp);
