@@ -1,6 +1,5 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const getAppleMusicLink = require('get-apple-music-link');
 const { average, get_user_reviews, parse_artist_song_data, sort, handle_error } = require('../func.js');
 const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '**11**', '**12**', '**13**', '**14**', '**15**', '**16**', '**17**', '**18**', '**19**', '**20**'];
 const { SlashCommandBuilder } = require('@discordjs/builders');
@@ -131,7 +130,7 @@ module.exports = {
         }
 
         if (songEP != false) {
-            songEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
+            songEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0], `["${songEP}"].art`) });
             if (tags.length != 0) songEmbed.addField('Tags:', `\`${tags.join(', ')}\``);
         } else if (tags.length != 0) {
             songEmbed.setFooter({ text: `Tags: ${tags.join(', ')}` });
@@ -173,16 +172,7 @@ module.exports = {
                     .addOptions(select_options),
             );
 
-        // Spotify / Apple Music stuff
-        
-        await getAppleMusicLink.track(`${songName}`, `${origArtistArray[0]}`, function(res, err) {
-            if(err) {
-                interaction.editReply({ embeds: [songEmbed], components: [row] });
-            }
-            else{
-                interaction.editReply({ /*content: `[Apple Music Link](${res})`,*/ embeds: [songEmbed], components: [row] });
-            }
-        });
+        interaction.editReply({ embeds: [songEmbed], components: [row] });
 
         let message = await interaction.fetchReply();
 
