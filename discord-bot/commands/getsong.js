@@ -50,7 +50,7 @@ module.exports = {
         let remixes = [];
         let starCount = 0;
 
-        songObj = db.reviewDB.get(origArtistArray[0], `["${songName}"]`);
+        songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
         if (songObj === undefined) { return interaction.editReply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
         `\nUse \`/getArtist\` to get a full list of this artist's songs.`); }
         songEP = songObj.ep;
