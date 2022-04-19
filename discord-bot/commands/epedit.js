@@ -106,7 +106,7 @@ module.exports = {
                 handle_error(interaction, err);
             });
 
-            if (old_ep_rating == false) old_ep_rating == 'N/A';
+            if (old_ep_rating == false) old_ep_rating = 'N/A';
 
             interaction.editReply(`Here's what was edited on your review of **${artistArray.join(' & ')} - ${ep_name}**:` +
             `\n${(old_ep_rating != undefined) ? `\`${old_ep_rating}\` changed to \`${ep_rating}/10\`` : ``}` +

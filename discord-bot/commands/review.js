@@ -31,11 +31,6 @@ module.exports = {
             option.setName('review')
                 .setDescription('Review of the song (Set this to - if you wish to do a rating and no review.)')
                 .setRequired(true))
-
-        .addStringOption(option => 
-            option.setName('art')
-                .setDescription('Art of the song (put spotify or s here if you want to use your spotify status.)')
-                .setRequired(false))
             
         .addStringOption(option => 
             option.setName('vocalist')
@@ -49,10 +44,16 @@ module.exports = {
                 .setAutocomplete(true)
                 .setRequired(false))
 
+        .addStringOption(option => 
+            option.setName('art')
+                .setDescription('Art of the song (put spotify or s here if you want to use your spotify status.)')
+                .setRequired(false))
+
         .addUserOption(option => 
             option.setName('user_who_sent')
                 .setDescription('User who sent you this song in Mailbox. Ignore if not a mailbox review.')
                 .setRequired(false)),
+        
 	admin: false,
 	async execute(interaction, sp_artist, sp_song, sp_rating, sp_review, sp_art, sp_vocalists, sp_remixers, sp_user_who_sent, sp_star) {
 
@@ -218,7 +219,7 @@ module.exports = {
         const row2 = new Discord.MessageActionRow();
 
         // If we're in an EP/LP review, stick in a button to push to EP review.
-        if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
+        if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false && origArtistArray.includes(db.user_stats.get(interaction.user.id, 'current_ep_review')[1][0])) {
             if (db.user_stats.get(interaction.user.id, 'current_ep_review').length != 0) {
                 row2.addComponents( 
                     new Discord.MessageButton()
@@ -540,17 +541,7 @@ module.exports = {
                             msgEmbed = msg.embeds[0];
                             mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
                             mainArtists = mainArtists.flat(1);
-                            ep_name = msgEmbed.title.split(' - ');
-                            ep_name.shift();
-                            ep_name = ep_name.join(' - ');
-                            if (ep_name.includes('/10')) {
-                                ep_name = ep_name.replace('/10)', '');
-                                if (ep_name.includes('.5')) {
-                                    ep_name = ep_name.slice(0, -4).trim();
-                                } else {
-                                    ep_name = ep_name.slice(0, -3).trim();
-                                }
-                            }
+                            ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review')[2];
 
                             for (let j = 0; j < artistArray.length; j++) {
                                 db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
@@ -567,10 +558,7 @@ module.exports = {
                                 field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
                             }
 
-                            if (msgEmbed.length > 3500 && type == 'A') {
-                                for (let j = 0; j < msgEmbed.fields.length; j++) {
-                                    msgEmbed.fields[j].value = `*Review hidden to save space*`;
-                                }
+                            if (msgEmbed.length > 3250 && type == 'A') {
                                 db.user_stats.set(interaction.user.id, 'B', 'current_ep_review[3]');
                                 type = 'B';
                             }
@@ -615,17 +603,7 @@ module.exports = {
                                 msgEmbed = msg.embeds[0];
                                 mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
                                 mainArtists = mainArtists.flat(1);
-                                ep_name = msgEmbed.title.split(' - ');
-                                ep_name.shift();
-                                ep_name = ep_name.join(' - ');
-                                if (ep_name.includes('/10')) {
-                                    ep_name = ep_name.replace('/10)', '');
-                                    if (ep_name.includes('.5')) {
-                                        ep_name = ep_name.slice(0, -4).trim();
-                                    } else {
-                                        ep_name = ep_name.slice(0, -3).trim();
-                                    }
-                                }
+                                ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review')[2];
 
                                 for (let j = 0; j < artistArray.length; j++) {
                                     db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
@@ -642,10 +620,7 @@ module.exports = {
                                     field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
                                 }
                                 
-                                if (msgEmbed.length > 3500 && type == 'A') {
-                                    for (let j = 0; j < msgEmbed.fields.length; j++) {
-                                        msgEmbed.fields[j].value = `*Review hidden to save space*`;
-                                    }
+                                if (msgEmbed.length > 3250 && type == 'A') {
                                     db.user_stats.set(interaction.user.id, 'B', 'current_ep_review[3]');
                                     type = 'B';
                                 }

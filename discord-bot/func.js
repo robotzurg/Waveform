@@ -580,5 +580,110 @@ module.exports = {
         });
         return rep_arr;
     },
+
+    create_ep_review: async function(interaction, client, origArtistArray, songArray, ep_name, ep_art) {
+        const { get_user_reviews } = require('./func.js');
+        let all_reviewed_users = [-1]; // The list of users who have reviewed every song on the EP/LP.
+
+        for (let i = 0; i < songArray.length; i++) {
+            let songArtistArray = origArtistArray;
+            let songCollabArray = [];
+            let songVocalistArray = [];
+            let userArray;
+
+            let songObj = db.reviewDB.get(origArtistArray[0], `["${songArray[i]}"]`);
+
+            if (all_reviewed_users[0] == -1) {
+                all_reviewed_users = get_user_reviews(songObj);        
+            } else {
+                userArray = get_user_reviews(songObj);    
+                all_reviewed_users = all_reviewed_users.filter(val => userArray.includes(val));
+            }
+
+            // VIP adjustment
+            if (songArray[i].includes('- VIP') || songArray[i].includes('(VIP)')) {
+                if (songArray[i].includes('- VIP')) {
+                    songArray[i] = songArray[i].replace('- VIP', 'VIP');
+                } else {
+                    songArray[i] = songArray[i].replace('(VIP)', 'VIP');
+                }
+            }
+
+            if (songObj.collab != undefined) {
+                if (songObj.collab.length != 0) {
+                    songCollabArray.push(songObj.collab);
+                    songCollabArray = songCollabArray.flat(1);
+                    songCollabArray = [...new Set(songCollabArray)];
+                    songArtistArray.push(songCollabArray);
+                    songArtistArray = songArtistArray.flat(1);
+                }
+            }
+
+            if (songObj.vocals != undefined) {
+                if (songObj.vocals.length != 0) {
+                    songVocalistArray.push(songObj.vocals);
+                    songVocalistArray = songVocalistArray.flat(1);
+                    // Add vocalistArray to origArtistArray so it can be used to edit data
+                    songArtistArray.push(songVocalistArray);
+                    songArtistArray = songArtistArray.flat(1);
+                }
+            }
+
+            for (let j = 0; j < songArtistArray.length; j++) {
+                db.reviewDB.set(songArtistArray[j], ep_name, `["${songArray[i]}"].ep`);
+            }
+
+        }
+
+        let ep_object;
+
+        for (let i = 0; i < origArtistArray.length; i++) {
+
+            if (db.reviewDB.get(origArtistArray[0], `["${ep_name}"]`) == undefined) {  
+                ep_object = {
+                    [ep_name]: {
+                        art: ep_art,
+                        collab: origArtistArray.filter(word => origArtistArray[i] != word),
+                        songs: songArray,
+                        tags: [],
+                    },
+                };
+            } else {
+                ep_object = db.reviewDB.get(origArtistArray[i]);
+                
+                let epUserArray = Object.keys(db.reviewDB.get(origArtistArray[i], `["${ep_name}"]`));
+                epUserArray = epUserArray.filter(e => e !== 'art');
+                epUserArray = epUserArray.filter(e => e !== 'songs');
+                epUserArray = epUserArray.filter(e => e !== 'collab');
+                epUserArray = epUserArray.filter(e => e !== 'review_num');
+                epUserArray = epUserArray.filter(e => e !== 'tags');
+
+                all_reviewed_users = all_reviewed_users.filter(val => !epUserArray.includes(val));
+            }
+                
+            if (all_reviewed_users.length != 0) {
+                for (let u = 0; u < all_reviewed_users.length; u++) {
+                    let user = await client.users.fetch(all_reviewed_users[u]);
+                    let member = await interaction.guild.members.fetch(user.id);
+                    let user_object = {
+                        url: false,
+                        msg_id: false,
+                        starred: false,
+                        name: member.displayName,
+                        rating: false,
+                        review: false,
+                        sentby: false,
+                        no_songs: false,
+                    };
+
+                    ep_object[ep_name][user.id] = user_object;
+                }
+            }
+
+            let db_artist_obj = db.reviewDB.get(origArtistArray[i]);
+            Object.assign(db_artist_obj, ep_object);
+            db.reviewDB.set(origArtistArray[i], db_artist_obj);
+        }
+    },
     
 };

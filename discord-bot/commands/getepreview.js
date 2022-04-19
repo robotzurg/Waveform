@@ -58,9 +58,13 @@ module.exports = {
             let ratingArray = [];
 
             const ep_object = db.reviewDB.get(artistArray[0], `${epName}`);
-            if (ep_object == undefined) return interaction.editReply('EP not found. *(EP Object not found in database.)*');
-            const ep_overall_rating = parseInt(db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].rating`));
-            const ep_overall_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].review`);
+            if (ep_object == undefined) return interaction.editReply('EP/LP not found.');
+
+            let ep_name = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].name`);
+            if (ep_name == undefined) return interaction.editReply(`This EP/LP has not been reviewed by the user ${taggedMember.displayName}.`);
+
+            let ep_overall_rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].rating`);
+            let ep_overall_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].review`);
             let no_songs_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].no_songs`);
             let ep_sent_by = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].sentby`);
             if (no_songs_review == undefined) no_songs_review = false; // Undefined handling for EP/LP reviews without this
@@ -163,16 +167,16 @@ module.exports = {
                 });
             }
             
-            if (epEmbed.length > 3500) {
+            if (epEmbed.length > 3250) {
                 for (let i = 0; i < epEmbed.fields.length; i++) {
                     epEmbed.fields[i].value = `*Review hidden to save space*`;
                 }
             }
 
-            if (ep_url === undefined) {
-                interaction.editReply({ embeds: [epEmbed] });
-            } else {
+            if (ep_url) {
                 interaction.editReply({ content: `[View EP/LP Review Message](${ep_url})`, embeds: [epEmbed] });
+            } else {
+                interaction.editReply({ embeds: [epEmbed] });
             }
 
         } catch (err) {

@@ -22,11 +22,6 @@ module.exports = {
                 .setRequired(true))
 
         .addStringOption(option => 
-            option.setName('art')
-                .setDescription('Art for the EP/LP. (type "s" or "spotify" for status art.)')
-                .setRequired(false))
-
-        .addStringOption(option => 
             option.setName('overall_rating')
                 .setDescription('Overall Rating of the EP/LP. Out of 10, decimals allowed. Can be added later.')
                 .setRequired(false))
@@ -35,7 +30,12 @@ module.exports = {
             option.setName('overall_review')
                 .setDescription('Overall Review of the EP/LP. Can be added later.')
                 .setRequired(false))
-    
+
+        .addStringOption(option => 
+            option.setName('art')
+                .setDescription('Art for the EP/LP. (type "s" for status art, or leave blank for automatic spotify searching.)')
+                .setRequired(false))
+
         .addUserOption(option => 
             option.setName('user_who_sent')
                 .setDescription('User who sent you this EP/LP in Mailbox. Ignore if not a mailbox review.')
