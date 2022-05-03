@@ -73,7 +73,7 @@ module.exports = {
 
             rname = db.reviewDB.get(artistArray[i], `["${songName}"].["${userToDelete.id}"].name`);
 
-            if (rname === undefined) break;
+            if (rname == undefined) break;
 
             songObj = db.reviewDB.get(artistArray[i], `["${songName}"]`);
 
@@ -90,7 +90,9 @@ module.exports = {
             }
 
             delete songObj[`${userToDelete.id}`];
-            songObj[`review_num`] -= 1;
+            if (!songName.includes(' EP') && !songName.includes(' LP')) {
+                songObj[`review_num`] -= 1;
+            }
 
             db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
         }

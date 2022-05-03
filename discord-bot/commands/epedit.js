@@ -32,6 +32,7 @@ module.exports = {
             let artistArray = origArtistArray.slice(0);
             let ep_name = interaction.options.getString('ep_name');
             let ep_rating = interaction.options.getString('ep_rating');
+            if (ep_rating.includes('/10')) ep_rating = ep_rating.replace('/10', '');
             let ep_review = interaction.options.getString('ep_review');
             let old_ep_rating;
             let old_ep_review;
@@ -41,72 +42,62 @@ module.exports = {
             // Quick checks to see if we've got stuff in the database for this
             for (let i = 0; i < artistArray.length; i++) {
                 if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`Artist \`${artistArray[i]}\` is not in the database.`);
-                if (db.reviewDB.get(artistArray[i], `["${ep_name}"]`) === undefined) return interaction.editReply(`\`${ep_name}\` is not in ${artistArray[i]}'s database.`);
-                if (db.reviewDB.get(artistArray[i], `["${ep_name}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`You don't have a review for ${ep_name} in the database.`);
+                if (db.reviewDB.get(artistArray[i], `["${ep_name}"]`) == undefined) return interaction.editReply(`\`${ep_name}\` is not in ${artistArray[i]}'s database.`);
+                if (db.reviewDB.get(artistArray[i], `["${ep_name}"].["${interaction.user.id}"]`) == undefined) return interaction.editReply(`You don't have a review for ${ep_name} in the database.`);
             }
 
             let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
 
-            await channelsearch.messages.fetch(db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].msg_id`)).then(msg => {
-                let msgEmbed = msg.embeds[0];
-
-                if (ep_rating != null) {
-                    old_ep_rating = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].rating`);
-                    msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${ep_rating}/10)`);
-                    for (let i = 0; i < artistArray.length; i++) {
-                        db.reviewDB.set(artistArray[i], parseFloat(ep_rating), `["${ep_name}"].["${interaction.user.id}"].rating`);
-                    }
+            if (ep_rating != null) {
+                old_ep_rating = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].rating`);
+                if (old_ep_rating == 'false/10') old_ep_rating = "N/A";
+                for (let i = 0; i < artistArray.length; i++) {
+                    db.reviewDB.set(artistArray[i], parseFloat(ep_rating), `["${ep_name}"].["${interaction.user.id}"].rating`);
                 }
-                
-                if (ep_review != null) {
-                    old_ep_review = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].review`);
-                    if (ep_review.includes('\\n')) {
-                        ep_review = ep_review.split('\\n').join('\n');
-                    }
-                    msgEmbed.setDescription(`*${ep_review}*`);
-                    for (let i = 0; i < artistArray.length; i++) {
-                        db.reviewDB.set(artistArray[i], ep_review, `["${ep_name}"].["${interaction.user.id}"].review`);
-                    }
+            }
+            
+            if (ep_review != null) {
+                old_ep_review = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].review`);
+                if (ep_review.includes('\\n')) {
+                    ep_review = ep_review.split('\\n').join('\n');
                 }
-
-                msg.edit({ embeds: [msgEmbed] });
-            }).catch(() => {
-                channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                if (channelsearch != undefined) {
-                    channelsearch.messages.fetch(`${db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].msg_id`)}`).then(msg => {
-                        let msgEmbed = msg.embeds[0];
-
-                        if (ep_rating != null) {
-                            old_ep_rating = `${db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].rating`)}/10`;
-                            if (old_ep_rating == 'false/10') old_ep_rating = "N/A";
-                            msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${ep_rating}/10)`);
-                            for (let i = 0; i < artistArray.length; i++) {
-                                db.reviewDB.set(artistArray[i], parseFloat(ep_rating), `["${ep_name}"].["${interaction.user.id}"].rating`);
-                            }
-                        }
-                        
-                        if (ep_review != null) {
-                            old_ep_review = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].review`);
-                            if (ep_review.includes('\\n')) {
-                                ep_review = ep_review.split('\\n').join('\n');
-                            }
-                            msgEmbed.setDescription(`*${ep_review}*`);
-                            for (let i = 0; i < artistArray.length; i++) {
-                                db.reviewDB.set(artistArray[i], ep_review, `["${ep_name}"].["${interaction.user.id}"].review`);
-                            }
-                        }
-
-                        msg.edit({ embeds: [msgEmbed] });
-                    }).catch((err) => {
-                        handle_error(interaction, err);
-                    });
+                for (let i = 0; i < artistArray.length; i++) {
+                    db.reviewDB.set(artistArray[i], ep_review, `["${ep_name}"].["${interaction.user.id}"].review`);
                 }
+            }
 
-            }).catch((err) => {
-                handle_error(interaction, err);
-            });
+            if (db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].msg_id`) != false) {
+                await channelsearch.messages.fetch(db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].msg_id`)).then(msg => {
+                    let msgEmbed = msg.embeds[0];
+                    if (ep_rating != null) {
+                        msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${ep_rating}/10)`);
+                    }
+                    if (ep_review != null) {
+                        msgEmbed.setDescription(`*${ep_review}*`);
+                    }
+                    msg.edit({ embeds: [msgEmbed] });
+                }).catch(() => {
+                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                    if (channelsearch != undefined) {
+                        channelsearch.messages.fetch(`${db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].msg_id`)}`).then(msg => {
+                            let msgEmbed = msg.embeds[0];
+                            if (ep_rating != null) {
+                                msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${ep_rating}/10)`);
+                            }
+                            if (ep_review != null) {
+                                msgEmbed.setDescription(`*${ep_review}*`);
+                            }
 
-            if (old_ep_rating == false) old_ep_rating = 'N/A';
+                            msg.edit({ embeds: [msgEmbed] });
+                        }).catch((err) => {
+                            handle_error(interaction, err);
+                        });
+                    }
+
+                }).catch((err) => {
+                    handle_error(interaction, err);
+                });
+            }
 
             interaction.editReply(`Here's what was edited on your review of **${artistArray.join(' & ')} - ${ep_name}**:` +
             `\n${(old_ep_rating != undefined) ? `\`${old_ep_rating}\` changed to \`${ep_rating}/10\`` : ``}` +

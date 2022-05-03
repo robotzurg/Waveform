@@ -29,8 +29,8 @@ module.exports = {
 
         artistArray = artistArray.split(' & ');
 
-        if (old_song === new_song) return interaction.editReply('Old and new song names can\'t be the same thing!');
-        if (db.reviewDB.get(artistArray[0], old_song) === undefined) return interaction.editReply('This song doesn\'t exist in the database.');
+        if (old_song == new_song) return interaction.editReply('Old and new song names can\'t be the same thing!');
+        if (db.reviewDB.get(artistArray[0], old_song) == undefined) return interaction.editReply('This song doesn\'t exist in the database.');
 
         for (let i = 0; i < artistArray.length; i++) {
             const artist_obj = db.reviewDB.get(artistArray[i]);

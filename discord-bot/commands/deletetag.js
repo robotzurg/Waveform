@@ -50,7 +50,7 @@ module.exports = {
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
 
         let songObj = db.reviewDB.get(origArtistArray[0], `["${songName}"]`);
-        if (songObj === undefined) { return interaction.editReply(`The thing you tried to remove a tag from, \`${origArtistArray.join(' & ')} - ${songName}\`, does not exist.`); }
+        if (songObj == undefined) { return interaction.editReply(`The thing you tried to remove a tag from, \`${origArtistArray.join(' & ')} - ${songName}\`, does not exist.`); }
 
         let tagSongEntry = (`${origArtistArray.join(' & ')} - ${songName}` + 
         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +

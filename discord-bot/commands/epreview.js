@@ -49,6 +49,7 @@ module.exports = {
             let ep_name = interaction.options.getString('ep_name');
             let art = interaction.options.getString('art');
             let overall_rating = interaction.options.getString('overall_rating');
+            if (overall_rating.includes('/10')) overall_rating = overall_rating.replace('/10', '');
             let overall_review = interaction.options.getString('overall_review');
             let user_sent_by = interaction.options.getUser('user_who_sent');
             let taggedMember = false;
@@ -94,9 +95,9 @@ module.exports = {
 
             // Spotify check (checks for both "spotify" and "s" as the image link)
             if (art != false && art != undefined) {
-                if (art.toLowerCase().includes('spotify') || art.toLowerCase() === 's') {
+                if (art.toLowerCase().includes('spotify') || art.toLowerCase() == 's') {
                     interaction.member.presence.activities.forEach((activity) => {
-                        if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                        if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
                             art = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
                         }
                     });
@@ -189,7 +190,7 @@ module.exports = {
 
             // Make sure we DON'T get any slip ups, where the bot lets spotify run through (if it can't find a status)
             if (art != undefined && art != false) {
-                if (art.toLowerCase() === 's') art = false;
+                if (art.toLowerCase() == 's') art = false;
             }
 
             // Add in the EP object/review
@@ -231,7 +232,7 @@ module.exports = {
 
                     db.reviewDB.set(artistArray[i], epObject);
 
-                } else if (db.reviewDB.get(artistArray[i], `["${ep_name}"]`) === undefined) {
+                } else if (db.reviewDB.get(artistArray[i], `["${ep_name}"]`) == undefined) {
 
                     let db_artist_obj = db.reviewDB.get(artistArray[i]);
                     Object.assign(db_artist_obj, epObject);
@@ -257,10 +258,10 @@ module.exports = {
 
             if (db.reviewDB.has(artistArray[0]) && art == false) {
                 art = db.reviewDB.get(artistArray[0], `["${ep_name}"].art`);
-                if (art === undefined || art === false) {
+                if (art == undefined || art == false) {
                     art = interaction.user.avatarURL({ format: "png", dynamic: false });
                 }
-            } else if (art === false || art === undefined) {
+            } else if (art == false || art == undefined) {
                 // Otherwise set our review art to the users avatar.
                 art = interaction.user.avatarURL({ format: "png", dynamic: false });
             }
@@ -299,7 +300,7 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], msg.url, `["${ep_name}"].["${interaction.user.id}"].url`);
             }
 
-            const filter = i => i.user.id === interaction.user.id;
+            const filter = i => i.user.id == interaction.user.id;
             const collector = interaction.channel.createMessageComponentCollector({ filter, time: 10000000 });
             let ra_collector;
             let re_collector;
@@ -311,7 +312,7 @@ module.exports = {
                         await i.deferUpdate();
                         await i.editReply({ content: 'Type in the overall EP/LP rating (DO NOT ADD `/10`!)', components: [] });
 
-                        const ra_filter = m => m.author.id === interaction.user.id;
+                        const ra_filter = m => m.author.id == interaction.user.id;
                         ra_collector = interaction.channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                         ra_collector.on('collect', async m => {
                             overall_rating = parseFloat(m.content);
@@ -333,7 +334,7 @@ module.exports = {
                         await i.deferUpdate();
                         await i.editReply({ content: 'Type in the new overall EP/LP review.', components: [] });
 
-                        const re_filter = m => m.author.id === interaction.user.id;
+                        const re_filter = m => m.author.id == interaction.user.id;
                         re_collector = interaction.channel.createMessageCollector({ filter: re_filter, max: 1, time: 120000 });
                         re_collector.on('collect', async m => {
                             overall_review = m.content;
@@ -362,7 +363,7 @@ module.exports = {
                         // If we don't have a 10 rating, the button does nothing.
                         if (overall_rating < 8) return await i.editReply({ embeds: [epEmbed], components: [row, row2] });
 
-                        if (starred === false) {
+                        if (starred == false) {
                             if (overall_rating != false) {
                                 epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${ep_name} (${overall_rating}/10) 🌟`);
                             } else {

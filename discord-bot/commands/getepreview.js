@@ -45,7 +45,7 @@ module.exports = {
             if (!epName.includes(' EP') && !epName.includes(' LP')) epName = `${epName} EP`;
 
             const artistObj = db.reviewDB.get(artistArray[0]);
-            if (artistObj === undefined) {
+            if (artistObj == undefined) {
                 return interaction.editReply('No artist found.');
             }
 
@@ -75,9 +75,9 @@ module.exports = {
 
             let ep_art = db.reviewDB.get(artistArray[0], `${epName}.art`);
             let ep_songs = db.reviewDB.get(artistArray[0], `${epName}.songs`);
-            if (ep_songs === false || ep_songs === undefined) ep_songs = [];
+            if (ep_songs == false || ep_songs == undefined) ep_songs = [];
 
-            if (ep_art === false) {
+            if (ep_art == false) {
                 ep_art = taggedUser.avatarURL({ format: "png" });
             }
 
@@ -118,7 +118,7 @@ module.exports = {
                     }
 
                     ratingArray.push(rscore);
-                    epEmbed.addField(`${rstarred === true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `${rreview}`);
+                    epEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `${rreview}`);
                 }
             }
             

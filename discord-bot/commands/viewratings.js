@@ -60,7 +60,7 @@ module.exports = {
                 let otherArtists = [artistArray[i], collabArray, vocalistArray].flat(1);
 
                 let allArtists = otherArtists.map(v => {
-                    if (v === undefined) {
+                    if (v == undefined) {
                         return [];
                     }
                     return v;

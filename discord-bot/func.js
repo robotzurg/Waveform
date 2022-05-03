@@ -86,18 +86,18 @@ module.exports = {
 
         if (origArtistArray.toLowerCase() == 's' || songArg.toLowerCase() == 's') {
             interaction.member.presence.activities.forEach((activity) => {
-                if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
                     
                     let sp_data = parse_spotify(activity);
                     
-                    if (origArtistArray.toLowerCase() === 's') origArtistArray = sp_data[0];
-                    if (songArg.toLowerCase() === 's') songArg = sp_data[1];
+                    if (origArtistArray.toLowerCase() == 's') origArtistArray = sp_data[0];
+                    if (songArg.toLowerCase() == 's') songArg = sp_data[1];
                     spotifyCheck = true;
                 }
             });
         }
 
-        if (spotifyCheck === false && (origArtistArray.toLowerCase() === 's' || songArg.toLowerCase() === 's')) {
+        if (spotifyCheck == false && (origArtistArray.toLowerCase() == 's' || songArg.toLowerCase() == 's')) {
             interaction.editReply('Spotify status not detected, please type in the artist/song name manually or fix your status!');
             return -1;
         }
@@ -245,13 +245,13 @@ module.exports = {
 
     review_song: function(interaction, artistArray, origArtistArray, song, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt = false, user_who_sent, ep_name) {
 
-        if (user_who_sent === undefined || user_who_sent == null) {
+        if (user_who_sent == undefined || user_who_sent == null) {
             user_who_sent = false;
         } 
 
         for (let i = 0; i < artistArray.length; i++) {
 
-            if (ep_name === undefined) ep_name = false;
+            if (ep_name == undefined) ep_name = false;
             let songName = song;
             
             // Used if both the artist and song object exist
@@ -285,7 +285,7 @@ module.exports = {
 
                 db.reviewDB.set(artistArray[i], song_object);
 
-            } else if(db.reviewDB.get(artistArray[i], `["${songName}"]`) === undefined) { //If the artist db exists, check if the song db doesn't exist
+            } else if(db.reviewDB.get(artistArray[i], `["${songName}"]`) == undefined) { //If the artist db exists, check if the song db doesn't exist
                 const artistObj = db.reviewDB.get(artistArray[i]);
 
                 //Create the object that will be injected into the Artist object
@@ -347,7 +347,7 @@ module.exports = {
 
                     db.reviewDB.set(origArtistArray[i], song_object);
     
-                } else if(db.reviewDB.get(origArtistArray[i], `["${origSongName}"]`) === undefined) { //If the artist db exists, check if the song db doesn't exist
+                } else if(db.reviewDB.get(origArtistArray[i], `["${origSongName}"]`) == undefined) { //If the artist db exists, check if the song db doesn't exist
                     const artistObj = db.reviewDB.get(origArtistArray[i]);
     
                     //Create the object that will be injected into the Artist object
@@ -382,7 +382,7 @@ module.exports = {
 
                     db.reviewDB.set(vocalistArray[i], song_object);
     
-                } else if(db.reviewDB.get(vocalistArray[i], `["${origSongName}"]`) === undefined) { //If the artist db exists, check if the song db doesn't exist
+                } else if(db.reviewDB.get(vocalistArray[i], `["${origSongName}"]`) == undefined) { //If the artist db exists, check if the song db doesn't exist
                     const artistObj = db.reviewDB.get(vocalistArray[i]);
     
                     //Create the object that will be injected into the Artist object
@@ -415,7 +415,7 @@ module.exports = {
             let star_check;
             star_check = db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].starred`);
 
-            if (star_check === true) {
+            if (star_check == true) {
                 star_count++;
                 star_array.push(`:star2: <@${userArray[i]}>`);
             }
@@ -583,7 +583,7 @@ module.exports = {
 
     create_ep_review: async function(interaction, client, origArtistArray, songArray, ep_name, ep_art) {
         const { get_user_reviews } = require('./func.js');
-        let all_reviewed_users = [-1]; // The list of users who have reviewed every song on the EP/LP.
+        let all_reviewed_users = []; // The list of users who have reviewed every song on the EP/LP.
 
         for (let i = 0; i < songArray.length; i++) {
             let songArtistArray = origArtistArray;
@@ -593,7 +593,7 @@ module.exports = {
 
             let songObj = db.reviewDB.get(origArtistArray[0], `["${songArray[i]}"]`);
 
-            if (all_reviewed_users[0] == -1) {
+            if (all_reviewed_users.length == 0) {
                 all_reviewed_users = get_user_reviews(songObj);        
             } else {
                 userArray = get_user_reviews(songObj);    

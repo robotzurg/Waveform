@@ -49,7 +49,7 @@ module.exports = {
             } 
 
             let name = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].name`);
-            if (name === undefined) {
+            if (name == undefined) {
                 interaction.editReply(`No review found for \`${origArtistArray.join(' & ')} - ${songName}\`.`);
                 await wait(30000);
                 try {
@@ -103,12 +103,12 @@ module.exports = {
                     db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
                 }
 
-                if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt === false) {
+                if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt == false) {
                     songArt = msgEmbed.thumbnail.url;
                 }
 
                 collab = origArtistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
-                if (starred === true) {
+                if (starred == true) {
                     field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
                 } else {
                     field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
@@ -147,7 +147,7 @@ module.exports = {
                 msg.edit({ embeds: [msgEmbed], components: [] });
 
                 // Star reaction stuff for hall of fame
-                if (rating >= 8 && starred === true) {
+                if (rating >= 8 && starred == true) {
                     for (let x = 0; x < artistArray.length; x++) {
                         db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
                     }
@@ -178,12 +178,12 @@ module.exports = {
                         db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
                     }
 
-                    if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt === false) {
+                    if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt == false) {
                         songArt = msgEmbed.thumbnail.url;
                     }
 
                     collab = artistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
-                    if (starred === true) {
+                    if (starred == true) {
                         field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
                     } else {
                         field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
@@ -222,7 +222,7 @@ module.exports = {
                     msg.edit({ embeds: [msgEmbed], components: [] });
 
                     // Star reaction stuff for hall of fame
-                    if (rating >= 8 && starred === true) {
+                    if (rating >= 8 && starred == true) {
                         for (let x = 0; x < artistArray.length; x++) {
                             db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
                         }

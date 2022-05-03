@@ -22,10 +22,8 @@ module.exports = {
     admin: true,
 	execute(interaction) {
 
-        let args = [];     
-        interaction.options._hoistedOptions.forEach((value) => {
-            args.push(value.value);
-        });
+        let config = interaction.options.getString('configuration');
+        let value = interaction.options.getString('value');
 
         if (!db.server_settings.has(interaction.guild.id)) {
             db.server_settings.set(interaction.guild.id, {
@@ -37,7 +35,7 @@ module.exports = {
             });
         }
 
-        if (!args.length) {
+        if (config == null && value == null) {
             const reviewChannel = db.server_settings.get(interaction.guild.id, 'review_channel');
             const hofChannel = db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel');
             const reviewFilter = db.server_settings.get(interaction.guild.id, 'review_filter');
@@ -54,29 +52,29 @@ module.exports = {
 
             interaction.editReply({ embeds: [configEmbed] });
         } else {
-            if (args[0] === 'RC') {
+            if (config == 'RC') {
 
-                if (!args[1].includes('#')) return interaction.editReply('This config must be a channel.');
-                db.server_settings.set(interaction.guild.id, args[1], 'review_channel');
-                return interaction.editReply(`Successfully changed the review channel to ${args[1]}.`);
+                if (!value.includes('#')) return interaction.editReply('This config must be a channel.');
+                db.server_settings.set(interaction.guild.id, value, 'review_channel');
+                return interaction.editReply(`Successfully changed the review channel to ${value}.`);
 
-            } else if (args[0] === 'HFC') {
+            } else if (config == 'HFC') {
 
-                if (!args[1].includes('#')) return interaction.editReply('This config must be a channel.');
-                db.server_settings.set(interaction.guild.id, args[1], 'hall_of_fame_channel');
-                return interaction.editReply(`Successfully changed the hall of fame channel to ${args[1]}.`);
+                if (!value.includes('#')) return interaction.editReply('This config must be a channel.');
+                db.server_settings.set(interaction.guild.id, value, 'hall_of_fame_channel');
+                return interaction.editReply(`Successfully changed the hall of fame channel to ${value}.`);
 
-            } else if (args[0] === 'RCF') {
+            } else if (config == 'RCF') {
 
-                if (!args[1].includes('true') && !args[1].includes('false')) return interaction.editReply('Parameter must be `true` or `false`.');
-                db.server_settings.set(interaction.guild.id, (args[1] === 'true'), 'review_filter');
-                return interaction.editReply(`Successfully set the review channel filter to \`${args[1]}\`.`);
+                if (!value.includes('true') && !value.includes('false')) return interaction.editReply('Parameter must be `true` or `false`.');
+                db.server_settings.set(interaction.guild.id, (value == 'true'), 'review_filter');
+                return interaction.editReply(`Successfully set the review channel filter to \`${value}\`.`);
 
-            } else if (args[0] === 'SC') {
+            } else if (config == 'SC') {
 
-                if (isNaN(parseInt(args[1]))) return interaction.editReply('Parameter must be a number.');
-                db.server_settings.set(interaction.guild.id, parseInt(args[1]), 'star_cutoff');
-                return interaction.editReply(`Successfully set the hall of fame star cutoff to \`${args[1]}\`.`);
+                if (isNaN(parseInt(value))) return interaction.editReply('Parameter must be a number.');
+                db.server_settings.set(interaction.guild.id, parseInt(value), 'star_cutoff');
+                return interaction.editReply(`Successfully set the hall of fame star cutoff to \`${value}\`.`);
 
             }
         }
