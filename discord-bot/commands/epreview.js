@@ -49,7 +49,9 @@ module.exports = {
             let ep_name = interaction.options.getString('ep_name');
             let art = interaction.options.getString('art');
             let overall_rating = interaction.options.getString('overall_rating');
-            if (overall_rating.includes('/10')) overall_rating = overall_rating.replace('/10', '');
+            if (overall_rating != null) {
+                if (overall_rating.includes('/10')) overall_rating = overall_rating.replace('/10', '');
+            }
             let overall_review = interaction.options.getString('overall_review');
             let user_sent_by = interaction.options.getUser('user_who_sent');
             let taggedMember = false;
