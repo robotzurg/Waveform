@@ -37,17 +37,17 @@ module.exports = {
         }
         
         // Spotify Check
-        if (artist.toLowerCase() === 's') {
+        if (artist.toLowerCase() == 's') {
             interaction.member.presence.activities.forEach((activity) => {
-                if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
                     let sp_data = parse_spotify(activity);
-                    if (artist.toLowerCase() === 's') artist = sp_data[0][0];
+                    if (artist.toLowerCase() == 's') artist = sp_data[0][0];
                     spotifyCheck = true;
                 }
             });
         }
 
-        if (spotifyCheck === false && (artist.toLowerCase() === 's')) {
+        if (spotifyCheck == false && (artist.toLowerCase() == 's')) {
             return interaction.editReply('Spotify status not detected, please type in the artist name manually or fix your status!');
         }
 

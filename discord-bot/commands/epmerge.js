@@ -35,9 +35,9 @@ module.exports = {
 
         // Spotify check (checks for both "spotify" and "s" as the image link)
         if (ep_art != false && ep_art != undefined) {
-            if (ep_art.toLowerCase().includes('spotify') || ep_art.toLowerCase() === 's') {
+            if (ep_art.toLowerCase().includes('spotify') || ep_art.toLowerCase() == 's') {
                 interaction.member.presence.activities.forEach((activity) => {
-                    if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                    if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
                         ep_art = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
                     }
                 });
@@ -127,7 +127,7 @@ module.exports = {
             }
         });
 
-        const filter = i => i.user.id === interaction.user.id;
+        const filter = i => i.user.id == interaction.user.id;
         const collector = interaction.channel.createMessageComponentCollector({ filter, max: 1, time: 10000000 });
 
         collector.on('collect', async int => {

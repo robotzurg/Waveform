@@ -60,7 +60,7 @@ module.exports = {
 				console.log(artists);
 				console.log(song);
 				await interaction.editReply({ content: `Type in your rating for **${artists} - ${song}** (DO NOT ADD /10!)`, components: [] });
-				const ra_filter = m => m.author.id === interaction.user.id;
+				const ra_filter = m => m.author.id == interaction.user.id;
 
 				let ra_collector = await interaction.channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
 				ra_collector.on('collect', async m => {
@@ -70,7 +70,7 @@ module.exports = {
 					m.delete();
 					await interaction.editReply({ content: `Type in your review for **${artists} - ${song}**`, components: [] });
 					// eslint-disable-next-line no-shadow
-					const re_filter = m => m.author.id === interaction.user.id;
+					const re_filter = m => m.author.id == interaction.user.id;
 
 					let re_collector = interaction.channel.createMessageCollector({ filter: re_filter, max: 1, time: 10000000 });
 					re_collector.on('collect', async m2 => {
@@ -81,7 +81,7 @@ module.exports = {
 
                         let star_collector = interaction.channel.createMessageComponentCollector({ max: 2, time: 120000 });
 						star_collector.on('collect', async i => {
-							if (i.user.id === interaction.user.id) {
+							if (i.user.id == interaction.user.id) {
 								switch (i.customId) {
 									case 'star': {
 										starred = true;

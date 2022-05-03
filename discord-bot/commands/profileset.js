@@ -24,7 +24,7 @@ module.exports = {
         let args = [];
         args = get_args(interaction, args);
 
-        if (args[0] === 'FS') {
+        if (args[0] == 'FS') {
             db.user_stats.set(interaction.user.id, args[1], 'fav_song');
             interaction.editReply(`Set favorite song to ${args[1]}!`);
         } else if (args[0] == 'LFS') {

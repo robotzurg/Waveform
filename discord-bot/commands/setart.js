@@ -48,9 +48,9 @@ module.exports = {
         let rmxArtistArray = parsed_args[4];
         let vocalistArray = parsed_args[5];
         let songArt = interaction.options.getString('art');
-        let newSong = (db.reviewDB.get(artistArray[0], `["${songName}"]`) != undefined);
 
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
+        let newSong = (db.reviewDB.get(artistArray[0], `["${songName}"]`) != undefined);
         
         if (songArt == null) {
             const client_id = process.env.SPOTIFY_API_ID; // Your client id
@@ -81,9 +81,9 @@ module.exports = {
                     songArt = songData.album.images[0].url;
                 }
             });
-        } else if (songArt.toLowerCase() === 's') {
+        } else if (songArt.toLowerCase() == 's') {
             await interaction.member.presence.activities.forEach(async (activity) => {
-                if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
                     songArt = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
                 } else {
                     if (songArt == 's') {

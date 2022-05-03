@@ -1,6 +1,5 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
-//const forAsync = require('for-async');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -19,7 +18,7 @@ module.exports = {
         const old_artist = interaction.options.getString('old_artist');
         const new_artist = interaction.options.getString('new_artist');
 
-        if (old_artist === new_artist) return interaction.editReply('Old and new artist names can\'t be the same thing!');
+        if (old_artist == new_artist) return interaction.editReply('Old and new artist names can\'t be the same thing!');
         if (!db.reviewDB.has(old_artist)) return interaction.editReply('This artist doesn\'t exist in the database.');
 
         const artistObj = db.reviewDB.get(old_artist);

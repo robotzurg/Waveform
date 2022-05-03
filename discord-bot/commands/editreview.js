@@ -54,6 +54,7 @@ module.exports = {
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
 
         let rating = interaction.options.getString('rating');
+        if (rating.includes('/10')) rating = rating.replace('/10', '');
         let review = interaction.options.getString('review');
         let user_who_sent = interaction.options.getUser('user_who_sent');
 
@@ -77,8 +78,8 @@ module.exports = {
 
         for (let i = 0; i < artistArray.length; i++) {
             if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`Artist ${artistArray[i]} not found!`);
-            if (!db.reviewDB.get(artistArray[i], songName) === undefined) return interaction.editReply(`Song ${songName} not found!`);
-            if (!db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) === undefined) return interaction.editReply(`Review not found!`);
+            if (!db.reviewDB.get(artistArray[i], songName) == undefined) return interaction.editReply(`Song ${songName} not found!`);
+            if (!db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) == undefined) return interaction.editReply(`Review not found!`);
 
             if (rating != null && rating != undefined) {
                 if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`) < 8 && db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) == true) {

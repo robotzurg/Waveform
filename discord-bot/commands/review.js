@@ -70,7 +70,7 @@ module.exports = {
 
         // Check if we are reviewing in the right chat, if not, boot out
         if (`<#${int_channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel') && !mailboxes.includes(int_channel.name)) {
-            if (sp_song === undefined || sp_song === null) {
+            if (sp_song == undefined || sp_song == null) {
                 return interaction.editReply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
             }
         }
@@ -79,7 +79,9 @@ module.exports = {
         let origArtistArray = interaction.options.getString('artist').split(' & ');
         let origSongName = interaction.options.getString('song'); // for remixes later on
         let songName = interaction.options.getString('song');
-        let rating = parseFloat(interaction.options.getString('rating'));
+        let rating = interaction.options.getString('rating');
+        if (rating.includes('/10')) rating = rating.replace('/10', '');
+        rating = parseFloat(rating);
         let review = interaction.options.getString('review');
         let songArt = interaction.options.getString('art');
         let vocalistArray = interaction.options.getString('vocalist');
@@ -287,13 +289,13 @@ module.exports = {
         
         // Discord Profile Spotify check (checks for both "spotify" and "s" as the image link)
         if (songArt != false && songArt != undefined) {
-            if (songArt.toLowerCase().includes('spotify') || songArt.toLowerCase() === 's') {
+            if (songArt.toLowerCase().includes('spotify') || songArt.toLowerCase() == 's') {
                 interaction.member.presence.activities.forEach((activity) => {
-                    if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                    if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
                         songArt = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
                     }
                 });
-                if (songArt.toLowerCase().includes('spotify') || songArt.toLowerCase() === 's') songArt = false; // final passthrough check
+                if (songArt.toLowerCase().includes('spotify') || songArt.toLowerCase() == 's') songArt = false; // final passthrough check
             }
         }
 
@@ -345,16 +347,16 @@ module.exports = {
 
         //Add review to database
         //Quick thumbnail image check to assure we aren't putting in an avatar, songArt should be set to what we put in the database.
-        if (songArt === undefined || songArt === false || songArt.includes('avatar') || songArt === 'spotify' || songArt === 's') { 
+        if (songArt == undefined || songArt == false || songArt.includes('avatar') || songArt == 'spotify' || songArt == 's') { 
             songArt = false;
         }
 
         // Send the embed rate message (normal command review)
-        if (sp_song === undefined || sp_song === null) {
+        if (sp_song == undefined || sp_song == null) {
             // Send the review embed
             interaction.editReply({ embeds: [reviewEmbed], components: [row, row2] });
 
-            const filter = i => i.user.id === interaction.user.id;
+            const filter = i => i.user.id == interaction.user.id;
             const collector = int_channel.createMessageComponentCollector({ filter, time: collector_time });
             let a_collector;
             let s_collector;
@@ -376,7 +378,7 @@ module.exports = {
                                 artistArray = artistArray.flat(1);
                             }
                             
-                            if (starred === false) {
+                            if (starred == false) {
                                 reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
                             } else {
                                 reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
@@ -444,7 +446,7 @@ module.exports = {
                         await i.deferUpdate();
                         await i.editReply({ content: 'Type in the rating (DO NOT ADD /10!)', components: [] });
 
-                        const ra_filter = m => m.author.id === interaction.user.id;
+                        const ra_filter = m => m.author.id == interaction.user.id;
                         ra_collector = int_channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                         ra_collector.on('collect', async m => {
                             rating = parseFloat(m.content);
@@ -462,7 +464,7 @@ module.exports = {
                         await i.deferUpdate();
                         await i.editReply({ content: 'Type in the new review.', components: [] });
 
-                        const re_filter = m => m.author.id === interaction.user.id;
+                        const re_filter = m => m.author.id == interaction.user.id;
                         re_collector = int_channel.createMessageCollector({ filter: re_filter, max: 1, time: 120000 });
                         re_collector.on('collect', async m => {
                             review = m.content;
@@ -487,7 +489,7 @@ module.exports = {
                         // If we don't have a 10 rating, the button does nothing.
                         if (rating < 8) return await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
 
-                        if (starred === false) {
+                        if (starred == false) {
                             reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
                             starred = true;
                         } else {
@@ -547,12 +549,12 @@ module.exports = {
                                 db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
                             }
 
-                            if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt === false) {
+                            if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt == false) {
                                 songArt = msgEmbed.thumbnail.url;
                             }
 
                             collab = origArtistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
-                            if (starred === true) {
+                            if (starred == true) {
                                 field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
                             } else {
                                 field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
@@ -588,7 +590,7 @@ module.exports = {
                             msg.edit({ embeds: [msgEmbed], components: [] });
 
                             // Star reaction stuff for hall of fame
-                            if (rating >= 8 && starred === true) {
+                            if (rating >= 8 && starred == true) {
                                 for (let x = 0; x < artistArray.length; x++) {
                                     db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
                                 }
@@ -609,12 +611,12 @@ module.exports = {
                                     db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
                                 }
 
-                                if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt === false) {
+                                if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt == false) {
                                     songArt = msgEmbed.thumbnail.url;
                                 }
 
                                 collab = artistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
-                                if (starred === true) {
+                                if (starred == true) {
                                     field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
                                 } else {
                                     field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
@@ -650,7 +652,7 @@ module.exports = {
                                 msg.edit({ embeds: [msgEmbed], components: [] });
 
                                 // Star reaction stuff for hall of fame
-                                if (rating >= 8 && starred === true) {
+                                if (rating >= 8 && starred == true) {
                                     for (let x = 0; x < artistArray.length; x++) {
                                         db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
                                     }
@@ -698,7 +700,7 @@ module.exports = {
                         }
 
                         // Star reaction stuff for hall of fame
-                        if (rating >= 8 && starred === true) {
+                        if (rating >= 8 && starred == true) {
                             for (let x = 0; x < artistArray.length; x++) {
                                 db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
                             }
@@ -741,7 +743,7 @@ module.exports = {
                 }
 
                 // Star reaction stuff for hall of fame
-                if (sp_star === true) {
+                if (sp_star == true) {
                     for (let x = 0; x < artistArray.length; x++) {
                         db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
                     }

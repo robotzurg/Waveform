@@ -68,7 +68,7 @@ module.exports = {
                     let otherArtists = [artistArray[i], db.reviewDB.get(artistArray[i], `["${songArray[j]}"].collab`), db.reviewDB.get(artistArray[i], `["${songArray[j]}"].vocals`)].flat(1);
 
                     let allArtists = otherArtists.map(v => {
-                        if (v === undefined) {
+                        if (v == undefined) {
                             return [];
                         }
                         return v;

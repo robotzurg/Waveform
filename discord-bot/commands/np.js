@@ -13,7 +13,7 @@ module.exports = {
             // Function to grab average of all ratings later
             let average = (array) => array.reduce((a, b) => a + b) / array.length;
             interaction.member.presence.activities.forEach((activity) => {
-                if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
                     let sp_data = parse_spotify(activity);
                     let url = `https://open.spotify.com/track/${activity.syncId}`;
                     let yourReview = false;
@@ -39,19 +39,18 @@ module.exports = {
                             let yourStar = '';
 
                             for (let i = 0; i < userArray.length; i++) {
-                                
-                                if (userArray[i] === `${interaction.user.id}`) {
+
+                                if (userArray[i] == `${interaction.user.id}`) {
                                     yourReview = db.reviewDB.get(artistArray[0], `["${title}"].["${userArray[i]}"].rating`);
-                                    console.log(yourReview);
                                 }
+
                                 if (userArray[i] != 'ep') {
                                     let rating;
                                     rating = db.reviewDB.get(artistArray[0], `["${title}"].["${userArray[i]}"].rating`);
 
-                                    if (db.reviewDB.get(artistArray[0], `["${title}"].["${userArray[i]}"].starred`) === true) {
+                                    if (db.reviewDB.get(artistArray[0], `["${title}"].["${userArray[i]}"].starred`) == true) {
                                         starNum++;
-                                        console.log(userArray[i]);
-                                        if (userArray[i] === `${interaction.user.id}`) {
+                                        if (userArray[i] == `${interaction.user.id}`) {
                                             yourStar = '⭐'; //Added to the end of your rating tab
                                         }
                                     }
@@ -87,7 +86,7 @@ module.exports = {
                 }
             });
             
-            if (sent === false) return interaction.editReply('You aren\'t playing a song on Spotify.');
+            if (sent == false) return interaction.editReply('You aren\'t playing a song on Spotify.');
         } catch (err) {
             let error = err;
             handle_error(interaction, error);

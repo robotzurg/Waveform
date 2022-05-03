@@ -24,7 +24,7 @@ module.exports = {
                 let member = await interaction.guild.members.fetch(memberIDList[i]);
                 if (member.presence == null) continue;
                 member.presence.activities.forEach((activity) => {
-                    if (activity.type === 'LISTENING' && activity.name === 'Spotify' && activity.assets !== null) {
+                    if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
                         avg = "N/A";
                         let sp_data = parse_spotify(activity);
                         let title = sp_data[1];

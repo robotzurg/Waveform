@@ -73,7 +73,7 @@ module.exports = {
             let songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
 
             rname = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].name`);
-            if (rname === undefined) return interaction.editReply(`No review found for \`${origArtistArray.join(' & ')} - ${songName}\`. *Note that for EP reviews, you need to use \`/getReviewEP\`.*`);
+            if (rname == undefined) return interaction.editReply(`No review found for \`${origArtistArray.join(' & ')} - ${songName}\`. *Note that for EP reviews, you need to use \`/getReviewEP\`.*`);
             rreview = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].review`);
             rscore = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].rating`);
             rsentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].sentby`);
@@ -94,7 +94,7 @@ module.exports = {
             const reviewEmbed = new Discord.MessageEmbed()
             .setColor(`${taggedMember.displayHexColor}`);
 
-            if (rstarred === false) {
+            if (rstarred == false) {
                 reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray})` : ``}`);
             } else {
                 reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray})` : ``} :star2:`);
@@ -134,7 +134,7 @@ module.exports = {
             
             console.log(rurl);
 
-            if ((rurl === undefined && rtimestamp === undefined) || rurl == false) {
+            if ((rurl == undefined && rtimestamp == undefined) || rurl == false) {
                 interaction.editReply({ embeds: [reviewEmbed] });
             } else {
                 interaction.editReply({ content: `[View Review Message](${rurl})`, embeds: [reviewEmbed] });

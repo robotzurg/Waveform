@@ -51,7 +51,7 @@ module.exports = {
         let starCount = 0;
 
         songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
-        if (songObj === undefined) { return interaction.editReply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
+        if (songObj == undefined) { return interaction.editReply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
         `\nUse \`/getArtist\` to get a full list of this artist's songs.`); }
         songEP = songObj.ep;
         remixArray = songObj.remixers;
@@ -63,7 +63,7 @@ module.exports = {
                 remixes.push(`\`${remixArray[i]} Remix\``);
             }
         }
-        if (songEP === undefined || songEP === false) songEP = false;
+        if (songEP == undefined || songEP == false) songEP = false;
         
         let userArray = get_user_reviews(songObj);
         let userIDList = userArray.slice(0); //.slice(0) is there to create a COPY, not a REFERENCE.
@@ -84,13 +84,13 @@ module.exports = {
                 let rating;
                 let starred = false;
                 rating = db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].rating`);
-                if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].starred`) === true) {
+                if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].starred`) == true) {
                     starCount++;
                     starred = true;
                 }
                 rankNumArray.push(parseFloat(rating));
 
-                if (starred === true) {
+                if (starred == true) {
                     userArray[i] = [parseFloat(rating) + 1, `:star2: <@${userArray[i]}> \`${rating}/10\``];
                     userIDList[i] = [parseFloat(rating) + 1, userIDList[i]];
                 } else {
@@ -102,7 +102,7 @@ module.exports = {
         
         if (rankNumArray.length != 0) {
             songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` + 
-            `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} star${starCount === 1 ? '' : 's'}!** :star2:`)}`);
+            `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} star${starCount == 1 ? '' : 's'}!** :star2:`)}`);
         } else {
             songEmbed.setDescription(`*The average rating of this song is N/A*`);
         }
@@ -179,9 +179,9 @@ module.exports = {
         const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 120000 });
 
         collector.on('collect', async i => {
-            if (i.customId === 'select') { // Select Menu
+            if (i.customId == 'select') { // Select Menu
 
-                if (i.values[0] === 'back') { // Back Selection
+                if (i.values[0] == 'back') { // Back Selection
                     return await i.update({ content: ` `, embeds: [songEmbed], components: [row] });
                 }
                 
@@ -199,7 +199,7 @@ module.exports = {
                 const reviewEmbed = new Discord.MessageEmbed()
                 .setColor(`${taggedMember.displayHexColor}`);
     
-                if (starred === false) {
+                if (starred == false) {
                     reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
                 } else {
                     reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``} :star2:`);
@@ -236,7 +236,7 @@ module.exports = {
                     });
                 }
                 
-                if (url === undefined) {
+                if (url == undefined) {
                     await i.update({ embeds: [reviewEmbed], components: [row] });
                 } else {
                     await i.update({ content: `[View Review Message](${url})`, embeds: [reviewEmbed], components: [row] });

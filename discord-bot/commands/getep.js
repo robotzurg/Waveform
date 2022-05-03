@@ -28,17 +28,17 @@ module.exports = {
             let artistArray = origArtistArray;
 
             const artistObj = db.reviewDB.get(artistArray[0]);
-            if (artistObj === undefined) {
+            if (artistObj == undefined) {
                 return interaction.editReply('No artist found.');
             }
 
             const songArray = db.reviewDB.get(artistArray[0], `["${ep_name}"].songs`);
-            if (songArray === undefined) {
+            if (songArray == undefined) {
                 return interaction.editReply('No EP/LP found.');
             }
 
             let ep_art = db.reviewDB.get(artistArray[0], `["${ep_name}"].art`);
-            if (ep_art === undefined || ep_art === false) {
+            if (ep_art == undefined || ep_art == false) {
                 ep_art = interaction.user.avatarURL({ format: "png", dynamic: false });
             }
 
@@ -90,7 +90,7 @@ module.exports = {
 
                     for (let ii = 0; ii < reviewNum.length; ii++) {
                         rating = db.reviewDB.get(songArtist, `["${songArray[i]}"].["${reviewNum[ii]}"].rating`);
-                        if (db.reviewDB.get(songArtist, `["${songArray[i]}"].["${reviewNum[ii]}"].starred`) === true) {
+                        if (db.reviewDB.get(songArtist, `["${songArray[i]}"].["${reviewNum[ii]}"].starred`) == true) {
                             star_num++;
                         }
                         rankNumArray.push(parseFloat(rating));
@@ -127,8 +127,7 @@ module.exports = {
 
             for (let i = 0; i < userIDList.length; i++) {
                 taggedMemberSel = await interaction.guild.members.fetch(userIDList[i])
-                // eslint-disable-next-line no-unused-vars
-                .catch(x => taggedMemberSel = 'Invalid Member (They have left the server)');
+                .catch(() => taggedMemberSel = 'Invalid Member (They have left the server)');
                 if (taggedMemberSel != 'Invalid Member (They have left the server)') {
                     taggedUserSel = taggedMemberSel.user;
                 }
@@ -163,7 +162,7 @@ module.exports = {
 
             collector.on('collect', async select => {
 
-                if (select.values[0] === 'back') { // Back Selection
+                if (select.values[0] == 'back') { // Back Selection
                     return await select.update({ content: ' ', embeds: [epEmbed], components: [row] });
                 }
 
@@ -218,7 +217,7 @@ module.exports = {
                             }
                         }
 
-                        if (no_songs_review == false) epReviewEmbed.addField(`${rstarred === true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `${rreview}`);
+                        if (no_songs_review == false) epReviewEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `${rreview}`);
                     }
                 }
                 
@@ -274,10 +273,10 @@ module.exports = {
                     }
                 }
 
-                if (ep_url === undefined) {
-                    select.update({ embeds: [epReviewEmbed], components: [row] });
+                if (ep_url) {
+                    interaction.editReply({ content: `[View EP/LP Review Message](${ep_url})`, embeds: [epEmbed] });
                 } else {
-                    select.update({ content: `[View EP/LP Review Message](${ep_url})`, embeds: [epReviewEmbed], components: [row] });
+                    interaction.editReply({ embeds: [epEmbed] });
                 }
 
             });
