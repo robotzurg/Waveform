@@ -17,7 +17,7 @@ module.exports = {
                 .setRequired(true))
 
         .addStringOption(option => 
-            option.setName('song')
+            option.setName('song_name')
                 .setDescription('The name of the song. (Do not include any features or remixers in here!)')
                 .setAutocomplete(true)
                 .setRequired(true))
@@ -77,8 +77,8 @@ module.exports = {
 
         // Init variables
         let origArtistArray = interaction.options.getString('artist').split(' & ');
-        let origSongName = interaction.options.getString('song'); // for remixes later on
-        let songName = interaction.options.getString('song');
+        let origSongName = interaction.options.getString('song_name'); // for remixes later on
+        let songName = interaction.options.getString('song_name');
         let rating = interaction.options.getString('rating');
         if (rating.includes('/10')) rating = rating.replace('/10', '');
         rating = parseFloat(rating);
