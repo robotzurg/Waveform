@@ -17,14 +17,14 @@ module.exports = {
                 .setRequired(true))
 
         .addStringOption(option => 
-            option.setName('song')
-                .setDescription('The name of the song/EP/LP.')
+            option.setName('name')
+                .setDescription('The name of the song or EP/LP.')
                 .setAutocomplete(true)
                 .setRequired(true))
 
         .addStringOption(option => 
             option.setName('art')
-                .setDescription('Art for the song/EP/LP. (leave blank for spotify searching)')
+                .setDescription('Override auto-art placement with your own image link.')
                 .setRequired(false))
 
         .addStringOption(option => 
@@ -36,7 +36,10 @@ module.exports = {
 	async execute(interaction) {
         try {
 
-        let parsed_args = parse_artist_song_data(interaction);
+        let artists = interaction.options.getString('artist');
+        let song = interaction.options.getString('name');
+        let remixers = interaction.options.getString('remixers');
+        let parsed_args = await parse_artist_song_data(interaction, artists, song, remixers);
 
         if (parsed_args == -1) {
             return;
@@ -55,14 +58,14 @@ module.exports = {
         if (songArt == null) {
             const client_id = process.env.SPOTIFY_API_ID; // Your client id
             const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
-            const song = `${origArtistArray[0]} ${songName}`;
+            const song_check = `${origArtistArray[0]} ${songName}`;
 
             const spotify = new Spotify({
                 id: client_id,
                 secret: client_secret,
             });
 
-            await spotify.search({ type: "track", query: song }).then(function(data) {  
+            await spotify.search({ type: "track", query: song_check }).then(function(data) {  
 
                 let results = data.tracks.items;
                 let songData = data.tracks.items[0];

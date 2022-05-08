@@ -5,7 +5,7 @@ const { handle_error } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('epedit')
+        .setName('epeditreview')
         .setDescription('Edit/add data to an EP/LP review')
         .addStringOption(option => 
             option.setName('artist')
@@ -49,7 +49,7 @@ module.exports = {
             let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
 
             if (ep_rating != null) {
-                old_ep_rating = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].rating`);
+                old_ep_rating = `${db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].rating`)}/10`;
                 if (old_ep_rating == 'false/10') old_ep_rating = "N/A";
                 for (let i = 0; i < artistArray.length; i++) {
                     db.reviewDB.set(artistArray[i], parseFloat(ep_rating), `["${ep_name}"].["${interaction.user.id}"].rating`);

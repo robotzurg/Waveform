@@ -71,15 +71,15 @@ module.exports = {
         return userArray;
     },
 
-    parse_artist_song_data: function(interaction) {
+    parse_artist_song_data: function(interaction, artists, song, remixers) {
         const { parse_spotify } = require('./func.js');
 
         let spotifyCheck = false;
-        let origArtistArray = interaction.options.getString('artist');
-        let songArg = interaction.options.getString('song');
+        let origArtistArray = artists;
+        let songArg = song;
         let rmxArtistArray = [];
-        if (interaction.options.getString('remixers') != null) {
-            rmxArtistArray = [interaction.options.getString('remixers').split(' & ')];
+        if (remixers != null) {
+            rmxArtistArray = [remixers.split(' & ')];
             rmxArtistArray = rmxArtistArray.flat(1);
         }
         let vocalistArray = [];
@@ -187,7 +187,11 @@ module.exports = {
 
         origArtistArray = origArtistArray.filter(v => !vocalistArray.includes(v));
 
-        return [origArtistArray, songArg, artistArray, songName, rmxArtistArray, vocalistArray];
+        let displaySongName = (`${songArg}` + 
+        `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
+        `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
+
+        return [origArtistArray, songArg, artistArray, songName, rmxArtistArray, vocalistArray, displaySongName];
     },
 
     // Updates the art for embed messages, NOT in the database. That's done in the !add review commands themselves.
@@ -396,6 +400,64 @@ module.exports = {
                     if (!db.reviewDB.get(vocalistArray[i], `["${origSongName}"].remixers`).includes(rmxArtistArray.join(' & '))) {
                         db.reviewDB.push(vocalistArray[i], rmxArtistArray.join(' & '), `["${origSongName}"].remixers`);
                     }
+                }
+            }
+        }
+    },
+
+    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art) {
+        // Add in the EP object/review
+        for (let i = 0; i < artistArray.length; i++) {
+
+            let epObject = {
+                [ep_name]: {
+                    [interaction.user.id]: {
+                        url: false,
+                        msg_id: false,
+                        starred: false,
+                        name: interaction.member.displayName,
+                        rating: overall_rating,
+                        review: overall_review,
+                        sentby: taggedUser.id,
+                        no_songs: false,
+                        ranking: [],
+                    },
+                    art: art,
+                    collab: artistArray.filter(word => artistArray[i] != word),
+                    songs: [],
+                    tags: [],
+                },
+            }; 
+
+            let reviewObject = {
+                url: false,
+                msg_id: false,
+                starred: false,
+                name: interaction.member.displayName,
+                rating: overall_rating,
+                review: overall_review,
+                sentby: taggedUser.id,
+                no_songs: false,
+                ranking: [],
+            };
+
+            if (!db.reviewDB.has(artistArray[i])) {
+                db.reviewDB.set(artistArray[i], epObject);
+            } else if (!db.reviewDB.get(artistArray[i], `["${ep_name}"]`)) {
+                let db_artist_obj = db.reviewDB.get(artistArray[i]);
+                Object.assign(db_artist_obj, epObject);
+                db.reviewDB.set(artistArray[i], db_artist_obj);
+            } else {
+                const db_song_obj = db.reviewDB.get(artistArray[i], `["${ep_name}"]`);
+
+                let new_user_obj = {
+                    [`${interaction.user.id}`]: reviewObject,
+                };
+
+                Object.assign(db_song_obj, new_user_obj);
+                db.reviewDB.set(artistArray[i], db_song_obj, `["${ep_name}"]`);
+                if (art != undefined && art != false && art != null && !art.includes('avatar')) {
+                    db.reviewDB.set(artistArray[i], art, `["${ep_name}"].art`);
                 }
             }
         }

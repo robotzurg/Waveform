@@ -14,7 +14,7 @@ module.exports = {
                 .setRequired(true))
 
         .addStringOption(option => 
-            option.setName('song')
+            option.setName('song_name')
                 .setDescription('The name of the song.')
                 .setAutocomplete(true)
                 .setRequired(true))
@@ -27,8 +27,11 @@ module.exports = {
 	admin: false,
 	async execute(interaction) {
         try {
-            let parsed_args = parse_artist_song_data(interaction);
-
+            let artists = interaction.options.getString('artist');
+            let song = interaction.options.getString('song_name');
+            let remixers = interaction.options.getString('remixers');
+            let parsed_args = await parse_artist_song_data(interaction, artists, song, remixers);
+            
             if (parsed_args == -1) {
                 await wait(30000);
                 try {
