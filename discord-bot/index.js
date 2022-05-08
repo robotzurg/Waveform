@@ -1,7 +1,7 @@
 // require the discord.js module
 const fs = require('fs');
 const Discord = require('discord.js');
-const { token } = require('./config.json');
+const { token_dev } = require('./config.json');
 const db = require('./db');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
@@ -40,14 +40,14 @@ for (const file of commandFiles) {
     }
 }
 
-const rest = new REST({ version: '9' }).setToken(token);
+const rest = new REST({ version: '9' }).setToken(token_dev);
 
 (async () => {
 	try {
 		console.log('Started refreshing application (/) commands.');
 
 		await rest.put(
-			Routes.applicationGuildCommands(mainClientId, mainGuildId),
+			Routes.applicationGuildCommands(devClientId, devGuildId),
 			{ body: registerCommands },
 		);
 
@@ -122,7 +122,7 @@ client.on('interactionCreate', async interaction => {
                 }
 
                 interaction.respond(artist_names);
-            } else if (focused[0].name == 'song' || focused[0].name == 'old_song' || focused[0].name == 'ep_name') {
+            } else if (focused[0].name == 'name' || focused[0].name == 'song_name' || focused[0].name == 'ep_name') {
                 let artist_songs = db.reviewDB.get(val_artist.split(' & ')[0]);
                 if (artist_songs == undefined) {
                     interaction.respond([]); 
@@ -133,11 +133,13 @@ client.on('interactionCreate', async interaction => {
                 let collab_artist_songs = [];
                 artist_songs = artist_songs.filter(v => v != 'Image');
                 artist_songs = artist_songs.reverse();
-                if (focused[0].name != 'ep_name') {
-                    artist_songs = artist_songs.filter(v => !v.includes(' EP'));
-                    artist_songs = artist_songs.filter(v => !v.includes(' LP'));
-                } else {
-                    artist_songs = artist_songs.filter(v => v.includes(' EP') || v.includes('LP'));
+                if (focused[0].name != 'old_name' && focused[0].name != 'name') {
+                    if (focused[0].name != 'ep_name') {
+                        artist_songs = artist_songs.filter(v => !v.includes(' EP'));
+                        artist_songs = artist_songs.filter(v => !v.includes(' LP'));
+                    } else {
+                        artist_songs = artist_songs.filter(v => v.includes(' EP') || v.includes('LP'));
+                    }
                 }
 
                 for (let i = 0; i < artist_songs.length; i++) {
@@ -230,4 +232,4 @@ client.on('guildMemberAdd', async (member) => {
 
 
 // login to Discord
-client.login(token);
+client.login(token_dev);

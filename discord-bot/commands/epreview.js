@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { handle_error } = require('../func.js');
+const { handle_error, review_ep } = require('../func.js');
 const Spotify = require('node-spotify-api');
 require('dotenv').config();
 
@@ -49,7 +49,9 @@ module.exports = {
             let ep_name = interaction.options.getString('ep_name');
             let art = interaction.options.getString('art');
             let overall_rating = interaction.options.getString('overall_rating');
-            if (overall_rating.includes('/10')) overall_rating = overall_rating.replace('/10', '');
+            if (overall_rating != null) {
+                if (overall_rating.includes('/10')) overall_rating = overall_rating.replace('/10', '');
+            }
             let overall_review = interaction.options.getString('overall_review');
             let user_sent_by = interaction.options.getUser('user_who_sent');
             let taggedMember = false;
@@ -104,6 +106,13 @@ module.exports = {
                 }
             }
 
+            // Checking if an image already exists
+            if (art == false || art == null || art == undefined) {
+                if (db.reviewDB.has(artistArray[0])) {
+                    art = db.reviewDB.get(artistArray[0], `["${ep_name}"].art`);
+                }
+            }
+
             // Grab art from server spotify
             if (art == false || art == undefined || art == null) {
                 const client_id = process.env.SPOTIFY_API_ID; // Your client id
@@ -140,6 +149,16 @@ module.exports = {
             // Setup buttons
             const row = new Discord.MessageActionRow()
             .addComponents(
+                new Discord.MessageButton()
+                    .setCustomId('artist')
+                    .setLabel('Artist')
+                    .setStyle('PRIMARY')
+                    .setEmoji('📝'),
+                new Discord.MessageButton()
+                    .setCustomId('ep')
+                    .setLabel('Name')
+                    .setStyle('PRIMARY')
+                    .setEmoji('📝'),
                 new Discord.MessageButton()
                     .setCustomId('rating')
                     .setLabel('Rating')
@@ -188,82 +207,9 @@ module.exports = {
                 );
             }
 
-            // Make sure we DON'T get any slip ups, where the bot lets spotify run through (if it can't find a status)
-            if (art != undefined && art != false) {
-                if (art.toLowerCase() == 's') art = false;
-            }
-
-            // Add in the EP object/review
-            for (let i = 0; i < artistArray.length; i++) {
-
-                let epObject = {
-                    [ep_name]: {
-                        [interaction.user.id]: {
-                            url: false,
-                            msg_id: false,
-                            starred: false,
-                            name: interaction.member.displayName,
-                            rating: overall_rating,
-                            review: overall_review,
-                            sentby: taggedUser.id,
-                            no_songs: false,
-                            ranking: [],
-                        },
-                        art: art,
-                        collab: artistArray.filter(word => artistArray[i] != word),
-                        songs: [],
-                        tags: [],
-                    },
-                }; 
-
-                let reviewObject = {
-                    url: false,
-                    msg_id: false,
-                    starred: false,
-                    name: interaction.member.displayName,
-                    rating: overall_rating,
-                    review: overall_review,
-                    sentby: taggedUser.id,
-                    no_songs: false,
-                    ranking: [],
-                };
-
-                if (!db.reviewDB.has(artistArray[i])) {
-
-                    db.reviewDB.set(artistArray[i], epObject);
-
-                } else if (db.reviewDB.get(artistArray[i], `["${ep_name}"]`) == undefined) {
-
-                    let db_artist_obj = db.reviewDB.get(artistArray[i]);
-                    Object.assign(db_artist_obj, epObject);
-                    db.reviewDB.set(artistArray[i], db_artist_obj);
-
-                } else {
-
-                    const db_song_obj = db.reviewDB.get(artistArray[i], `["${ep_name}"]`);
-
-                    let new_user_obj = {
-                        [`${interaction.user.id}`]: reviewObject,
-                    };
-
-                    Object.assign(db_song_obj, new_user_obj);
-                    db.reviewDB.set(artistArray[i], db_song_obj, `["${ep_name}"]`);
-                    if (art != undefined && art != false && art != null && !art.includes('avatar')) {
-                        db.reviewDB.set(artistArray[i], art, `["${ep_name}"].art`);
-                    }
-
-                }
-
-            }
-
-            if (db.reviewDB.has(artistArray[0]) && art == false) {
-                art = db.reviewDB.get(artistArray[0], `["${ep_name}"].art`);
-                if (art == undefined || art == false) {
-                    art = interaction.user.avatarURL({ format: "png", dynamic: false });
-                }
-            } else if (art == false || art == undefined) {
-                // Otherwise set our review art to the users avatar.
-                art = interaction.user.avatarURL({ format: "png", dynamic: false });
+            // Final passthrough check
+            if (art != false && art != undefined) {
+                if (art.toLowerCase() == 's') art = false; // final passthrough check
             }
 
             // Set up the embed
@@ -272,7 +218,11 @@ module.exports = {
             .setTitle(`${artistArray.join(' & ')} - ${ep_name}`)
             .setAuthor({ name: `${ep_name.includes('LP') ? `${interaction.member.displayName}'s LP review` : `${interaction.member.displayName}'s EP review`}`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` });
 
-            epEmbed.setThumbnail(art);
+            if (art == false) {
+                epEmbed.setThumbnail(interaction.user.avatarURL({ format: "png", dynamic: false }));
+            } else {
+                epEmbed.setThumbnail(art);
+            }
 
             if (overall_rating != false && overall_review != false) {
                 epEmbed.setDescription(`*${overall_review}*`);
@@ -294,20 +244,84 @@ module.exports = {
 
             db.user_stats.set(interaction.user.id, [msg.id, artistArray, ep_name, 'A'], 'current_ep_review');            
 
-            // Set message ids
-            for (let i = 0; i < artistArray.length; i++) {
-                db.reviewDB.set(artistArray[i], msg.id, `["${ep_name}"].["${interaction.user.id}"].msg_id`);
-                db.reviewDB.set(artistArray[i], msg.url, `["${ep_name}"].["${interaction.user.id}"].url`);
-            }
-
             const filter = i => i.user.id == interaction.user.id;
             const collector = interaction.channel.createMessageComponentCollector({ filter, time: 10000000 });
             let ra_collector;
             let re_collector;
+            let a_collector;
+            let name_collector;
 
             collector.on('collect', async i => {
 
                 switch (i.customId) {
+                    case 'artist': {
+                        await i.deferUpdate();
+                        await i.editReply({ content: 'Type in the artist name(s) (separated with &)', components: [] });
+                        const a_filter = m => m.author.id == interaction.user.id;
+                        a_collector = interaction.channel.createMessageCollector({ filter: a_filter, max: 1, time: 60000 });
+                        a_collector.on('collect', async m => {
+                            artistArray = m.content.split(' & ');
+                            
+                            if (starred == false) {
+                                epEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name}`);
+                            } else {
+                                epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${ep_name} 🌟`);
+                            }
+
+                            // Thumbnail image handling
+                            if (art == false || art == null) {
+                                if (db.reviewDB.has(m.content.split(' & ')[0])) {
+                                    art = db.reviewDB.get(m.content.split(' & ')[0], `["${ep_name}"].art`);
+                                    epEmbed.setThumbnail(art);
+                                }
+                                if (art == undefined) { // If the above line of code returns undefined, use continue with false
+                                    art = false;
+                                }
+                            }
+
+                            await i.editReply({ embeds: [epEmbed], components: [row, row2] });
+                            db.user_stats.set(interaction.user.id, [msg.id, artistArray, ep_name, 'A'], 'current_ep_review');      
+                            m.delete();
+                        });
+                        
+                        a_collector.on('end', async () => {
+                            await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
+                        });
+                    } break;
+                    case 'ep': {
+                        await i.deferUpdate();
+                        await i.editReply({ content: 'Type in the new EP/LP name!', components: [] });
+
+                        const name_filter = m => m.author.id == interaction.user.id && (m.content.includes(' EP') || m.content.includes(' LP'));
+                        name_collector = interaction.channel.createMessageCollector({ filter: name_filter, max: 1, time: 60000 });
+                        name_collector.on('collect', async m => {
+                            ep_name = m.content;
+                            if (starred == false) {
+                                epEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name}`);
+                            } else {
+                                epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${ep_name} 🌟`);
+                            }
+
+                            // Thumbnail image handling
+                            if (art == false || art == null) {
+                                if (db.reviewDB.has(artistArray[0])) {
+                                    art = db.reviewDB.get(artistArray[0], `["${ep_name}"].art`);
+                                    epEmbed.setThumbnail(ep_name);
+                                }
+                                if (art == undefined) { // If the above line of code returns undefined, use continue with false
+                                    art = false;
+                                }
+                            }
+
+                            await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
+                            db.user_stats.set(interaction.user.id, [msg.id, artistArray, ep_name, 'A'], 'current_ep_review');      
+                            m.delete();
+                        });
+                        
+                        name_collector.on('end', async () => {
+                            await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
+                        });
+                    } break;
                     case 'rating': {
                         await i.deferUpdate();
                         await i.editReply({ content: 'Type in the overall EP/LP rating (DO NOT ADD `/10`!)', components: [] });
@@ -320,13 +334,28 @@ module.exports = {
                             for (let j = 0; j < artistArray.length; j++) {
                                 db.reviewDB.set(artistArray[j], overall_rating, `["${ep_name}"].["${interaction.user.id}"].rating`);
                             }
+
+                            row2 = new Discord.MessageActionRow()
+                            .addComponents(
+                                new Discord.MessageButton()
+                                    .setCustomId('begin')
+                                    .setLabel('Begin EP/LP Review')
+                                    .setStyle('SUCCESS'),
+                                new Discord.MessageButton()
+                                    .setCustomId('done')
+                                    .setLabel('Send to Database')
+                                    .setStyle('SUCCESS'),
+                                new Discord.MessageButton()
+                                    .setCustomId('delete')
+                                    .setLabel('Delete')
+                                    .setStyle('DANGER'),
+                            );
                             
                             await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
                             m.delete();
                         });
                         
-                        ra_collector.on('end', async collected => {
-                            console.log(`Collected ${collected.size} items`);
+                        ra_collector.on('end', async () => {
                             await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
                         });
                     } break;
@@ -348,12 +377,27 @@ module.exports = {
                                 db.reviewDB.set(artistArray[j], overall_review, `["${ep_name}"].["${interaction.user.id}"].review`);
                             }
 
+                            row2 = new Discord.MessageActionRow()
+                            .addComponents(
+                                new Discord.MessageButton()
+                                    .setCustomId('begin')
+                                    .setLabel('Begin EP/LP Review')
+                                    .setStyle('SUCCESS'),
+                                new Discord.MessageButton()
+                                    .setCustomId('done')
+                                    .setLabel('Send to Database')
+                                    .setStyle('SUCCESS'),
+                                new Discord.MessageButton()
+                                    .setCustomId('delete')
+                                    .setLabel('Delete')
+                                    .setStyle('DANGER'),
+                            );
+
                             await i.editReply({ embeds: [epEmbed], components: [row, row2] });
                             m.delete();
                         });
                         
-                        re_collector.on('end', async collected => {
-                            console.log(`Collected ${collected.size} items`);
+                        re_collector.on('end', async () => {
                             await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
                         });
                     } break;
@@ -411,6 +455,8 @@ module.exports = {
 
                         if (ra_collector != undefined) ra_collector.stop();
                         if (re_collector != undefined) re_collector.stop();
+                        if (a_collector != undefined) a_collector.stop();
+                        if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
                         db.user_stats.set(interaction.user.id, false, 'current_ep_review');
                     } break;
@@ -419,11 +465,22 @@ module.exports = {
 
                         if (ra_collector != undefined) ra_collector.stop();
                         if (re_collector != undefined) re_collector.stop();
+                        if (a_collector != undefined) a_collector.stop();
+                        if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
+
+                        review_ep(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art);
+
+                        // Set message ids
+                        for (let j = 0; j < artistArray.length; j++) {
+                            db.reviewDB.set(artistArray[j], msg.id, `["${ep_name}"].["${interaction.user.id}"].msg_id`);
+                            db.reviewDB.set(artistArray[j], msg.url, `["${ep_name}"].["${interaction.user.id}"].url`);
+                        }
 
                         for (let j = 0; j < artistArray.length; j++) {
                             db.reviewDB.set(artistArray[j], true, `["${ep_name}"].["${interaction.user.id}"].no_songs`);
                         }
+                        
 
                         if (overall_review != false) epEmbed.setDescription(`${overall_review}`);
                         if (overall_rating != false) epEmbed.addField(`Rating`, `**${overall_rating}/10**`);
@@ -438,7 +495,17 @@ module.exports = {
                     case 'begin': {
                         if (ra_collector != undefined) ra_collector.stop();
                         if (re_collector != undefined) re_collector.stop();
+                        if (a_collector != undefined) a_collector.stop();
+                        if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
+
+                        review_ep(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art);
+
+                        // Set message ids
+                        for (let j = 0; j < artistArray.length; j++) {
+                            db.reviewDB.set(artistArray[j], msg.id, `["${ep_name}"].["${interaction.user.id}"].msg_id`);
+                            db.reviewDB.set(artistArray[j], msg.url, `["${ep_name}"].["${interaction.user.id}"].url`);
+                        }
 
                         i.update({ embeds: [epEmbed], components: [] });
                     } break;
@@ -446,6 +513,8 @@ module.exports = {
             });
 
             collector.on('end', async () => {
+                if (a_collector != undefined) a_collector.stop();
+                if (name_collector != undefined) name_collector.stop();
                 if (ra_collector != undefined) ra_collector.stop();
                 if (re_collector != undefined) re_collector.stop();
             });

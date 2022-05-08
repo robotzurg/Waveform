@@ -9,7 +9,7 @@ module.exports = {
         .setDescription('Get info from spotify about a song')
         .addStringOption(option => 
             option.setName('query')
-                .setDescription('Query to search on spotify')
+                .setDescription('Query to search on spotify.')
                 .setRequired(true)),
 	admin: true,
 	async execute(interaction) {
