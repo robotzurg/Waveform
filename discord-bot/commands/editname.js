@@ -114,9 +114,9 @@ module.exports = {
                     channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                         msgEmbed = msg.embeds[0];
                         if (msgEmbed.title.includes('🌟')) {
-                            msgEmbed.setTitle(`🌟 ${displaySongName} 🌟`);
+                            msgEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
                         } else {
-                            msgEmbed.setTitle(`${displaySongName}`);
+                            msgEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
                         }
                         msg.edit({ content: ' ', embeds: [msgEmbed] });
                         resolve();
@@ -126,9 +126,9 @@ module.exports = {
                             channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                                 msgEmbed = msg.embeds[0];
                                 if (msgEmbed.title.includes('🌟')) {
-                                    msgEmbed.setTitle(`🌟 ${displaySongName} 🌟`);
+                                    msgEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
                                 } else {
-                                    msgEmbed.setTitle(`${displaySongName}`);
+                                    msgEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
                                 }
                                 msg.edit({ content: ' ', embeds: [msgEmbed] });
                                 resolve();
