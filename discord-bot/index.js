@@ -17,6 +17,10 @@ client.commands = new Discord.Collection();
 const registerCommands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
+// Create enums for user_stats
+// eslint-disable-next-line no-unused-vars
+const UserEPEnum = { MESSAGE_ID: 0, ARTIST_ARRAY: 1, EP_NAME: 2, REVIEW_TYPE: 3 };
+
 // Place your client and guild ids here
 // eslint-disable-next-line no-unused-vars
 const mainClientId = '828651073136361472';
@@ -86,6 +90,9 @@ client.on('interactionCreate', async interaction => {
             
             if (focused[0].name == 'artist' || focused[0].name == 'vocalist') {
                 let artist_names = db.reviewDB.keyArray();
+
+                // TODO: Get "og" swapped to the artist names involved on the EP/LP review, for auto-complete to work better!
+                // if (focused[0].value.toLowerCase() == 'og') focused[0].value.replace('og', db.user_stats.get(`${interaction.user.id}.`)); 
 
                 // Search filters
                 artist_names = artist_names.filter(letter_filter);

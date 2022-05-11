@@ -2,6 +2,8 @@ const Discord = require('discord.js');
 const db = require("./db.js");
 const forAsync = require('for-async');
 
+// TODO: ADD FUNCTION HEADERS/DEFS FOR ALL OF THESE!!!
+
 module.exports = {
 
     arrayRemove: function(arr, value) { 

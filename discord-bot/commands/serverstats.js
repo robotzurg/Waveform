@@ -6,8 +6,8 @@ const _ = require('lodash');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('stats')
-        .setDescription('View general stats about the server!'),
+        .setName('serverstats')
+        .setDescription('View general stats about the server\'s bot usage!'),
 	async execute(interaction, client) {
         try {
 

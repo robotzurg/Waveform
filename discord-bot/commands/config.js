@@ -2,6 +2,8 @@ const Discord = require("discord.js");
 const db = require('../db.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
+// TODO: MAKE THIS A BUNCH OF SUBCOMMANDS!!
+
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('config')
