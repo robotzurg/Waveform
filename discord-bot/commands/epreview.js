@@ -71,6 +71,7 @@ module.exports = {
                 overall_rating = false;
             } else {
                 overall_rating = parseFloat(overall_rating);
+                if (isNaN(overall_rating)) return interaction.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating!');
             }
 
             if (overall_review == null) {
@@ -83,9 +84,10 @@ module.exports = {
                 }
             }
 
-            // Place EP by default if EP or LP is not included in the title.
+            // Check to make sure "EP" or "LP" is in the ep/lp name
             if (!ep_name.includes(' EP') && !ep_name.includes(' LP')) {
-                ep_name = `${ep_name} EP`;
+                return interaction.editReply(`You did not add EP or LP (aka album) to the name of the thing you are reviewing, make sure to do that!\n` + 
+                `For example: \`${ep_name} EP\` or \`${ep_name} LP\``);
             }
 
             if (user_sent_by.id != null && user_sent_by.id != undefined && user_sent_by.id != false) {
@@ -330,6 +332,8 @@ module.exports = {
                         ra_collector = interaction.channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                         ra_collector.on('collect', async m => {
                             overall_rating = parseFloat(m.content);
+                            if (overall_rating.includes('/10')) overall_rating = overall_rating.replace('/10', '');
+                            if (isNaN(overall_rating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
                             epEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${overall_rating}/10)`);
                             for (let j = 0; j < artistArray.length; j++) {
                                 db.reviewDB.set(artistArray[j], overall_rating, `["${ep_name}"].["${interaction.user.id}"].rating`);
@@ -432,22 +436,6 @@ module.exports = {
                         await i.deferUpdate();
 
                         try {
-                            for (let j = 0; j < artistArray.length; j++) {
-                                let songObj = db.reviewDB.get(artistArray[j], `["${ep_name}"]`);
-                                delete songObj[interaction.user.id];
-                                db.reviewDB.set(artistArray[j], songObj, `["${ep_name}"]`);
-
-                                if (Object.keys(db.reviewDB.get(artistArray[j], `["${ep_name}"]`)).length <= 3) {
-                                    let artistObj = db.reviewDB.get(artistArray[j]);
-                                    delete artistObj[ep_name];
-                                    db.reviewDB.set(artistArray[j], artistObj);
-                                }
-
-                                if (Object.keys(db.reviewDB.get(artistArray[j])).length == 0) {
-                                    db.reviewDB.delete(artistArray[j]);
-                                }
-                            }
-
                             await interaction.deleteReply();
                         } catch (err) {
                             console.log(err);

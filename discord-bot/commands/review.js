@@ -82,6 +82,7 @@ module.exports = {
         let rating = interaction.options.getString('rating');
         if (rating.includes('/10')) rating = rating.replace('/10', '');
         rating = parseFloat(rating);
+        if (isNaN(rating)) return interaction.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating!');
         let review = interaction.options.getString('review');
         let songArt = interaction.options.getString('art');
         let vocalistArray = interaction.options.getString('vocalist');
@@ -450,6 +451,8 @@ module.exports = {
                         ra_collector = int_channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                         ra_collector.on('collect', async m => {
                             rating = parseFloat(m.content);
+                            if (rating.includes('/10')) rating = rating.replace('/10', '');
+                            if (isNaN(rating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
                             reviewEmbed.fields[0] = { name : 'Rating', value : `**${rating}/10**` };
                             await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
                             m.delete();
