@@ -2,8 +2,6 @@ const db = require("../db.js");
 const { handle_error } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
-// TODO: MAKE THIS A BUNCH OF SUBCOMMANDS!!!
-
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('setprofile')

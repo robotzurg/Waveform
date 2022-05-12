@@ -10,11 +10,7 @@ module.exports = {
 	async execute(interaction) {
         try {
             db.user_stats.set(interaction.user.id, false, 'current_ep_review');
-            try {
-                await interaction.deleteReply();
-            } catch (err) {
-                console.log(err);
-            }
+            await interaction.deleteReply();
         } catch (err) {
             let error = err;
             handle_error(interaction, error);

@@ -190,7 +190,7 @@ client.on('interactionCreate', async interaction => {
                 }
             } else if (focused[0].name == 'tag') {
                 let tag_list = db.tags.keyArray();
-
+                tag_list = tag_list.reverse();
                 tag_list = tag_list.filter(letter_filter);
                 if (tag_list.length > 25) tag_list = tag_list.slice(tag_list.length - 25, tag_list.length);
                 tag_list = tag_list.map(v => v = { name: v, value: v });

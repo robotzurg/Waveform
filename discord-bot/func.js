@@ -249,7 +249,7 @@ module.exports = {
             }
     },
 
-    review_song: function(interaction, artistArray, origArtistArray, song, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt = false, user_who_sent, ep_name) {
+    review_song: function(interaction, artistArray, origArtistArray, song, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt = false, user_who_sent, ep_name, tag) {
 
         if (user_who_sent == undefined || user_who_sent == null) {
             user_who_sent = false;
@@ -258,6 +258,7 @@ module.exports = {
         for (let i = 0; i < artistArray.length; i++) {
 
             if (ep_name == undefined) ep_name = false;
+            if (tag == null) tag = [];
             let songName = song;
             
             // Used if both the artist and song object exist
@@ -283,6 +284,7 @@ module.exports = {
                     hof_id: false,
                     ep: ep_name,
                     review_num: 1,
+                    tags: [tag],
                 },
             };
 
@@ -314,6 +316,7 @@ module.exports = {
                 Object.assign(songObj, newuserObj);
                 db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
                 db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
+                db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
             } else if (review_object.name != undefined) { // Otherwise if you have no review but the song and artist objects exist
 
                 const songObj = db.reviewDB.get(artistArray[i], `["${songName}"]`);
@@ -328,7 +331,7 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
                 db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
                 db.reviewDB.math(artistArray[i], '+', 1, `["${songName}"].review_num`);
-
+                db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
             }
 
         }
@@ -346,6 +349,7 @@ module.exports = {
                         hof_id: false,
                         ep: ep_name,
                         review_num: 0,
+                        tags: [],
                     },
                 };
 
@@ -381,6 +385,7 @@ module.exports = {
                         hof_id: false,
                         ep: ep_name,
                         review_num: 0,
+                        tags: [],
                     },
                 };
 
@@ -407,7 +412,12 @@ module.exports = {
         }
     },
 
-    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art) {
+    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, tag) {
+
+        if (tag == null) {
+            tag = [];
+        }
+
         // Add in the EP object/review
         for (let i = 0; i < artistArray.length; i++) {
 
@@ -427,7 +437,7 @@ module.exports = {
                     art: art,
                     collab: artistArray.filter(word => artistArray[i] != word),
                     songs: [],
-                    tags: [],
+                    tags: [tag],
                 },
             }; 
 
@@ -461,6 +471,7 @@ module.exports = {
                 if (art != undefined && art != false && art != null && !art.includes('avatar')) {
                     db.reviewDB.set(artistArray[i], art, `["${ep_name}"].art`);
                 }
+                db.reviewDB.push(artistArray[i], tag, `["${ep_name}"].tags`);
             }
         }
     },
@@ -520,15 +531,6 @@ module.exports = {
                 db.hall_of_fame.delete(songName);
             }).catch(() => {});
         }
-    },
-
-    get_args: function(interaction, args) {
-        interaction.options._hoistedOptions.forEach((value) => {
-            args.push(value.value);
-            console.log(args);
-        });
-
-        return args;
     },
 
     average: function(array) {

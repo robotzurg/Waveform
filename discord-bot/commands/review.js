@@ -45,6 +45,12 @@ module.exports = {
                 .setRequired(false))
 
         .addStringOption(option => 
+            option.setName('tag')
+                .setDescription('Put a tag you want to set the song to here!')
+                .setAutocomplete(true)
+                .setRequired(false))
+
+        .addStringOption(option => 
             option.setName('art')
                 .setDescription('Art of the song (put spotify or s here if you want to use your spotify status.)')
                 .setRequired(false))
@@ -55,24 +61,17 @@ module.exports = {
                 .setRequired(false)),
         
 	admin: false,
-	async execute(interaction, sp_artist, sp_song, sp_rating, sp_review, sp_art, sp_vocalists, sp_remixers, sp_user_who_sent, sp_star) {
+	async execute(interaction) {
 
         try {
 
-        // This variable is here so that we can start a review from anywhere else (for Spotify Link Review)
+        // This variable is here so that we can start a review from anywhere else
         let int_channel = interaction.channel;
         let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
 
-        // If we do a Spotify Link Review, we have to change the channel focus to #reviews.
-        if (sp_song != undefined) {
-            int_channel = await interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
-        }
-
         // Check if we are reviewing in the right chat, if not, boot out
         if (`<#${int_channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel') && !mailboxes.includes(int_channel.name)) {
-            if (sp_song == undefined || sp_song == null) {
-                return interaction.editReply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
-            }
+            return interaction.editReply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
         }
 
         // Init variables
@@ -84,9 +83,10 @@ module.exports = {
         rating = parseFloat(rating);
         if (isNaN(rating)) return interaction.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating!');
         let review = interaction.options.getString('review');
-        let songArt = interaction.options.getString('art');
         let vocalistArray = interaction.options.getString('vocalist');
         let rmxArtistArray = interaction.options.getString('remixers');
+        let tag = interaction.options.getString('tag');
+        let songArt = interaction.options.getString('art');
         let user_who_sent = interaction.options.getUser('user_who_sent');
         let ranking_pos = null;
         let starred = false;
@@ -125,20 +125,6 @@ module.exports = {
                 songName = songName.replace('(VIP)', 'VIP');
                 origSongName = origSongName.replace('(VIP)', 'VIP');
             }
-        }
-
-        // Init variables for spotify link review
-        if (sp_song != undefined && sp_song != null) {
-            origArtistArray = sp_artist.split(' & ');
-            songName = sp_song;
-            rating = parseFloat(sp_rating);
-            review = sp_review;
-            songArt = sp_art;
-            vocalistArray = sp_vocalists.split(' & ');
-            rmxArtistArray = sp_remixers.split(' & ');
-            user_who_sent = sp_user_who_sent;
-            ranking_pos = false;
-            starred = sp_star;
         }
 
         let artistArray = [origArtistArray, vocalistArray];
@@ -352,222 +338,309 @@ module.exports = {
             songArt = false;
         }
 
-        // Send the embed rate message (normal command review)
-        if (sp_song == undefined || sp_song == null) {
-            // Send the review embed
-            interaction.editReply({ embeds: [reviewEmbed], components: [row, row2] });
+        // Send the review embed
+        interaction.editReply({ embeds: [reviewEmbed], components: [row, row2] });
 
-            const filter = i => i.user.id == interaction.user.id;
-            const collector = int_channel.createMessageComponentCollector({ filter, time: collector_time });
-            let a_collector;
-            let s_collector;
-            let ra_collector;
-            let re_collector;
+        const filter = i => i.user.id == interaction.user.id;
+        const collector = int_channel.createMessageComponentCollector({ filter, time: collector_time });
+        let a_collector;
+        let s_collector;
+        let ra_collector;
+        let re_collector;
 
-            collector.on('collect', async i => {
-                switch (i.customId) {
-                    // Artist edit button
-                    case 'artist': {
-                        await i.deferUpdate();
-                        await i.editReply({ content: 'Type in the Artist Name(s) (separated with &, DO NOT PUT REMIXERS OR FEATURE VOCALISTS HERE!)', components: [] });
-                        const a_filter = m => m.author.id == interaction.user.id;
-                        a_collector = int_channel.createMessageCollector({ filter: a_filter, max: 1, time: 60000 });
-                        a_collector.on('collect', async m => {
-                            origArtistArray = m.content.split(' & ');
-                            if (rmxArtistArray.length != 0) {
-                                artistArray = [origArtistArray, vocalistArray];
-                                artistArray = artistArray.flat(1);
-                            }
-                            
-                            if (starred == false) {
-                                reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
-                            } else {
-                                reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
-                            }
-
-                            // Thumbnail image handling
-                            if (songArt == false || songArt == null) {
-                                if (db.reviewDB.has(m.content.split(' & ')[0])) {
-                                    songArt = db.reviewDB.get(m.content.split(' & ')[0], `["${songName}"].art`);
-                                    reviewEmbed.setThumbnail(songArt);
-                                }
-                                if (songArt == undefined) { // If the above line of code returns undefined, use continue with false
-                                    songArt = false;
-                                }
-                            }
-
-                            await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
-                            m.delete();
-                        });
+        collector.on('collect', async i => {
+            switch (i.customId) {
+                // Artist edit button
+                case 'artist': {
+                    await i.deferUpdate();
+                    await i.editReply({ content: 'Type in the Artist Name(s) (separated with &, DO NOT PUT REMIXERS OR FEATURE VOCALISTS HERE!)', components: [] });
+                    const a_filter = m => m.author.id == interaction.user.id;
+                    a_collector = int_channel.createMessageCollector({ filter: a_filter, max: 1, time: 60000 });
+                    a_collector.on('collect', async m => {
+                        origArtistArray = m.content.split(' & ');
+                        if (rmxArtistArray.length != 0) {
+                            artistArray = [origArtistArray, vocalistArray];
+                            artistArray = artistArray.flat(1);
+                        }
                         
-                        a_collector.on('end', async collected => {
-                            console.log(`Collected ${collected.size} items`);
-                            await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
-                        });
-                    } break;
-                    case 'song': {
-                        await i.deferUpdate();
-                        await i.editReply({ content: 'Type in the Song Name (NO FT. OR REMIXERS SHOULD BE INCLUDED)', components: [] });
-
-                        const s_filter = m => m.author.id == interaction.user.id;
-                        s_collector = int_channel.createMessageCollector({ filter: s_filter, max: 1, time: 60000 });
-                        s_collector.on('collect', async m => {
-                            songName = m.content;
-                            displaySongName = (`${songName}` + 
-                            `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
-                            `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
-
-                            if (starred == false) {
-                                reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
-                            } else {
-                                reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
-                            }
-
-                            // Thumbnail image handling
-                            if (songArt == false || songArt == null) {
-                                if (db.reviewDB.has(artistArray[0])) {
-                                    songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
-                                    reviewEmbed.setThumbnail(songArt);
-                                }
-                                if (songArt == undefined) { // If the above line of code returns undefined, use continue with false
-                                    songArt = false;
-                                }
-                            }
-
-                            await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
-                            m.delete();
-                        });
-                        
-                        s_collector.on('end', async collected => {
-                            console.log(`Collected ${collected.size} items`);
-                            await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
-                        });
-                    } break;
-                    case 'rating': {
-                        await i.deferUpdate();
-                        await i.editReply({ content: 'Type in the rating (DO NOT ADD /10!)', components: [] });
-
-                        const ra_filter = m => m.author.id == interaction.user.id;
-                        ra_collector = int_channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
-                        ra_collector.on('collect', async m => {
-                            rating = parseFloat(m.content);
-                            if (rating.includes('/10')) rating = rating.replace('/10', '');
-                            if (isNaN(rating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
-                            reviewEmbed.fields[0] = { name : 'Rating', value : `**${rating}/10**` };
-                            await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
-                            m.delete();
-                        });
-                        
-                        ra_collector.on('end', async collected => {
-                            console.log(`Collected ${collected.size} items`);
-                            await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
-                        });
-                    } break;
-                    case 'review': {
-                        await i.deferUpdate();
-                        await i.editReply({ content: 'Type in the new review.', components: [] });
-
-                        const re_filter = m => m.author.id == interaction.user.id;
-                        re_collector = int_channel.createMessageCollector({ filter: re_filter, max: 1, time: 120000 });
-                        re_collector.on('collect', async m => {
-                            review = m.content;
-
-                            if (review.includes('\\n')) {
-                                review = review.split('\\n').join('\n');
-                            }
-
-                            reviewEmbed.setDescription(review);
-                            await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
-                            m.delete();
-                        });
-                        
-                        re_collector.on('end', async collected => {
-                            console.log(`Collected ${collected.size} items`);
-                            await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
-                        });
-                    } break;
-                    case 'star': {
-                        await i.deferUpdate();
-
-                        // If we don't have a 10 rating, the button does nothing.
-                        if (rating < 8) return await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
-
                         if (starred == false) {
-                            reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
-                            starred = true;
-                        } else {
                             reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
-                            starred = false;
+                        } else {
+                            reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
+                        }
+
+                        // Thumbnail image handling
+                        if (songArt == false || songArt == null) {
+                            if (db.reviewDB.has(m.content.split(' & ')[0])) {
+                                songArt = db.reviewDB.get(m.content.split(' & ')[0], `["${songName}"].art`);
+                                reviewEmbed.setThumbnail(songArt);
+                            }
+                            if (songArt == undefined) { // If the above line of code returns undefined, use continue with false
+                                songArt = false;
+                            }
                         }
 
                         await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
-                    } break;
-                    case 'delete': {
-                        await i.deferUpdate();
+                        m.delete();
+                    });
+                    
+                    a_collector.on('end', async () => {
+                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
+                    });
+                } break;
+                case 'song': {
+                    await i.deferUpdate();
+                    await i.editReply({ content: 'Type in the Song Name (NO FT. OR REMIXERS SHOULD BE INCLUDED)', components: [] });
 
-                        try {
-                            await interaction.deleteReply();
-                        } catch (err) {
-                            console.log(err);
+                    const s_filter = m => m.author.id == interaction.user.id;
+                    s_collector = int_channel.createMessageCollector({ filter: s_filter, max: 1, time: 60000 });
+                    s_collector.on('collect', async m => {
+                        songName = m.content;
+                        displaySongName = (`${songName}` + 
+                        `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
+                        `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
+
+                        if (starred == false) {
+                            reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+                        } else {
+                            reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
                         }
 
-                        if (a_collector != undefined) a_collector.stop();
-                        if (s_collector != undefined) s_collector.stop();
-                        if (ra_collector != undefined) ra_collector.stop();
-                        if (re_collector != undefined) re_collector.stop();
-                        if (collector != undefined) collector.stop(); // Collector for all buttons
-                    } break;
-                    case 'ep_done': { // EP review handling
-                        await i.deferUpdate();
+                        // Thumbnail image handling
+                        if (songArt == false || songArt == null) {
+                            if (db.reviewDB.has(artistArray[0])) {
+                                songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+                                reviewEmbed.setThumbnail(songArt);
+                            }
+                            if (songArt == undefined) { // If the above line of code returns undefined, use continue with false
+                                songArt = false;
+                            }
+                        }
 
-                        if (a_collector != undefined) a_collector.stop();
-                        if (s_collector != undefined) s_collector.stop();
-                        if (ra_collector != undefined) ra_collector.stop();
-                        if (re_collector != undefined) re_collector.stop();
-                        if (collector != undefined) collector.stop(); // Collector for all buttons
-                        interaction.deleteReply();
+                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
+                        m.delete();
+                    });
+                    
+                    s_collector.on('end', async () => {
+                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
+                    });
+                } break;
+                case 'rating': {
+                    await i.deferUpdate();
+                    await i.editReply({ content: 'Type in the rating (DO NOT ADD /10!)', components: [] });
 
-                        let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review')[0];
-                        let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+                    const ra_filter = m => m.author.id == interaction.user.id;
+                    ra_collector = int_channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
+                    ra_collector.on('collect', async m => {
+                        rating = parseFloat(m.content);
+                        if (rating.includes('/10')) rating = rating.replace('/10', '');
+                        if (isNaN(rating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
+                        reviewEmbed.fields[0] = { name : 'Rating', value : `**${rating}/10**` };
+                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
+                        m.delete();
+                    });
+                    
+                    ra_collector.on('end', async () => {
+                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
+                    });
+                } break;
+                case 'review': {
+                    await i.deferUpdate();
+                    await i.editReply({ content: 'Type in the new review.', components: [] });
 
-                        let msgEmbed;
-                        let mainArtists;
-                        let ep_name;
-                        let collab;
-                        let field_name;
-                        let type = db.user_stats.get(interaction.user.id, 'current_ep_review')[3]; // Type A is when embed length is under 2000 characters, type B is when its over 2000
+                    const re_filter = m => m.author.id == interaction.user.id;
+                    re_collector = int_channel.createMessageCollector({ filter: re_filter, max: 1, time: 120000 });
+                    re_collector.on('collect', async m => {
+                        review = m.content;
 
-                        // Review the song
-                        await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, ep_name);
+                        if (review.includes('\\n')) {
+                            review = review.split('\\n').join('\n');
+                        }
 
-                        // Edit the EP embed
-                        await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                        reviewEmbed.setDescription(review);
+                        await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
+                        m.delete();
+                    });
+                    
+                    re_collector.on('end', async () => {
+                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
+                    });
+                } break;
+                case 'star': {
+                    await i.deferUpdate();
+
+                    // If we don't have a 10 rating, the button does nothing.
+                    if (rating < 8) return await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
+
+                    if (starred == false) {
+                        reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
+                        starred = true;
+                    } else {
+                        reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+                        starred = false;
+                    }
+
+                    await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
+                } break;
+                case 'delete': {
+                    await i.deferUpdate();
+
+                    try {
+                        await interaction.deleteReply();
+                    } catch (err) {
+                        console.log(err);
+                    }
+
+                    if (a_collector != undefined) a_collector.stop();
+                    if (s_collector != undefined) s_collector.stop();
+                    if (ra_collector != undefined) ra_collector.stop();
+                    if (re_collector != undefined) re_collector.stop();
+                    if (collector != undefined) collector.stop(); // Collector for all buttons
+                } break;
+                case 'ep_done': { // EP review handling
+                    await i.deferUpdate();
+
+                    if (a_collector != undefined) a_collector.stop();
+                    if (s_collector != undefined) s_collector.stop();
+                    if (ra_collector != undefined) ra_collector.stop();
+                    if (re_collector != undefined) re_collector.stop();
+                    if (collector != undefined) collector.stop(); // Collector for all buttons
+                    interaction.deleteReply();
+
+                    let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review')[0];
+                    let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+
+                    let msgEmbed;
+                    let mainArtists;
+                    let ep_name;
+                    let collab;
+                    let field_name;
+                    let type = db.user_stats.get(interaction.user.id, 'current_ep_review')[3]; // Type A is when embed length is under 2000 characters, type B is when its over 2000
+                    let ep_songs;
+                    let ep_last_song_button = new Discord.MessageActionRow()
+                    .addComponents( 
+                        new Discord.MessageButton()
+                        .setCustomId('finish_ep_review')
+                        .setLabel('Finalize the EP/LP Review')
+                        .setStyle('SUCCESS'),
+                    );
+
+                    // Review the song
+                    await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, ep_name, tag);
+
+                    // Edit the EP embed
+                    await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+
+                        msgEmbed = msg.embeds[0];
+                        mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
+                        mainArtists = mainArtists.flat(1);
+                        ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review')[2];
+                        ep_songs = db.reviewDB.get(mainArtists[0], `["${ep_name}"].songs`);
+
+                        for (let j = 0; j < artistArray.length; j++) {
+                            db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
+                        }
+
+                        if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt == false) {
+                            songArt = msgEmbed.thumbnail.url;
+                        }
+
+                        collab = origArtistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
+                        if (starred == true) {
+                            field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
+                        } else {
+                            field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
+                        }
+
+                        // If the entire EP/LP review is over 3250 characters, set EP/LP review type to "B" (aka hide any more reviews from that point)
+                        if (msgEmbed.length > 3250 && type == 'A') {
+                            db.user_stats.set(interaction.user.id, 'B', 'current_ep_review[3]');
+                            type = 'B';
+                        }
+
+                        // Check what review type we are and add in reviews to the EP/LP review message accordingly
+                        if (type == 'A') {
+                            if (review.length <= 1000) {
+                                msgEmbed.fields.push({
+                                    name: field_name,
+                                    value: `${review}`,
+                                    inline: false,
+                                });
+                            } else {
+                                msgEmbed.fields.push({
+                                    name: field_name,
+                                    value: `*Review hidden to save space*`,
+                                    inline: false,
+                                });
+                            }
+                        } else {
+                            msgEmbed.fields.push({
+                                name: field_name,
+                                value: `*Review hidden to save space*`,
+                                inline: false,
+                            });
+                        }
+
+                        if (ep_songs[ep_songs.length - 1] == songName) {
+                            msg.edit({ embeds: [msgEmbed], components: [ep_last_song_button] });
+
+                            const ep_final_filter = int => int.user.id == interaction.user.id;
+                            let ep_final_collector = int_channel.createMessageComponentCollector({ filter: ep_final_filter, max: 1, time: 60000 });
+
+                            ep_final_collector.on('collect', async () => {
+                                db.user_stats.set(interaction.user.id, false, 'current_ep_review');
+                                msg.edit({ components: [] });
+                            });
+
+                            ep_final_collector.on('end', async () => {
+                                msg.edit({ components: [] });
+                            });
+
+                        } else {
+                            msg.edit({ embeds: [msgEmbed], components: [] });
+                        }
+
+                        // Star reaction stuff for hall of fame
+                        if (rating >= 8 && starred == true) {
+                            for (let x = 0; x < artistArray.length; x++) {
+                                db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
+                            }
+
+                            db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
+                            hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
+                        }
+                    }).catch(() => {
+                        channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
+                        channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
 
                             msgEmbed = msg.embeds[0];
                             mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
                             mainArtists = mainArtists.flat(1);
                             ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review')[2];
-
+                            ep_songs = db.reviewDB.get(mainArtists[0], `["${ep_name}"].songs`);
+    
                             for (let j = 0; j < artistArray.length; j++) {
                                 db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
                             }
-
+    
                             if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt == false) {
                                 songArt = msgEmbed.thumbnail.url;
                             }
-
+    
                             collab = origArtistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
                             if (starred == true) {
                                 field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
                             } else {
                                 field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
                             }
-
+    
+                            // If the entire EP/LP review is over 3250 characters, set EP/LP review type to "B" (aka hide any more reviews from that point)
                             if (msgEmbed.length > 3250 && type == 'A') {
                                 db.user_stats.set(interaction.user.id, 'B', 'current_ep_review[3]');
                                 type = 'B';
                             }
-
+    
+                            // Check what review type we are and add in reviews to the EP/LP review message accordingly
                             if (type == 'A') {
                                 if (review.length <= 1000) {
                                     msgEmbed.fields.push({
@@ -589,175 +662,111 @@ module.exports = {
                                     inline: false,
                                 });
                             }
-
-                            msg.edit({ embeds: [msgEmbed], components: [] });
-
+    
+                            if (ep_songs[ep_songs.length - 1] == songName) {
+                                msg.edit({ embeds: [msgEmbed], components: [ep_last_song_button] });
+    
+                                const ep_final_filter = int => int.user.id == interaction.user.id;
+                                let ep_final_collector = int_channel.createMessageComponentCollector({ filter: ep_final_filter, max: 1, time: 60000 });
+    
+                                ep_final_collector.on('collect', async () => {
+                                    db.user_stats.set(interaction.user.id, false, 'current_ep_review');
+                                    msg.edit({ components: [] });
+                                });
+    
+                                ep_final_collector.on('end', async () => {
+                                    msg.edit({ components: [] });
+                                });
+    
+                            } else {
+                                msg.edit({ embeds: [msgEmbed], components: [] });
+                            }
+    
                             // Star reaction stuff for hall of fame
                             if (rating >= 8 && starred == true) {
                                 for (let x = 0; x < artistArray.length; x++) {
                                     db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
                                 }
-
+    
                                 db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
                                 hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                             }
-                        }).catch(() => {
-                            channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                            channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-
-                                msgEmbed = msg.embeds[0];
-                                mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
-                                mainArtists = mainArtists.flat(1);
-                                ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review')[2];
-
-                                for (let j = 0; j < artistArray.length; j++) {
-                                    db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
-                                }
-
-                                if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt == false) {
-                                    songArt = msgEmbed.thumbnail.url;
-                                }
-
-                                collab = artistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
-                                if (starred == true) {
-                                    field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
-                                } else {
-                                    field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
-                                }
-                                
-                                if (msgEmbed.length > 3250 && type == 'A') {
-                                    db.user_stats.set(interaction.user.id, 'B', 'current_ep_review[3]');
-                                    type = 'B';
-                                }
-    
-                                if (type == 'A') {
-                                    if (review.length <= 1000) {
-                                        msgEmbed.fields.push({
-                                            name: field_name,
-                                            value: `${review}`,
-                                            inline: false,
-                                        });
-                                    } else {
-                                        msgEmbed.fields.push({
-                                            name: field_name,
-                                            value: `*Review hidden to save space*`,
-                                            inline: false,
-                                        });
-                                    }
-                                } else {
-                                    msgEmbed.fields.push({
-                                        name: field_name,
-                                        value: `*Review hidden to save space*`,
-                                        inline: false,
-                                    });
-                                }
-
-                                msg.edit({ embeds: [msgEmbed], components: [] });
-
-                                // Star reaction stuff for hall of fame
-                                if (rating >= 8 && starred == true) {
-                                    for (let x = 0; x < artistArray.length; x++) {
-                                        db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
-                                    }
-
-                                    db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
-                                    hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
-                                }
-                            });
-                        }).catch((err) => {
-                            handle_error(interaction, err);
                         });
+                    }).catch((err) => {
+                        handle_error(interaction, err);
+                    });
 
-                        // Update user stats
-                        db.user_stats.set(interaction.user.id, `${origArtistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
+                    // Update user stats
+                    db.user_stats.set(interaction.user.id, `${origArtistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
 
-                        for (let ii = 0; ii < mainArtists.length; ii++) {
-                            // Update EP details
+                    for (let ii = 0; ii < mainArtists.length; ii++) {
+                        // Update EP details
+                        if (!ep_songs.includes(ep_name)) {
                             db.reviewDB.push(mainArtists[ii], songName, `["${ep_name}"].songs`);
-                            if (ranking_pos != false) {
-                                db.reviewDB.push(mainArtists[ii], [ranking_pos, `${ranking_pos}. ${songName} (${rating}/10)`], `["${ep_name}"].["${interaction.user.id}"].ranking`);
-                            }
                         }
-
-                        // Set msg_id for this review to false, since its part of the EP review message
-                        for (let ii = 0; ii < artistArray.length; ii++) {
-                            db.reviewDB.set(artistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`);
-                        }
-
-                    } break;
-                    case 'done': { // Send the review to the database
-                        await i.update({ content: ' ', embeds: [reviewEmbed], components: [] });
-
-                        // Review the song
-                        review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, false);
-
-                        // Update user stats
-                        db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
-                        
-                        const msg = await interaction.fetchReply();
-
-                        // Setting the message id and url for the message we just sent
-                        for (let ii = 0; ii < artistArray.length; ii++) {
-                            db.reviewDB.set(artistArray[ii], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
-                            db.reviewDB.set(artistArray[ii], msg.url, `["${songName}"].["${interaction.user.id}"].url`); 
-                        }
-
-                        // Star reaction stuff for hall of fame
-                        if (rating >= 8 && starred == true) {
-                            for (let x = 0; x < artistArray.length; x++) {
-                                db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
-                            }
-
-                            db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
-                            hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
-                        }
-
-                        // Fix artwork on all reviews for this song
-                        if (songArt != false && db.reviewDB.has(artistArray[0])) {
-                            update_art(interaction, artistArray[0], songName, songArt);
-                        }
-                    
-                        // End the collector
-                        collector.stop();
-                    } break;
-                }
-            });
-
-            collector.on('end', async () => {
-                if (a_collector != undefined) a_collector.stop();
-                if (s_collector != undefined) s_collector.stop();
-                if (ra_collector != undefined) ra_collector.stop();
-                if (re_collector != undefined) re_collector.stop();
-            });
-
-        } else { // Reviewing with the Spotify Link Review Context Menu
-
-            // Review the song
-            await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, false);
-
-            // Update user stats
-            db.user_stats.set(interaction.user.id, `${origArtistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
-
-            await int_channel.send({ embeds: [reviewEmbed] }).then(msg => {
-                // Setting the message id and url for the message we just sent (and check for mailbox, if so put as FALSE so we don't have to look for a non-existant message)
-                for (let ii = 0; ii < artistArray.length; ii++) {
-                    db.reviewDB.set(artistArray[ii], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
-                    db.reviewDB.set(artistArray[ii], msg.url, `["${songName}"].["${interaction.user.id}"].url`); 
-                }
-
-                // Star reaction stuff for hall of fame
-                if (sp_star == true) {
-                    for (let x = 0; x < artistArray.length; x++) {
-                        db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
                     }
+
+                    // Set msg_id for this review to false, since its part of the EP review message
+                    for (let ii = 0; ii < artistArray.length; ii++) {
+                        db.reviewDB.set(artistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`);
+                    }
+
+                } break;
+                case 'done': { // Send the review to the database
+                    await i.update({ content: ' ', embeds: [reviewEmbed], components: [] });
+
+                    // Review the song
+                    review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, false, tag);
+
+                    // Update user stats
+                    db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
                     
-                    db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
-                    hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
-                }
-            }).catch((err) => {
-                handle_error(interaction, err);
-            });
-        }
+                    const msg = await interaction.fetchReply();
+
+                    // Setup tags if necessary
+                    if (tag != null) {
+                        if (db.tags.has(tag)) {
+                            console.log(db.tags.get(tag));
+                            db.tags.push(tag, displaySongName);
+                            console.log(db.tags.get(tag));
+                        } else {
+                            db.tags.set(tag, [displaySongName]);
+                        }
+                    }
+
+                    // Setting the message id and url for the message we just sent
+                    for (let ii = 0; ii < artistArray.length; ii++) {
+                        db.reviewDB.set(artistArray[ii], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
+                        db.reviewDB.set(artistArray[ii], msg.url, `["${songName}"].["${interaction.user.id}"].url`); 
+                    }
+
+                    // Star reaction stuff for hall of fame
+                    if (rating >= 8 && starred == true) {
+                        for (let x = 0; x < artistArray.length; x++) {
+                            db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
+                        }
+
+                        db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
+                        hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
+                    }
+
+                    // Fix artwork on all reviews for this song
+                    if (songArt != false && db.reviewDB.has(artistArray[0])) {
+                        update_art(interaction, artistArray[0], songName, songArt);
+                    }
+                
+                    // End the collector
+                    collector.stop();
+                } break;
+            }
+        });
+
+        collector.on('end', async () => {
+            if (a_collector != undefined) a_collector.stop();
+            if (s_collector != undefined) s_collector.stop();
+            if (ra_collector != undefined) ra_collector.stop();
+            if (re_collector != undefined) re_collector.stop();
+        });
 
         } catch (err) {
             let error = err;

@@ -32,6 +32,12 @@ module.exports = {
                 .setRequired(false))
 
         .addStringOption(option => 
+            option.setName('tag')
+                .setDescription('Put a tag you want to set the song to here!')
+                .setAutocomplete(true)
+                .setRequired(false))
+
+        .addStringOption(option => 
             option.setName('art')
                 .setDescription('Art for the EP/LP. (type "s" for status art, or leave blank for automatic spotify searching.)')
                 .setRequired(false))
@@ -54,6 +60,7 @@ module.exports = {
             }
             let overall_review = interaction.options.getString('overall_review');
             let user_sent_by = interaction.options.getUser('user_who_sent');
+            let tag = interaction.options.getString('tag');
             let taggedMember = false;
             let taggedUser = false;
             let starred = false;
@@ -488,6 +495,17 @@ module.exports = {
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
                         review_ep(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art);
+
+                        // Setup tags if necessary
+                        if (tag != null) {
+                            if (db.tags.has(tag)) {
+                                console.log(db.tags.get(tag));
+                                db.tags.push(tag, `${artistArray.join(' & ')} - ${ep_name}`);
+                                console.log(db.tags.get(tag));
+                            } else {
+                                db.tags.set(tag, [`${artistArray.join(' & ')} - ${ep_name}`]);
+                            }
+                        }
 
                         // Set message ids
                         for (let j = 0; j < artistArray.length; j++) {

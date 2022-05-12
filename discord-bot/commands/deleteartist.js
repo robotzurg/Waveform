@@ -14,14 +14,9 @@ module.exports = {
 	async execute(interaction) {
         try {
 
-		let args = [];
-
-        await interaction.options._hoistedOptions.forEach(async (value) => {
-            args.push(value.value);
-        });
-
-		db.reviewDB.delete(args[0]);
-		interaction.editReply(`${args[0]} deleted from the database.`);
+        let artist = interaction.options.getString('artist');
+		db.reviewDB.delete(artist);
+		interaction.editReply(`${artist} deleted from the database.`);
 
         } catch (err) {
             let error = err;

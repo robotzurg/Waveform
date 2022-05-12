@@ -2,7 +2,8 @@ const Discord = require("discord.js");
 const db = require('../db.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
-// TODO: MAKE THIS A BUNCH OF SUBCOMMANDS!!
+// TODO: - MAKE THIS A BUNCH OF SUBCOMMANDS!!
+//       - Make the Star Cutoff retroactively remove/add hall of fame entries
 
 module.exports = {
 	data: new SlashCommandBuilder()
