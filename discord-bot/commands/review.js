@@ -44,11 +44,11 @@ module.exports = {
                 .setAutocomplete(true)
                 .setRequired(false))
 
-        .addStringOption(option => 
-            option.setName('tag')
-                .setDescription('Put a tag you want to set the song to here!')
-                .setAutocomplete(true)
-                .setRequired(false))
+        // .addStringOption(option => 
+        //     option.setName('tag')
+        //         .setDescription('Put a tag you want to set the song to here!')
+        //         .setAutocomplete(true)
+        //         .setRequired(false))
 
         .addStringOption(option => 
             option.setName('art')
