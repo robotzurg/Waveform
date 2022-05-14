@@ -724,7 +724,7 @@ module.exports = {
                     const msg = await interaction.fetchReply();
 
                     // Setup tags if necessary
-                    if (tag != null) {
+                    /*if (tag != null) {
                         if (db.tags.has(tag)) {
                             console.log(db.tags.get(tag));
                             db.tags.push(tag, displaySongName);
@@ -732,7 +732,7 @@ module.exports = {
                         } else {
                             db.tags.set(tag, [displaySongName]);
                         }
-                    }
+                    }*/
 
                     // Setting the message id and url for the message we just sent
                     for (let ii = 0; ii < artistArray.length; ii++) {
