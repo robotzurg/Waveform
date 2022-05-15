@@ -473,8 +473,11 @@ module.exports = {
                 if (art != undefined && art != false && art != null && !art.includes('avatar')) {
                     db.reviewDB.set(artistArray[i], art, `["${ep_name}"].art`);
                 }
-                if (tag != []) {
+                
+                if (tag != [] && db.reviewDB.get(artistArray[i], `["${ep_name}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${ep_name}"].tags`);
+                } else {
+                    db.reviewDB.set(artistArray[i], [tag].flat(1), `["${ep_name}"].tags`);
                 }
             }
         }
