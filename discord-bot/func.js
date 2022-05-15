@@ -316,8 +316,11 @@ module.exports = {
                 Object.assign(songObj, newuserObj);
                 db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
                 db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
-                if (tag != []) {
+                
+                if (tag != [] && db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
+                } else {
+                    db.reviewDB.set(artistArray[i], tag, `["${songName}"].tags`);
                 }
             } else if (review_object.name != undefined) { // Otherwise if you have no review but the song and artist objects exist
 
@@ -333,8 +336,11 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
                 db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
                 db.reviewDB.math(artistArray[i], '+', 1, `["${songName}"].review_num`);
-                if (tag != []) {
+
+                if (tag != [] && db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
+                } else {
+                    db.reviewDB.set(artistArray[i], tag, `["${songName}"].tags`);
                 }
             }
 
