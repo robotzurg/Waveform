@@ -217,7 +217,14 @@ module.exports = {
                             }
                         }
 
-                        if (no_songs_review == false) epReviewEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `${rreview}`);
+                        if (no_songs_review == false) {
+                            if (epEmbed.length < 3250) {
+                                epReviewEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `${rreview}`);
+                            } else {
+                                epReviewEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `*Review hidden to save space*`);
+                            }
+                        }
+                         
                     }
                 }
                 

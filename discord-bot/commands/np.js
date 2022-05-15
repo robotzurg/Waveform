@@ -21,7 +21,7 @@ module.exports = {
                     let title = sp_data[1];
                     let displayArtists = sp_data[2];
 
-                    const exampleEmbed = new Discord.MessageEmbed()
+                    const npEmbed = new Discord.MessageEmbed()
                     .setColor(`${interaction.member.displayHexColor}`)
                     .setTitle(`${displayArtists.join(' & ')} - ${title}`)
                     .setAuthor({ name: `${interaction.member.displayName}'s current song`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` });
@@ -60,28 +60,32 @@ module.exports = {
                                 }
                             }
 
-                            exampleEmbed.setDescription(`Reviews: \`${userArray.length} reviews\`\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}${yourReview != false ? `\nYour Rating: \`${yourReview}/10${yourStar}\`` : ''}\n<:spotify:961509676053323806> [Spotify](${url})`);
+                            if (rankNumArray.length != 0) { 
+                                npEmbed.setDescription(`Reviews: \`${userArray.length} reviews\`\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}${yourReview != false ? `\nYour Rating: \`${yourReview}/10${yourStar}\`` : ''}\n<:spotify:961509676053323806> [Spotify](${url})`);
+                            } else {
+                                npEmbed.setDescription(`This song has not been reviewed in the database.\n<:spotify:961509676053323806> [Spotify](${url})`);
+                            }
 
                             if (songObj.ep != undefined && songObj.ep != false) {
                                 if (db.reviewDB.get(artistArray[0], `["${songObj.ep}"].art`) != false) {
-                                    exampleEmbed.setFooter(`from ${songObj.ep}`, db.reviewDB.get(artistArray[0], `["${db.reviewDB.get(artistArray[0], `["${title}"].ep`)}"].art`));
+                                    npEmbed.setFooter(`from ${songObj.ep}`, db.reviewDB.get(artistArray[0], `["${db.reviewDB.get(artistArray[0], `["${title}"].ep`)}"].art`));
                                 } else {
-                                    exampleEmbed.setFooter(`from ${songObj.ep}`);
+                                    npEmbed.setFooter(`from ${songObj.ep}`);
                                 }
                             }
                         } else {
-                            exampleEmbed.setDescription(`This song has not been reviewed in the database.\n<:spotify:961509676053323806> [Spotify](${url})`);
+                            npEmbed.setDescription(`This song has not been reviewed in the database.\n<:spotify:961509676053323806> [Spotify](${url})`);
                         }
 
                     } else {
-                        exampleEmbed.setDescription(`This song has not been reviewed in the database.\n<:spotify:961509676053323806> [Spotify](${url})`);
+                        npEmbed.setDescription(`This song has not been reviewed in the database.\n<:spotify:961509676053323806> [Spotify](${url})`);
                     }
 
                     if (activity.assets.largeImage != undefined && activity.assets.largeImage != null) {
-                        exampleEmbed.setThumbnail(`https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`);
+                        npEmbed.setThumbnail(`https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`);
                     }
                     
-                    interaction.editReply({ embeds: [exampleEmbed] });
+                    interaction.editReply({ embeds: [npEmbed] });
                     sent = true;
                 }
             });

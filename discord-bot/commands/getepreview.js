@@ -55,13 +55,12 @@ module.exports = {
             let rscore;
             let rsentby = false;
             let rstarred;
-            let ratingArray = [];
 
             const ep_object = db.reviewDB.get(artistArray[0], `${epName}`);
             if (ep_object == undefined) return interaction.editReply('EP/LP not found.');
 
-            let ep_name = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].name`);
-            if (ep_name == undefined) return interaction.editReply(`This EP/LP has not been reviewed by the user ${taggedMember.displayName}.`);
+            let user_name = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].name`);
+            if (user_name == undefined) return interaction.editReply(`This EP/LP has not been reviewed by the user ${taggedMember.displayName}.`);
 
             let ep_overall_rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].rating`);
             let ep_overall_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].review`);
@@ -86,41 +85,6 @@ module.exports = {
             }
 
             const epEmbed = new Discord.MessageEmbed();
-            if (ep_songs.length != 0) {
-                for (let i = 0; i < ep_songs.length; i++) {
-                    let songName = ep_songs[i];
-                    artistsEmbed = [];
-                    vocalistsEmbed = [];
-
-                    rreview = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].review`);
-                    if (rreview.length > 1000) rreview = '*Review hidden to save space*';
-                    rscore = `${db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].rating`)}/10`;
-                    rsentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].sentby`);
-                    rstarred = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].starred`);
-
-                    // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
-                    if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
-                        if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
-                            artistsEmbed = [];
-                            artistsEmbed.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
-                            artistsEmbed = artistsEmbed.flat(1);
-                            artistsEmbed = artistsEmbed.join(' & ');
-                        }
-                    }
-            
-                    if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`) != undefined) {
-                        if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`).length != 0) {
-                            vocalistsEmbed = [];
-                            vocalistsEmbed.push(db.reviewDB.get(artistArray[0], `["${songName}"].vocals`));
-                            vocalistsEmbed = vocalistsEmbed.flat(1);
-                            vocalistsEmbed = vocalistsEmbed.join(' & ');
-                        }
-                    }
-
-                    ratingArray.push(rscore);
-                    epEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `${rreview}`);
-                }
-            }
             
             epEmbed.setColor(`${taggedMember.displayHexColor}`);
             epEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName}` : `🌟 ${origArtistArray.join(' & ')} - ${epName} 🌟`);
@@ -166,10 +130,43 @@ module.exports = {
                     }
                 });
             }
+
+            if (ep_songs.length != 0) {
+                for (let i = 0; i < ep_songs.length; i++) {
+                    let songName = ep_songs[i];
+                    artistsEmbed = [];
+                    vocalistsEmbed = [];
+
+                    rreview = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].review`);
+                    if (rreview.length > 1000) rreview = '*Review hidden to save space*';
+                    rscore = `${db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].rating`)}/10`;
+                    rsentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].sentby`);
+                    rstarred = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].starred`);
+
+                    // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
+                    if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
+                        if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
+                            artistsEmbed = [];
+                            artistsEmbed.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
+                            artistsEmbed = artistsEmbed.flat(1);
+                            artistsEmbed = artistsEmbed.join(' & ');
+                        }
+                    }
             
-            if (epEmbed.length > 3250) {
-                for (let i = 0; i < epEmbed.fields.length; i++) {
-                    epEmbed.fields[i].value = `*Review hidden to save space*`;
+                    if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`) != undefined) {
+                        if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`).length != 0) {
+                            vocalistsEmbed = [];
+                            vocalistsEmbed.push(db.reviewDB.get(artistArray[0], `["${songName}"].vocals`));
+                            vocalistsEmbed = vocalistsEmbed.flat(1);
+                            vocalistsEmbed = vocalistsEmbed.join(' & ');
+                        }
+                    }
+
+                    if (epEmbed.length < 3250) {
+                        epEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `${rreview}`);
+                    } else {
+                        epEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `*Review hidden to save space*`);
+                    }
                 }
             }
 

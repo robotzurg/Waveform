@@ -44,11 +44,11 @@ module.exports = {
                 .setAutocomplete(true)
                 .setRequired(false))
 
-        // .addStringOption(option => 
-        //     option.setName('tag')
-        //         .setDescription('Put a tag you want to set the song to here!')
-        //         .setAutocomplete(true)
-        //         .setRequired(false))
+        .addStringOption(option => 
+            option.setName('tag')
+                .setDescription('Put a tag you want to set the song to here!')
+                .setAutocomplete(true)
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('art')
@@ -171,7 +171,6 @@ module.exports = {
             songName = `${songName} (${rmxArtistArray.join(' & ')} Remix)`;
         }
 
-        // Auto merge EP review related variables (see automerge.js for more info)
         let collector_time = 100000000;
 
         // Setup buttons
@@ -724,7 +723,7 @@ module.exports = {
                     const msg = await interaction.fetchReply();
 
                     // Setup tags if necessary
-                    /*if (tag != null) {
+                    if (tag != null) {
                         if (db.tags.has(tag)) {
                             console.log(db.tags.get(tag));
                             db.tags.push(tag, displaySongName);
@@ -732,7 +731,7 @@ module.exports = {
                         } else {
                             db.tags.set(tag, [displaySongName]);
                         }
-                    }*/
+                    }
 
                     // Setting the message id and url for the message we just sent
                     for (let ii = 0; ii < artistArray.length; ii++) {

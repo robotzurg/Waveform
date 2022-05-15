@@ -284,7 +284,7 @@ module.exports = {
                     hof_id: false,
                     ep: ep_name,
                     review_num: 1,
-                    tags: [tag],
+                    tags: [tag].flat(1),
                 },
             };
 
@@ -316,7 +316,9 @@ module.exports = {
                 Object.assign(songObj, newuserObj);
                 db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
                 db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
-                db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
+                if (tag != []) {
+                    db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
+                }
             } else if (review_object.name != undefined) { // Otherwise if you have no review but the song and artist objects exist
 
                 const songObj = db.reviewDB.get(artistArray[i], `["${songName}"]`);
@@ -331,7 +333,9 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
                 db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
                 db.reviewDB.math(artistArray[i], '+', 1, `["${songName}"].review_num`);
-                db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
+                if (tag != []) {
+                    db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
+                }
             }
 
         }
@@ -414,9 +418,7 @@ module.exports = {
 
     review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, tag) {
 
-        if (tag == null) {
-            tag = [];
-        }
+        if (tag == null) tag = [];
 
         // Add in the EP object/review
         for (let i = 0; i < artistArray.length; i++) {
@@ -437,7 +439,7 @@ module.exports = {
                     art: art,
                     collab: artistArray.filter(word => artistArray[i] != word),
                     songs: [],
-                    tags: [tag],
+                    tags: [tag].flat(1),
                 },
             }; 
 
@@ -471,7 +473,9 @@ module.exports = {
                 if (art != undefined && art != false && art != null && !art.includes('avatar')) {
                     db.reviewDB.set(artistArray[i], art, `["${ep_name}"].art`);
                 }
-                db.reviewDB.push(artistArray[i], tag, `["${ep_name}"].tags`);
+                if (tag != []) {
+                    db.reviewDB.push(artistArray[i], tag, `["${ep_name}"].tags`);
+                }
             }
         }
     },
@@ -547,11 +551,10 @@ module.exports = {
         let title = activity.details;
         let displayArtists = artistArray;
 
+        console.log(activity.state, activity.details);
+
         if (artists.includes(';')) {
             artists = artists.split('; ');
-            if (activity.details.includes('feat.') || activity.details.includes('ft.') || activity.details.toLowerCase().includes('remix')) {
-                artists.pop();
-            }
             artistArray = artists;
             displayArtists = artists;
             artists = artists.join(' & ');
@@ -559,9 +562,6 @@ module.exports = {
 
         if (artists.includes(',')) {
             artists = artists.split(', ');
-            if (activity.details.includes('feat.') || activity.details.includes('ft.') || activity.details.toLowerCase().includes('remix')) {
-                artists.pop();
-            }
             artistArray = artists;
             displayArtists = artists;
             artists = artists.join(' & ');

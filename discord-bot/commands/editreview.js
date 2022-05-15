@@ -59,6 +59,10 @@ module.exports = {
         let rating = interaction.options.getString('rating');
         if (rating.includes('/10')) rating = rating.replace('/10', '');
         let review = interaction.options.getString('review');
+        // Handle new lines
+        if (review.includes('\\n')) {
+            review = review.split('\\n').join('\n');
+        } 
         let user_who_sent = interaction.options.getUser('user_who_sent');
 
         let taggedMember;
