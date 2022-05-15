@@ -258,8 +258,9 @@ module.exports = {
         for (let i = 0; i < artistArray.length; i++) {
 
             if (ep_name == undefined) ep_name = false;
-            if (tag == null) tag = [];
             let songName = song;
+
+            console.log(ep_name);
             
             // Used if both the artist and song object exist
             let review_object = {
@@ -284,7 +285,7 @@ module.exports = {
                     hof_id: false,
                     ep: ep_name,
                     review_num: 1,
-                    tags: [tag].flat(1),
+                    tags: (tag == null ? [] : [tag]),
                 },
             };
 
@@ -317,7 +318,7 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
                 db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
                 
-                if (tag != [] && db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
+                if (tag != null && db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
                 } else {
                     db.reviewDB.set(artistArray[i], tag, `["${songName}"].tags`);
@@ -337,7 +338,7 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
                 db.reviewDB.math(artistArray[i], '+', 1, `["${songName}"].review_num`);
 
-                if (tag != [] && db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
+                if (tag != null && db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
                 } else {
                     db.reviewDB.set(artistArray[i], tag, `["${songName}"].tags`);
@@ -422,9 +423,7 @@ module.exports = {
         }
     },
 
-    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art) {
-
-        // if (tag == null) tag = [];
+    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred, tag) {
 
         // Add in the EP object/review
         for (let i = 0; i < artistArray.length; i++) {
@@ -434,31 +433,29 @@ module.exports = {
                     [interaction.user.id]: {
                         url: false,
                         msg_id: false,
-                        starred: false,
+                        starred: starred,
                         name: interaction.member.displayName,
                         rating: overall_rating,
                         review: overall_review,
                         sentby: taggedUser.id,
                         no_songs: false,
-                        ranking: [],
                     },
                     art: art,
                     collab: artistArray.filter(word => artistArray[i] != word),
                     songs: [],
-                    tags: [], //[tag].flat(1),
+                    tags: (tag == null ? [] : [tag]),
                 },
             }; 
 
             let reviewObject = {
                 url: false,
                 msg_id: false,
-                starred: false,
+                starred: starred,
                 name: interaction.member.displayName,
                 rating: overall_rating,
                 review: overall_review,
                 sentby: taggedUser.id,
                 no_songs: false,
-                ranking: [],
             };
 
             if (!db.reviewDB.has(artistArray[i])) {
@@ -479,11 +476,11 @@ module.exports = {
                     db.reviewDB.set(artistArray[i], art, `["${ep_name}"].art`);
                 }
                 
-                /*if (tag != [] && db.reviewDB.get(artistArray[i], `["${ep_name}"].tags`) != undefined) {
+                if (tag != null && db.reviewDB.get(artistArray[i], `["${ep_name}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${ep_name}"].tags`);
                 } else {
                     db.reviewDB.set(artistArray[i], tag, `["${ep_name}"].tags`);
-                }*/
+                }
             }
         }
     },

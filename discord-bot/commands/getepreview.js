@@ -67,9 +67,7 @@ module.exports = {
             let no_songs_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].no_songs`);
             let ep_sent_by = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].sentby`);
             if (no_songs_review == undefined) no_songs_review = false; // Undefined handling for EP/LP reviews without this
-            let ep_ranking = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].ranking`);
             let ep_url = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].url`);
-            if (ep_ranking == undefined) ep_ranking = []; // This is handling for any odd scenarios where this never gets set
             let ep_starred = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].starred`);
 
             let ep_art = db.reviewDB.get(artistArray[0], `${epName}.art`);

@@ -31,11 +31,11 @@ module.exports = {
                 .setDescription('Overall Review of the EP/LP. Can be added later.')
                 .setRequired(false))
 
-        // .addStringOption(option => 
-        //     option.setName('tag')
-        //         .setDescription('Put a tag you want to set the song to here!')
-        //         .setAutocomplete(true)
-        //         .setRequired(false))
+        .addStringOption(option => 
+            option.setName('tag')
+                .setDescription('Put a tag you want to set the song to here!')
+                .setAutocomplete(true)
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('art')
@@ -50,8 +50,6 @@ module.exports = {
 	async execute(interaction) {
         try {
 
-            return interaction.editReply('This command is temporarily disabled.');
-
             let origArtistArray = interaction.options.getString('artist').split(' & ');
             let artistArray = origArtistArray.slice(0);
             let ep_name = interaction.options.getString('ep_name');
@@ -62,7 +60,7 @@ module.exports = {
             }
             let overall_review = interaction.options.getString('overall_review');
             let user_sent_by = interaction.options.getUser('user_who_sent');
-            //let tag = null; //interaction.options.getString('tag');
+            let tag = interaction.options.getString('tag');
             let taggedMember = false;
             let taggedUser = false;
             let starred = false;
@@ -463,7 +461,7 @@ module.exports = {
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
-                        review_ep(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred);
+                        review_ep(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred, tag);
 
                         // Set message ids
                         for (let j = 0; j < artistArray.length; j++) {
@@ -493,16 +491,16 @@ module.exports = {
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
-                        review_ep(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred);
+                        review_ep(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred, tag);
 
-                        // // Setup tags if necessary
-                        // if (tag != null) {
-                        //     if (db.tags.has(tag)) {
-                        //         db.tags.push(tag, `${artistArray.join(' & ')} - ${ep_name}`);
-                        //     } else {
-                        //         db.tags.set(tag, [`${artistArray.join(' & ')} - ${ep_name}`]);
-                        //     }
-                        // }
+                        // Setup tags if necessary
+                        if (tag != null) {
+                            if (db.tags.has(tag)) {
+                                db.tags.push(tag, `${artistArray.join(' & ')} - ${ep_name}`);
+                            } else {
+                                db.tags.set(tag, [`${artistArray.join(' & ')} - ${ep_name}`]);
+                            }
+                        }
 
                         // Set message ids
                         for (let j = 0; j < artistArray.length; j++) {

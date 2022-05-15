@@ -88,7 +88,6 @@ module.exports = {
         let tag = interaction.options.getString('tag');
         let songArt = interaction.options.getString('art');
         let user_who_sent = interaction.options.getUser('user_who_sent');
-        let ranking_pos = null;
         let starred = false;
         let taggedUser = false;
         let taggedMember = false;
@@ -137,12 +136,6 @@ module.exports = {
         if (user_who_sent != null) {
             taggedUser = user_who_sent;
             taggedMember = await interaction.guild.members.fetch(taggedUser.id);
-        }
-
-        if (ranking_pos == null) {
-            ranking_pos = false;
-        } else {
-            ranking_pos = parseInt(ranking_pos);
         }
 
         // [] check, as the system requires [] to grab the remix artist with string slicing.
@@ -531,7 +524,7 @@ module.exports = {
                     await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
 
                         msgEmbed = msg.embeds[0];
-                        mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
+                        mainArtists = [msgEmbed.title.replace('🌟 ', '').trim().split(' - ')[0].split(' & ')];
                         mainArtists = mainArtists.flat(1);
                         ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review')[2];
                         ep_songs = db.reviewDB.get(mainArtists[0], `["${ep_name}"].songs`);
@@ -701,7 +694,7 @@ module.exports = {
                     for (let ii = 0; ii < mainArtists.length; ii++) {
                         // Update EP details
                         if (!ep_songs.includes(ep_name)) {
-                            db.reviewDB.push(mainArtists[ii], songName, `["${ep_name}"].songs`);
+                            await db.reviewDB.push(mainArtists[ii], songName, `["${ep_name}"].songs`);
                         }
                     }
 
@@ -725,9 +718,7 @@ module.exports = {
                     // Setup tags if necessary
                     if (tag != null) {
                         if (db.tags.has(tag)) {
-                            console.log(db.tags.get(tag));
                             db.tags.push(tag, displaySongName);
-                            console.log(db.tags.get(tag));
                         } else {
                             db.tags.set(tag, [displaySongName]);
                         }
