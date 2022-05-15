@@ -422,9 +422,9 @@ module.exports = {
         }
     },
 
-    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, tag) {
+    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art) {
 
-        if (tag == null) tag = [];
+        // if (tag == null) tag = [];
 
         // Add in the EP object/review
         for (let i = 0; i < artistArray.length; i++) {
@@ -445,7 +445,7 @@ module.exports = {
                     art: art,
                     collab: artistArray.filter(word => artistArray[i] != word),
                     songs: [],
-                    tags: [tag].flat(1),
+                    tags: [], //[tag].flat(1),
                 },
             }; 
 
@@ -469,7 +469,6 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], db_artist_obj);
             } else {
                 const db_song_obj = db.reviewDB.get(artistArray[i], `["${ep_name}"]`);
-
                 let new_user_obj = {
                     [`${interaction.user.id}`]: reviewObject,
                 };
@@ -480,11 +479,11 @@ module.exports = {
                     db.reviewDB.set(artistArray[i], art, `["${ep_name}"].art`);
                 }
                 
-                if (tag != [] && db.reviewDB.get(artistArray[i], `["${ep_name}"].tags`) != undefined) {
+                /*if (tag != [] && db.reviewDB.get(artistArray[i], `["${ep_name}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${ep_name}"].tags`);
                 } else {
-                    db.reviewDB.set(artistArray[i], [tag].flat(1), `["${ep_name}"].tags`);
-                }
+                    db.reviewDB.set(artistArray[i], tag, `["${ep_name}"].tags`);
+                }*/
             }
         }
     },
