@@ -58,6 +58,8 @@ module.exports = {
         let reviewObj = {};
         let reviewedArray = [];
         let userArray = [];
+        let avg = 0;
+        let starCount = 0;
         songArray = songArray.filter(item => item !== 'Image');
         songArray = songArray.map(item => item.replace('\\', '\\\\'));
 
@@ -71,21 +73,29 @@ module.exports = {
                         reviewObj[songArray[i]] = parseFloat(songObj[taggedUser.id].rating);
                     } else {
                         reviewObj[`🌟 ${songArray[i]}`] = parseFloat(songObj[taggedUser.id].rating) + 1;
+                        starCount += 1;
                     }
                 }
-            } 
-        }
-
-        if (Object.keys(reviewObj).length == 0) {
-            return interaction.editReply(`${taggedMember.displayName} has never rated a song by this artist before!`);
+            } else {
+                reviewObj[songArray[i]] = -1;
+            }
         }
 
         reviewedArray = Object.entries(reviewObj).sort((a, b) => b[1] - a[1]);
+        let avgArray = [];
         for (let i = 0; i < reviewedArray.length; i++) {
             if (reviewedArray[i][1] > 10) {
                 reviewedArray[i][1] -= 1;
+                avgArray.push(reviewedArray[i][1]);
+            } else if (reviewedArray[i][1] == -1) {
+                reviewedArray[i][1] = 'N/A';
+            } else {
+                avgArray.push(reviewedArray[i][1]);
             }
         }
+
+        avg = _.mean(avgArray).toFixed(2);
+        if (isNaN(avg)) avg = 'N/A';
 
         let pagedReviewList = _.chunk(reviewedArray, 10);
         let page_num = 0;
@@ -110,11 +120,14 @@ module.exports = {
             pagedReviewList[i] = pagedReviewList[i].join('\n');
         }  
 
+        console.log(starCount);
+
         const ratingListEmbed = new Discord.MessageEmbed()
             .setColor(`${interaction.member.displayHexColor}`)
             .setThumbnail(taggedUser.avatarURL({ format: "png" }))
-            .setAuthor({ name: `All rating for ${artist} by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ format: "png" }) })
-            .setDescription(pagedReviewList[page_num]);
+            .setAuthor({ name: `All ratings for ${artist} by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ format: "png" }) })
+            .addField(`Average Rating`, `${avg}`, true)
+            .addField(`Songs`, `${pagedReviewList[page_num]}`, false);
             if (pagedReviewList.length > 1) {
                 ratingListEmbed.setFooter({ text: `Page 1 / ${pagedReviewList.length}` });
                 interaction.editReply({ embeds: [ratingListEmbed], components: [row] });
@@ -130,7 +143,7 @@ module.exports = {
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;
                 page_num = _.clamp(page_num, 0, pagedReviewList.length - 1);
-                ratingListEmbed.setDescription(pagedReviewList[page_num]);
+                ratingListEmbed.fields[1] = { name: `Songs`, value: pagedReviewList[page_num] };
                 ratingListEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedReviewList.length}` });
                 i.update({ embeds: [ratingListEmbed] });
             });
