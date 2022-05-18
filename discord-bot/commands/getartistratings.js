@@ -59,7 +59,6 @@ module.exports = {
         let reviewedArray = [];
         let userArray = [];
         let avg = 0;
-        let starCount = 0;
         songArray = songArray.filter(item => item !== 'Image');
         songArray = songArray.map(item => item.replace('\\', '\\\\'));
 
@@ -73,22 +72,26 @@ module.exports = {
                         reviewObj[songArray[i]] = parseFloat(songObj[taggedUser.id].rating);
                     } else {
                         reviewObj[`🌟 ${songArray[i]}`] = parseFloat(songObj[taggedUser.id].rating) + 1;
-                        starCount += 1;
                     }
                 }
             } else {
-                reviewObj[songArray[i]] = -1;
+                reviewObj[songArray[i]] = -2;
             }
+
+            if (isNaN(reviewObj[songArray[i]]) && reviewObj[songArray[i]] != undefined) reviewObj[songArray[i]] = -1; 
         }
 
         reviewedArray = Object.entries(reviewObj).sort((a, b) => b[1] - a[1]);
         let avgArray = [];
+
         for (let i = 0; i < reviewedArray.length; i++) {
             if (reviewedArray[i][1] > 10) {
                 reviewedArray[i][1] -= 1;
                 avgArray.push(reviewedArray[i][1]);
             } else if (reviewedArray[i][1] == -1) {
-                reviewedArray[i][1] = 'N/A';
+                reviewedArray[i][1] = 'No Rating Given';
+            } else if (reviewedArray[i][1] == -2) {
+                reviewedArray[i][1] = 'No Review';
             } else {
                 avgArray.push(reviewedArray[i][1]);
             }
@@ -119,8 +122,6 @@ module.exports = {
 
             pagedReviewList[i] = pagedReviewList[i].join('\n');
         }  
-
-        console.log(starCount);
 
         const ratingListEmbed = new Discord.MessageEmbed()
             .setColor(`${interaction.member.displayHexColor}`)
