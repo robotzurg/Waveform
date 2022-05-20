@@ -247,7 +247,7 @@ const scopes = [
 ];
 
 const spotifyApi = new SpotifyWebApi({
-    redirectUri: 'http://localhost:3000/callback',
+    redirectUri: 'http://waveformserver.hopto.org/callback',
     clientId: process.env.SPOTIFY_API_ID,
     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
 });
@@ -291,5 +291,5 @@ app.get('/callback', (req, res) => {
 });
 
 app.listen(3000, () =>
-    console.log('HTTP Server up. Now go to http://localhost:3000/login in your browser to authenticate.'),
+    console.log('HTTP Server up. Trololool.'),
 );
