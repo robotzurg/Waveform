@@ -27,6 +27,8 @@ module.exports = {
 
             */
 
+            await interaction.editReply('Loading server stats, this make take a bit of time so please be patient!');
+
             let artistCount = 0;
             let songCount = 0;
             let epCount = 0;
@@ -125,7 +127,7 @@ module.exports = {
                 { name: 'Most Given Rating', value: `${mostGivenRating[0][0]} \`(${mostGivenRating[0][1]} times)\`` },
             );
 
-            interaction.editReply({ embeds: [statsEmbed] });
+            interaction.editReply({ content: ' ', sembeds: [statsEmbed] });
 
         } catch (err) {
             let error = err;

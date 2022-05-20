@@ -28,12 +28,14 @@ module.exports = {
 	admin: false,
 	async execute(interaction) {
 
+        await interaction.editReply('Loading profile, this may take a bit of time so please be patient!');
+
         let canvas = new Canvas(1305, 872);
 
         // render to files using a background thread
         async function render() {
             let pngData = await canvas.png;
-            interaction.editReply({ files: [pngData] });
+            interaction.editReply({ content: ' ', files: [pngData] });
         }
 
         try {

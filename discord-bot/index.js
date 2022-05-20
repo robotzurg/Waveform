@@ -5,6 +5,8 @@ const { token } = require('./config.json');
 const db = require('./db');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
+const express = require('express');
+const SpotifyWebApi = require('spotify-web-api-node');
 
 // create a new Discord client and give it some variables
 const { Client, Intents } = require('discord.js');
@@ -16,10 +18,6 @@ const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_
 client.commands = new Discord.Collection();
 const registerCommands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
-
-// Create enums for user_stats
-// eslint-disable-next-line no-unused-vars
-const UserEPEnum = { MESSAGE_ID: 0, ARTIST_ARRAY: 1, EP_NAME: 2, REVIEW_TYPE: 3 };
 
 // Place your client and guild ids here
 // eslint-disable-next-line no-unused-vars
@@ -240,3 +238,58 @@ client.on('guildMemberAdd', async (member) => {
 
 // login to Discord
 client.login(token);
+
+const scopes = [
+    'playlist-read-collaborative',
+    'playlist-modify-public',
+    'playlist-read-private',
+    'playlist-modify-private',
+];
+
+const spotifyApi = new SpotifyWebApi({
+    redirectUri: 'http://localhost:3000/callback',
+    clientId: process.env.SPOTIFY_API_ID,
+    clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+});
+
+const app = express();
+
+app.get('/login', (env, res) => {
+    res.redirect(spotifyApi.createAuthorizeURL(scopes));
+});
+
+app.get('/callback', (req, res) => {
+    const error = req.query.error;
+    const code = req.query.code;
+
+    if (error) {
+        console.error('Callback Error:', error);
+        res.send(`Callback Error: ${error}`);
+        return;
+    }
+
+    spotifyApi
+        .authorizationCodeGrant(code)
+        .then(data => {
+            const access_token = data.body['access_token'];
+            const refresh_token = data.body['refresh_token'];
+            const expires_in = data.body['expires_in'];
+
+            spotifyApi.setAccessToken(access_token);
+            spotifyApi.setRefreshToken(refresh_token);
+
+            db.user_stats.set('122568101995872256', access_token, 'access_token');
+            db.user_stats.set('122568101995872256', refresh_token, 'refresh_token');
+
+            console.log(`Sucessfully retreived access token. Expires in ${expires_in} s.`);
+            res.send('Success! You can now close the window.');
+        })
+        .catch(err => {
+            console.error('Error getting Tokens:', err);
+            res.send(`Error getting Tokens: ${err}`);
+        });
+});
+
+app.listen(3000, () =>
+    console.log('HTTP Server up. Now go to http://localhost:3000/login in your browser to authenticate.'),
+);

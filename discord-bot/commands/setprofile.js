@@ -42,15 +42,15 @@ module.exports = {
             
         let split_genres;
         switch (interaction.options.getSubcommand()) {
-            case 'Favorite Song': 
+            case 'fav_song': 
                 db.user_stats.set(interaction.user.id, interaction.options.getString('song_name'), 'fav_song');
                 interaction.editReply(`Set favorite song to ${interaction.options.getString('song_name')}!`);
             break;
-            case 'Least Favorite Song': 
+            case 'least_fav_song': 
                 db.user_stats.set(interaction.user.id, interaction.options.getString('song_name'), 'least_fav_song');
                 interaction.editReply(`Set least favorite song to ${interaction.options.getString('song_name')}!`);
             break;
-            case 'Favorite Genres':
+            case 'fav_genres':
                 split_genres = interaction.options.getString('genres').split(' & ');
                 if (split_genres.length > 3) return interaction.editReply('Favorite genres are limited to a max of 3 entries. Do not put more then this.');
                 db.user_stats.set(interaction.user.id, split_genres, 'fav_genres');
