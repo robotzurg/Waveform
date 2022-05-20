@@ -56,6 +56,7 @@ module.exports = {
                     db.user_stats.set(interaction.user.id, refresh_token, 'refresh_token');
 
                     console.log(`Sucessfully retreived access_token. Expires in ${expires_in} s.`);
+                    interaction.editReply('Authentication complete! You can now use the spotify API.');
                     res.send('Success! You can now close the window.');
                 })
                 .catch(err => {
@@ -64,6 +65,11 @@ module.exports = {
                 });
         });
 
-        interaction.editReply('Click on [this link](http://waveformserver.hopto.org) to login and authorize Spotify for usage with Waveform!\nYou should only need to do this once.');
+        app.listen(3000, function(err) {
+            if (err) console.log("Error in server setup");
+            console.log("Server listening on Port", 3000);
+        });
+
+        interaction.editReply('Click on [this link](http://waveformserver.hopto.org/login) to login and authorize Spotify for usage with Waveform!\nYou should only need to do this once.');
     },
 };

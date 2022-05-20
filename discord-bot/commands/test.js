@@ -21,7 +21,7 @@ module.exports = {
             clientId: process.env.SPOTIFY_API_ID,
             clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
         });
-        let playlistId;
+        let playlistId = db.user_stats.get(interaction.user.id, 'mailbox_playlist_id');
         let trackLink = interaction.options.getString('link');
         let trackUri;
         if (!trackLink.includes('spotify')) interaction.editReply('This is not a spotify link!');
@@ -38,13 +38,16 @@ module.exports = {
             spotifyApi.setAccessToken(data.body["access_token"]);
         }); 
 
-        // Create a private playlist
-        await spotifyApi.createPlaylist('Waveform Mailbox', { 'description': 'A test mailbox playlist for Waveform', 'public': true })
-        .then(data => {
-            playlistId = data.body.id;
-        }, function(err) {
-            console.log('Something went wrong!', err);
-        });
+        if (playlistId == undefined) {
+            // Create a private playlist
+            await spotifyApi.createPlaylist('Waveform Mailbox', { 'description': 'A test mailbox playlist for Waveform', 'public': true })
+            .then(data => {
+                playlistId = data.body.id;
+                db.user_stats.set(interaction.user.id, data.body.id, 'mailbox_playlist_id');
+            }, function(err) {
+                console.log('Something went wrong!', err);
+            });
+        }
 
         // Add tracks to a playlist
         await spotifyApi.addTracksToPlaylist(playlistId, [trackUri])
