@@ -3,6 +3,7 @@ require('dotenv').config();
 const db = require('../db.js');
 const SpotifyWebApi = require('spotify-web-api-node');
 const express = require('express');
+const { createHttpTerminator } = require('http-terminator');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -44,7 +45,7 @@ module.exports = {
 
             spotifyApi
                 .authorizationCodeGrant(code)
-                .then(data => {
+                .then(async data => {
                     const access_token = data.body['access_token'];
                     const refresh_token = data.body['refresh_token'];
                     const expires_in = data.body['expires_in'];
@@ -57,7 +58,12 @@ module.exports = {
 
                     console.log(`Sucessfully retreived access_token. Expires in ${expires_in} s.`);
                     interaction.editReply('Authentication complete! You can now use the spotify API.');
-                    res.send('Success! You can now close the window.');
+                    res.send('Authentication success! You can now close the window, and return to discord.');
+                    const httpTerminator = createHttpTerminator({
+                        server,
+                    });
+                    
+                    await httpTerminator.terminate();
                 })
                 .catch(err => {
                     console.error('Error getting Tokens:', err);
@@ -65,7 +71,7 @@ module.exports = {
                 });
         });
 
-        app.listen(3000, function(err) {
+        let server = app.listen(3000, function(err) {
             if (err) console.log("Error in server setup");
             console.log("Server listening on Port", 3000);
         });
