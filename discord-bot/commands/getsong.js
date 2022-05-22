@@ -58,6 +58,9 @@ module.exports = {
         `\nUse \`/getArtist\` to get a full list of this artist's songs.`); }
         songEP = songObj.ep;
         remixArray = songObj.remixers;
+        if (remixArray == undefined) {
+            remixArray = [];
+        }
         let tags = songObj.tags;
         if (tags == undefined) tags = [];
 

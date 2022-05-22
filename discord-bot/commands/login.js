@@ -2,11 +2,13 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 require('dotenv').config();
 const SpotifyWebApi = require('spotify-web-api-node');
 const db = require('../db.js');
+const wait = require('wait');
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('login')
         .setDescription('Login to Spotify through Waveform, to gain access to spotify features!'),
+    cooldown: 30,
 	async execute(interaction, client, app) {
 
         const scopes = [
@@ -54,7 +56,7 @@ module.exports = {
                     await db.user_stats.set(interaction.user.id, refresh_token, 'refresh_token');
         
                     console.log(`Sucessfully retreived access_token. Expires in ${expires_in} s.`);
-                    interaction.editReply('Authentication successful! You can now use the Spotify API with Waveform.')
+                    interaction.editReply('Authentication successful! You can now use the Spotify API with Waveform.');
                     res.send('Authentication success! You can now close the window, and return to discord.');
                 })
                 .catch(err => {
@@ -64,6 +66,12 @@ module.exports = {
         });
 
         interaction.editReply(`Click on [this link](http://waveformserver.hopto.org/login) to login and authorize Spotify for usage with Waveform!\nYou should only need to do this once.`);
+        await wait(30000);
+        await interaction.fetchReply().then(msg => {
+            if (!msg.content.includes('successful!')) {
+                msg.edit('Spotify Login authentication link expired. Please resend `/login` if you would like to run this again.');
+            }
+        });
 
     },
 };

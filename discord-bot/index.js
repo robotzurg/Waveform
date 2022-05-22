@@ -16,6 +16,7 @@ myIntents.add('GUILD_PRESENCES', 'GUILD_MEMBERS', 'GUILD_PRESENCES');
 const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, 
                             Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_PRESENCES], partials: ['MESSAGE', 'CHANNEL', 'REACTION'] });
 client.commands = new Discord.Collection();
+client.cooldowns = new Discord.Collection();
 const registerCommands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
@@ -207,6 +208,27 @@ client.on('interactionCreate', async interaction => {
     const command = client.commands.get(interaction.commandName);
 
     if (!command) return;
+
+    if (!client.cooldowns.has(interaction.commandName)) {
+        client.cooldowns.set(interaction.commandName, 0);
+    }
+
+    const now = Date.now();
+	client.timestamps = client.cooldowns.get(interaction.commandName);
+    const cooldownAmount = (command.cooldown || 0) * 1000;
+
+    if (client.cooldowns.has(interaction.commandName) && client.cooldowns.get(interaction.commandName) != 0) {
+        const expirationTime = client.cooldowns.get(interaction.commandName) + cooldownAmount;
+
+        if (now < expirationTime) {
+            const timeLeft = (expirationTime - now) / 1000;
+            return interaction.editReply(`Due to system limitations, you must wait ${timeLeft.toFixed(0)} more second(s) before the next use of \`/${interaction.commandName}\`.`);
+        }
+
+    }
+
+	client.cooldowns.set(interaction.commandName, now);
+	setTimeout(() => client.cooldowns.delete(interaction.commandName), cooldownAmount); 
 
     try {
         if (app._router != undefined) {
