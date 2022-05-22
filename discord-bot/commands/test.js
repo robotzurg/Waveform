@@ -31,11 +31,11 @@ module.exports = {
             return interaction.editReply('This track threw an error. Yikes!');
         });
 
-        spotifyApi.setRefreshToken(refresh_token);
-        spotifyApi.setAccessToken(access_token);
-        spotifyApi.refreshAccessToken().then(data => {
-            db.user_stats.set(interaction.user.id, data.body["access_token"], 'access_token');
-            spotifyApi.setAccessToken(data.body["access_token"]);
+        await spotifyApi.setRefreshToken(refresh_token);
+        await spotifyApi.setAccessToken(access_token);
+        await spotifyApi.refreshAccessToken().then(async data => {
+            await db.user_stats.set(interaction.user.id, data.body["access_token"], 'access_token');
+            await spotifyApi.setAccessToken(data.body["access_token"]);
         }); 
 
         if (playlistId == undefined) {
