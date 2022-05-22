@@ -40,7 +40,7 @@ module.exports = {
         await getData(trackLink).then(data => {
             name = data.name;
             artists = data.artists.map(artist => artist.name);
-            if (data.type == 'single') {
+            if (data.type == 'track') {
                 trackUris.push(data.uri); // Used to add to playlist
             } else if (data.type == 'album') {
                 for (let i = 0; i < data.tracks.items.length; i++) {
