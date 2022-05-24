@@ -4,7 +4,7 @@ const db = require('../db.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('deletetag')
+        .setName('deletesongtag')
         .setDescription('Delete a tag on a song or EP/LP!')
         .addStringOption(option => 
             option.setName('artist')
@@ -62,7 +62,7 @@ module.exports = {
         if (db.tags.has(tag)) {
             let tagArr = db.tags.get(tag);
             tagArr = tagArr.filter(v => v != tagSongEntry);
-            db.tags.set(tag, tagArr);
+            db.tags.set(tag, tagArr, 'song_list');
         } else {
             return interaction.editReply(`The thing you tried to remove a tag from, \`${tagSongEntry}\`, doesn't have the tag ${tag}.`);
         }

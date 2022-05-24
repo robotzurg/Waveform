@@ -29,6 +29,7 @@ module.exports = {
         let artistCount = [];
         let songSkip = [];
         let ratingList = {};
+        let ratingCount = 0;
 
         let artistArray = db.reviewDB.keyArray();
 
@@ -63,6 +64,7 @@ module.exports = {
                 for (let k = 0; k < userArray.length; k++) {
                     let userData = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].["${userArray[k]}"]`);
                     if (userData.rating == undefined || userData.rating == null) continue;
+                    ratingCount += 1;
                     userData.rating = userData.rating.toString();
                     if (!(userData.rating in ratingList)) {
                         ratingList[userData.rating] = 1;
@@ -112,9 +114,10 @@ module.exports = {
             .setAuthor({ name: `All ratings by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ format: "png" }) })
             .setDescription(pagedRatingList[page_num]);
             if (pagedRatingList.length > 1) {
-                ratingListEmbed.setFooter({ text: `Page 1 / ${pagedRatingList.length}` });
+                ratingListEmbed.setFooter({ text: `Page 1 / ${pagedRatingList.length} • ${ratingCount} ratings given` });
                 interaction.editReply({ embeds: [ratingListEmbed], components: [row] });
             } else {
+                ratingListEmbed.setFooter({ text: `${ratingCount} ratings given` });
                 interaction.editReply({ embeds: [ratingListEmbed], components: [] });
             }
         
@@ -127,7 +130,7 @@ module.exports = {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;
                 page_num = _.clamp(page_num, 0, pagedRatingList.length - 1);
                 ratingListEmbed.setDescription(pagedRatingList[page_num]);
-                ratingListEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedRatingList.length}` });
+                ratingListEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedRatingList.length} • ${ratingCount} ratings given` });
                 i.update({ embeds: [ratingListEmbed] });
             });
 

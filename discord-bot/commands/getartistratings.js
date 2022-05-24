@@ -40,7 +40,15 @@ module.exports = {
         if (artist.toLowerCase() == 's') {
             interaction.member.presence.activities.forEach((activity) => {
                 if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
-                    let sp_data = parse_spotify(activity);
+                    let artistArray = activity.state;
+                    if (activity.state.includes('; ')) {
+                        artistArray = artistArray.split('; ');
+                    } else if (activity.state.includes(', ')) {
+                        artistArray = artistArray.split(', '); // This is because of a stupid mobile discord bug
+                    } else {
+                        artistArray = [artistArray];
+                    }
+                    let sp_data = parse_spotify(artistArray[0], '');
                     if (artist.toLowerCase() == 's') artist = sp_data[0][0];
                     spotifyCheck = true;
                 }

@@ -57,7 +57,9 @@ module.exports = {
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
 
         let rating = interaction.options.getString('rating');
-        if (rating.includes('/10')) rating = rating.replace('/10', '');
+        if (rating != null) {
+            if (rating.includes('/10')) rating = rating.replace('/10', '');
+        }
         let review = interaction.options.getString('review');
         // Handle new lines
         if (review != null) {

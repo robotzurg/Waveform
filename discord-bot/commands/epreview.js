@@ -496,9 +496,10 @@ module.exports = {
                         // Setup tags if necessary
                         if (tag != null) {
                             if (db.tags.has(tag)) {
-                                db.tags.push(tag, `${artistArray.join(' & ')} - ${ep_name}`);
+                                db.tags.push(tag, `${artistArray.join(' & ')} - ${ep_name}`, 'song_list');
                             } else {
-                                db.tags.set(tag, [`${artistArray.join(' & ')} - ${ep_name}`]);
+                                db.tags.set(tag, [`${artistArray.join(' & ')} - ${ep_name}`], 'song_list');
+                                db.tags.set(tag, false, 'image');
                             }
                         }
 

@@ -26,10 +26,18 @@ module.exports = {
                 member.presence.activities.forEach((activity) => {
                     if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
                         avg = "N/A";
-                        let sp_data = parse_spotify(activity);
+                        let artistArray = activity.state;
+                        if (activity.state.includes('; ')) {
+                            artistArray = artistArray.split('; ');
+                        } else if (activity.state.includes(', ')) {
+                            artistArray = artistArray.split(', '); // This is because of a stupid mobile discord bug
+                        } else {
+                            artistArray = [artistArray];
+                        }
+                        let sp_data = parse_spotify(artistArray, activity.details);
                         let title = sp_data[1];
                         let displayArtists = sp_data[2][0];
-                        let artistArray = displayArtists.split('; ');
+                        artistArray = sp_data[0];
 
                         if (db.reviewDB.has(artistArray[0])) {
                             let songObj = db.reviewDB.get(artistArray[0], `["${title}"]`);
