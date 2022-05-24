@@ -86,14 +86,21 @@ module.exports = {
         }
         let vocalistArray = [];
 
-        if (origArtistArray.toLowerCase() == 's' || songArg.toLowerCase() == 's') {
+        if (artists.toLowerCase() == 's' || song.toLowerCase() == 's') {
             interaction.member.presence.activities.forEach((activity) => {
                 if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
-                    
-                    let sp_data = parse_spotify(activity);
-                    
-                    if (origArtistArray.toLowerCase() == 's') origArtistArray = sp_data[0];
-                    if (songArg.toLowerCase() == 's') songArg = sp_data[1];
+                    origArtistArray = activity.state;
+                    songArg = activity.details;
+                    if (activity.state.includes('; ')) {
+                        origArtistArray = origArtistArray.split('; ');
+                    } else if (activity.state.includes(', ')) {
+                        origArtistArray = origArtistArray.split(', '); // This is because of a stupid mobile discord bug
+                    } else {
+                        origArtistArray = [origArtistArray];
+                    }
+                    let sp_data = parse_spotify(origArtistArray, songArg);
+                    if (artists.toLowerCase() == 's') origArtistArray = sp_data[0];
+                    if (song.toLowerCase() == 's') songArg = sp_data[1];
                     spotifyCheck = true;
                 }
             });
@@ -368,7 +375,7 @@ module.exports = {
 
                     db.reviewDB.set(origArtistArray[i], song_object);
     
-                } else if(db.reviewDB.get(origArtistArray[i], `["${origSongName}"]`) == undefined) { //If the artist db exists, check if the song db doesn't exist
+                } else if (db.reviewDB.get(origArtistArray[i], `["${origSongName}"]`) == undefined) { //If the artist db exists, check if the song db doesn't exist
                     const artistObj = db.reviewDB.get(origArtistArray[i]);
     
                     //Create the object that will be injected into the Artist object
@@ -546,78 +553,45 @@ module.exports = {
         return array.reduce((a, b) => a + b) / array.length;
     },
 
-    parse_spotify: function(activity) {
+    parse_spotify: function(artistArray, songName) {
 
-        activity.state = activity.state.trim();
-        activity.details = activity.details.trim();
-        let artists = activity.state;
-        let artistArray = [activity.state];
+        songName = songName.trim();
         let rmxArtist = false;
-        let title = activity.details;
         let displayArtists = artistArray;
 
-        console.log(activity.state, activity.details);
-
-        if (artists.includes(';')) {
-            artists = artists.split('; ');
-            artistArray = artists;
-            displayArtists = artists;
-            artists = artists.join(' & ');
-        }
-
-        if (artists.includes(',')) {
-            artists = artists.split(', ');
-            artistArray = artists;
-            displayArtists = artists;
-            artists = artists.join(' & ');
-        }
-
-        if (activity.details.includes('Remix') && activity.details.includes('-')) {
-            title = activity.details.split(' - ');
-            rmxArtist = title[1].slice(0, -6);
-            activity.details = `${title[0]} (${rmxArtist} Remix)`;
-            displayArtists = artistArray;
+        if (songName.includes('Remix') && songName.includes('-')) {
+            songName = songName.split(' - ');
+            rmxArtist = songName[1].slice(0, -6);
+            songName = `${songName[0]} (${rmxArtist} Remix)`;
+            displayArtists = artistArray.filter(v => v != rmxArtist);
             artistArray = [rmxArtist.split(' & ')];
             artistArray = artistArray.flat(1);
         }
 
-        if (activity.details.includes('feat.')) {
-            title = activity.details.split(' (feat. ');
-            if (activity.details.includes('Remix')) {
-                activity.details = `${title[0]} (${rmxArtist} Remix)`;
-            } else {
-                activity.details = `${title[0]}`;
+        if (songName.includes('feat.')) {
+            songName = songName.split(' (feat. ');
+            songName = `${songName[0]}${(rmxArtist != false) ? ` (${rmxArtist} Remix)` : ``}`;
+        }
+
+        if (songName.includes('ft. ')) {
+            songName = songName.split(' (ft. ');
+            songName = `${songName[0]}${(rmxArtist != false) ? ` (${rmxArtist} Remix)` : ``}`;
+        }
+
+        if (songName.includes('(with ')) {
+            songName = songName.split(' (with ');
+            songName = `${songName[0]}${(rmxArtist != false) ? ` (${rmxArtist} Remix)` : ``}`;
+        }
+
+        if (songName.includes('- VIP') || songName.includes('(VIP)')) {
+            if (songName.includes('- VIP')) {
+                songName = songName.replace('- VIP', 'VIP');
+            } else if (songName.includes('(VIP)')) {
+                songName = songName.replace('(VIP)', 'VIP');
             }
         }
 
-        if (activity.details.includes('ft. ')) {
-            title = activity.details.split(' (ft. ');
-            if (activity.details.includes('Remix')) {
-                activity.details = `${title[0]} (${rmxArtist} Remix)`;
-            } else {
-                activity.details = `${title[0]}`;
-            }
-        }
-
-        if (activity.details.includes('(with ')) {
-            title = activity.details.split(' (with ');
-            if (activity.details.includes('Remix')) {
-                activity.details = `${title[0]} (${rmxArtist} Remix)`;
-            } else {
-                activity.details = `${title[0]}`;
-            }
-        }
-
-        if (activity.details.includes('- VIP') || activity.details.includes('(VIP)')) {
-            if (activity.details.includes('- VIP')) {
-                activity.details = activity.details.replace('- VIP', 'VIP');
-            } else {
-                activity.details = activity.details.replace('(VIP)', 'VIP');
-            }
-        }
-
-        title = activity.details;
-        return [artistArray, title, displayArtists];
+        return [artistArray, songName, displayArtists];
     },
 
     handle_error: function(interaction, err) {

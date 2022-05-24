@@ -18,19 +18,14 @@ module.exports = {
 
         try {
             
-        let tagList = [];
         let tag = interaction.options.getString('tag');
+        if (!db.tags.has(tag)) return interaction.editReply(`The tag ${tag} does not exist.`);
+        let songList = db.tags.get(tag, 'song_list');
+        let tagArt = db.tags.get(tag, 'image');
+        console.log(tagArt);
+        if (songList.length == 0) return interaction.editReply(`There are no songs with the tag \`${tag}\`.`);
 
-        let tagArray = db.tags.keyArray();
-
-        for (let i = 0; i < tagArray.length; i++) {
-            if (tagArray[i] != tag) continue;
-            tagList = db.tags.get(tagArray[i]);
-        }
-
-        if (tagList.length == 0) return interaction.editReply(`There are no songs with the tag \`${tag}\`.`);
-
-        let pagedTagList = _.chunk(tagList, 10);
+        let pagedSongList = _.chunk(songList, 10);
         let page_num = 0;
         const row = new Discord.MessageActionRow()
         .addComponents(
@@ -44,42 +39,46 @@ module.exports = {
                 .setEmoji('➡️'),
         );
 
-        for (let i = 0; i < pagedTagList.length; i++) {
+        for (let i = 0; i < pagedSongList.length; i++) {
 
-            for (let j = 0; j < pagedTagList[i].length; j++) {
-                pagedTagList[i][j] = `• ` + `[${pagedTagList[i][j]}](https://www.google.com)`;
+            for (let j = 0; j < pagedSongList[i].length; j++) {
+                pagedSongList[i][j] = `• ` + `[${pagedSongList[i][j]}](https://www.google.com)`;
             }
 
-            pagedTagList[i] = pagedTagList[i].join('\n');
+            pagedSongList[i] = pagedSongList[i].join('\n');
         }  
 
-        const tagListEmbed = new Discord.MessageEmbed()
+        const songListEmbed = new Discord.MessageEmbed()
             .setColor(`${interaction.member.displayHexColor}`)
             .setAuthor({ name: `List of songs with the tag ${tag}` })
-            .setDescription(pagedTagList[page_num]);
-            if (pagedTagList.length > 1) {
-                tagListEmbed.setFooter({ text: `Page 1 / ${pagedTagList.length} • ${tagList.length} song(s) with the tag ${tag}` });
-                interaction.editReply({ embeds: [tagListEmbed], components: [row] });
-            } else {
-                tagListEmbed.setFooter({ text: `${tagList.length} song(s) with the tag ${tag}` });
-                interaction.editReply({ embeds: [tagListEmbed], components: [] });
+            .setDescription(pagedSongList[page_num]);
+            if (tagArt != false) {
+                songListEmbed.setThumbnail(tagArt);
             }
-        
-        if (pagedTagList.length > 1) {
+
+            if (pagedSongList.length > 1) {
+                songListEmbed.setFooter({ text: `Page 1 / ${pagedSongList.length} • ${songList.length} song(s) with the tag ${tag}` });
+                interaction.editReply({ embeds: [songListEmbed], components: [row] });
+            } else {
+                songListEmbed.setFooter({ text: `${songList.length} song(s) with the tag ${tag}` });
+                interaction.editReply({ embeds: [songListEmbed], components: [] });
+            }
+
+        if (pagedSongList.length > 1) {
             let message = await interaction.fetchReply();
         
             const collector = message.createMessageComponentCollector({ time: 120000 });
 
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;
-                page_num = _.clamp(page_num, 0, pagedTagList.length - 1);
-                tagListEmbed.setDescription(pagedTagList[page_num]);
-                tagListEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedTagList.length} • ${tagList.length} song(s) with the tag ${tag}` });
-                i.update({ embeds: [tagListEmbed] });
+                page_num = _.clamp(page_num, 0, pagedSongList.length - 1);
+                songListEmbed.setDescription(pagedSongList[page_num]);
+                songListEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedSongList.length} • ${songList.length} song(s) with the tag ${tag}` });
+                i.update({ embeds: [songListEmbed] });
             });
 
             collector.on('end', async () => {
-                interaction.editReply({ embeds: [tagListEmbed], components: [] });
+                interaction.editReply({ embeds: [songListEmbed], components: [] });
             });
         }
 

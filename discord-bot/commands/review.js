@@ -718,9 +718,10 @@ module.exports = {
                     // Setup tags if necessary
                     if (tag != null) {
                         if (db.tags.has(tag)) {
-                            db.tags.push(tag, displaySongName);
+                            db.tags.push(tag, displaySongName, 'song_list');
                         } else {
-                            db.tags.set(tag, [displaySongName]);
+                            db.tags.set(tag, [displaySongName], 'song_list');
+                            db.tags.set(tag, false, 'image');
                         }
                     }
 

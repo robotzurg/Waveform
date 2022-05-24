@@ -28,6 +28,11 @@ module.exports = {
             option.setName('remixers')
                 .setDescription('Remix artists on the song, if any.')
                 .setAutocomplete(true)
+                .setRequired(false))
+
+        .addStringOption(option => 
+            option.setName('tag_image')
+                .setDescription('An image for the tag. (MUST BE A VALID IMAGE LINK)')
                 .setRequired(false)),
 	async execute(interaction) {
         try {
@@ -48,6 +53,8 @@ module.exports = {
         let vocalistArray = parsed_args[5];
 
         let tag = interaction.options.getString('tag');
+        let tagArt = interaction.options.getString('tag_image');
+        if (tagArt == null) tagArt = false;
 
         if (rmxArtistArray == undefined) rmxArtistArray = [];
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
@@ -60,10 +67,11 @@ module.exports = {
         `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
 
         if (db.tags.has(tag)) {
-            db.tags.push(tag, tagSongEntry);
+            db.tags.push(tag, tagSongEntry, 'song_list');
         } else {
-            db.tags.set(tag, [tagSongEntry]);
+            db.tags.set(tag, [tagSongEntry], 'song_list');
         }
+        db.tags.set(tag, tagArt, 'image');
 
         for (let i = 0; i < artistArray.length; i++) {
             if (db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
