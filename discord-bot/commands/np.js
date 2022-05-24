@@ -68,6 +68,9 @@ module.exports = {
                     artistArray = sp_data[0];
                     songName = sp_data[1];
                     displayArtists = sp_data[2];
+                    if (displayArtists == undefined) {
+                        displayArtists = artistArray;
+                    }
                 }
             });
         }
@@ -106,7 +109,7 @@ module.exports = {
                     npEmbed.setDescription(`Reviews: \`${userArray.length} reviews\`` + 
                     `\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}` + 
                     `\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}` + 
-                    `${yourRating != false ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
+                    `${(yourRating != false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${musicProgressBar != false ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                     `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
                 } else {
