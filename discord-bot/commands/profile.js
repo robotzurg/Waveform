@@ -57,7 +57,8 @@ module.exports = {
             let tenCount = 0;
             let zeroCount = 0;
             let mostArtist = 0;
-            let recentStar = "N/A";
+            let starArtistList = [];
+            let mostStarred = 0;
             let artistCount = [];
             let songSkip = [];
             let ratingList = [];
@@ -77,7 +78,12 @@ module.exports = {
                     } else {
                         userArray = [];
                     }
-                    if (userArray.length != 0) artistCount.push(artistArray[i]);
+                    if (userArray.length != 0) {
+                        artistCount.push(artistArray[i]);
+                        if (db.reviewDB.get(artistArray[i], `["${songArray[j]}"].["${userArray[0]}"].starred`) == true) {
+                            starArtistList.push(artistArray[i]);
+                        } 
+                    }
                     if (songSkip.includes(`${artistArray[i]} - ${songArray[j]}`)) continue;
 
                     let otherArtists = [artistArray[i], db.reviewDB.get(artistArray[i], `["${songArray[j]}"].collab`), db.reviewDB.get(artistArray[i], `["${songArray[j]}"].vocals`)].flat(1);
@@ -96,10 +102,7 @@ module.exports = {
                         ratingList.push(parseFloat(userData.rating));
                         if (songArray[j].includes(' EP')) epReviewCount += 1;
                         if (songArray[j].includes(' LP')) lpReviewCount += 1;
-                        if (userData.starred == true) {
-                            starCount += 1;
-                            recentStar = `${artistArray[i]} - ${songArray[j]}`;
-                        }
+                        if (userData.starred == true) starCount += 1;
 
                         if (parseFloat(userData.rating) == 10) tenCount += 1;
                         if (parseFloat(userData.rating) == 0) zeroCount += 1;
@@ -114,12 +117,10 @@ module.exports = {
             }
 
             mostArtist = find_most_duplicate(artistCount);
+            mostStarred = find_most_duplicate(starArtistList);
             ratingList = ratingList.filter(v => !Number.isNaN(v));
             ratingAvg = _.mean(ratingList);
-
-            let replRecentStar = db.user_stats.get(taggedUser.id, 'star_list');
-            replRecentStar = replRecentStar[replRecentStar.length - 1];
-            if (replRecentStar != undefined) recentStar = replRecentStar;
+            console.log(mostStarred);
 
             FontLibrary.use("main", [
                 "./LEMONMILK-Light.otf",
@@ -186,9 +187,9 @@ module.exports = {
             ctx.fillText(`${mostArtist[0][0]} (${mostArtist[0][1]} Reviews)`, canvas.width / 2, 725 - offset);
 
             ctx.font = `40px main_reg`;
-            ctx.fillText('Recently Starred', canvas.width / 2, 805 - offset);
-            ctx.font = applyText('main', 25, 585, canvas, recentStar);
-            ctx.fillText(`${recentStar}`, canvas.width / 2, 845 - offset);
+            ctx.fillText('Most Starred Artist', canvas.width / 2, 805 - offset);
+            ctx.font = `25px main`;
+            ctx.fillText(`${mostStarred[0][0]} (${mostStarred[0][1]} Stars)`, canvas.width / 2, 845 - offset);
 
             // Recent Review / Recent Stars lists
 

@@ -14,7 +14,7 @@ module.exports = {
         try {
 
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
-        let songArt, spotifyUrl, yourRating, artistArray, songName, displayArtists, sp_data;
+        let songArt, spotifyUrl, yourRating, artistArray, songName, displayArtists, sp_data, isPlaying = true, isPodcast = false;
         let songLength, songCurMs, musicProgressBar = false; // Spotify API specific variables 
         const access_token = db.user_stats.get(interaction.user.id, 'access_token');
 
@@ -36,13 +36,15 @@ module.exports = {
             }); 
 
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+                if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
                 artistArray = data.body.item.artists.map(artist => artist.name);
                 songName = data.body.item.name;
                 spotifyUrl = data.body.item.external_urls.spotify;
                 songArt = data.body.item.album.images[0].url;
                 songLength = data.body.item.duration_ms;
                 songCurMs = data.body.progress_ms;
-                musicProgressBar = progressbar.splitBar(songLength / 1000, songCurMs / 1000, 10)[0];
+                musicProgressBar = progressbar.splitBar(songLength / 1000, songCurMs / 1000, 12)[0];
+                isPlaying = data.body.is_playing;
                 // Parse spotify to get rid of features and get remixers and stuff
                 sp_data = parse_spotify(artistArray, songName);
                 artistArray = sp_data[0];
@@ -75,10 +77,15 @@ module.exports = {
             });
         }
 
+        // Check if a podcast is being played, as we don't support that.
+        if (isPodcast == true) {
+            return interaction.editReply('Podcasts are not supported with `/np`.');
+        }
+
         const npEmbed = new Discord.MessageEmbed()
         .setColor(`${interaction.member.displayHexColor}`);
-        npEmbed.setTitle(`${displayArtists.join(' & ')} - ${songName}`)
-        .setAuthor({ name: `${interaction.member.displayName}'s current song`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` })
+        npEmbed.setTitle(`${displayArtists.join(' & ')} - ${songName}`);
+        npEmbed.setAuthor({ name: `${interaction.member.displayName}'s ${isPlaying ? `current song` : `last song played`}`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` })
         .setThumbnail(songArt);
 
         if (db.reviewDB.has(artistArray[0])) {
@@ -110,11 +117,11 @@ module.exports = {
                     `\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}` + 
                     `\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}` + 
                     `${(yourRating != false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
-                    `${musicProgressBar != false ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
+                    `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                     `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
                 } else {
                     npEmbed.setDescription(`This song has not been reviewed in the database.` + 
-                    `${musicProgressBar != false ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
+                    `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                     `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
                 }
 
@@ -127,12 +134,12 @@ module.exports = {
                 }
             } else {
                 npEmbed.setDescription(`This song has not been reviewed in the database.` + 
-                `${musicProgressBar != false ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
+                `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                 `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
             }
         } else {
             npEmbed.setDescription(`This song has not been reviewed in the database.` + 
-            `${musicProgressBar != false ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
+            `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
             `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
         }
         

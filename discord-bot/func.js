@@ -559,7 +559,7 @@ module.exports = {
         let rmxArtist = false;
         let displayArtists = artistArray;
 
-        if (songName.includes('Remix') && songName.includes('-')) {
+        if (songName.includes('Remix') && songName.includes(' - ')) {
             songName = songName.split(' - ');
             rmxArtist = songName[1].slice(0, -6);
             songName = `${songName[0]} (${rmxArtist} Remix)`;
