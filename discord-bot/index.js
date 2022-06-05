@@ -1,7 +1,7 @@
 // require the discord.js module
 const fs = require('fs');
 const Discord = require('discord.js');
-const { token } = require('./config.json');
+const { token_dev } = require('./config.json');
 const db = require('./db');
 const { REST } = require('@discordjs/rest');
 const { Routes } = require('discord-api-types/v9');
@@ -43,14 +43,14 @@ for (const file of commandFiles) {
     }
 }
 
-const rest = new REST({ version: '9' }).setToken(token);
+const rest = new REST({ version: '9' }).setToken(token_dev);
 
 (async () => {
 	try {
 		console.log('Started refreshing application (/) commands.');
 
 		await rest.put(
-			Routes.applicationGuildCommands(mainClientId, mainGuildId),
+			Routes.applicationGuildCommands(devClientId, devGuildId),
 			{ body: registerCommands },
 		);
 
@@ -248,15 +248,18 @@ client.on('guildMemberAdd', async (member) => {
 
     if (!db.user_stats.has(member.user.id)) {
         db.user_stats.set(member.user.id, {
+            "access_token": false,
+            "refresh_token": false,
             "current_ep_review": false,
             "fav_genres": [],
             "fav_song": "N/A",
             "least_fav_song": "N/A",
             "mailbox": false,
+            "mailbox_list": [],
+            "mailbox_playlist_id": false,
             "name": `${member.user.username}`,
             "recent_review": "N/A",
             "star_list": [],
-            "local_tags": [],
         });
     }
 
@@ -264,8 +267,8 @@ client.on('guildMemberAdd', async (member) => {
 
 
 // login to Discord
-client.login(token);
+client.login(token_dev);
 
-app.listen(3000, async () => {
-    console.log("Server listening on Port", 3000);
-});
+// app.listen(3000, async () => {
+//     console.log("Server listening on Port", 3000);
+// });

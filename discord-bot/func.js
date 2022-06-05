@@ -6,26 +6,6 @@ const forAsync = require('for-async');
 
 module.exports = {
 
-    arrayRemove: function(arr, value) { 
-        return arr.filter(function(ele) { 
-            return ele != value; 
-        });
-    },
-
-    randomNumber: function(min, max) { 
-        return Math.random() * (max - min) + min; 
-    },
-
-    capitalize: function(string) {
-        if (string == null || string == false || string == undefined) return string;
-
-        string = string.split(' ');
-        string = string.map(a => a.charAt(0).toUpperCase() + a.slice(1));
-        string = string.join(' ');
-
-        return string;
-    },
-
     removeItemOnce: function(arr, value) {
         let index = arr.indexOf(value);
         if (index > -1) {
@@ -266,8 +246,6 @@ module.exports = {
 
             if (ep_name == undefined) ep_name = false;
             let songName = song;
-
-            console.log(ep_name);
             
             // Used if both the artist and song object exist
             let review_object = {
@@ -729,6 +707,29 @@ module.exports = {
             Object.assign(db_artist_obj, ep_object);
             db.reviewDB.set(origArtistArray[i], db_artist_obj);
         }
+    },
+
+    /**
+     * Finds and returns the channel object of a review message, for use in messing with it.
+     * @param {Object} interaction The interaction of the slash command this function is used in.
+     * @param {String} user_id The user ID of the reviewer. 
+     * @param {String} msg_id The ID of the review message. 
+     */
+    find_review_channel: async function(interaction, user_id, msg_id) {
+        let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+        let target = undefined;
+        await channelsearch.messages.fetch(msg_id).then(async () => {
+            target = channelsearch;
+        }).catch(async () => {
+            channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(user_id, 'mailbox'));
+            if (channelsearch != undefined) {
+                await channelsearch.messages.fetch(msg_id).then(async () => {
+                    target = channelsearch;
+                });
+            }
+        });
+
+        return target;
     },
     
 };

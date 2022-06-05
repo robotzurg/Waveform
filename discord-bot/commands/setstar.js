@@ -1,7 +1,7 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('wait');
-const { parse_artist_song_data, hall_of_fame_check, handle_error } = require('../func.js');
+const { parse_artist_song_data, hall_of_fame_check, handle_error, find_review_channel } = require('../func.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -97,7 +97,7 @@ module.exports = {
         let msgtoEdit = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].msg_id`);
 
         if (msgtoEdit != false && msgtoEdit != undefined) {
-            let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+            let channelsearch = await find_review_channel(interaction, interaction.user.id, msgtoEdit);
             channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                 let embed_data = msg.embeds;
                 let msgEmbed = embed_data[0];
@@ -113,30 +113,7 @@ module.exports = {
                         }
                     }
                 }
-                msg.edit({ embeds: [msgEmbed] });
-            }).catch(() => {
-                channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                if (channelsearch != undefined) {
-                    channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                        let embed_data = msg.embeds;
-                        let msgEmbed = embed_data[0];
-                        let msgEmbedTitle = msgEmbed.title;
-                        if (star_check == false) {
-                            if (!msgEmbedTitle.includes(':star2:')) {
-                                msgEmbed.title = `:star2: ${msgEmbedTitle} :star2:`;
-                            }
-                        } else {
-                            if (msgEmbedTitle.includes(':star2:')) {
-                                while (msgEmbed.title.includes(':star2:')) {
-                                    msgEmbed.title = msgEmbed.title.replace(':star2:', '');
-                                }
-                            }
-                        }
-                        msg.edit({ embeds: [msgEmbed] });
-                    }).catch((err) => {
-                        handle_error(interaction, err);
-                    });
-                }   
+                msg.edit({ embeds: [msgEmbed] });   
             }).catch((err) => {
                 handle_error(interaction, err);
             });
@@ -146,7 +123,7 @@ module.exports = {
         if (ep_from != false && ep_from != undefined) {
             if (db.reviewDB.get(artistArray[0], `["${ep_from}"].["${interaction.user.id}"]`) != undefined) {
                 let epMsgToEdit = db.reviewDB.get(artistArray[0], `["${ep_from}"].["${interaction.user.id}"].msg_id`);
-                let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+                let channelsearch = await find_review_channel(interaction, interaction.user.id, epMsgToEdit);
 
                 channelsearch.messages.fetch(`${epMsgToEdit}`).then(msg => {
                     let msgEmbed = msg.embeds[0];
@@ -172,35 +149,6 @@ module.exports = {
                     }
 
                     msg.edit({ embeds: [msgEmbed] });
-                }).catch(() => {
-                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                    channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                        let msgEmbed = msg.embeds[0];
-                        let msg_embed_fields = msgEmbed.fields;
-                        let field_num = -1;
-                        for (let i = 0; i < msg_embed_fields.length; i++) {
-                            if (msg_embed_fields[i].name.includes(songName)) {
-                                field_num = i;
-                            }
-                        }
-
-                        if (star_check == false) {
-                            if (!msg_embed_fields[field_num].name.includes('🌟')) {
-                                msg_embed_fields[field_num].name = `🌟 ${msg_embed_fields[field_num].name} 🌟`;
-                            }
-                        } else {
-                            if (msg_embed_fields[field_num].name.includes('🌟')) {
-                                while (msg_embed_fields[field_num].name.includes('🌟')) {
-                                    msg_embed_fields[field_num].name = msg_embed_fields[field_num].name.replace('🌟', '');
-                                }
-                            }
-                        }
-                        
-
-                        msg.edit({ embeds: [msgEmbed] });
-                    }).catch((err) => {
-                        handle_error(interaction, err);
-                    });
                 }).catch((err) => {
                     handle_error(interaction, err);
                 });

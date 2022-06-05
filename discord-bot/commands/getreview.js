@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { parse_artist_song_data, handle_error } = require('../func.js');
+const { parse_artist_song_data, handle_error, find_review_channel } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -113,16 +113,9 @@ module.exports = {
 
             let reviewMsgID = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].msg_id`);
             if (reviewMsgID != false && reviewMsgID != undefined) {
-                let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+                let channelsearch = await find_review_channel(interaction, taggedUser.id, reviewMsgID);
                 await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
                     reviewEmbed.setTimestamp(msg.createdTimestamp);
-                }).catch(() => {
-                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(taggedUser.id, 'mailbox'));
-                    if (channelsearch != undefined) {
-                        channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
-                            reviewEmbed.setTimestamp(msg.createdTimestamp);
-                        }).catch(() => {}); // No error handling here as this is to make sure that legacy reviews go through okay, if they have msg_id false.
-                    }
                 });
             }
 

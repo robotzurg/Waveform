@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { parse_artist_song_data, handle_error, hall_of_fame_check } = require('../func.js');
+const { parse_artist_song_data, handle_error, hall_of_fame_check, find_review_channel } = require('../func.js');
 const wait = require('util').promisify(setTimeout);
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
@@ -67,7 +67,7 @@ module.exports = {
             let songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
 
             let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review')[0];
-            let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+            let channelsearch = await find_review_channel(interaction, interaction.user.id, msgtoEdit);
 
             let msgEmbed;
             let mainArtists;
@@ -86,7 +86,6 @@ module.exports = {
 
             // Edit the EP embed
             await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-
                 msgEmbed = msg.embeds[0];
                 mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
                 mainArtists = mainArtists.flat(1);
@@ -158,84 +157,6 @@ module.exports = {
                     db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
                     hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                 }
-            }).catch(() => {
-                channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-
-                    msgEmbed = msg.embeds[0];
-                    mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
-                    mainArtists = mainArtists.flat(1);
-                    ep_name = msgEmbed.title.split(' - ');
-                    ep_name.shift();
-                    ep_name = ep_name.join(' - ');
-                    if (ep_name.includes('/10')) {
-                        ep_name = ep_name.replace('/10)', '');
-                        if (ep_name.includes('.5')) {
-                            ep_name = ep_name.slice(0, -4).trim();
-                        } else {
-                            ep_name = ep_name.slice(0, -3).trim();
-                        }
-                    }
-
-                    for (let j = 0; j < artistArray.length; j++) {
-                        db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
-                    }
-
-                    if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt == false) {
-                        songArt = msgEmbed.thumbnail.url;
-                    }
-
-                    collab = artistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
-                    if (starred == true) {
-                        field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
-                    } else {
-                        field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
-                    }
-                    
-                    if (msgEmbed.length > 3250 && type == 'A') {
-                        for (let j = 0; j < msgEmbed.fields.length; j++) {
-                            msgEmbed.fields[j].value = `*Review hidden to save space*`;
-                        }
-                        db.user_stats.set(interaction.user.id, 'B', 'current_ep_review[3]');
-                        type = 'B';
-                    }
-
-                    if (type == 'A') {
-                        if (review.length <= 1000) {
-                            msgEmbed.fields.push({
-                                name: field_name,
-                                value: `${review}`,
-                                inline: false,
-                            });
-                        } else {
-                            msgEmbed.fields.push({
-                                name: field_name,
-                                value: `*Review hidden to save space*`,
-                                inline: false,
-                            });
-                        }
-                    } else {
-                        msgEmbed.fields.push({
-                            name: field_name,
-                            value: `*Review hidden to save space*`,
-                            inline: false,
-                        });
-                    }
-
-                    msg.edit({ embeds: [msgEmbed], components: [] });
-
-                    // Star reaction stuff for hall of fame
-                    if (rating >= 8 && starred == true) {
-                        for (let x = 0; x < artistArray.length; x++) {
-                            db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
-                        }
-
-                        db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
-                        hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
-                    }
-                });
-            }).catch((err) => {
-                handle_error(interaction, err);
             });
 
             // Update user stats

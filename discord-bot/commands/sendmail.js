@@ -22,7 +22,7 @@ module.exports = {
         let taggedMember = await interaction.guild.members.fetch(taggedUser.id);    
 
         const access_token = db.user_stats.get(taggedUser.id, 'access_token');
-        if (access_token == undefined || access_token == false) interaction.editReply(`The user ${taggedMember.displayName} has not logged into Spotify through Waveform. Tell them to login using \`/login\`!`);
+        if (access_token == undefined || access_token == false) return interaction.editReply(`The user ${taggedMember.displayName} has not logged into Spotify through Waveform. Tell them to login using \`/login\`!`);
         const refresh_token = db.user_stats.get(taggedUser.id, 'refresh_token');
         const spotifyApi = new SpotifyWebApi({
             redirectUri: process.env.SPOTIFY_REDIRECT_URI,
@@ -36,7 +36,7 @@ module.exports = {
         let name;
         let artists;
 
-        if (!trackLink.includes('spotify')) interaction.editReply('The link you put in is not a valid spotify link!');
+        if (!trackLink.includes('spotify')) return interaction.editReply('The link you put in is not a valid spotify link!');
         await getData(trackLink).then(data => {
             name = data.name;
             artists = data.artists.map(artist => artist.name);

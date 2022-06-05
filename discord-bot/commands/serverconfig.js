@@ -7,8 +7,8 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('config')
-		.setDescription('Configure settings for Waveform. Using no arguments shows the config list.')
+		.setName('serverconfig')
+		.setDescription('Configure settings for the server on Waveform. Using no arguments shows the config list.')
         .addStringOption(option => 
             option.setName('configuration')
                 .setDescription('Which setting to configure.')
