@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { update_art, review_song, hall_of_fame_check, handle_error } = require('../func.js');
+const { update_art, review_song, hall_of_fame_check, handle_error, find_review_channel } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('util').promisify(setTimeout);
 const Spotify = require('node-spotify-api');
@@ -500,7 +500,7 @@ module.exports = {
                     interaction.deleteReply();
 
                     let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review')[0];
-                    let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+                    let channelsearch = await find_review_channel(interaction, interaction.user.id, msgtoEdit);
 
                     let msgEmbed;
                     let mainArtists;
@@ -601,89 +601,6 @@ module.exports = {
                             db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
                             hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                         }
-                    }).catch(() => {
-                        channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                        channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-
-                            msgEmbed = msg.embeds[0];
-                            mainArtists = [msgEmbed.title.split(' - ')[0].split(' & ')];
-                            mainArtists = mainArtists.flat(1);
-                            ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review')[2];
-                            ep_songs = db.reviewDB.get(mainArtists[0], `["${ep_name}"].songs`);
-    
-                            for (let j = 0; j < artistArray.length; j++) {
-                                db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
-                            }
-    
-                            if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt == false) {
-                                songArt = msgEmbed.thumbnail.url;
-                            }
-    
-                            collab = origArtistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
-                            if (starred == true) {
-                                field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
-                            } else {
-                                field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
-                            }
-    
-                            // If the entire EP/LP review is over 3250 characters, set EP/LP review type to "B" (aka hide any more reviews from that point)
-                            if (msgEmbed.length > 3250 && type == 'A') {
-                                db.user_stats.set(interaction.user.id, 'B', 'current_ep_review[3]');
-                                type = 'B';
-                            }
-    
-                            // Check what review type we are and add in reviews to the EP/LP review message accordingly
-                            if (type == 'A') {
-                                if (review.length <= 1000) {
-                                    msgEmbed.fields.push({
-                                        name: field_name,
-                                        value: `${review}`,
-                                        inline: false,
-                                    });
-                                } else {
-                                    msgEmbed.fields.push({
-                                        name: field_name,
-                                        value: `*Review hidden to save space*`,
-                                        inline: false,
-                                    });
-                                }
-                            } else {
-                                msgEmbed.fields.push({
-                                    name: field_name,
-                                    value: `*Review hidden to save space*`,
-                                    inline: false,
-                                });
-                            }
-    
-                            if (ep_songs[ep_songs.length - 1] == songName) {
-                                msg.edit({ embeds: [msgEmbed], components: [ep_last_song_button] });
-    
-                                const ep_final_filter = int => int.user.id == interaction.user.id;
-                                let ep_final_collector = int_channel.createMessageComponentCollector({ filter: ep_final_filter, max: 1, time: 60000 });
-    
-                                ep_final_collector.on('collect', async () => {
-                                    db.user_stats.set(interaction.user.id, false, 'current_ep_review');
-                                    msg.edit({ components: [] });
-                                });
-    
-                                ep_final_collector.on('end', async () => {
-                                    msg.edit({ components: [] });
-                                });
-    
-                            } else {
-                                msg.edit({ embeds: [msgEmbed], components: [] });
-                            }
-    
-                            // Star reaction stuff for hall of fame
-                            if (rating >= 8 && starred == true) {
-                                for (let x = 0; x < artistArray.length; x++) {
-                                    db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
-                                }
-    
-                                db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
-                                hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
-                            }
-                        });
                     }).catch((err) => {
                         handle_error(interaction, err);
                     });

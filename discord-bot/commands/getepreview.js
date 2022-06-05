@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { handle_error } = require('../func.js');
+const { handle_error, find_review_channel } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -116,16 +116,9 @@ module.exports = {
 
             let reviewMsgID = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].msg_id`);
             if (reviewMsgID != false && reviewMsgID != undefined) {
-                let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+                let channelsearch = await find_review_channel(interaction, taggedUser.id, reviewMsgID);
                 await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
                     epEmbed.setTimestamp(msg.createdTimestamp);
-                }).catch(() => {
-                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(taggedUser.id, 'mailbox'));
-                    if (channelsearch != undefined) {
-                        channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
-                            epEmbed.setTimestamp(msg.createdTimestamp);
-                        }).catch(() => {});
-                    }
                 });
             }
 

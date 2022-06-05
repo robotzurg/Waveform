@@ -1,7 +1,7 @@
 // TODO: Make remixes work with this 
 
 const db = require("../db.js");
-const { get_user_reviews, parse_artist_song_data } = require("../func.js");
+const { get_user_reviews, parse_artist_song_data, find_review_channel } = require("../func.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const forAsync = require('for-async');
 
@@ -89,7 +89,7 @@ module.exports = {
 
         const song_obj = db.reviewDB.get(artistArray[0], new_song);
         let msgstoEdit = [];
-        let count = -1;
+        let count = 0;
         let userIDs = [];
 
         let userArray = get_user_reviews(song_obj);
@@ -103,37 +103,19 @@ module.exports = {
         msgstoEdit = msgstoEdit.filter(item => item !== false);
         msgstoEdit = msgstoEdit.filter(item => item !== null);
         if (msgstoEdit.length > 0) { 
-
-            forAsync(msgstoEdit, async function(item) {
+            forAsync(msgstoEdit, async function(msgtoEdit) { 
                 count += 1;
+                let channelsearch = await find_review_channel(interaction, userIDs[count], msgtoEdit);
                 return new Promise(function(resolve) {
-                    let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
-                    let msgtoEdit = item;
-                    let msgEmbed;
-
-                    channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                        msgEmbed = msg.embeds[0];
+                    channelsearch.messages.fetch(`${msgtoEdit}`).then(async msg => {
+                        let msgEmbed = msg.embeds[0];
                         if (msgEmbed.title.includes('🌟')) {
-                            msgEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
+                            msgEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${newDisplaySongName} 🌟`);
                         } else {
-                            msgEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+                            msgEmbed.setTitle(`${origArtistArray.join(' & ')} - ${newDisplaySongName}`);
                         }
-                        msg.edit({ content: ' ', embeds: [msgEmbed] });
+                        await msg.edit({ content: ' ', embeds: [msgEmbed] });
                         resolve();
-                    }).catch(() => {
-                        channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
-                        if (channelsearch != undefined) {
-                            channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                msgEmbed = msg.embeds[0];
-                                if (msgEmbed.title.includes('🌟')) {
-                                    msgEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
-                                } else {
-                                    msgEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
-                                }
-                                msg.edit({ content: ' ', embeds: [msgEmbed] });
-                                resolve();
-                            }).catch(() => {});
-                        }
                     });
                 });
             });

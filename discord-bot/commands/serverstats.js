@@ -127,7 +127,7 @@ module.exports = {
                 { name: 'Most Given Rating', value: `${mostGivenRating[0][0]} \`(${mostGivenRating[0][1]} times)\`` },
             );
 
-            interaction.editReply({ content: ' ', sembeds: [statsEmbed] });
+            interaction.editReply({ content: ' ', embeds: [statsEmbed] });
 
         } catch (err) {
             let error = err;

@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const forAsync = require('for-async');
-const { get_user_reviews, parse_artist_song_data, handle_error } = require("../func.js");
+const { get_user_reviews, parse_artist_song_data, handle_error, find_review_channel } = require("../func.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const Discord = require("discord.js");
 const Spotify = require('node-spotify-api');
@@ -124,31 +124,16 @@ module.exports = {
             msgstoEdit = msgstoEdit.filter(item => item !== undefined);
             msgstoEdit = msgstoEdit.filter(item => item !== false);
             if (msgstoEdit.length > 0) { 
-                
-                forAsync(msgstoEdit, async function(item) {
+                forAsync(msgstoEdit, async function(msgtoEdit) {
                     count += 1;
+                    let channelsearch = await find_review_channel(interaction, userIDs[count], msgtoEdit);
                     return new Promise(function(resolve) {
-                        let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
-                        let msgtoEdit = item;
                         let msgEmbed;
-
                         channelsearch.messages.fetch(msgtoEdit).then(msg => {
                             msgEmbed = msg.embeds[0];
                             msgEmbed.setThumbnail(songArt);
                             msg.edit({ content: ' ', embeds: [msgEmbed] });
                             resolve();
-                        }).catch(() => {
-                            channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
-                            if (channelsearch != undefined) {
-                                channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                    msgEmbed = msg.embeds[0];
-                                    msgEmbed.setThumbnail(songArt);
-                                    msg.edit({ content: ' ', embeds: [msgEmbed] });
-                                    resolve();
-                                }).catch(err => {
-                                    handle_error(interaction, err);
-                                });
-                            }
                         });
                     });
                 });
@@ -167,7 +152,6 @@ module.exports = {
                             let embed_data;
 
                             channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                console.log(msg);
                                 embed_data = msg.embeds;
                                 msgEmbed = embed_data[0];
                                 msgEmbed.image.url = songArt;

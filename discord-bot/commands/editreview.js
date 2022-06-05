@@ -1,7 +1,7 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('wait');
-const { parse_artist_song_data, handle_error } = require("../func.js");
+const { parse_artist_song_data, handle_error, find_review_channel } = require("../func.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -124,7 +124,7 @@ module.exports = {
                 `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
 
         if (reviewMsgID != false) {
-            let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+            let channelsearch = await find_review_channel(interaction, interaction.user.id, reviewMsgID);
             channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
                 let embed_data = msg.embeds;
                 let msgEmbed = embed_data[0];
@@ -134,18 +134,6 @@ module.exports = {
                 if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
 
                 msg.edit({ embeds: [msgEmbed] });
-            }).catch(() => {
-                channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
-                    let embed_data = msg.embeds;
-                    let msgEmbed = embed_data[0];
-    
-                    if (rating != null && rating != undefined) msgEmbed.fields[0].value = `**${rating}/10**`;
-                    if (review != null && review != undefined) msgEmbed.setDescription(review);
-                    if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
-    
-                    msg.edit({ embeds: [msgEmbed] });
-                });
             });
         }
 
@@ -165,7 +153,7 @@ module.exports = {
         if (ep_from != false && ep_from != undefined) {
             if (db.reviewDB.get(primArtist, `["${ep_from}"].["${interaction.user.id}"]`) != undefined) {
                 let displayArtists = origArtistArray.filter(v => v != primArtist);
-                let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+                let channelsearch = await find_review_channel(interaction, interaction.user.id, epMsgToEdit);
                 channelsearch.messages.fetch(`${epMsgToEdit}`).then(msg => {
                     let msgEmbed = msg.embeds[0];
                     let msg_embed_fields = msgEmbed.fields;
@@ -186,8 +174,6 @@ module.exports = {
                     if (review != null && review != undefined && msg_embed_fields[field_num].value != '*Review hidden to save space*') msg_embed_fields[field_num].value = review;
 
                     msg.edit({ embeds: [msgEmbed] });
-                }).catch(err => {
-                    console.log(err);
                 });
             } 
         }

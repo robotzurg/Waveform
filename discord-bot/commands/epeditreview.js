@@ -1,7 +1,7 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require("wait");
-const { handle_error } = require('../func.js');
+const { handle_error, find_review_channel } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -46,7 +46,7 @@ module.exports = {
                 if (db.reviewDB.get(artistArray[i], `["${ep_name}"].["${interaction.user.id}"]`) == undefined) return interaction.editReply(`You don't have a review for ${ep_name} in the database.`);
             }
 
-            let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+            let ep_msg_id = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].msg_id`);
 
             if (ep_rating != null) {
                 old_ep_rating = `${db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].rating`)}/10`;
@@ -66,8 +66,9 @@ module.exports = {
                 }
             }
 
-            if (db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].msg_id`) != false) {
-                await channelsearch.messages.fetch(db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].msg_id`)).then(msg => {
+            if (ep_msg_id != false && ep_msg_id != undefined) {
+                let channelsearch = await find_review_channel(interaction, interaction.user.id, ep_msg_id);
+                await channelsearch.messages.fetch(ep_msg_id).then(msg => {
                     let msgEmbed = msg.embeds[0];
                     if (ep_rating != null) {
                         msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${ep_rating}/10)`);
@@ -76,26 +77,6 @@ module.exports = {
                         msgEmbed.setDescription(`*${ep_review}*`);
                     }
                     msg.edit({ embeds: [msgEmbed] });
-                }).catch(() => {
-                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(interaction.user.id, 'mailbox'));
-                    if (channelsearch != undefined) {
-                        channelsearch.messages.fetch(`${db.reviewDB.get(artistArray[0], `["${ep_name}"].["${interaction.user.id}"].msg_id`)}`).then(msg => {
-                            let msgEmbed = msg.embeds[0];
-                            if (ep_rating != null) {
-                                msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${ep_rating}/10)`);
-                            }
-                            if (ep_review != null) {
-                                msgEmbed.setDescription(`*${ep_review}*`);
-                            }
-
-                            msg.edit({ embeds: [msgEmbed] });
-                        }).catch((err) => {
-                            handle_error(interaction, err);
-                        });
-                    }
-
-                }).catch((err) => {
-                    handle_error(interaction, err);
                 });
             }
 

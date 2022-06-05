@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { average, get_user_reviews, parse_artist_song_data, sort, handle_error } = require('../func.js');
+const { average, get_user_reviews, parse_artist_song_data, sort, handle_error, find_review_channel } = require('../func.js');
 const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '**11**', '**12**', '**13**', '**14**', '**15**', '**16**', '**17**', '**18**', '**19**', '**20**'];
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
@@ -229,16 +229,10 @@ module.exports = {
                 }
 
                 let reviewMsgID = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].msg_id`);
-                console.log(reviewMsgID);
                 if (reviewMsgID != false && reviewMsgID != undefined) {
-                    let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+                    let channelsearch = await find_review_channel(interaction, i.values[0], reviewMsgID);
                     await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
                         reviewEmbed.setTimestamp(msg.createdTimestamp);
-                    }).catch(async () => {
-                        channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(i.values[0], 'mailbox'));
-                        await channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
-                            reviewEmbed.setTimestamp(msg.createdTimestamp);
-                        }).catch(() => {});
                     });
                 }
                 
