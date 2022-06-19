@@ -82,6 +82,10 @@ module.exports = {
             return interaction.editReply('Podcasts are not supported with `/np`.');
         }
 
+        if (displayArtists == undefined) {
+            displayArtists = artistArray.join(' & ');
+        }
+
         const npEmbed = new Discord.MessageEmbed()
         .setColor(`${interaction.member.displayHexColor}`);
         npEmbed.setTitle(`${displayArtists.join(' & ')} - ${songName}`);

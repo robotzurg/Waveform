@@ -125,16 +125,18 @@ module.exports = {
 
         if (reviewMsgID != false) {
             let channelsearch = await find_review_channel(interaction, interaction.user.id, reviewMsgID);
-            channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
-                let embed_data = msg.embeds;
-                let msgEmbed = embed_data[0];
+            if (channelsearch != undefined) {
+                channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
+                    let embed_data = msg.embeds;
+                    let msgEmbed = embed_data[0];
 
-                if (rating != null && rating != undefined) msgEmbed.fields[0].value = `**${rating}/10**`;
-                if (review != null && review != undefined) msgEmbed.setDescription(review);
-                if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
+                    if (rating != null && rating != undefined) msgEmbed.fields[0].value = `**${rating}/10**`;
+                    if (review != null && review != undefined) msgEmbed.setDescription(review);
+                    if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
 
-                msg.edit({ embeds: [msgEmbed] });
-            });
+                    msg.edit({ embeds: [msgEmbed] });
+                });
+            }
         }
 
         let primArtist = artistArray[0];
@@ -154,27 +156,29 @@ module.exports = {
             if (db.reviewDB.get(primArtist, `["${ep_from}"].["${interaction.user.id}"]`) != undefined) {
                 let displayArtists = origArtistArray.filter(v => v != primArtist);
                 let channelsearch = await find_review_channel(interaction, interaction.user.id, epMsgToEdit);
-                channelsearch.messages.fetch(`${epMsgToEdit}`).then(msg => {
-                    let msgEmbed = msg.embeds[0];
-                    let msg_embed_fields = msgEmbed.fields;
-                    let field_num = -1;
-                    for (let i = 0; i < msg_embed_fields.length; i++) {
-                        if (msg_embed_fields[i].name.includes(songName)) {
-                            field_num = i;
+                if (channelsearch != undefined) {
+                    channelsearch.messages.fetch(`${epMsgToEdit}`).then(msg => {
+                        let msgEmbed = msg.embeds[0];
+                        let msg_embed_fields = msgEmbed.fields;
+                        let field_num = -1;
+                        for (let i = 0; i < msg_embed_fields.length; i++) {
+                            if (msg_embed_fields[i].name.includes(songName)) {
+                                field_num = i;
+                            }
                         }
-                    }
 
-                    if (rating != null && rating != undefined) {
-                        if (msg_embed_fields[field_num].name.includes('🌟')) {
-                            msg_embed_fields[field_num].name = `🌟 ${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``} (${rating}/10) 🌟`;
-                        } else {
-                            msg_embed_fields[field_num].name = `${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``} (${rating}/10)`;
-                        }
-                    } 
-                    if (review != null && review != undefined && msg_embed_fields[field_num].value != '*Review hidden to save space*') msg_embed_fields[field_num].value = review;
+                        if (rating != null && rating != undefined) {
+                            if (msg_embed_fields[field_num].name.includes('🌟')) {
+                                msg_embed_fields[field_num].name = `🌟 ${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``} (${rating}/10) 🌟`;
+                            } else {
+                                msg_embed_fields[field_num].name = `${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``} (${rating}/10)`;
+                            }
+                        } 
+                        if (review != null && review != undefined && msg_embed_fields[field_num].value != '*Review hidden to save space*') msg_embed_fields[field_num].value = review;
 
-                    msg.edit({ embeds: [msgEmbed] });
-                });
+                        msg.edit({ embeds: [msgEmbed] });
+                    });
+                }
             } 
         }
 

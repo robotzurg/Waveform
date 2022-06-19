@@ -106,18 +106,20 @@ module.exports = {
             forAsync(msgstoEdit, async function(msgtoEdit) { 
                 count += 1;
                 let channelsearch = await find_review_channel(interaction, userIDs[count], msgtoEdit);
-                return new Promise(function(resolve) {
-                    channelsearch.messages.fetch(`${msgtoEdit}`).then(async msg => {
-                        let msgEmbed = msg.embeds[0];
-                        if (msgEmbed.title.includes('🌟')) {
-                            msgEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${newDisplaySongName} 🌟`);
-                        } else {
-                            msgEmbed.setTitle(`${origArtistArray.join(' & ')} - ${newDisplaySongName}`);
-                        }
-                        await msg.edit({ content: ' ', embeds: [msgEmbed] });
-                        resolve();
+                if (channelsearch != undefined) {
+                    return new Promise(function(resolve) {
+                        channelsearch.messages.fetch(`${msgtoEdit}`).then(async msg => {
+                            let msgEmbed = msg.embeds[0];
+                            if (msgEmbed.title.includes('🌟')) {
+                                msgEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${newDisplaySongName} 🌟`);
+                            } else {
+                                msgEmbed.setTitle(`${origArtistArray.join(' & ')} - ${newDisplaySongName}`);
+                            }
+                            await msg.edit({ content: ' ', embeds: [msgEmbed] });
+                            resolve();
+                        });
                     });
-                });
+                }
             });
         }
 

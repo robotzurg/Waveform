@@ -262,9 +262,11 @@ module.exports = {
                 let reviewMsgID = db.reviewDB.get(artistArray[0], `["${ep_name}"].["${taggedUser.id}"].msg_id`);
                 if (reviewMsgID != false && reviewMsgID != undefined) {
                     let channelsearch = await find_review_channel(interaction, taggedUser.id, reviewMsgID);
-                    await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
-                        epReviewEmbed.setTimestamp(msg.createdTimestamp);
-                    });
+                    if (channelsearch != undefined) {
+                        await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
+                            epReviewEmbed.setTimestamp(msg.createdTimestamp);
+                        });
+                    }
                 }
 
                 if (epReviewEmbed.length > 3250) {

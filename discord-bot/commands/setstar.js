@@ -98,25 +98,27 @@ module.exports = {
 
         if (msgtoEdit != false && msgtoEdit != undefined) {
             let channelsearch = await find_review_channel(interaction, interaction.user.id, msgtoEdit);
-            channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                let embed_data = msg.embeds;
-                let msgEmbed = embed_data[0];
-                let msgEmbedTitle = msgEmbed.title;
-                if (star_check == false) {
-                    if (!msgEmbedTitle.includes(':star2:')) {
-                        msgEmbed.title = `:star2: ${msgEmbedTitle} :star2:`;
-                    }
-                } else {
-                    if (msgEmbedTitle.includes(':star2:')) {
-                        while (msgEmbed.title.includes(':star2:')) {
-                            msgEmbed.title = msgEmbed.title.replace(':star2:', '');
+            if (channelsearch != undefined) {
+                await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                    let embed_data = msg.embeds;
+                    let msgEmbed = embed_data[0];
+                    let msgEmbedTitle = msgEmbed.title;
+                    if (star_check == false) {
+                        if (!msgEmbedTitle.includes(':star2:')) {
+                            msgEmbed.title = `:star2: ${msgEmbedTitle} :star2:`;
+                        }
+                    } else {
+                        if (msgEmbedTitle.includes(':star2:')) {
+                            while (msgEmbed.title.includes(':star2:')) {
+                                msgEmbed.title = msgEmbed.title.replace(':star2:', '');
+                            }
                         }
                     }
-                }
-                msg.edit({ embeds: [msgEmbed] });   
-            }).catch((err) => {
-                handle_error(interaction, err);
-            });
+                    msg.edit({ embeds: [msgEmbed] });   
+                }).catch((err) => {
+                    handle_error(interaction, err);
+                });
+            }
         }
 
         let ep_from = db.reviewDB.get(artistArray[0], `["${songName}"].ep`);
