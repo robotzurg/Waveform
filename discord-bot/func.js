@@ -535,12 +535,21 @@ module.exports = {
 
         songName = songName.trim();
         let rmxArtist = false;
+        let temp = '';
         let displayArtists = artistArray;
 
         if (songName.includes('Remix') && songName.includes(' - ')) {
             songName = songName.split(' - ');
             rmxArtist = songName[1].slice(0, -6);
             songName = `${songName[0]} (${rmxArtist} Remix)`;
+            displayArtists = artistArray.filter(v => v != rmxArtist);
+            artistArray = [rmxArtist.split(' & ')];
+            artistArray = artistArray.flat(1);
+        }
+
+        if (songName.includes(' Remix)')) {
+            temp = songName.split(' Remix)')[0].split('(');
+            rmxArtist = temp[temp.length - 1];
             displayArtists = artistArray.filter(v => v != rmxArtist);
             artistArray = [rmxArtist.split(' & ')];
             artistArray = artistArray.flat(1);
@@ -609,7 +618,7 @@ module.exports = {
         let all_reviewed_users = []; // The list of users who have reviewed every song on the EP/LP.
 
         for (let i = 0; i < songArray.length; i++) {
-            let songArtistArray = origArtistArray;
+            let songArtistArray = origArtistArray.slice(0);
             let songCollabArray = [];
             let songVocalistArray = [];
             let userArray;

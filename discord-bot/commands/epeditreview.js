@@ -68,16 +68,18 @@ module.exports = {
 
             if (ep_msg_id != false && ep_msg_id != undefined) {
                 let channelsearch = await find_review_channel(interaction, interaction.user.id, ep_msg_id);
-                await channelsearch.messages.fetch(ep_msg_id).then(msg => {
-                    let msgEmbed = msg.embeds[0];
-                    if (ep_rating != null) {
-                        msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${ep_rating}/10)`);
-                    }
-                    if (ep_review != null) {
-                        msgEmbed.setDescription(`*${ep_review}*`);
-                    }
-                    msg.edit({ embeds: [msgEmbed] });
-                });
+                if (channelsearch != undefined) {
+                    await channelsearch.messages.fetch(ep_msg_id).then(msg => {
+                        let msgEmbed = msg.embeds[0];
+                        if (ep_rating != null) {
+                            msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${ep_rating}/10)`);
+                        }
+                        if (ep_review != null) {
+                            msgEmbed.setDescription(`*${ep_review}*`);
+                        }
+                        msg.edit({ embeds: [msgEmbed] });
+                    });
+                }
             }
 
             interaction.editReply(`Here's what was edited on your review of **${artistArray.join(' & ')} - ${ep_name}**:` +

@@ -127,15 +127,17 @@ module.exports = {
                 forAsync(msgstoEdit, async function(msgtoEdit) {
                     count += 1;
                     let channelsearch = await find_review_channel(interaction, userIDs[count], msgtoEdit);
-                    return new Promise(function(resolve) {
-                        let msgEmbed;
-                        channelsearch.messages.fetch(msgtoEdit).then(msg => {
-                            msgEmbed = msg.embeds[0];
-                            msgEmbed.setThumbnail(songArt);
-                            msg.edit({ content: ' ', embeds: [msgEmbed] });
-                            resolve();
+                    if (channelsearch != undefined) {
+                        return new Promise(function(resolve) {
+                            let msgEmbed;
+                            channelsearch.messages.fetch(msgtoEdit).then(msg => {
+                                msgEmbed = msg.embeds[0];
+                                msgEmbed.setThumbnail(songArt);
+                                msg.edit({ content: ' ', embeds: [msgEmbed] });
+                                resolve();
+                            });
                         });
-                    });
+                    }
                 });
             }
 
