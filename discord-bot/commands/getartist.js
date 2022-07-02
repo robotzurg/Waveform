@@ -52,8 +52,6 @@ module.exports = {
             let epKeyArray = songArray.filter(item => item.includes(' LP') || item.includes(' EP'));
             songArray = songArray.filter(item => !item.includes(' LP') && !item.includes(' EP'));
 
-            console.log(songArray);
-
             let reviewNum;
             let singleArray = [];
             let pagedSingleArray = [];
@@ -204,11 +202,11 @@ module.exports = {
                     }
 
                     if (songArray[i].includes('Remix')) {
-                        remixArray.push([(star_check.includes(songArray[i])) ? 99999 : reviewNum, `• ${collabArray.join(' & ')} - ${songArray[i]} ${songDetails}`]);
+                        remixArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• ${collabArray.join(' & ')} - ${songArray[i]} ${songDetails}`]);
                         // Escape character the stars so that they don't italicize the texts
                         remixArray[remixArray.length - 1][1] = remixArray[remixArray.length - 1][1].replace('*', '\\*');
                     } else { // Singles
-                        singleArray.push([(star_check.includes(songArray[i])) ? 99999 : reviewNum, `• ${songArray[i]}` + 
+                        singleArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• ${songArray[i]}` + 
                         `${(collabArray.length != 0) ? ` (with ${collabArray.join(' & ')})` : ``}` + 
                         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` + 
                         ` ${songDetails}`]);

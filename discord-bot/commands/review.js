@@ -1,9 +1,8 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { update_art, review_song, hall_of_fame_check, handle_error, find_review_channel } = require('../func.js');
+const { update_art, review_song, hall_of_fame_check, handle_error, find_review_channel, grab_spotify_art } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require('util').promisify(setTimeout);
-const Spotify = require('node-spotify-api');
 require('dotenv').config();
 
 module.exports = {
@@ -138,22 +137,20 @@ module.exports = {
             taggedMember = await interaction.guild.members.fetch(taggedUser.id);
         }
 
-        // [] check, as the system requires [] to grab the remix artist with string slicing.
+        // Songname check to avoid not using the arguments properly.
         if (songName.includes('Remix)')) {
             await interaction.editReply('Please use the Remixers argument for Remixers, do not include them in the song name!`');
             await wait(10000);
-            try {
-                await interaction.deleteReply();
-                return;
+            try { 
+                await interaction.deleteReply(); return;
             } catch (err) {
                 console.log(err);
             }
         } else if (songName.includes('ft.') || songName.includes('feat.')) {
             await interaction.editReply('Please use the Vocalists argument for Vocalists, do not include them in the song name!`');
             await wait(10000);
-            try {
-                await interaction.deleteReply();
-                return;
+            try { 
+                await interaction.deleteReply(); return;
             } catch (err) {
                 console.log(err);
             }
@@ -236,45 +233,18 @@ module.exports = {
 
         // Grab art from server spotify
         if (songArt == false || songArt == undefined || songArt == null) {
-            const client_id = process.env.SPOTIFY_API_ID; // Your client id
-            const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
-            const song = `${origArtistArray[0]} ${songName}`;
-
-            const spotify = new Spotify({
-                id: client_id,
-                secret: client_secret,
-            });
-
-            await spotify.search({ type: "track", query: song }).then(function(data) {  
-
-                let results = data.tracks.items;
-                let songData = data.tracks.items[0];
-                for (let i = 0; i < results.length; i++) {
-                    if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].album.name.toLowerCase()}` == `${song.toLowerCase()}`) {
-                        songData = results[i];
-                        break;
-                    } else if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].name.toLowerCase()}` == `${song.toLowerCase()}`) {
-                        songData = results[i];
-                    }
-                }
-
-                if (results.length == 0) {
-                    songArt = false;
-                } else {
-                    songArt = songData.album.images[0].url;
-                }
-            });
+            songArt = await grab_spotify_art(origArtistArray, songName);
         }
         
         // Discord Profile Spotify check (checks for both "spotify" and "s" as the image link)
         if (songArt != false && songArt != undefined) {
-            if (songArt.toLowerCase().includes('spotify') || songArt.toLowerCase() == 's') {
+            if (songArt.toLowerCase() == 's') {
                 interaction.member.presence.activities.forEach((activity) => {
                     if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
                         songArt = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
                     }
                 });
-                if (songArt.toLowerCase().includes('spotify') || songArt.toLowerCase() == 's') songArt = false; // final passthrough check
+                if (songArt.toLowerCase() == 's') songArt = false; // final passthrough check
             }
         }
 
@@ -313,7 +283,7 @@ module.exports = {
             reviewEmbed.setDescription(`Rating: **${rating}/10**`);
         }
         
-        if (songArt == false) {
+        if (songArt == false || songArt == undefined) {
             reviewEmbed.setThumbnail(interaction.user.avatarURL({ format: "png", dynamic: false }));
         } else {
             reviewEmbed.setThumbnail(songArt);
@@ -348,9 +318,10 @@ module.exports = {
                     await i.editReply({ content: 'Type in the Artist Name(s) (separated with &, DO NOT PUT REMIXERS OR FEATURE VOCALISTS HERE!)', components: [] });
                     const a_filter = m => m.author.id == interaction.user.id;
                     a_collector = int_channel.createMessageCollector({ filter: a_filter, max: 1, time: 60000 });
-                    a_collector.on('collect', async m => {
+                    await a_collector.on('collect', async m => {
                         origArtistArray = m.content.split(' & ');
-                        if (rmxArtistArray.length != 0) {
+                        songArt = false;
+                        if (rmxArtistArray.length == 0) {
                             artistArray = [origArtistArray, vocalistArray];
                             artistArray = artistArray.flat(1);
                         }
@@ -361,16 +332,16 @@ module.exports = {
                             reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
                         }
 
-                        // Thumbnail image handling
-                        if (songArt == false || songArt == null) {
-                            if (db.reviewDB.has(m.content.split(' & ')[0])) {
-                                songArt = db.reviewDB.get(m.content.split(' & ')[0], `["${songName}"].art`);
-                                reviewEmbed.setThumbnail(songArt);
-                            }
-                            if (songArt == undefined) { // If the above line of code returns undefined, use continue with false
-                                songArt = false;
-                            }
+                        // Check if we have art for the edited song info in the database
+                        if (songArt == undefined || songArt == false) {
+                            // If we don't have art for the edited song info, search it on the spotify API.
+                            songArt = await grab_spotify_art(artistArray, songName);
+                            if (songArt == false) songArt = interaction.user.avatarURL({ format: "png", dynamic: false });
+                        } else {
+                            if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+                            if (songArt == undefined || songArt == false) songArt = interaction.user.avatarURL({ format: "png", dynamic: false });
                         }
+                        reviewEmbed.setThumbnail(songArt);
 
                         await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
                         m.delete();
@@ -386,8 +357,9 @@ module.exports = {
 
                     const s_filter = m => m.author.id == interaction.user.id;
                     s_collector = int_channel.createMessageCollector({ filter: s_filter, max: 1, time: 60000 });
-                    s_collector.on('collect', async m => {
+                    await s_collector.on('collect', async m => {
                         songName = m.content;
+                        songArt = false;
                         displaySongName = (`${songName}` + 
                         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
                         `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
@@ -398,16 +370,16 @@ module.exports = {
                             reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
                         }
 
-                        // Thumbnail image handling
-                        if (songArt == false || songArt == null) {
-                            if (db.reviewDB.has(artistArray[0])) {
-                                songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
-                                reviewEmbed.setThumbnail(songArt);
-                            }
-                            if (songArt == undefined) { // If the above line of code returns undefined, use continue with false
-                                songArt = false;
-                            }
+                        // Check if we have art for the edited song info in the database
+                        if (songArt == undefined || songArt == false) {
+                            // If we don't have art for the edited song info, search it on the spotify API.
+                            songArt = await grab_spotify_art(artistArray, songName);
+                            if (songArt == false) songArt = interaction.user.avatarURL({ format: "png", dynamic: false });
+                        } else {
+                            if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+                            if (songArt == undefined || songArt == false) songArt = interaction.user.avatarURL({ format: "png", dynamic: false });
                         }
+                        reviewEmbed.setThumbnail(songArt);
 
                         await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
                         m.delete();

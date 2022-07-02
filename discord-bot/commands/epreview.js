@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { handle_error, review_ep } = require('../func.js');
+const { handle_error, review_ep, grab_spotify_art } = require('../func.js');
 const Spotify = require('node-spotify-api');
 require('dotenv').config();
 
@@ -278,15 +278,15 @@ module.exports = {
                             }
 
                             // Thumbnail image handling
-                            if (art == false || art == null) {
-                                if (db.reviewDB.has(m.content.split(' & ')[0])) {
-                                    art = db.reviewDB.get(m.content.split(' & ')[0], `["${ep_name}"].art`);
-                                    epEmbed.setThumbnail(art);
-                                }
-                                if (art == undefined) { // If the above line of code returns undefined, use continue with false
-                                    art = false;
-                                }
+                            if (art == undefined || art == false) {
+                                // If we don't have art for the edited ep info, search it on the spotify API.
+                                art = await grab_spotify_art(artistArray, ep_name);
+                                if (art == false) art = interaction.user.avatarURL({ format: "png", dynamic: false });
+                            } else {
+                                if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0], `["${ep_name}"].art`);
+                                if (art == undefined || art == false) art = interaction.user.avatarURL({ format: "png", dynamic: false });
                             }
+                            epEmbed.setThumbnail(art);
 
                             await i.editReply({ embeds: [epEmbed], components: [row, row2] });
                             db.user_stats.set(interaction.user.id, [msg.id, artistArray, ep_name, 'A'], 'current_ep_review');      
@@ -312,15 +312,15 @@ module.exports = {
                             }
 
                             // Thumbnail image handling
-                            if (art == false || art == null) {
-                                if (db.reviewDB.has(artistArray[0])) {
-                                    art = db.reviewDB.get(artistArray[0], `["${ep_name}"].art`);
-                                    epEmbed.setThumbnail(ep_name);
-                                }
-                                if (art == undefined) { // If the above line of code returns undefined, use continue with false
-                                    art = false;
-                                }
+                            if (art == undefined || art == false) {
+                                // If we don't have art for the edited ep info, search it on the spotify API.
+                                art = await grab_spotify_art(artistArray, ep_name);
+                                if (art == false) art = interaction.user.avatarURL({ format: "png", dynamic: false });
+                            } else {
+                                if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0], `["${ep_name}"].art`);
+                                if (art == undefined || art == false) art = interaction.user.avatarURL({ format: "png", dynamic: false });
                             }
+                            epEmbed.setThumbnail(art);
 
                             await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
                             db.user_stats.set(interaction.user.id, [msg.id, artistArray, ep_name, 'A'], 'current_ep_review');      
