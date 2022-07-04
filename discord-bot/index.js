@@ -269,6 +269,6 @@ client.on('guildMemberAdd', async (member) => {
 // login to Discord
 client.login(token);
 
-app.listen(3000, async () => {
+/*app.listen(3000, async () => {
     console.log("Server listening on Port", 3000);
-});
+});*/
