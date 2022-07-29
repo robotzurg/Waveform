@@ -46,7 +46,7 @@ module.exports = {
         for (let i = 0; i < paged_star_list.length; i++) {
 
             for (let j = 0; j < paged_star_list[i].length; j++) {
-                paged_star_list[i][j] = `• ` + paged_star_list[i][j];
+                paged_star_list[i][j] = `• **[${paged_star_list[i][j]}](<https://www.google.com>)**`;
             }
 
             paged_star_list[i] = paged_star_list[i].join('\n');
@@ -58,22 +58,23 @@ module.exports = {
             .setTitle(`🌟 ${taggedMember.displayName}'s Stars 🌟`)
             .setDescription(paged_star_list[page_num]);
             if (paged_star_list.length > 1) {
-                starCommandEmbed.setFooter({ text: `Page 1 / ${paged_star_list.length}` });
+                starCommandEmbed.setFooter({ text: `Page 1 / ${paged_star_list.length} • ${star_list.length} stars given` });
                 interaction.editReply({ embeds: [starCommandEmbed], components: [row] });
             } else {
+                starCommandEmbed.setFooter({ text: `${star_list.length} stars given` });
                 interaction.editReply({ embeds: [starCommandEmbed], components: [] });
             }
         
         if (paged_star_list.length > 1) {
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ time: 60000 });
+            const collector = message.createMessageComponentCollector({ time: 360000 });
 
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;
                 page_num = _.clamp(page_num, 0, paged_star_list.length - 1);
                 starCommandEmbed.setDescription(paged_star_list[page_num]);
-                starCommandEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_star_list.length}` });
+                starCommandEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_star_list.length} • ${star_list.length} stars given` });
                 i.update({ embeds: [starCommandEmbed] });
             });
 

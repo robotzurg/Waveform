@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { parse_spotify, get_user_reviews, handle_error } = require('../func.js');
+const { get_user_reviews, handle_error, spotify_api_setup } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const _ = require('lodash');
 
@@ -24,6 +24,7 @@ module.exports = {
         try {
 
         let spotifyCheck;
+        let isPodcast;
         let artist = interaction.options.getString('artist');
 
         let taggedUser = interaction.options.getUser('user');
@@ -37,26 +38,24 @@ module.exports = {
         }
         
         // Spotify Check
-        if (artist.toLowerCase() == 's') {
-            interaction.member.presence.activities.forEach((activity) => {
-                if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
-                    let artistArray = activity.state;
-                    if (activity.state.includes('; ')) {
-                        artistArray = artistArray.split('; ');
-                    } else if (activity.state.includes(', ')) {
-                        artistArray = artistArray.split(', '); // This is because of a stupid mobile discord bug
-                    } else {
-                        artistArray = [artistArray];
-                    }
-                    let sp_data = parse_spotify(artistArray[0], '');
-                    if (artist.toLowerCase() == 's') artist = sp_data[0][0];
-                    spotifyCheck = true;
-                }
+        if (artist == null) {
+            const spotifyApi = await spotify_api_setup(interaction.user.id);
+            if (spotifyApi == false) return interaction.editReply(`This subcommand requires you to use \`/login\` `);
+
+            await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+                if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
+                artist = data.body.item.artists.map(a => a.name)[0];
+                spotifyCheck = true;
             });
+
+            // Check if a podcast is being played, as we don't support that.
+            if (isPodcast == true) {
+                return interaction.editReply('Podcasts are not supported with `/np`.');
+            }
         }
 
         if (spotifyCheck == false && (artist.toLowerCase() == 's')) {
-            return interaction.editReply('Spotify status not detected, please type in the artist name manually or fix your status!');
+            return interaction.editReply('Spotify playback not detected, please type in the artist name manually or play a song!');
         }
 
         const artistObj = db.reviewDB.get(artist);

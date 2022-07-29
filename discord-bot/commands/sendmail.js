@@ -1,7 +1,8 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
+const Discord = require('discord.js');
 require('dotenv').config();
 const db = require('../db.js');
-const SpotifyWebApi = require('spotify-web-api-node');
+const { spotify_api_setup } = require('../func.js');
 const { getData } = require('spotify-url-info');
 
 module.exports = {
@@ -10,7 +11,7 @@ module.exports = {
         .setDescription('Send a song to a users mailbox playlist! (THIS REQUIRES SPOTIFY AUTHENTICATION WITH /LOGIN)')
         .addStringOption(option => 
             option.setName('link')
-                .setDescription('Link to the spotify song you would like to send to the mailbox')
+                .setDescription('Link to the song you would like to send to the mailbox (MUST BE A SPOTIFY LINK)')
                 .setRequired(true))
         .addUserOption(option => 
             option.setName('user')
@@ -19,28 +20,30 @@ module.exports = {
 	async execute(interaction) {
 
         let taggedUser = interaction.options.getUser('user');
-        let taggedMember = await interaction.guild.members.fetch(taggedUser.id);    
+        let taggedMember = await interaction.guild.members.fetch(taggedUser.id);  
 
-        const access_token = db.user_stats.get(taggedUser.id, 'access_token');
-        if (access_token == undefined || access_token == false) return interaction.editReply(`The user ${taggedMember.displayName} has not logged into Spotify through Waveform. Tell them to login using \`/login\`!`);
-        const refresh_token = db.user_stats.get(taggedUser.id, 'refresh_token');
-        const spotifyApi = new SpotifyWebApi({
-            redirectUri: process.env.SPOTIFY_REDIRECT_URI,
-            clientId: process.env.SPOTIFY_API_ID,
-            clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-        });
+        const spotifyApi = await spotify_api_setup(taggedUser.id);
+    
+        if (spotifyApi == false) {
+            interaction.editReply('You must use `/login` to use Spotify related features!');
+            return -1;
+        }
 
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
         let trackLink = interaction.options.getString('link');
         let trackUris = [];
         let name;
         let artists;
+        let url;
+        let songArt;
 
         if (!trackLink.includes('spotify')) return interaction.editReply('The link you put in is not a valid spotify link!');
         await getData(trackLink).then(data => {
+            url = data.external_urls.spotify;
+            songArt = data.images[0].url;
             name = data.name;
             artists = data.artists.map(artist => artist.name);
-            if (data.type == 'track') {
+            if (data.type == 'track' || data.type == 'single') {
                 trackUris.push(data.uri); // Used to add to playlist
             } else if (data.type == 'album') {
                 for (let i = 0; i < data.tracks.items.length; i++) {
@@ -52,17 +55,25 @@ module.exports = {
             return interaction.editReply('This track threw an error. Yikes!');
         });
 
-        await spotifyApi.setRefreshToken(refresh_token);
-        await spotifyApi.setAccessToken(access_token);
-        await spotifyApi.refreshAccessToken().then(async data => {
-            await db.user_stats.set(taggedUser.id, data.body["access_token"], 'access_token');
-            await spotifyApi.setAccessToken(data.body["access_token"]);
-        }); 
-
         // Add tracks to the mailbox playlist
         await spotifyApi.addTracksToPlaylist(playlistId, trackUris)
         .then(() => {
-            interaction.editReply(`Sent the track **${artists.join(' & ')} - ${name}** to ${taggedMember.displayName}'s Spotify Mailbox!`);
+
+            const mailEmbed = new Discord.MessageEmbed()
+            .setColor(`${interaction.member.displayHexColor}`)
+            .setTitle(`${artists.join(' & ')} - ${name}`)
+            .setDescription(`This song was sent to you by <@${interaction.user.id}>!`)
+            .setThumbnail(songArt);
+
+            if (interaction.channel.id != db.user_stats.get(taggedUser.id, 'mailbox')) {
+                interaction.editReply(`Sent [**${artists.join(' & ')} - ${name}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
+                let mail_channel = interaction.guild.channels.cache.get(db.user_stats.get(taggedUser.id, 'mailbox'));
+                mail_channel.send({ content: `You've got mail! 📬`, embeds: [mailEmbed] });
+            } else {
+                interaction.editReply({ content: `You've got mail! 📬`, embeds: [mailEmbed] });
+            }
+
+            // Put the song we just mailboxed into a mailbox list for the user, so it can be pulled up with /viewmail
             if (db.user_stats.get(taggedUser.id, 'mailbox_list') == undefined) {
                 db.user_stats.set(taggedUser.id, [[`**${artists.join(' & ')} - ${name}**`, `${interaction.user.id}`]], 'mailbox_list');
             } else {

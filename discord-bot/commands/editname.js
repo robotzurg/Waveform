@@ -1,4 +1,6 @@
+/* eslint-disable no-unreachable */
 // TODO: Make remixes work with this 
+// TODO: Make this command less buggy and more consistent
 
 const db = require("../db.js");
 const { get_user_reviews, parse_artist_song_data, find_review_channel } = require("../func.js");
@@ -28,6 +30,9 @@ module.exports = {
                 .setDescription('The name of remixers on the original song, if any (CURRENTLY DISABLED)')
                 .setRequired(false)),
 	async execute(interaction) {
+
+        return interaction.editReply('This command is temporarily disabled due to bugs.');
+        
         let artists = interaction.options.getString('artist');
         let old_song = interaction.options.getString('old_name');
         let new_song = interaction.options.getString('new_name');
@@ -49,8 +54,8 @@ module.exports = {
 
         let origArtistArray = parsed_args[0];
         let artistArray = parsed_args[2];
-        let rmxArtistArray = parsed_args[4];
-        let displaySongName = parsed_args[6];
+        let rmxArtistArray = parsed_args[3];
+        let displaySongName = parsed_args[5];
         let newDisplaySongName = displaySongName.replace(old_song, new_song);
 
         if (rmxArtistArray.length != 0) {

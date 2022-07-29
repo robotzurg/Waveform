@@ -1,6 +1,5 @@
 const db = require("../db.js");
 const { parse_artist_song_data, handle_error, hall_of_fame_check, find_review_channel } = require('../func.js');
-const wait = require('util').promisify(setTimeout);
 const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
@@ -10,14 +9,14 @@ module.exports = {
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
-                .setAutocomplete(true)
-                .setRequired(true))
+                .setAutocomplete(false)
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('song_name')
                 .setDescription('The name of the song.')
-                .setAutocomplete(true)
-                .setRequired(true))
+                .setAutocomplete(false)
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('remixers')
@@ -33,19 +32,14 @@ module.exports = {
             let parsed_args = await parse_artist_song_data(interaction, artists, song, remixers);
             
             if (parsed_args == -1) {
-                await wait(30000);
-                try {
-                    return interaction.deleteReply();
-                } catch (err) {
-                    return console.log(err);
-                }
+                return interaction.deleteReply();
             }
 
             let origArtistArray = parsed_args[0];
+            let songName = parsed_args[1];
             let artistArray = parsed_args[2];
-            let songName = parsed_args[3];
-            let rmxArtistArray = parsed_args[4];
-            let vocalistArray = parsed_args[5];
+            let rmxArtistArray = parsed_args[3];
+            let vocalistArray = parsed_args[4];
 
             if (rmxArtistArray.length != 0) {
                 artistArray = rmxArtistArray;
@@ -54,12 +48,6 @@ module.exports = {
             let name = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].name`);
             if (name == undefined) {
                 interaction.editReply(`No review found for \`${origArtistArray.join(' & ')} - ${songName}\`.`);
-                await wait(30000);
-                try {
-                    return await interaction.deleteReply();
-                } catch (err) {
-                    return console.log(err);
-                }
             } 
             let review = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].review`);
             let rating = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].rating`);

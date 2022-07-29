@@ -11,13 +11,13 @@ module.exports = {
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
                 .setAutocomplete(true)
-                .setRequired(true))
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('song_name')
                 .setDescription('The name of the song.')
                 .setAutocomplete(true)
-                .setRequired(true))
+                .setRequired(false))
             
         .addUserOption(option => 
             option.setName('user')
@@ -42,10 +42,10 @@ module.exports = {
             }
 
             let origArtistArray = parsed_args[0];
+            let songName = parsed_args[1];
             let artistArray = parsed_args[2];
-            let songName = parsed_args[3];
-            let rmxArtistArray = parsed_args[4];
-            let vocalistArray = parsed_args[5];
+            let rmxArtistArray = parsed_args[3];
+            let displaySongName = parsed_args[5];
 
             if (rmxArtistArray.length != 0) {
                 artistArray = rmxArtistArray;
@@ -85,6 +85,14 @@ module.exports = {
             if (rsentby != false) {
                 usrSentBy = await interaction.guild.members.cache.get(rsentby);              
             }
+
+            // If we don't have a single review link, we can check for an EP/LP review link
+            if (rurl == false && (epfrom != false && epfrom != undefined)) {
+                let songEPObj = db.reviewDB.get(artistArray[0], `["${epfrom}"]`);
+                if (songEPObj[`${interaction.user.id}`].url != false) {
+                    rurl = songEPObj[`${interaction.user.id}`].url;
+                }
+            }
             
             if (songArt != false) {
                 songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
@@ -98,18 +106,15 @@ module.exports = {
             .setColor(`${taggedMember.displayHexColor}`);
 
             if (rstarred == false) {
-                reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray})` : ``}`);
+                reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
             } else {
-                reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray})` : ``} :star2:`);
+                reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${displaySongName} :star2:`);
             }
 
             reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ format: "png" })}` });
 
-            if (rreview != '-') {
-                reviewEmbed.setDescription(`${rreview}`);
-            } else {
-                reviewEmbed.setDescription(`Rating: **${rscore}/10**`);
-            }
+            if (rscore != false) reviewEmbed.addField('Rating: ', `**${rscore}/10**`, true);
+            if (rreview != false) reviewEmbed.setDescription(rreview);
 
             let reviewMsgID = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].msg_id`);
             if (reviewMsgID != false && reviewMsgID != undefined) {
@@ -122,7 +127,6 @@ module.exports = {
             }
 
             reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ format: "png" }) : songArt);
-            if (rreview != '-') reviewEmbed.addField('Rating: ', `**${rscore}/10**`, true);
 
             if (rsentby != false) {
                 reviewEmbed.setFooter({ text: `Sent by ${usrSentBy.displayName}`, iconURL: `${usrSentBy.user.avatarURL({ format: "png" })}` });
@@ -135,6 +139,7 @@ module.exports = {
             } else {
                 interaction.editReply({ content: `[View Review Message](${rurl})`, embeds: [reviewEmbed] });
             }
+
         } catch (err) {
             console.log(err);
             let error = err;

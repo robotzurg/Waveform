@@ -4,25 +4,25 @@ const db = require('../db.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('deletesongtag')
-        .setDescription('Delete a tag on a song or EP/LP!')
-        .addStringOption(option => 
-            option.setName('artist')
-                .setDescription('The name of the artist(s).')
-                .setAutocomplete(true)
-                .setRequired(true))
-
-        .addStringOption(option => 
-            option.setName('name')
-                .setDescription('The name of the song or EP/LP.')
-                .setAutocomplete(true)
-                .setRequired(true))
-
+        .setName('removesongtag')
+        .setDescription('Remove a tag on a song or EP/LP!')
         .addStringOption(option => 
             option.setName('tag')
                 .setDescription('The tag you would like to remove from the song or EP/LP.')
                 .setAutocomplete(true)
                 .setRequired(true))
+    
+        .addStringOption(option => 
+            option.setName('artist')
+                .setDescription('The name of the artist(s).')
+                .setAutocomplete(true)
+                .setRequired(false))
+
+        .addStringOption(option => 
+            option.setName('name')
+                .setDescription('The name of the song or EP/LP.')
+                .setAutocomplete(true)
+                .setRequired(false))
             
         .addStringOption(option => 
             option.setName('remixers')
@@ -42,10 +42,10 @@ module.exports = {
         }
 
         let origArtistArray = parsed_args[0];
+        let songName = parsed_args[1];
         let artistArray = parsed_args[2];
-        let songName = parsed_args[3];
-        let rmxArtistArray = parsed_args[4];
-        let vocalistArray = parsed_args[5];
+        let rmxArtistArray = parsed_args[3];
+        let vocalistArray = parsed_args[4];
 
         let tag = interaction.options.getString('tag');
 

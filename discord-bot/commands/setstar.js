@@ -1,6 +1,5 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const wait = require('wait');
 const { parse_artist_song_data, hall_of_fame_check, handle_error, find_review_channel } = require('../func.js');
 
 module.exports = {
@@ -11,13 +10,13 @@ module.exports = {
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
                 .setAutocomplete(true)
-                .setRequired(true))
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('name')
                 .setDescription('The name of the song or EP/LP.')
                 .setAutocomplete(true)
-                .setRequired(true))
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('remixers')
@@ -40,10 +39,10 @@ module.exports = {
 
         let origArtistArray = parsed_args[0];
         let origSongName = parsed_args[1];
+        let songName = parsed_args[1];
         let artistArray = parsed_args[2];
-        let songName = parsed_args[3];
-        let rmxArtistArray = parsed_args[4];
-        let vocalistArray = parsed_args[5];
+        let rmxArtistArray = parsed_args[3];
+        let vocalistArray = parsed_args[4];
         let songArt;
 
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
@@ -66,7 +65,9 @@ module.exports = {
             if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`${artistArray[i]} not found in database.`);
             if (db.reviewDB.get(artistArray[i], `["${songName}"]`) == undefined) return interaction.editReply(`${origArtistArray.join(' & ')} - ${songName} not found in database.`);
             if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) == undefined) return interaction.editReply(`You haven't reviewed ${origArtistArray.join(' & ')} - ${songName}.`);
-            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`) < 8) return interaction.editReply(`You haven't rated ${origArtistArray.join(' & ')} - ${songName} an 8/10 or higher!`);
+            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`) != false) {
+                if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`) < 8) return interaction.editReply(`You haven't rated ${origArtistArray.join(' & ')} - ${songName} an 8/10 or higher!`);
+            }
 
             if (star_check == true) {
                 await db.reviewDB.set(artistArray[i], false, `["${songName}"].["${interaction.user.id}"].starred`);
@@ -84,7 +85,6 @@ module.exports = {
             db.user_stats.remove(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
             interaction.editReply(`Unstarred ${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }.`);
         }
-        
         
         // Hall of Fame stuff
         // Create display song name variable
@@ -132,7 +132,6 @@ module.exports = {
                     let msg_embed_fields = msgEmbed.fields;
                     let field_num = -1;
                     for (let i = 0; i < msg_embed_fields.length; i++) {
-                        console.log(msg_embed_fields[i]);
                         if (msg_embed_fields[i].name.includes(songName)) {
                             field_num = i;
                         }
@@ -156,9 +155,6 @@ module.exports = {
                 });
             } 
         }
-
-        await wait(30000);
-        await interaction.deleteReply();
 
         } catch (err) {
             let error = err;

@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { average, parse_spotify, get_user_reviews, sort, removeItemOnce, handle_error } = require('../func.js');
+const { average, get_user_reviews, sort, removeItemOnce, handle_error, spotify_api_setup } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const _ = require('lodash');
 
@@ -10,42 +10,39 @@ module.exports = {
         .setDescription('Get all the songs from an artist and display them in an embed message.')
         .addStringOption(option => 
             option.setName('artist')
-                .setDescription('The name of the artist.')
+                .setDescription('The name of the artist(s). (DO NOT PUT ANY REMIXERS HERE) (Leave empty to use spotify playback)')
                 .setAutocomplete(true)
-                .setRequired(true)),
-
+                .setRequired(false)),
     admin: false,
 	async execute(interaction) {
         try {
-
             let spotifyCheck;
             let artist = interaction.options.getString('artist');
+            let isPodcast;
             
             // Spotify Check
-            if (artist.toLowerCase() == 's') {
-                interaction.member.presence.activities.forEach((activity) => {
-                    if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
-                        let artistArray = activity.state;
-                        if (activity.state.includes('; ')) {
-                            artistArray = artistArray.split('; ');
-                        } else if (activity.state.includes(', ')) {
-                            artistArray = artistArray.split(', '); // This is because of a stupid mobile discord bug
-                        } else {
-                            artistArray = [artistArray];
-                        }
-                        let sp_data = parse_spotify(artistArray[0], '');
-                        if (artist.toLowerCase() == 's') artist = sp_data[0][0];
-                        spotifyCheck = true;
-                    }
+            if (artist == null) {
+                const spotifyApi = await spotify_api_setup(interaction.user.id);
+                if (spotifyApi == false) return interaction.editReply(`This subcommand requires you to use \`/login\` `);
+
+                await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+                    if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
+                    artist = data.body.item.artists.map(a => a.name)[0];
+                    spotifyCheck = true;
                 });
+
+                // Check if a podcast is being played, as we don't support that.
+                if (isPodcast == true) {
+                    return interaction.editReply('Podcasts are not supported with `/np`.');
+                }
             }
 
             if (spotifyCheck == false && (artist.toLowerCase() == 's')) {
-                return interaction.editReply('Spotify status not detected, please type in the artist name manually or fix your status!');
+                return interaction.editReply('Spotify playback not detected, please type in the artist name manually or play a song!');
             }
 
             const artistObj = db.reviewDB.get(artist);
-            if (artistObj == undefined) return interaction.editReply('Artist not found.');
+            if (artistObj == undefined) return interaction.editReply(`\`${artist}\` not found in the database.`);
             const artistImage = artistObj.Image;
             let songArray = Object.keys(artistObj);
             songArray = songArray.filter(item => item !== 'Image');
@@ -276,8 +273,6 @@ module.exports = {
                 } else {
                     artistEmbed.setDescription(`No reviewed songs. :(`);
                 }
-
-                console.log(artistEmbed.length);
 
             if (pages_active[0] == true) {
                 interaction.editReply({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });

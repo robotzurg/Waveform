@@ -1,6 +1,5 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const wait = require('wait');
 const { parse_artist_song_data, handle_error, find_review_channel } = require("../func.js");
 
 module.exports = {
@@ -8,33 +7,37 @@ module.exports = {
         .setName('editreview')
         .setDescription('Edit a song review.')
         .addStringOption(option => 
-            option.setName('artist')
-                .setDescription('The artists of the song you would like to edit the review of (No Remixers Here).')
-                .setAutocomplete(true)
-                .setRequired(true))
-        .addStringOption(option => 
-            option.setName('song_name')
-                .setDescription('The song you would like to edit the review of.')
-                .setAutocomplete(true)
-                .setRequired(true))
-        .addStringOption(option => 
             option.setName('rating')
                 .setDescription('The new rating of the review.')
                 .setRequired(false))
+
         .addStringOption(option => 
             option.setName('review')
                 .setDescription('The new written review.')
                 .setRequired(false))
+
         .addUserOption(option => 
             option.setName('user_who_sent')
                 .setDescription('The new user who sent you the song for the review')
                 .setRequired(false))
+
+        .addStringOption(option => 
+            option.setName('artist')
+                .setDescription('The artists of the song you would like to edit the review of (No Remixers Here).')
+                .setAutocomplete(true)
+                .setRequired(false))
+
+        .addStringOption(option => 
+            option.setName('song_name')
+                .setDescription('The song you would like to edit the review of.')
+                .setAutocomplete(true)
+                .setRequired(false))
+
         .addStringOption(option => 
             option.setName('remixers')
                 .setDescription('Remixers that remixed the song you are editing the review of.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-	admin: true,
 	async execute(interaction) {
         try {
 
@@ -48,11 +51,11 @@ module.exports = {
         }
 
         let origArtistArray = parsed_args[0];
-        let origSongName = parsed_args[1];
+        let songName = parsed_args[1];
         let artistArray = parsed_args[2];
-        let songName = parsed_args[3];
-        let rmxArtistArray = parsed_args[4];
-        let vocalistArray = parsed_args[5];
+        let rmxArtistArray = parsed_args[3];
+        let vocalistArray = parsed_args[4];
+        let origSongName = parsed_args[6];
 
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
 
@@ -186,13 +189,6 @@ module.exports = {
         `${(oldrating != undefined) ? `\`${oldrating}/10\` changed to \`${rating}/10\`\n` : ``}` +
         `${(oldreview != undefined) ? `Review was changed to \`${review}\`\n` : ``}` +
         `${(old_user_who_sent != undefined) ? `User Who Sent was changed to \`${user_sent_name.displayName}\`` : ``}`);
-
-        await wait(30000);
-        try {
-            await interaction.deleteReply();
-        } catch (err) {
-            console.log(err);
-        }
 
         } catch (err) {
             let error = err;

@@ -7,22 +7,22 @@ module.exports = {
         .setName('addtag')
         .setDescription('Add a tag to a song or EP/LP!')
         .addStringOption(option => 
+            option.setName('tag')
+                .setDescription('The tag you would like to assign to the song.')
+                .setAutocomplete(true)
+                .setRequired(true))
+
+        .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
                 .setAutocomplete(true)
-                .setRequired(true))
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('name')
                 .setDescription('The name of the song or EP/LP.')
                 .setAutocomplete(true)
-                .setRequired(true))
-
-        .addStringOption(option => 
-            option.setName('tag')
-                .setDescription('The tag you would like to assign to the song.')
-                .setAutocomplete(true)
-                .setRequired(true))
+                .setRequired(false))
             
         .addStringOption(option => 
             option.setName('remixers')
@@ -47,10 +47,10 @@ module.exports = {
         }
 
         let origArtistArray = parsed_args[0];
+        let songName = parsed_args[1];
         let artistArray = parsed_args[2];
-        let songName = parsed_args[3];
-        let rmxArtistArray = parsed_args[4];
-        let vocalistArray = parsed_args[5];
+        let rmxArtistArray = parsed_args[3];
+        let vocalistArray = parsed_args[4];
 
         let tag = interaction.options.getString('tag');
         let tagArt = interaction.options.getString('tag_image');
@@ -59,12 +59,11 @@ module.exports = {
         if (rmxArtistArray == undefined) rmxArtistArray = [];
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
 
-        let songObj = db.reviewDB.get(origArtistArray[0], `["${songName}"]`);
+        let songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
         if (songObj == undefined) { return interaction.editReply(`The thing you tried to add a tag to, \`${origArtistArray.join(' & ')} - ${songName}\`, does not exist.`); }
 
         let tagSongEntry = (`${origArtistArray.join(' & ')} - ${songName}` + 
-        `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
-        `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
+        `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
 
         if (db.tags.has(tag)) {
             db.tags.push(tag, tagSongEntry, 'song_list');
