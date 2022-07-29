@@ -10,7 +10,7 @@ module.exports = {
         .setDescription('View general stats about the server\'s bot usage!'),
 	async execute(interaction, client) {
         try {
-            await interaction.editReply('Loading server stats, this make take a bit of time so please be patient!');
+            await interaction.editReply('Loading server stats, this may take a bit of time so please be patient!');
             let artistCount = 0;
             let songCount = 0;
             let epCount = 0;
@@ -34,16 +34,6 @@ module.exports = {
                 songArray = songArray.filter(v => v != 'Image');
 
                 for (let j = 0; j < songArray.length; j++) {
-
-                    let vocalistArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].vocals`);
-                    let collabArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].collab`);
-                    if (vocalistArray != undefined) {
-                        if (vocalistArray.length != 0 && !vocalistArray.includes(artistArray[i])) {
-                            collabArray = [collabArray, vocalistArray];
-                            collabArray = collabArray.flat(1);
-                            db.reviewDB.set(artistArray[i], collabArray, `["${songArray[j]}"].collab`);
-                        }
-                    }
 
                     let userArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"]`);
                     if (userArray != null && userArray != undefined) {
