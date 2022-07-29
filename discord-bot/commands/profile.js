@@ -6,7 +6,6 @@ const _ = require('lodash');
 
 const applyText = (font, fontSize, cutoff, canvas, text) => {
 	const context = canvas.getContext('2d');
-
 	do {
 		// Assign the font to the context and decrement it so it can be measured again
 		context.font = `${fontSize -= 1}px ${font}`;
@@ -120,7 +119,6 @@ module.exports = {
             mostStarred = find_most_duplicate(starArtistList);
             ratingList = ratingList.filter(v => !Number.isNaN(v));
             ratingAvg = _.mean(ratingList);
-            console.log(mostStarred);
 
             FontLibrary.use("main", [
                 "./LEMONMILK-Light.otf",

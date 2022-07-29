@@ -1,6 +1,5 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const wait = require("wait");
 const { handle_error, find_review_channel } = require('../func.js');
 
 module.exports = {
@@ -85,13 +84,7 @@ module.exports = {
             interaction.editReply(`Here's what was edited on your review of **${artistArray.join(' & ')} - ${ep_name}**:` +
             `\n${(old_ep_rating != undefined) ? `\`${old_ep_rating}\` changed to \`${ep_rating}/10\`` : ``}` +
             `\n${(old_ep_review != undefined) ? `Review was changed to \`${ep_review}\`` : ``}`);
-            
-            await wait(30000);
-            try {
-                await interaction.deleteReply();
-            } catch (err) {
-                console.log(err);
-            }
+
         } catch (err) {
             let error = err;
             handle_error(interaction, error);

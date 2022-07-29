@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { handle_error, find_review_channel } = require('../func.js');
+const { handle_error, find_review_channel, parse_artist_song_data } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,13 +11,13 @@ module.exports = {
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
                 .setAutocomplete(true)
-                .setRequired(true))
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('ep_name')
                 .setDescription('The name of the EP/LP.')
                 .setAutocomplete(true)
-                .setRequired(true))
+                .setRequired(false))
             
         .addUserOption(option => 
             option.setName('user')
@@ -27,9 +27,16 @@ module.exports = {
 	async execute(interaction) {
 
         try {
+            let artists = interaction.options.getString('artist');
+            let ep = interaction.options.getString('ep_name');
+            let parsed_args = await parse_artist_song_data(interaction, artists, ep);
+            if (parsed_args == -1) return;
 
-            let origArtistArray = interaction.options.getString('artist').split(' & ');
-            let epName = interaction.options.getString('ep_name');
+            let origArtistArray = parsed_args[0];
+            let epName = parsed_args[1];
+            let artistArray = parsed_args[2];
+            let epType = epName.includes(' LP') ? `LP` : `EP`;
+
             let taggedUser = interaction.options.getUser('user');
             let taggedMember = interaction.member;
 
@@ -40,14 +47,7 @@ module.exports = {
                 taggedMember = interaction.member;
             }
 
-            let artistArray = origArtistArray;
-
             if (!epName.includes(' EP') && !epName.includes(' LP')) epName = `${epName} EP`;
-
-            const artistObj = db.reviewDB.get(artistArray[0]);
-            if (artistObj == undefined) {
-                return interaction.editReply('No artist found.');
-            }
 
             let artistsEmbed;
             let vocalistsEmbed;
@@ -56,11 +56,11 @@ module.exports = {
             let rsentby = false;
             let rstarred;
 
-            const ep_object = db.reviewDB.get(artistArray[0], `${epName}`);
-            if (ep_object == undefined) return interaction.editReply('EP/LP not found.');
+            let epObj = db.reviewDB.get(artistArray[0], `["${epName}"]`);
+            if (epObj == undefined) return interaction.editReply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
 
             let user_name = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].name`);
-            if (user_name == undefined) return interaction.editReply(`This EP/LP has not been reviewed by the user ${taggedMember.displayName}.`);
+            if (user_name == undefined) return interaction.editReply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` has not been reviewed by the user ${taggedMember.displayName}.`);
 
             let ep_overall_rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].rating`);
             let ep_overall_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].review`);
@@ -104,11 +104,8 @@ module.exports = {
                 epEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
             }
 
-            if (epName.includes('EP')) {
-                epEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && ep_songs.length != 0 ? `${taggedMember.displayName}'s mailbox EP review` : `${taggedMember.displayName}'s EP review`, iconURL: `${taggedUser.avatarURL({ format: "png", dynamic: false })}` });
-            } else if (epName.includes('LP')) {
-                epEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && ep_songs.length != 0 ? `${taggedMember.displayName}'s mailbox LP review` : `${taggedMember.displayName}'s LP review`, iconURL: `${taggedUser.avatarURL({ format: "png", dynamic: false })}` });
-            }
+            epEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && ep_songs.length != 0 ? `${taggedMember.displayName}'s mailbox ${epType} review` : `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ format: "png", dynamic: false })}` });
+
             epEmbed.setThumbnail(ep_art);
             if (ep_sent_by != false && ep_sent_by != undefined) {
                 epEmbed.setFooter(`Sent by ${ep_sent_by.displayName}`, `${ep_sent_by.user.avatarURL({ format: "png" })}`);
@@ -132,7 +129,7 @@ module.exports = {
 
                     rreview = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].review`);
                     if (rreview.length > 1000) rreview = '*Review hidden to save space*';
-                    rscore = `${db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].rating`)}/10`;
+                    rscore = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].rating`);
                     rsentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].sentby`);
                     rstarred = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].starred`);
 
@@ -156,15 +153,23 @@ module.exports = {
                     }
 
                     if (epEmbed.length < 3250) {
-                        epEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `${rreview}`);
+                        epEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
+                        `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
+                        `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
+                        `${rscore != false ? `(${rscore}/10)` : ``}`, 
+                        `${rreview == false ? `*No review written*` : `${rreview}`}`);
                     } else {
-                        epEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}(${rscore})`, `*Review hidden to save space*`);
+                        epEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
+                        `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
+                        `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
+                        `${rscore != false ? `(${rscore}/10)` : ``}`, 
+                        `${rreview == false ? `*No review written*` : `*Review hidden to save space*`}`);
                     }
                 }
             }
 
             if (ep_url) {
-                interaction.editReply({ content: `[View EP/LP Review Message](${ep_url})`, embeds: [epEmbed] });
+                interaction.editReply({ content: `[View ${epType} Review Message](${ep_url})`, embeds: [epEmbed] });
             } else {
                 interaction.editReply({ embeds: [epEmbed] });
             }

@@ -17,7 +17,6 @@ module.exports = {
         mail_list = mail_list.map(v => `• ${v[0]} sent by <@${v[1]}>\n`);
 
         let paged_mail_list = _.chunk(mail_list, 10);
-        console.log(paged_mail_list);
         let page_num = 0;
         const row = new Discord.MessageActionRow()
         .addComponents(

@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { handle_error, create_ep_review } = require('../func.js');
+const { handle_error, create_ep_review, parse_artist_song_data } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require("wait");
 const Spotify = require('node-spotify-api');
@@ -23,32 +23,27 @@ module.exports = {
 
         .addStringOption(option => 
             option.setName('ep_art')
-                .setDescription('Art for the EP/LP. (type "s" or "spotify" for status ep_art.)')
+                .setDescription('Art for the EP/LP. (type "s" for status ep_art.)')
                 .setRequired(false)),
 	async execute(interaction, client) {
         try {
 
-        let artistArray = interaction.options.getString('artist').split(' & ');
-        let ep_name = interaction.options.getString('ep_name');
+        let artists = interaction.options.getString('artist');
+        let ep = interaction.options.getString('epName');
+        let parsed_args = await parse_artist_song_data(interaction, artists, ep);
+        if (parsed_args == -1) return;
+
+        let epName = parsed_args[1];
+        let artistArray = parsed_args[2];
+        let epType = epName.includes(' LP') ? `LP` : `EP`;
         let ep_art = interaction.options.getString('ep_art');
         let songArray = [];
-
-        // Spotify check (checks for both "spotify" and "s" as the image link)
-        if (ep_art != false && ep_art != undefined) {
-            if (ep_art.toLowerCase().includes('spotify') || ep_art.toLowerCase() == 's') {
-                interaction.member.presence.activities.forEach((activity) => {
-                    if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
-                        ep_art = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
-                    }
-                });
-            }
-        }
 
         // Grab ep_art from server spotify
         if (ep_art == false || ep_art == undefined || ep_art == null) {
             const client_id = process.env.SPOTIFY_API_ID; // Your client id
             const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
-            let search = ep_name.replace(' EP', '');
+            let search = epName.replace(' EP', '');
             search = search.replace(' LP', '');
             const song = `${artistArray[0]} ${search}`;
 
@@ -69,20 +64,13 @@ module.exports = {
                     }
                 }
 
-                if (results.length == 0) {
-                    ep_art = false;
-                } else {
-                    ep_art = songData.album.images[0].url;
-                }
+                (results.length == 0 ? ep_art = false : ep_art = songData.album.images[0].url);
             });
         }
 
         // Place EP by default if EP or LP is not included in the title.
-        if (!ep_name.includes(' EP') && !ep_name.includes(' LP')) {
-            ep_name = `${ep_name} EP`;
-        }
-
-        if (db.reviewDB.get(artistArray[0], `["${ep_name}"]`) != undefined) return interaction.editReply('This EP/LP already exists in the database.'); 
+        if (!epName.includes(' EP') && !epName.includes(' LP')) epName = `${epName} EP`;
+        if (db.reviewDB.get(artistArray[0], `["${epName}"]`) != undefined) return interaction.editReply(`The ${epType} ${artistArray.join(' & ')} - ${epName} already exists in the database.`); 
         
         const row = new Discord.MessageActionRow()
         .addComponents(
@@ -98,13 +86,13 @@ module.exports = {
 
         let epEmbed = new Discord.MessageEmbed()
         .setColor(`${interaction.member.displayHexColor}`)
-        .setTitle(`Songs included in the EP/LP ${artistArray.join(' & ')} - ${ep_name}`);
+        .setTitle(`Songs included in the ${epType} ${artistArray.join(' & ')} - ${epName}`);
 
         if (ep_art != false) {
             epEmbed.setThumbnail(ep_art);
         }
 
-        interaction.editReply({ content: 'Type in the songs in the EP/LP song list order, one by one.\n' +
+        interaction.editReply({ content: `Type in the songs in the ${epType} song list order, one by one.\n` +
         'Make sure they are **JUST** the song name, no features that would be in the song name should be included here.\n' + 
         '(Remember that remixes are not currently supported.)\n' + 
         'When you are finished, click on the "Finish" button, or click the "Delete" button to revert everything you\'ve done.', embeds: [epEmbed], components: [row] });
@@ -134,7 +122,7 @@ module.exports = {
             if (int.customId == 'finish') {
                 msg_collector.stop();
                 
-                await create_ep_review(interaction, client, artistArray, songArray, ep_name, ep_art);
+                await create_ep_review(interaction, client, artistArray, songArray, epName, ep_art);
 
                 int.update({ content: `Merging complete:`, components: [], embeds: [epEmbed] });
             } else {

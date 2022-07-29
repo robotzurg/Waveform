@@ -34,7 +34,6 @@ module.exports = {
         await app.get(`/callback`, async (req, res) => {
             const error = req.query.error;
             const code = req.query.code;
-            console.log(interaction.user.id);
             
             if (error) {
                 console.error('Callback Error:', error);
@@ -56,7 +55,8 @@ module.exports = {
                     await db.user_stats.set(interaction.user.id, refresh_token, 'refresh_token');
         
                     console.log(`Sucessfully retreived access_token. Expires in ${expires_in} s.`);
-                    interaction.editReply('Authentication successful! You can now use the Spotify API with Waveform.');
+                    interaction.editReply('Authentication successful! You can now use the Spotify API with Waveform.\n' + 
+                    'Make sure to use `/setupmailbox` to setup your Waveform Mailbox, now that you have logged in!');
                     res.send('Authentication success! You can now close the window, and return to discord.');
                 })
                 .catch(err => {

@@ -22,7 +22,6 @@ module.exports = {
         if (!db.tags.has(tag)) return interaction.editReply(`The tag ${tag} does not exist.`);
         let songList = db.tags.get(tag, 'song_list');
         let tagArt = db.tags.get(tag, 'image');
-        console.log(tagArt);
         if (songList.length == 0) return interaction.editReply(`There are no songs with the tag \`${tag}\`.`);
 
         let pagedSongList = _.chunk(songList, 10);

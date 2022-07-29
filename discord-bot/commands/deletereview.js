@@ -10,13 +10,13 @@ module.exports = {
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
                 .setAutocomplete(true)
-                .setRequired(true))
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('name')
                 .setDescription('The name of the song or EP/LP.')
                 .setAutocomplete(true)
-                .setRequired(true))
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('remixers')
@@ -38,11 +38,11 @@ module.exports = {
         }
 
         let origArtistArray = parsed_args[0];
+        let songName = parsed_args[1];
         let origSongName = parsed_args[1];
         let artistArray = parsed_args[2];
-        let songName = parsed_args[3];
-        let rmxArtistArray = parsed_args[4];
-        let vocalistArray = parsed_args[5];
+        let rmxArtistArray = parsed_args[3];
+        let vocalistArray = parsed_args[4];
 
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
 

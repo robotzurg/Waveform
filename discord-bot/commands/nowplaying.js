@@ -1,95 +1,58 @@
 const Discord = require('discord.js');
 const db = require('../db.js');
-const { parse_spotify, get_user_reviews, handle_error } = require('../func.js');
+const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const SpotifyWebApi = require('spotify-web-api-node');
 const ms_format = require('format-duration');
 const progressbar = require('string-progressbar');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('np')
+        .setName('nowplaying')
         .setDescription('Display your currently playing song on Spotify!'),
 	async execute(interaction) {
         try {
 
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
-        let songArt, spotifyUrl, yourRating, artistArray, songName, displayArtists, sp_data, isPlaying = true, isPodcast = false;
+        let songArt, spotifyUrl, yourRating, origArtistArray, artistArray, songName, rmxArtistArray, songDisplayName, isPlaying = true, isPodcast = false;
         let songLength, songCurMs, musicProgressBar = false; // Spotify API specific variables 
-        const access_token = db.user_stats.get(interaction.user.id, 'access_token');
+        const spotifyApi = await spotify_api_setup(interaction.user.id);
+        
+        if (spotifyApi == false) return interaction.editReply(`This command requires you to use \`/login\` `);
 
-        // If we have an access token for spotify API (therefore can use it)
-        if (access_token != undefined && access_token != false) {
-            const refresh_token = db.user_stats.get(interaction.user.id, 'refresh_token');
-            const spotifyApi = new SpotifyWebApi({
-                redirectUri: process.env.SPOTIFY_REDIRECT_URI,
-                clientId: process.env.SPOTIFY_API_ID,
-                clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-            });
+        await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+            if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
+            spotifyUrl = data.body.item.external_urls.spotify;
+            songArt = data.body.item.album.images[0].url;
+            songLength = data.body.item.duration_ms;
+            songCurMs = data.body.progress_ms;
+            musicProgressBar = progressbar.splitBar(songLength / 1000, songCurMs / 1000, 12)[0];
+            isPlaying = data.body.is_playing;
+            let parsed_args = await parse_artist_song_data(interaction);
 
-            // Refresh access token so we can use API
-            await spotifyApi.setRefreshToken(refresh_token);
-            await spotifyApi.setAccessToken(access_token);
-            await spotifyApi.refreshAccessToken().then(async data => {
-                await db.user_stats.set(interaction.user.id, data.body["access_token"], 'access_token');
-                await spotifyApi.setAccessToken(data.body["access_token"]);
-            }); 
+            if (parsed_args == -1) {
+                return;
+            }
 
-            await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
-                if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
-                artistArray = data.body.item.artists.map(artist => artist.name);
-                songName = data.body.item.name;
-                spotifyUrl = data.body.item.external_urls.spotify;
-                songArt = data.body.item.album.images[0].url;
-                songLength = data.body.item.duration_ms;
-                songCurMs = data.body.progress_ms;
-                musicProgressBar = progressbar.splitBar(songLength / 1000, songCurMs / 1000, 12)[0];
-                isPlaying = data.body.is_playing;
-                // Parse spotify to get rid of features and get remixers and stuff
-                sp_data = parse_spotify(artistArray, songName);
-                artistArray = sp_data[0];
-                songName = sp_data[1];
-                displayArtists = sp_data[2];
-            });
-        } else {
-            interaction.member.presence.activities.forEach((activity) => {
-                if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
-                    artistArray = activity.state;
-                    songName = activity.details;
-                    if (activity.state.includes('; ')) {
-                        artistArray = artistArray.split('; ');
-                    } else if (activity.state.includes(', ')) {
-                        artistArray = artistArray.split(', '); // This is because of a stupid mobile discord bug
-                    } else {
-                        artistArray = [artistArray];
-                    }
-                    sp_data = parse_spotify(artistArray, songName);
-                    spotifyUrl = `https://open.spotify.com/track/${activity.syncId}`;
-                    yourRating = false;
-                    songArt = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
-                    artistArray = sp_data[0];
-                    songName = sp_data[1];
-                    displayArtists = sp_data[2];
-                    if (displayArtists == undefined) {
-                        displayArtists = artistArray;
-                    }
-                }
-            });
-        }
+            origArtistArray = parsed_args[0];
+            songName = parsed_args[1];
+            artistArray = parsed_args[2];
+            rmxArtistArray = parsed_args[3];
+            songDisplayName = parsed_args[5];
+
+            if (rmxArtistArray.length != 0) {
+                artistArray = rmxArtistArray;
+            } 
+        });
 
         // Check if a podcast is being played, as we don't support that.
         if (isPodcast == true) {
             return interaction.editReply('Podcasts are not supported with `/np`.');
         }
 
-        if (displayArtists == undefined) {
-            displayArtists = artistArray.join(' & ');
-        }
-
         const npEmbed = new Discord.MessageEmbed()
-        .setColor(`${interaction.member.displayHexColor}`);
-        npEmbed.setTitle(`${displayArtists.join(' & ')} - ${songName}`);
-        npEmbed.setAuthor({ name: `${interaction.member.displayName}'s ${isPlaying ? `current song` : `last song played`}`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` })
+        .setColor(`${interaction.member.displayHexColor}`)
+        .setTitle(`${origArtistArray.join(' & ')} - ${songDisplayName}`)
+        .setAuthor({ name: `${interaction.member.displayName}'s ${isPlaying ? `current song` : `last song played`}`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` })
         .setThumbnail(songArt);
 
         if (db.reviewDB.has(artistArray[0])) {

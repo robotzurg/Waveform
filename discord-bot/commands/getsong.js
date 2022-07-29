@@ -12,13 +12,13 @@ module.exports = {
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
                 .setAutocomplete(true)
-                .setRequired(true))
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('song_name')
                 .setDescription('The name of the song.')
                 .setAutocomplete(true)
-                .setRequired(true))
+                .setRequired(false))
             
         .addStringOption(option => 
             option.setName('remixers')
@@ -39,13 +39,9 @@ module.exports = {
         }
 
         let origArtistArray = parsed_args[0];
+        let songName = parsed_args[1];
         let artistArray = parsed_args[2];
-        let songName = parsed_args[3];
-        let rmxArtistArray = parsed_args[4];
-        let vocalistArray = parsed_args[5];
-
-        if (rmxArtistArray == undefined) rmxArtistArray = [];
-        if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
+        let displaySongName = parsed_args[5];
 
         let songObj;
         let songEP = false;
@@ -77,30 +73,32 @@ module.exports = {
 
         const rankNumArray = [];
         const songEmbed = new Discord.MessageEmbed()
-        .setColor(`${interaction.member.displayHexColor}`);
-
-        if (vocalistArray.length != 0) {
-            songEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName} (ft. ${vocalistArray.join(' & ')})`);
-        } else {
-            songEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName}`);
-        }
+        .setColor(`${interaction.member.displayHexColor}`)
+        .setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
 
         for (let i = 0; i < userArray.length; i++) {
             if (userArray[i] != 'EP') {
                 let rating;
+                let ratingDisplay;
                 let starred = false;
                 rating = db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].rating`);
                 if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].starred`) == true) {
                     starCount++;
                     starred = true;
                 }
-                rankNumArray.push(parseFloat(rating));
+
+                if (rating == false) {
+                    ratingDisplay = 'No Rating';
+                } else {
+                    rankNumArray.push(parseFloat(rating)); 
+                    ratingDisplay = `${rating}/10`;
+                }
 
                 if (starred == true) {
-                    userArray[i] = [parseFloat(rating) + 1, `:star2: <@${userArray[i]}> \`${rating}/10\``];
+                    userArray[i] = [parseFloat(rating) + 1, `:star2: <@${userArray[i]}> \`${ratingDisplay}\``];
                     userIDList[i] = [parseFloat(rating) + 1, userIDList[i]];
                 } else {
-                    userArray[i] = [parseFloat(rating), `<@${userArray[i]}> \`${rating}/10\``];
+                    userArray[i] = [parseFloat(rating), `<@${userArray[i]}> \`${ratingDisplay}\``];
                     userIDList[i] = [parseFloat(rating), userIDList[i]];
                 }
             }
@@ -197,7 +195,16 @@ module.exports = {
                 const review = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].review`);
                 const rating = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].rating`);
                 let sentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].sentby`);
-                const url = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].url`);
+                let url = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].url`);
+                
+                // If we don't have a single review link, we can check for an EP/LP review link
+                if (url == false && (songEP != false && songEP != undefined)) {
+                    let songEPObj = db.reviewDB.get(artistArray[0], `["${songEP}"]`);
+                    if (songEPObj[`${interaction.user.id}`].url != false) {
+                        url = songEPObj[`${interaction.user.id}`].url;
+                    }
+                }
+
                 if (sentby != false) {
                     sentby = await interaction.guild.members.cache.get(sentby);              
                 }
@@ -206,21 +213,17 @@ module.exports = {
                 .setColor(`${taggedMember.displayHexColor}`);
     
                 if (starred == false) {
-                    reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
+                    reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
                 } else {
-                    reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``} :star2:`);
+                    reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${displaySongName} :star2:`);
                 }
     
                 reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ format: "png" })}` });
     
-                if (review != '-') {
-                    reviewEmbed.setDescription(`${review}`);
-                } else {
-                    reviewEmbed.setDescription(`Rating: **${rating}/10**`);
-                }
+                if (rating != false) reviewEmbed.addField('Rating: ', `**${rating}/10**`, true);
+                if (review != false) reviewEmbed.setDescription(review);
     
                 reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ format: "png" }) : songArt);
-                if (review != '-') reviewEmbed.addField('Rating: ', `**${rating}/10**`, true);
 
                 if (sentby != false) {
                     reviewEmbed.setFooter(`Sent by ${sentby.displayName}`, `${sentby.user.avatarURL({ format: "png" })}`);
@@ -237,8 +240,8 @@ module.exports = {
                         });
                     }
                 }
-                
-                if (url == undefined) {
+
+                if (url == undefined || url == false) {
                     await i.update({ embeds: [reviewEmbed], components: [row] });
                 } else {
                     await i.update({ content: `[View Review Message](${url})`, embeds: [reviewEmbed], components: [row] });

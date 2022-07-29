@@ -53,42 +53,135 @@ module.exports = {
         return userArray;
     },
 
-    parse_artist_song_data: function(interaction, artists, song, remixers) {
-        const { parse_spotify } = require('./func.js');
+    parse_artist_song_data: async function(interaction, artists = null, song = null, remixers = null, vocalists = null) {
+        const { spotify_api_setup } = require('./func.js');
 
-        let spotifyCheck = false;
+        let rmxArtist = false;
+        let temp = '';
         let origArtistArray = artists;
+        let origSongArg = song; // Used to have the non remix name of a song, for reviews
         let songArg = song;
         let rmxArtistArray = [];
+        let passesChecks = true;
         if (remixers != null) {
             rmxArtistArray = [remixers.split(' & ')];
             rmxArtistArray = rmxArtistArray.flat(1);
         }
+        
         let vocalistArray = [];
-
-        if (artists.toLowerCase() == 's' || song.toLowerCase() == 's') {
-            interaction.member.presence.activities.forEach((activity) => {
-                if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
-                    origArtistArray = activity.state;
-                    songArg = activity.details;
-                    if (activity.state.includes('; ')) {
-                        origArtistArray = origArtistArray.split('; ');
-                    } else if (activity.state.includes(', ')) {
-                        origArtistArray = origArtistArray.split(', '); // This is because of a stupid mobile discord bug
-                    } else {
-                        origArtistArray = [origArtistArray];
-                    }
-                    let sp_data = parse_spotify(origArtistArray, songArg);
-                    if (artists.toLowerCase() == 's') origArtistArray = sp_data[0];
-                    if (song.toLowerCase() == 's') songArg = sp_data[1];
-                    spotifyCheck = true;
-                }
-            });
+        if (vocalists != null) {
+            vocalistArray = [vocalists.split(' & ')];
+            vocalistArray = vocalistArray.flat(1);
         }
 
-        if (spotifyCheck == false && (origArtistArray.toLowerCase() == 's' || songArg.toLowerCase() == 's')) {
-            interaction.editReply('Spotify status not detected, please type in the artist/song name manually or fix your status!');
-            return -1;
+        // If we're pulling from Spotify (no arguments given)
+        if (origArtistArray == null && songArg == null && remixers == null) {
+            const spotifyApi = await spotify_api_setup(interaction.user.id);
+            let isPodcast = false;
+        
+            if (spotifyApi == false) {
+                interaction.editReply('You must use `/login` to use Spotify related features!');
+                return -1;
+            }
+
+            await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+                if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
+                origArtistArray = data.body.item.artists.map(artist => artist.name);
+                songArg = data.body.item.name;
+                songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
+                await spotifyApi.getAlbum(data.body.item.album.id)
+                .then(async album_data => {
+                    // TODO: Use this to make next song suggestions for EP/LP reviews!
+                    // eslint-disable-next-line no-unused-vars
+                    let track_arr = album_data.body.tracks.items.map(t => t.name);
+                    if (interaction.commandName.includes('ep')) {
+                        if (songArg.includes('Remix')) {
+                            passesChecks = 'ep';
+                        } else if (track_arr.length <= 1) {
+                            passesChecks = 'length';
+                        }
+                        origArtistArray = album_data.body.artists.map(artist => artist.name);
+                        songArg = album_data.body.name;
+                        if (album_data.body.album_type == 'single' && !songArg.includes(' EP')) {
+                            songArg = `${songArg} EP`;
+                        } else if (album_data.body.album_type == 'album' && !songArg.includes(' LP')) {
+                            songArg = `${songArg} LP`;
+                        }
+                    }
+                });
+            });
+
+            // Check if a podcast is being played, as we don't support that.
+            if (isPodcast == true) {
+                interaction.editReply('Podcasts are not supported with `/np`.');
+                return -1;
+            }
+
+            if (songArg.includes(' Remix)') || songArg.includes(' Remix]')) {
+                songArg = songArg.replace('[', '(');
+                songArg = songArg.replace(']', ')');
+                temp = songArg.split(' Remix)')[0].split('(');
+                rmxArtist = temp[temp.length - 1];
+                rmxArtist = rmxArtist.replace(' VIP', '');
+                origSongArg = temp[0].trim();
+                songArg = `${temp[0].trim()} (${rmxArtist} Remix)`;
+                rmxArtistArray = [rmxArtist.split(' & ')];
+                rmxArtistArray = rmxArtistArray.flat(1);
+                origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
+                if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
+            }
+
+            if (songArg.includes('Remix') && songArg.includes(' - ') && !songArg.includes('Remix)') && !songArg.includes('Remix]')) {
+                songArg = songArg.split(' - ');
+                rmxArtist = songArg[1].slice(0, -6);
+                rmxArtist = rmxArtist.replace(' VIP', '');
+                origSongArg = songArg[0];
+                songArg = `${songArg[0]} (${rmxArtist} Remix)`;
+                rmxArtistArray = [rmxArtist.split(' & ')];
+                rmxArtistArray = rmxArtistArray.flat(1);
+                origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
+                if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
+            }
+
+            if (songArg.includes('feat.')) {
+                songArg = songArg.split(' (feat. ');
+                if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1].slice(0, -1));
+                origSongArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
+                songArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
+            }
+    
+            if (songArg.includes('ft. ')) {
+                songArg = songArg.split(' (ft. ');
+                if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1].slice(0, -1));
+                origSongArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
+                songArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
+            }
+    
+            if (songArg.includes('(with ')) {
+                songArg = songArg.split(' (with ');
+                origSongArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
+                songArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
+            }
+
+            if (origArtistArray.length == 0) {
+                passesChecks = false;
+            }
+
+            if (passesChecks == false) {
+                interaction.editReply('This song cannot be parsed properly in the database, and as such cannot be reviewed or have data pulled up for it.');
+                return -1;
+            } else if (passesChecks == 'ep') {
+                interaction.editReply('This track cannot be added to EP/LP reviews, therefore is invalid to be used in relation with EP/LP commands.');
+                return -1;
+            } else if (passesChecks == 'length') {
+                interaction.editReply('This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.');
+                return -1;
+            }
+            
+        } else {
+            if (remixers != null) {
+                songArg = `${songArg} (${remixers} Remix)`;
+            }
         }
 
         let artistArray;
@@ -100,7 +193,6 @@ module.exports = {
 
         artistArray = artistArray.flat(1);
         origArtistArray = artistArray.slice(0);
-
         
         if (db.user_stats.get(interaction.user.id, 'current_ep_review')[2] != undefined) {
             if (db.user_stats.get(interaction.user.id, 'current_ep_review')[2].includes(' EP') || db.user_stats.get(interaction.user.id, 'current_ep_review')[2].includes(' LP')) {
@@ -114,73 +206,68 @@ module.exports = {
             }
         }
 
-        let songName = songArg;
-
-        // Handle remixes
-        if (rmxArtistArray.length != 0) {
-            songName = `${songArg} (${rmxArtistArray.join(' & ')} Remix)`;
-        }
-
-        // Check if all the artists exist
-        for (let i = 0; i < artistArray.length; i++) {
-            if (!db.reviewDB.has(artistArray[i])) {
-                interaction.editReply(`The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.`);
-                return -1;
-            }
-        }
-
-        for (let i = 0; i < rmxArtistArray.length; i++) {
-            if (!db.reviewDB.has(rmxArtistArray[i])) {
-                interaction.editReply(`The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.`);
-                return -1;
-            }
-        }
-
         // VIP adjustment
-        if (songName.includes('- VIP') || songName.includes('(VIP)')) {
-            if (songName.includes('- VIP')) {
-                songName = songName.replace('- VIP', 'VIP');
-            } else {
-                songName = songName.replace('(VIP)', 'VIP');
-            }
-        }
+        songArg = songArg.replace('- VIP', 'VIP');
+        songArg = songArg.replace('(VIP)', 'VIP');
+     
+        if (interaction.commandName != 'nowplaying') {
+            // Check if all the artists exist (don't check this if we're pulling data for /review or /epreview)
+            if (interaction.commandName != 'review' && interaction.commandName != 'epreview') {
+                for (let i = 0; i < artistArray.length; i++) {
+                    if (!db.reviewDB.has(artistArray[i])) {
+                        interaction.editReply(`The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.`);
+                        return -1;
+                    }
+                }
 
-        if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
-            if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
-                artistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
-                origArtistArray.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
-                artistArray = artistArray.flat(1);
-                origArtistArray = artistArray.flat(1);
-                artistArray = [...new Set(artistArray)];
-                origArtistArray = [...new Set(origArtistArray)];
+                for (let i = 0; i < rmxArtistArray.length; i++) {
+                    if (!db.reviewDB.has(rmxArtistArray[i])) {
+                        interaction.editReply(`The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.`);
+                        return -1;
+                    }
+                }
             }
-        }
 
-        if (db.reviewDB.get(rmxArtistArray[0], `["${songName}"].rmx_collab`) != undefined) {
-            if (db.reviewDB.get(rmxArtistArray[0], `["${songName}"].rmx_collab`).length != 0) {
-                rmxArtistArray.push(db.reviewDB.get(rmxArtistArray[0], `["${songName}"].rmx_collab`));
-                rmxArtistArray = rmxArtistArray.flat(1);
+            if (db.reviewDB.has(artistArray[0])) {
+                if (db.reviewDB.get(artistArray[0], `["${songArg}"].collab`) != undefined) {
+                    if (db.reviewDB.get(artistArray[0], `["${songArg}"].collab`).length != 0) {
+                        artistArray.push(db.reviewDB.get(artistArray[0], `["${songArg}"].collab`));
+                        origArtistArray.push(db.reviewDB.get(artistArray[0], `["${songArg}"].collab`));
+                        artistArray = artistArray.flat(1);
+                        origArtistArray = artistArray.flat(1);
+                        artistArray = [...new Set(artistArray)];
+                        origArtistArray = [...new Set(origArtistArray)];
+                    }
+                }
+
+                if (db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`) != undefined) {
+                    if (db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`).length != 0 && vocalistArray != db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`)) {
+                        vocalistArray = db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`);
+                    }
+                }
             }
-        }
 
-        if (db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`) != undefined) {
-            if (db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`).length != 0) {
-                vocalistArray.push(db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`));
-                vocalistArray = vocalistArray.flat(1);
-                console.log(vocalistArray);
-                // Add vocalistArray to artistArray so it can be used to edit data
-                artistArray.push(vocalistArray);
-                artistArray = artistArray.flat(1);
+            if (rmxArtistArray[0] != undefined) {
+                if (db.reviewDB.has(rmxArtistArray[0])) {
+                    if (db.reviewDB.get(rmxArtistArray[0], `["${songArg}"].rmx_collab`) != undefined) {
+                        if (db.reviewDB.get(rmxArtistArray[0], `["${songArg}"].rmx_collab`).length != 0) {
+                            rmxArtistArray.push(db.reviewDB.get(rmxArtistArray[0], `["${songArg}"].rmx_collab`));
+                            rmxArtistArray = rmxArtistArray.flat(1);
+                        }
+                    }
+                }
             }
         }
 
         origArtistArray = origArtistArray.filter(v => !vocalistArray.includes(v));
+        origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
+
+        if (rmxArtistArray.length != 0) artistArray = rmxArtistArray; // Main artist becomes the remix artists
 
         let displaySongName = (`${songArg}` + 
-        `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
-        `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
+        `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
 
-        return [origArtistArray, songArg, artistArray, songName, rmxArtistArray, vocalistArray, displaySongName];
+        return [origArtistArray, songArg, artistArray, rmxArtistArray, vocalistArray, displaySongName, origSongArg];
     },
 
     // Updates the art for embed messages, NOT in the database. That's done in the !add review commands themselves.
@@ -240,7 +327,7 @@ module.exports = {
 
         if (user_who_sent == undefined || user_who_sent == null) {
             user_who_sent = false;
-        } 
+        }
 
         for (let i = 0; i < artistArray.length; i++) {
 
@@ -265,7 +352,7 @@ module.exports = {
                     remixers: [],
                     remix_collab: (rmxArtistArray.length != 0 ? rmxArtistArray.filter(word => artistArray[i] != word) : []),
                     art: songArt,
-                    collab: (rmxArtistArray.length == 0) ? artistArray.filter(word => !vocalistArray.includes(word) && !rmxArtistArray.includes(word) && artistArray[i] != word) : origArtistArray, 
+                    collab: (rmxArtistArray.length == 0) ? artistArray.filter(word => !rmxArtistArray.includes(word) && artistArray[i] != word) : origArtistArray, 
                     vocals: vocalistArray,
                     hof_id: false,
                     ep: ep_name,
@@ -302,6 +389,9 @@ module.exports = {
                 Object.assign(songObj, newuserObj);
                 db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
                 db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
+                if (vocalistArray.length != 0 && vocalistArray != db.reviewDB.get(artistArray[i], `["${songName}"].vocals`)) {
+                    db.reviewDB.set(artistArray[i], vocalistArray, `["${songName}"].vocals`);
+                }
                 
                 if (tag != null && db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
@@ -322,6 +412,9 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
                 db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
                 db.reviewDB.math(artistArray[i], '+', 1, `["${songName}"].review_num`);
+                if (vocalistArray.length != 0 && vocalistArray != db.reviewDB.get(artistArray[i], `["${songName}"].vocals`)) {
+                    db.reviewDB.set(artistArray[i], vocalistArray, `["${songName}"].vocals`);
+                }
 
                 if (tag != null && db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
@@ -531,56 +624,6 @@ module.exports = {
         return array.reduce((a, b) => a + b) / array.length;
     },
 
-    parse_spotify: function(artistArray, songName) {
-
-        songName = songName.trim();
-        let rmxArtist = false;
-        let temp = '';
-        let displayArtists = artistArray;
-        
-        if (songName.includes(' Remix)')) {
-            temp = songName.split(' Remix)')[0].split('(');
-            rmxArtist = temp[temp.length - 1];
-            displayArtists = artistArray.filter(v => v != rmxArtist);
-            artistArray = [rmxArtist.split(' & ')];
-            artistArray = artistArray.flat(1);
-        }
-
-        if (songName.includes('Remix') && songName.includes(' - ') && !songName.includes('Remix)')) {
-            songName = songName.split(' - ');
-            rmxArtist = songName[1].slice(0, -6);
-            songName = `${songName[0]} (${rmxArtist} Remix)`;
-            displayArtists = artistArray.filter(v => v != rmxArtist);
-            artistArray = [rmxArtist.split(' & ')];
-            artistArray = artistArray.flat(1);
-        }
-
-        if (songName.includes('feat.')) {
-            songName = songName.split(' (feat. ');
-            songName = `${songName[0]}${(rmxArtist != false) ? ` (${rmxArtist} Remix)` : ``}`;
-        }
-
-        if (songName.includes('ft. ')) {
-            songName = songName.split(' (ft. ');
-            songName = `${songName[0]}${(rmxArtist != false) ? ` (${rmxArtist} Remix)` : ``}`;
-        }
-
-        if (songName.includes('(with ')) {
-            songName = songName.split(' (with ');
-            songName = `${songName[0]}${(rmxArtist != false) ? ` (${rmxArtist} Remix)` : ``}`;
-        }
-
-        if (songName.includes('- VIP') || songName.includes('(VIP)')) {
-            if (songName.includes('- VIP')) {
-                songName = songName.replace('- VIP', 'VIP');
-            } else if (songName.includes('(VIP)')) {
-                songName = songName.replace('(VIP)', 'VIP');
-            }
-        }
-
-        return [artistArray, songName, displayArtists];
-    },
-
     /**
      * Searches the spotify API to grab a song or EP/LP art and returns an image link to the song art, or false if it can't find one.
      * @param {Array} artistArray The artist array of the song or EP/LP to search on Spotify.
@@ -590,6 +633,7 @@ module.exports = {
         const Spotify = require('node-spotify-api');
         const client_id = process.env.SPOTIFY_API_ID; // Your client id
         const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
+
         let search = name.replace(' EP', '');
         search = search.replace(' LP', '');
         const song = `${artistArray[0]} ${search}`;
@@ -621,7 +665,7 @@ module.exports = {
     },
 
     handle_error: function(interaction, err) {
-        interaction.editReply({ content: `Waveform ran into an error. Don't worry, the bot is still online!`, 
+        interaction.editReply({ content: `Waveform ran into an error. Don't worry, the bot is still online!\nError: \`${err}\``, 
         embeds: [], components: [] });
         let error_channel = interaction.guild.channels.cache.get('933610135719395329');
         let error = String(err.stack);
@@ -773,11 +817,42 @@ module.exports = {
             if (channelsearch != undefined) {
                 await channelsearch.messages.fetch(msg_id).then(async () => {
                     target = channelsearch;
-                });
+                }).catch(() => {}); // Do nothing if we can't find it.
             }
         });
 
         return target;
+    },
+
+    /**
+     * Sets up and returns a spotify web api object for the interaction user.
+     * @param {String} user_id The user id to authenticate to the Spotify API.
+     */
+    spotify_api_setup:  async function(user_id) {
+        const SpotifyWebApi = require('spotify-web-api-node');
+        const access_token = db.user_stats.get(user_id, 'access_token');
+
+        // If we have an access token for spotify API (therefore can use it)
+        if (access_token != undefined && access_token != false) {
+            const refresh_token = db.user_stats.get(user_id, 'refresh_token');
+            const spotifyApi = new SpotifyWebApi({
+                redirectUri: process.env.SPOTIFY_REDIRECT_URI,
+                clientId: process.env.SPOTIFY_API_ID,
+                clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+            });
+
+            // Refresh access token so we can use API
+            await spotifyApi.setRefreshToken(refresh_token);
+            await spotifyApi.setAccessToken(access_token);
+            await spotifyApi.refreshAccessToken().then(async data => {
+                await db.user_stats.set(user_id, data.body["access_token"], 'access_token');
+                await spotifyApi.setAccessToken(data.body["access_token"]);
+            }); 
+
+            return spotifyApi;
+        } else {
+            return false;
+        }
     },
     
 };

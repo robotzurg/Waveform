@@ -1,70 +1,99 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { update_art, review_song, hall_of_fame_check, handle_error, find_review_channel, grab_spotify_art } = require('../func.js');
+const { update_art, review_song, hall_of_fame_check, handle_error, find_review_channel, grab_spotify_art, parse_artist_song_data } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const wait = require('util').promisify(setTimeout);
 require('dotenv').config();
 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('review')
         .setDescription('Review a song using Waveform.')
-        .addStringOption(option => 
-            option.setName('artist')
-                .setDescription('The name of the artist(s). (DO NOT PUT ANY REMIXERS OR VOCALISTS HERE, ONLY PRODUCTION ARTISTS)')
-                .setAutocomplete(true)
-                .setRequired(true))
+        .addSubcommand(subcommand =>
+            subcommand.setName('with_spotify')
+            .setDescription('Review a song by utilizing your currently playing spotify song (requires login).')
 
-        .addStringOption(option => 
-            option.setName('song_name')
-                .setDescription('The name of the song. (Do not include any features or remixers in here!)')
-                .setAutocomplete(true)
-                .setRequired(true))
+            .addStringOption(option => 
+                option.setName('rating')
+                    .setDescription('Rating for the song (1-10, decimals allowed.)')
+                    .setRequired(false))
 
-        .addStringOption(option => 
-            option.setName('rating')
-                .setDescription('Rating for the song (1-10, decimals allowed.)')
-                .setRequired(true))
+            .addStringOption(option => 
+                option.setName('review')
+                    .setDescription('Your review of the song')
+                    .setRequired(false))
 
-        .addStringOption(option => 
-            option.setName('review')
-                .setDescription('Review of the song (Set this to - if you wish to do a rating and no review.)')
-                .setRequired(true))
-            
-        .addStringOption(option => 
-            option.setName('vocalist')
-                .setDescription('Vocalists who feature on the song (use & to separate multiple)')
-                .setAutocomplete(true)
-                .setRequired(false))
+            .addStringOption(option => 
+                option.setName('tag')
+                    .setDescription('Put a tag you want to set the song to here!')
+                    .setAutocomplete(true)
+                    .setRequired(false))
 
-        .addStringOption(option => 
-            option.setName('remixers')
-                .setDescription('Put remixers here, if you reviewing a remix of the original song. (NOT IN ARTISTS ARGUMENT)')
-                .setAutocomplete(true)
-                .setRequired(false))
+            .addUserOption(option => 
+                option.setName('user_who_sent')
+                    .setDescription('User who sent you this song in Mailbox. Ignore if not a mailbox review.')
+                    .setRequired(false))
 
-        .addStringOption(option => 
-            option.setName('tag')
-                .setDescription('Put a tag you want to set the song to here!')
-                .setAutocomplete(true)
-                .setRequired(false))
+            .addStringOption(option => 
+                option.setName('art')
+                    .setDescription('Image link of the song art (put \'s\' here if you want to use your spotify playback.)')
+                    .setRequired(false)))
 
-        .addStringOption(option => 
-            option.setName('art')
-                .setDescription('Art of the song (put spotify or s here if you want to use your spotify status.)')
-                .setRequired(false))
+        .addSubcommand(subcommand =>
+            subcommand.setName('manually')
+            .setDescription('Review a song by manually entering information.')
 
-        .addUserOption(option => 
-            option.setName('user_who_sent')
-                .setDescription('User who sent you this song in Mailbox. Ignore if not a mailbox review.')
-                .setRequired(false)),
-        
-	admin: false,
+            .addStringOption(option => 
+                option.setName('artist')
+                    .setDescription('The name of the artist(s). (DO NOT PUT ANY REMIXERS HERE)')
+                    .setAutocomplete(true)
+                    .setRequired(true))
+
+            .addStringOption(option => 
+                option.setName('song_name')
+                    .setDescription('The name of the song. (Do not include any features or remixers in here!)')
+                    .setAutocomplete(true)
+                    .setRequired(true))
+
+            .addStringOption(option => 
+                option.setName('rating')
+                    .setDescription('Rating for the song (1-10, decimals allowed.)')
+                    .setRequired(false))
+
+            .addStringOption(option => 
+                option.setName('review')
+                    .setDescription('Your review of the song')
+                    .setRequired(false))
+
+            .addStringOption(option => 
+                option.setName('remixers')
+                    .setDescription('Put remixers here, if you reviewing a remix of the original song. (NOT IN ARTISTS ARGUMENT)')
+                    .setAutocomplete(true)
+                    .setRequired(false))
+
+            .addStringOption(option => 
+                option.setName('tag')
+                    .setDescription('Put a tag you want to set the song to here!')
+                    .setAutocomplete(true)
+                    .setRequired(false))
+
+            .addUserOption(option => 
+                option.setName('user_who_sent')
+                    .setDescription('User who sent you this song in Mailbox. Ignore if not a mailbox review.')
+                    .setRequired(false))
+
+            .addStringOption(option => 
+                option.setName('art')
+                    .setDescription('Image link of the song art (put \'s\' here if you want to use your spotify playback.)')
+                    .setRequired(false))
+
+            .addStringOption(option => 
+                option.setName('vocalist')
+                    .setDescription('If you want the song name to have a (ft.) in it for artists, use this argument.')
+                    .setAutocomplete(true))),
 	async execute(interaction) {
-
         try {
 
-        // This variable is here so that we can start a review from anywhere else
+        // These variables are here so that we can start a review from anywhere else
         let int_channel = interaction.channel;
         let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
 
@@ -73,17 +102,37 @@ module.exports = {
             return interaction.editReply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
         }
 
-        // Init variables
-        let origArtistArray = interaction.options.getString('artist').split(' & ');
-        let origSongName = interaction.options.getString('song_name'); // for remixes later on
-        let songName = interaction.options.getString('song_name');
-        let rating = interaction.options.getString('rating');
-        if (rating.includes('/10')) rating = rating.replace('/10', '');
-        rating = parseFloat(rating);
-        if (isNaN(rating)) return interaction.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating!');
-        let review = interaction.options.getString('review');
         let vocalistArray = interaction.options.getString('vocalist');
         let rmxArtistArray = interaction.options.getString('remixers');
+
+        let artists = interaction.options.getString('artist');
+        let song = interaction.options.getString('song_name');
+        
+        // Songname check to avoid not using the arguments properly.
+        if (song != null) {
+            if (song.includes('Remix)') || song.includes('ft.') || song.includes('feat.')) {
+                await interaction.editReply('Please make sure that no artist names are placed in the song name argument.\n' + 
+                'For example, do not put `Song (Dude Remix)`, just put `Song`, and put the remixer in the Remixers argument.');
+                return;
+            }
+        }
+
+        let parsed_args = await parse_artist_song_data(interaction, artists, song, rmxArtistArray, vocalistArray);
+        if (parsed_args == -1) return;
+        console.log(parsed_args);
+
+        let origArtistArray = parsed_args[0];
+        let songName = parsed_args[1];
+        let artistArray = parsed_args[2];
+        rmxArtistArray = parsed_args[3];
+        vocalistArray = parsed_args[4];
+        let displaySongName = parsed_args[5];
+        let origSongName = parsed_args[6];
+
+        let rating = interaction.options.getString('rating');
+        if (rating == null) rating = false;
+        let review = interaction.options.getString('review');
+        if (review == null) review = false;
         let tag = interaction.options.getString('tag');
         let songArt = interaction.options.getString('art');
         let user_who_sent = interaction.options.getUser('user_who_sent');
@@ -103,171 +152,67 @@ module.exports = {
             }
         }
 
-        if (vocalistArray == null) {
-            vocalistArray = [];
-        } else {
-            vocalistArray = vocalistArray.split(' & ');
-        }
-
-        if (rmxArtistArray == null) {
-            rmxArtistArray = [];
-        } else {
-            rmxArtistArray = rmxArtistArray.split(' & ');
-        }
-
-        if (songName.includes('- VIP') || songName.includes('(VIP)')) {
-            if (songName.includes('- VIP')) {
-                origSongName = origSongName.replace('- VIP', 'VIP');
-                songName = songName.replace('- VIP', 'VIP');
-            } else {
-                songName = songName.replace('(VIP)', 'VIP');
-                origSongName = origSongName.replace('(VIP)', 'VIP');
-            }
-        }
-
-        let artistArray = [origArtistArray, vocalistArray];
-        artistArray = artistArray.flat(1);
-
-        if (rmxArtistArray.length != 0) {
-            artistArray = rmxArtistArray;
-        }
-
         if (user_who_sent != null) {
             taggedUser = user_who_sent;
             taggedMember = await interaction.guild.members.fetch(taggedUser.id);
         }
 
-        // Songname check to avoid not using the arguments properly.
-        if (songName.includes('Remix)')) {
-            await interaction.editReply('Please use the Remixers argument for Remixers, do not include them in the song name!`');
-            await wait(10000);
-            try { 
-                await interaction.deleteReply(); return;
-            } catch (err) {
-                console.log(err);
-            }
-        } else if (songName.includes('ft.') || songName.includes('feat.')) {
-            await interaction.editReply('Please use the Vocalists argument for Vocalists, do not include them in the song name!`');
-            await wait(10000);
-            try { 
-                await interaction.deleteReply(); return;
-            } catch (err) {
-                console.log(err);
-            }
-        }
-
-        // Handle remixes
-        if (rmxArtistArray.length != 0) {
-            songName = `${songName} (${rmxArtistArray.join(' & ')} Remix)`;
-        }
-
-        let collector_time = 100000000;
-
-        // Setup buttons
-        const row = new Discord.MessageActionRow()
+        // Setup review editing buttons
+        const editButtons = new Discord.MessageActionRow()
         .addComponents(
             new Discord.MessageButton()
-                .setCustomId('artist')
-                .setLabel('Artist')
-                .setStyle('PRIMARY')
-                .setEmoji('📝'),
+                .setCustomId('artist').setLabel('Artist')
+                .setStyle('PRIMARY').setEmoji('📝'),
             new Discord.MessageButton()
-                .setCustomId('song')
-                .setLabel('Song')
-                .setStyle('PRIMARY')
-                .setEmoji('📝'),
+                .setCustomId('song').setLabel('Song')
+                .setStyle('PRIMARY').setEmoji('📝'),
             new Discord.MessageButton()
-                .setCustomId('rating')
-                .setLabel('Rating')
-                .setStyle('PRIMARY')
-                .setEmoji('📝'),
+                .setCustomId('rating').setLabel('Rating')
+                .setStyle('PRIMARY').setEmoji('📝'),
             new Discord.MessageButton()
-                .setCustomId('review')
-                .setLabel('Review')
-                .setStyle('PRIMARY')
-                .setEmoji('📝'),
+                .setCustomId('review').setLabel('Review')
+                .setStyle('PRIMARY').setEmoji('📝'),
             new Discord.MessageButton()
-                .setCustomId('star')
-                .setLabel('')
-                .setStyle('SECONDARY')
-                .setEmoji('🌟'),
+                .setCustomId('star').setLabel('')
+                .setStyle('SECONDARY').setEmoji('🌟'),
         );
 
-        // Setup bottom row
-        const row2 = new Discord.MessageActionRow();
+        // Setup review submit button row
+        const reviewButtons = new Discord.MessageActionRow();
 
-        // If we're in an EP/LP review, stick in a button to push to EP review.
+        // If we're in an EP/LP review, stick in a button to push to EP review instead of a send to database button.
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false && origArtistArray.includes(db.user_stats.get(interaction.user.id, 'current_ep_review')[1][0])) {
             if (db.user_stats.get(interaction.user.id, 'current_ep_review').length != 0) {
-                row2.addComponents( 
+                reviewButtons.addComponents( 
                     new Discord.MessageButton()
-                    .setCustomId('ep_done')
-                    .setLabel('Push to EP Review')
+                    .setCustomId('ep_done').setLabel('Push to EP Review')
                     .setStyle('SUCCESS'),
                 );
             }
         } else {
-            row2.addComponents( 
+            reviewButtons.addComponents( 
                 new Discord.MessageButton()
-                .setCustomId('done')
-                .setLabel('Send to Database')
+                .setCustomId('done').setLabel('Send to Database')
                 .setStyle('SUCCESS'),
             );
         }
 
         // Add the delete button
-        row2.addComponents(
+        reviewButtons.addComponents(
             new Discord.MessageButton()
-                .setCustomId('delete')
-                .setLabel('Delete')
+                .setCustomId('delete').setLabel('Delete')
                 .setStyle('DANGER'),
         );
 
-
-        // Thumbnail image handling
+        // Grab song art if we don't directly specify one
         if (songArt == false || songArt == null || songArt == undefined) {
-            if (db.reviewDB.has(artistArray[0])) {
-                songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
-            }
-        }
-
-        // Grab art from server spotify
-        if (songArt == false || songArt == undefined || songArt == null) {
             songArt = await grab_spotify_art(origArtistArray, songName);
-        }
-        
-        // Discord Profile Spotify check (checks for both "spotify" and "s" as the image link)
-        if (songArt != false && songArt != undefined) {
-            if (songArt.toLowerCase() == 's') {
-                interaction.member.presence.activities.forEach((activity) => {
-                    if (activity.type == 'LISTENING' && activity.name == 'Spotify' && activity.assets !== null) {
-                        songArt = `https://i.scdn.co/image/${activity.assets.largeImage.slice(8)}`;
-                    }
-                });
-                if (songArt.toLowerCase() == 's') songArt = false; // final passthrough check
+            if (db.reviewDB.has(artistArray[0])) {
+                if (db.reviewDB.get(artistArray[0], `["${songName}"].art`) != false && db.reviewDB.get(artistArray[0], `["${songName}"].art`) != undefined) {
+                    songArt = await db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+                }
             }
         }
-
-        if (isNaN(rating)) {
-            await interaction.editReply('Your rating is not a number! Make sure NOT to include /10, just do the number, like "8".');
-            await wait(10000);
-            try {
-                await interaction.deleteReply();
-                return;
-            } catch (err) {
-                console.log(err);
-            }
-        }
-
-        // \n parse handling
-        if (review.includes('\\n')) {
-            review = review.split('\\n').join('\n');
-        }
-
-        // Create display song name variable
-        let displaySongName = (`${origSongName}` + 
-        `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
-        `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
 
         // Start creation of embed
         let reviewEmbed = new Discord.MessageEmbed()
@@ -275,36 +220,50 @@ module.exports = {
         .setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`)
         .setAuthor({ name: `${interaction.member.displayName}'s review`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` });
 
-        // Using - for the review changes how the embed is created.
-        if (review != '-') {
-            reviewEmbed.setDescription(review);
-            reviewEmbed.addField('Rating: ', `**${rating}/10**`, true);
+        // Check rating input to ensure we have a valid number.
+        if (rating != false) {
+            if (rating.includes('/10')) rating = rating.replace('/10', '');
+            rating = parseFloat(rating);
+            if (isNaN(rating)) return interaction.editReply(`The rating \`${rating}\` is not valid, please make sure you put in an integer or decimal rating!`);
+            if (rating < 0 || rating > 10) return interaction.editReply(`The rating \`${rating}\` is not a number in between 0 and 10. It must be between those 2 numbers.`);
+        }
+
+        // \n parse handling, to allow for line breaks in reviews on Discord PC
+        // I wish I knew why Discord wouldn't just let you do this on the client, but whatever
+        if (review != false) {
+            if (review.includes('\\n')) {
+                review = review.split('\\n').join('\n');
+            }
+        }
+
+        if (review == false && rating == false) {
+            return interaction.editReply('Your song review must either have a rating or review, it cannot be missing both.');
         } else {
-            reviewEmbed.setDescription(`Rating: **${rating}/10**`);
+            if (rating != false) reviewEmbed.addField('Rating: ', `**${rating}/10**`, true);
+            if (review != false) reviewEmbed.setDescription(review);
         }
         
         if (songArt == false || songArt == undefined) {
-            reviewEmbed.setThumbnail(interaction.user.avatarURL({ format: "png", dynamic: false }));
+            await reviewEmbed.setThumbnail(interaction.user.avatarURL({ format: "png", dynamic: false }));
         } else {
-            reviewEmbed.setThumbnail(songArt);
+            await reviewEmbed.setThumbnail(songArt);
         }
         
-
         if (taggedUser != false && taggedUser != undefined) {
-            reviewEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
+            reviewEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, avatarURL: taggedUser.avatarURL({ format: "png", dynamic: false }) });
         }
+        // End of Embed Code
 
-        //Add review to database
         //Quick thumbnail image check to assure we aren't putting in an avatar, songArt should be set to what we put in the database.
         if (songArt == undefined || songArt == false || songArt.includes('avatar') || songArt == 'spotify' || songArt == 's') { 
             songArt = false;
         }
 
         // Send the review embed
-        interaction.editReply({ embeds: [reviewEmbed], components: [row, row2] });
+        interaction.editReply({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
 
         const filter = i => i.user.id == interaction.user.id;
-        const collector = int_channel.createMessageComponentCollector({ filter, time: collector_time });
+        const collector = int_channel.createMessageComponentCollector({ filter, time: 100000000 });
         let a_collector;
         let s_collector;
         let ra_collector;
@@ -315,7 +274,7 @@ module.exports = {
                 // Artist edit button
                 case 'artist': {
                     await i.deferUpdate();
-                    await i.editReply({ content: 'Type in the Artist Name(s) (separated with &, DO NOT PUT REMIXERS OR FEATURE VOCALISTS HERE!)', components: [] });
+                    await i.editReply({ content: 'Type in the artist name(s) (separated with &, DO NOT PUT REMIXERS HERE!)', components: [] });
                     const a_filter = m => m.author.id == interaction.user.id;
                     a_collector = int_channel.createMessageCollector({ filter: a_filter, max: 1, time: 60000 });
                     await a_collector.on('collect', async m => {
@@ -343,17 +302,17 @@ module.exports = {
                         }
                         reviewEmbed.setThumbnail(songArt);
 
-                        await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
+                        await i.editReply({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
                         m.delete();
                     });
                     
                     a_collector.on('end', async () => {
-                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
+                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
                     });
                 } break;
                 case 'song': {
                     await i.deferUpdate();
-                    await i.editReply({ content: 'Type in the Song Name (NO FT. OR REMIXERS SHOULD BE INCLUDED)', components: [] });
+                    await i.editReply({ content: 'Type in the song name (NO FT. OR REMIXERS SHOULD BE INCLUDED)', components: [] });
 
                     const s_filter = m => m.author.id == interaction.user.id;
                     s_collector = int_channel.createMessageCollector({ filter: s_filter, max: 1, time: 60000 });
@@ -381,31 +340,33 @@ module.exports = {
                         }
                         reviewEmbed.setThumbnail(songArt);
 
-                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
-                        m.delete();
+                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
+                        m.delete(); 
                     });
                     
                     s_collector.on('end', async () => {
-                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
+                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
                     });
                 } break;
                 case 'rating': {
                     await i.deferUpdate();
-                    await i.editReply({ content: 'Type in the rating (DO NOT ADD /10!)', components: [] });
+                    await i.editReply({ content: 'Type in the rating (DO NOT WRITE /10!)', components: [] });
 
                     const ra_filter = m => m.author.id == interaction.user.id;
                     ra_collector = int_channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                     ra_collector.on('collect', async m => {
                         rating = parseFloat(m.content);
-                        if (rating.includes('/10')) rating = rating.replace('/10', '');
-                        if (isNaN(rating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
+                        if (m.content.includes('/10')) rating = parseFloat(m.content.replace('/10', ''));
+                        if (isNaN(rating)) {
+                            i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!'); return;
+                        }
                         reviewEmbed.fields[0] = { name : 'Rating', value : `**${rating}/10**` };
-                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
+                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
                         m.delete();
                     });
                     
                     ra_collector.on('end', async () => {
-                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
+                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
                     });
                 } break;
                 case 'review': {
@@ -422,19 +383,19 @@ module.exports = {
                         }
 
                         reviewEmbed.setDescription(review);
-                        await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
+                        await i.editReply({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
                         m.delete();
                     });
                     
                     re_collector.on('end', async () => {
-                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [row, row2] });
+                        await i.editReply({ content: ' ', embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
                     });
                 } break;
                 case 'star': {
                     await i.deferUpdate();
 
                     // If we don't have a 10 rating, the button does nothing.
-                    if (rating < 8) return await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
+                    if (rating < 8) return await i.editReply({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
 
                     if (starred == false) {
                         reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
@@ -444,7 +405,7 @@ module.exports = {
                         starred = false;
                     }
 
-                    await i.editReply({ embeds: [reviewEmbed], components: [row, row2] });
+                    await i.editReply({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
                 } break;
                 case 'delete': {
                     await i.deferUpdate();
@@ -511,9 +472,9 @@ module.exports = {
 
                         collab = origArtistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
                         if (starred == true) {
-                            field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10) 🌟`;
+                            field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''}${rating != false ? ` (${rating}/10)` : ``} 🌟`;
                         } else {
-                            field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''} (${rating}/10)`;
+                            field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''}${rating != false ? ` (${rating}/10)` : ``}`;
                         }
 
                         // If the entire EP/LP review is over 3250 characters, set EP/LP review type to "B" (aka hide any more reviews from that point)
@@ -533,14 +494,14 @@ module.exports = {
                             } else {
                                 msgEmbed.fields.push({
                                     name: field_name,
-                                    value: `*Review hidden to save space*`,
+                                    value: (review != false) ? `*Review hidden to save space*` : `*No review written*`,
                                     inline: false,
                                 });
                             }
                         } else {
                             msgEmbed.fields.push({
                                 name: field_name,
-                                value: `*Review hidden to save space*`,
+                                value: (review != false) ? `*Review hidden to save space*` : `*No review written*`,
                                 inline: false,
                             });
                         }
