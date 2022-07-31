@@ -69,9 +69,9 @@ module.exports = {
 
                 for (let i = 0; i < reviewNum.length; i++) {
                     let userObj = db.reviewDB.get(artistArray[0], `["${epName}"].["${reviewNum[i]}"]`);
-                    userArray[i] = `<@${reviewNum[i]}>${(userObj.rating != false) ? ` \`${userObj.rating}/10\`` : ` \`No Rating\``}`;
+                    userArray[i] = `<@${reviewNum[i]}>${(userObj.rating !== false) ? ` \`${userObj.rating}/10\`` : ` \`No Rating\``}`;
                     rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${reviewNum[i]}"].rating`);
-                    if (rating != false && rating != undefined && !isNaN(rating)) {
+                    if (rating !== false && rating != undefined && !isNaN(rating)) {
                         epRankArray.push(parseFloat(rating));
                     }
                 }
@@ -94,7 +94,7 @@ module.exports = {
                         if (db.reviewDB.get(songArtist, `["${epSongArray[i]}"].["${reviewNum[ii]}"].starred`) == true) {
                             star_num++;
                         }
-                        if (rating != false) {
+                        if (rating !== false) {
                             rankNumArray.push(parseFloat(rating));
                         }
                     }
@@ -245,14 +245,14 @@ module.exports = {
                 epReviewEmbed.setColor(`${taggedMember.displayHexColor}`);
                 epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName}` : `🌟 ${origArtistArray.join(' & ')} - ${epName} 🌟`);
         
-                if (ep_overall_rating != false && ep_overall_review != false) {
+                if (ep_overall_rating !== false && ep_overall_review != false) {
                     if (no_songs_review == false) {
                         epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                     } else {
                         epReviewEmbed.addField(`Rating`, `**${ep_overall_rating}/10**`);
                     }
                     epReviewEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
-                } else if (ep_overall_rating != false) {
+                } else if (ep_overall_rating !== false) {
                     if (no_songs_review == false) {
                         epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                     } else {

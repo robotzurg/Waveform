@@ -87,14 +87,14 @@ module.exports = {
             epEmbed.setColor(`${taggedMember.displayHexColor}`);
             epEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName}` : `🌟 ${origArtistArray.join(' & ')} - ${epName} 🌟`);
 
-            if (ep_overall_rating != false && ep_overall_review != false) {
+            if (ep_overall_rating !== false && ep_overall_review != false) {
                 if (no_songs_review == false) {
                     epEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                 } else {
                     epEmbed.addField(`Rating`, `**${ep_overall_rating}/10**`);
                 }
                 epEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
-            } else if (ep_overall_rating != false) {
+            } else if (ep_overall_rating !== false) {
                 if (no_songs_review == false) {
                     epEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                 } else {

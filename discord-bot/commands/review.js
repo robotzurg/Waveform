@@ -221,7 +221,7 @@ module.exports = {
         .setAuthor({ name: `${interaction.member.displayName}'s review`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` });
 
         // Check rating input to ensure we have a valid number.
-        if (rating != false) {
+        if (rating !== false) {
             if (rating.includes('/10')) rating = rating.replace('/10', '');
             rating = parseFloat(rating);
             if (isNaN(rating)) return interaction.editReply(`The rating \`${rating}\` is not valid, please make sure you put in an integer or decimal rating!`);
@@ -236,10 +236,10 @@ module.exports = {
             }
         }
 
-        if (review == false && rating == false) {
+        if (review == false && rating === false) {
             return interaction.editReply('Your song review must either have a rating or review, it cannot be missing both.');
         } else {
-            if (rating != false) reviewEmbed.addField('Rating: ', `**${rating}/10**`, true);
+            if (rating !== false) reviewEmbed.addField('Rating: ', `**${rating}/10**`, true);
             if (review != false) reviewEmbed.setDescription(review);
         }
         
@@ -472,9 +472,9 @@ module.exports = {
 
                         collab = origArtistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
                         if (starred == true) {
-                            field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''}${rating != false ? ` (${rating}/10)` : ``} 🌟`;
+                            field_name = `🌟 ${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''}${rating !== false ? ` (${rating}/10)` : ``} 🌟`;
                         } else {
-                            field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''}${rating != false ? ` (${rating}/10)` : ``}`;
+                            field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''}${rating !== false ? ` (${rating}/10)` : ``}`;
                         }
 
                         // If the entire EP/LP review is over 3250 characters, set EP/LP review type to "B" (aka hide any more reviews from that point)

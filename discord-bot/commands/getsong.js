@@ -220,7 +220,7 @@ module.exports = {
     
                 reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ format: "png" })}` });
     
-                if (rating != false) reviewEmbed.addField('Rating: ', `**${rating}/10**`, true);
+                if (rating !== false) reviewEmbed.addField('Rating: ', `**${rating}/10**`, true);
                 if (review != false) reviewEmbed.setDescription(review);
     
                 reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ format: "png" }) : songArt);

@@ -174,7 +174,7 @@ module.exports = {
             );
 
             // Setup bottom row
-            if (overall_rating == false && overall_review == false) {
+            if (overall_rating === false && overall_review == false) {
                 row2 = new Discord.MessageActionRow()
                 .addComponents(
                     new Discord.MessageButton()
@@ -221,10 +221,10 @@ module.exports = {
                 epEmbed.setThumbnail(art);
             }
 
-            if (overall_rating != false && overall_review != false) {
+            if (overall_rating !== false && overall_review != false) {
                 epEmbed.setDescription(`*${overall_review}*`);
                 epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overall_rating}/10)`);
-            } else if (overall_rating != false) {
+            } else if (overall_rating !== false) {
                 epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overall_rating}/10)`);
             } else if (overall_review != false) {
                 epEmbed.setDescription(`*${overall_review}*`);
@@ -407,14 +407,14 @@ module.exports = {
                         if (overall_rating < 8) return await i.editReply({ embeds: [epEmbed], components: [row, row2] });
 
                         if (starred == false) {
-                            if (overall_rating != false) {
+                            if (overall_rating !== false) {
                                 epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} (${overall_rating}/10) 🌟`);
                             } else {
                                 epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} 🌟`);
                             }
                             starred = true;
                         } else {
-                            if (overall_rating != false) {
+                            if (overall_rating !== false) {
                                 epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overall_rating}/10)`);
                             } else {
                                 epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
@@ -463,7 +463,7 @@ module.exports = {
                         
 
                         if (overall_review != false) epEmbed.setDescription(`${overall_review}`);
-                        if (overall_rating != false) epEmbed.addField(`Rating`, `**${overall_rating}/10**`);
+                        if (overall_rating !== false) epEmbed.addField(`Rating`, `**${overall_rating}/10**`);
                         if (starred == false) {
                             epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
                         } else {
