@@ -87,7 +87,7 @@ module.exports = {
                     starred = true;
                 }
 
-                if (rating == false) {
+                if (rating === false) {
                     ratingDisplay = 'No Rating';
                 } else {
                     rankNumArray.push(parseFloat(rating)); 

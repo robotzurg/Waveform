@@ -86,6 +86,7 @@ module.exports = {
 
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
                 if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
+                if (data.body.item == undefined) { passesChecks = 'notplaying'; return; }
                 origArtistArray = data.body.item.artists.map(artist => artist.name);
                 songArg = data.body.item.name;
                 songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
@@ -175,6 +176,9 @@ module.exports = {
                 return -1;
             } else if (passesChecks == 'length') {
                 interaction.editReply('This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.');
+                return -1;
+            } else if (passesChecks == 'notplaying') {
+                interaction.editReply('You are not currently playing a song on Spotify.');
                 return -1;
             }
             

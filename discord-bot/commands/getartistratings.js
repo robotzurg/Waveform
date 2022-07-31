@@ -12,7 +12,7 @@ module.exports = {
             option.setName('artist')
                 .setDescription('The name of the artist.')
                 .setAutocomplete(true)
-                .setRequired(true))
+                .setRequired(false))
         
         .addUserOption(option => 
             option.setName('user')
@@ -54,7 +54,7 @@ module.exports = {
             }
         }
 
-        if (spotifyCheck == false && (artist.toLowerCase() == 's')) {
+        if (spotifyCheck == false) {
             return interaction.editReply('Spotify playback not detected, please type in the artist name manually or play a song!');
         }
 
