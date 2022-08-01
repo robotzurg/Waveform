@@ -118,10 +118,10 @@ module.exports = {
             .setDescription(paged_star_list[page_num]);
             if (paged_star_list.length > 1) {
                 starCommandEmbed.setFooter({ text: `Page 1 / ${paged_star_list.length} • ${starList.length} stars given` });
-                await interaction.editReply({ embeds: [starCommandEmbed], components: [row] });
+                await interaction.editReply({ content: ` `, embeds: [starCommandEmbed], components: [row] });
             } else {
                 starCommandEmbed.setFooter({ text: `${starList.length} stars given` });
-                await interaction.editReply({ embeds: [starCommandEmbed], components: [] });
+                await interaction.editReply({ content: ` `, embeds: [starCommandEmbed], components: [] });
             }
         
         if (paged_star_list.length > 1) {
