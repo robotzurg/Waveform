@@ -51,7 +51,7 @@ module.exports = {
 
                 collabArray = collabArray.filter(v => !vocalistArray.includes(v));
 
-                let otherArtists = [artistArray[i], collabArray, vocalistArray].flat(1);
+                let otherArtists = [artistArray[i], collabArray].flat(1);
 
                 let allArtists = otherArtists.map(v => {
                     if (v == undefined) {

@@ -250,7 +250,7 @@ module.exports = {
         }
         
         if (taggedUser != false && taggedUser != undefined) {
-            reviewEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, avatarURL: taggedUser.avatarURL({ format: "png", dynamic: false }) });
+            reviewEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ format: "png", dynamic: false }) });
         }
         // End of Embed Code
 

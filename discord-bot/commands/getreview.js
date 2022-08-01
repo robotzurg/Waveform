@@ -35,6 +35,7 @@ module.exports = {
             let artists = interaction.options.getString('artist');
             let song = interaction.options.getString('song_name');
             let remixers = interaction.options.getString('remixers');
+
             let parsed_args = await parse_artist_song_data(interaction, artists, song, remixers);
 
             if (parsed_args == -1) {

@@ -53,11 +53,7 @@ module.exports = {
         let origArtistArray = parsed_args[0];
         let songName = parsed_args[1];
         let artistArray = parsed_args[2];
-        let rmxArtistArray = parsed_args[3];
-        let vocalistArray = parsed_args[4];
-        let origSongName = parsed_args[6];
-
-        if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
+        let displaySongName = parsed_args[5];
 
         let rating = interaction.options.getString('rating');
         if (rating != null) {
@@ -121,10 +117,6 @@ module.exports = {
         }
 
         let reviewMsgID = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].msg_id`);
-
-        let displaySongName = (`${origSongName}` + 
-                `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
-                `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
 
         if (reviewMsgID != false) {
             let channelsearch = await find_review_channel(interaction, interaction.user.id, reviewMsgID);
