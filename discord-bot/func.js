@@ -56,6 +56,11 @@ module.exports = {
     parse_artist_song_data: async function(interaction, artists = null, song = null, remixers = null, vocalists = null) {
         const { spotify_api_setup } = require('./func.js');
 
+        if ((artists == null && song != null) || (artists != null && song == null)) {
+            interaction.editReply('If you are searching for a review manually, you must put in both the artists (in the artist argument) and the song name (in the song_name argument).');
+            return -1;
+        }
+
         let rmxArtist = false;
         let temp = '';
         let origArtistArray = artists;
@@ -296,7 +301,6 @@ module.exports = {
                     msgstoEdit = msgstoEdit.filter(item => item !== false);
                     
                     if (msgstoEdit.length > 0) { 
-
                         forAsync(msgstoEdit, async function(item) {
                             count += 1;
                             return new Promise(function(resolve) {

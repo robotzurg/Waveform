@@ -50,7 +50,7 @@ module.exports = {
                         epCount += 1;
                     }
 
-                    let otherArtists = [artistArray[i], db.reviewDB.get(artistArray[i], `["${songArray[j]}"].collab`), db.reviewDB.get(artistArray[i], `["${songArray[j]}"].vocals`)].flat(1);
+                    let otherArtists = [artistArray[i], db.reviewDB.get(artistArray[i], `["${songArray[j]}"].collab`)].flat(1);
 
                     let allArtists = otherArtists.map(v => {
                         if (v == undefined) {
