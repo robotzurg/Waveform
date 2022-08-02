@@ -92,20 +92,20 @@ module.exports = {
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
                 if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
                 if (data.body.item == undefined) { passesChecks = 'notplaying'; return; }
-                origArtistArray = data.body.item.artists.map(artist => artist.name);
+                origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
                 songArg = data.body.item.name;
                 songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
                 await spotifyApi.getAlbum(data.body.item.album.id)
                 .then(async album_data => {
-                    // TODO: Use this to make next song suggestions for EP/LP reviews!
-                    // eslint-disable-next-line no-unused-vars
-                    let track_arr = album_data.body.tracks.items.map(t => t.name);
                     if (interaction.commandName.includes('ep')) {
+                        let track_arr = album_data.body.tracks.items.map(t => t.name);
+                        
                         if (songArg.includes('Remix')) {
                             passesChecks = 'ep';
                         } else if (track_arr.length <= 1) {
                             passesChecks = 'length';
                         }
+
                         origArtistArray = album_data.body.artists.map(artist => artist.name);
                         songArg = album_data.body.name;
                         if (album_data.body.album_type == 'single' && !songArg.includes(' EP')) {
@@ -113,6 +113,8 @@ module.exports = {
                         } else if (album_data.body.album_type == 'album' && !songArg.includes(' LP')) {
                             songArg = `${songArg} LP`;
                         }
+
+                        db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: track_arr }, 'current_ep_review');  
                     }
                 });
             });
@@ -203,11 +205,11 @@ module.exports = {
         artistArray = artistArray.flat(1);
         origArtistArray = artistArray.slice(0);
         
-        if (db.user_stats.get(interaction.user.id, 'current_ep_review')[2] != undefined) {
-            if (db.user_stats.get(interaction.user.id, 'current_ep_review')[2].includes(' EP') || db.user_stats.get(interaction.user.id, 'current_ep_review')[2].includes(' LP')) {
+        if (db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name') != undefined) {
+            if (db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name').includes(' EP') || db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name').includes(' LP')) {
                 for (let i = 0; i < origArtistArray.length; i++) {
                     if (origArtistArray[i].toLowerCase() == 'og') {
-                        origArtistArray[i] = db.user_stats.get(interaction.user.id, `current_ep_review`)[1];
+                        origArtistArray[i] = db.user_stats.get(interaction.user.id, `current_ep_review.artist_array`);
                         origArtistArray = origArtistArray.flat(1);
                         artistArray = origArtistArray.slice(0);
                     }   

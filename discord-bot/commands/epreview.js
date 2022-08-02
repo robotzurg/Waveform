@@ -81,6 +81,13 @@ module.exports = {
 	async execute(interaction) {
         try {
 
+            let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
+
+            // Check if we are reviewing in the right chat, if not, boot out
+            if (`<#${interaction.channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel') && !mailboxes.some(v => v.includes(interaction.channel.id))) {
+                return interaction.editReply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
+            }
+
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('ep_name');
             let parsed_args = await parse_artist_song_data(interaction, artists, ep);
@@ -239,7 +246,7 @@ module.exports = {
             // Grab message id to put in user_stats and the ep object
             const msg = await interaction.fetchReply();
 
-            db.user_stats.set(interaction.user.id, [msg.id, artistArray, epName, 'A'], 'current_ep_review');            
+            db.user_stats.set(interaction.user.id, msg.id, 'current_ep_review.msg_id');            
 
             const filter = i => i.user.id == interaction.user.id;
             const collector = interaction.channel.createMessageComponentCollector({ filter, time: 10000000 });
@@ -253,11 +260,16 @@ module.exports = {
                 switch (i.customId) {
                     case 'artist': {
                         await i.deferUpdate();
-                        await i.editReply({ content: 'Type in the artist name(s) (separated with &)', components: [] });
+                        await i.editReply({ content: 'Type in the artist name(s) (separated with & or x)', components: [] });
                         const a_filter = m => m.author.id == interaction.user.id;
                         a_collector = interaction.channel.createMessageCollector({ filter: a_filter, max: 1, time: 60000 });
                         a_collector.on('collect', async m => {
-                            artistArray = m.content.split(' & ');
+                            if (m.content.includes(' x ')) {
+                                m.content = m.content.replace(' & ', ' \\& ');
+                                artistArray = m.content;
+                            } else {
+                                artistArray = m.content.split(' & ');
+                            }
                             
                             if (starred == false) {
                                 epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
@@ -277,7 +289,7 @@ module.exports = {
                             epEmbed.setThumbnail(art);
 
                             await i.editReply({ embeds: [epEmbed], components: [row, row2] });
-                            db.user_stats.set(interaction.user.id, [msg.id, artistArray, epName, 'A'], 'current_ep_review');      
+                            db.user_stats.set(interaction.user.id, { msg_id: msg.id, artist_array: artistArray, ep_name: epName, review_type: 'A' }, 'current_ep_review');      
                             m.delete();
                         });
                         
@@ -311,7 +323,7 @@ module.exports = {
                             epEmbed.setThumbnail(art);
 
                             await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
-                            db.user_stats.set(interaction.user.id, [msg.id, artistArray, epName, 'A'], 'current_ep_review');      
+                            db.user_stats.set(interaction.user.id, { msg_id: msg.id, artist_array: artistArray, ep_name: epName, review_type: 'A' }, 'current_ep_review');      
                             m.delete();
                         });
                         
@@ -460,7 +472,6 @@ module.exports = {
                         for (let j = 0; j < artistArray.length; j++) {
                             db.reviewDB.set(artistArray[j], true, `["${epName}"].["${interaction.user.id}"].no_songs`);
                         }
-                        
 
                         if (overall_review != false) epEmbed.setDescription(`${overall_review}`);
                         if (overall_rating !== false) epEmbed.addField(`Rating`, `**${overall_rating}/10**`);
@@ -473,6 +484,8 @@ module.exports = {
                         i.editReply({ embeds: [epEmbed], components: [] });
                     } break;
                     case 'begin': {
+                        await i.deferUpdate();
+
                         if (ra_collector != undefined) ra_collector.stop();
                         if (re_collector != undefined) re_collector.stop();
                         if (a_collector != undefined) a_collector.stop();
@@ -480,6 +493,9 @@ module.exports = {
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
                         review_ep(interaction, artistArray, epName, overall_rating, overall_review, taggedUser, art, starred, tag);
+
+                        let epSongs = await (db.user_stats.get(interaction.user.id, 'current_ep_review.track_list') != false 
+                        ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(artistArray[0], `["${epName}"].songs`));
 
                         // Setup tags if necessary
                         if (tag != null) {
@@ -497,7 +513,8 @@ module.exports = {
                             db.reviewDB.set(artistArray[j], msg.url, `["${epName}"].["${interaction.user.id}"].url`);
                         }
 
-                        i.update({ embeds: [epEmbed], components: [] });
+                        await i.editReply({ embeds: [epEmbed], components: [] });
+                        await i.followUp({ content: `The first song you should review for this ${epType} review is **${epSongs[0]}**`, ephemeral: true });
                     } break;
                 }
             });

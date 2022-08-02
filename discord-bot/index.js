@@ -259,7 +259,6 @@ client.on('guildMemberAdd', async (member) => {
             "mailbox_playlist_id": false,
             "name": `${member.user.username}`,
             "recent_review": "N/A",
-            "star_list": [],
         });
     }
 

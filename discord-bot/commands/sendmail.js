@@ -16,11 +16,22 @@ module.exports = {
         .addUserOption(option => 
             option.setName('user')
                 .setDescription('User whose mailbox you would like to send a song to (MUST BE CONNECTED TO SPOTIFY)')
-                .setRequired(true)),
-	async execute(interaction) {
+                .setRequired(false)),
+	async execute(interaction, client) {
 
         let taggedUser = interaction.options.getUser('user');
-        let taggedMember = await interaction.guild.members.fetch(taggedUser.id);  
+        let taggedMember;
+        let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
+
+        // Check if we are reviewing in the right chat, if not, boot out
+        if (mailboxes.some(v => v.includes(interaction.channel.id))) {
+            taggedUser = client.users.cache.get(mailboxes.find(v => v[1] == interaction.channel.id)[0]);
+            taggedMember = await interaction.guild.members.fetch(taggedUser.id);
+        } else if (taggedUser != null) {
+            taggedMember = await interaction.guild.members.fetch(taggedUser.id);
+        } else if (taggedUser == null) {
+            return interaction.editReply(`You must either specify a user in the user argument to send this song to, or be in a mailbox chat!`);
+        }
 
         const spotifyApi = await spotify_api_setup(taggedUser.id);
     
@@ -40,7 +51,7 @@ module.exports = {
         if (!trackLink.includes('spotify')) return interaction.editReply('The link you put in is not a valid spotify link!');
         await getData(trackLink).then(data => {
             url = data.external_urls.spotify;
-            songArt = data.images[0].url;
+            data.type == 'track' ? songArt = data.album.images[0].url : songArt = data.images[0].url;
             name = data.name;
             artists = data.artists.map(artist => artist.name);
             if (data.type == 'track' || data.type == 'single') {
@@ -52,7 +63,6 @@ module.exports = {
             }
         }).catch((err) => {
             console.log(err);
-            return interaction.editReply('This track threw an error. Yikes!');
         });
 
         // Add tracks to the mailbox playlist
@@ -62,7 +72,7 @@ module.exports = {
             const mailEmbed = new Discord.MessageEmbed()
             .setColor(`${interaction.member.displayHexColor}`)
             .setTitle(`${artists.join(' & ')} - ${name}`)
-            .setDescription(`This song was sent to you by <@${interaction.user.id}>!`)
+            .setDescription(`This music mail was sent to you by <@${interaction.user.id}>!`)
             .setThumbnail(songArt);
 
             if (interaction.channel.id != db.user_stats.get(taggedUser.id, 'mailbox')) {
@@ -80,7 +90,7 @@ module.exports = {
                 db.user_stats.push(taggedUser.id, [`**${artists.join(' & ')} - ${name}**`, `${interaction.user.id}`], 'mailbox_list');
             }
         }, async () => {
-            interaction.editReply(`The user ${taggedMember.displayName} does not have a valid mailbox setup. Make sure they have set one up using \`/setupmailbox\`!`);
+            interaction.editReply(`Waveform ran into an issue sending this mail. Make sure they have set music mailbox setup by using \`/setupmailbox\`!`);
         });
     },
 };
