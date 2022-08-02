@@ -98,7 +98,7 @@ module.exports = {
         let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
 
         // Check if we are reviewing in the right chat, if not, boot out
-        if (`<#${int_channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel') && !mailboxes.includes(int_channel.name)) {
+        if (`<#${int_channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel') && !mailboxes.some(v => v.includes(int_channel.id))) {
             return interaction.editReply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
         }
 
@@ -119,7 +119,6 @@ module.exports = {
 
         let parsed_args = await parse_artist_song_data(interaction, artists, song, rmxArtistArray, vocalistArray);
         if (parsed_args == -1) return;
-        console.log(parsed_args);
 
         let origArtistArray = parsed_args[0];
         let songName = parsed_args[1];
@@ -141,11 +140,11 @@ module.exports = {
         let taggedMember = false;
 
         // EP/LP check to see if "og" is listed as the artist name, so replace it with EP/LP artist
-        if (db.user_stats.get(interaction.user.id, 'current_ep_review')[2] != undefined) {
-            if (db.user_stats.get(interaction.user.id, 'current_ep_review')[2].includes(' EP') || db.user_stats.get(interaction.user.id, 'current_ep_review')[2].includes(' LP')) {
+        if (db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name') != undefined) {
+            if (db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name').includes(' EP') || db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name').includes(' LP')) {
                 for (let i = 0; i < origArtistArray.length; i++) {
                     if (origArtistArray[i].toLowerCase() == 'og') {
-                        origArtistArray[i] = db.user_stats.get(interaction.user.id, `current_ep_review`)[1];
+                        origArtistArray[i] = db.user_stats.get(interaction.user.id, `current_ep_review.artist_array`);
                         origArtistArray = origArtistArray.flat(1);
                     }   
                 }
@@ -181,14 +180,12 @@ module.exports = {
         const reviewButtons = new Discord.MessageActionRow();
 
         // If we're in an EP/LP review, stick in a button to push to EP review instead of a send to database button.
-        if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false && origArtistArray.includes(db.user_stats.get(interaction.user.id, 'current_ep_review')[1][0])) {
-            if (db.user_stats.get(interaction.user.id, 'current_ep_review').length != 0) {
-                reviewButtons.addComponents( 
-                    new Discord.MessageButton()
-                    .setCustomId('ep_done').setLabel('Push to EP Review')
-                    .setStyle('SUCCESS'),
-                );
-            }
+        if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false && origArtistArray.includes(db.user_stats.get(interaction.user.id, 'current_ep_review.artist_array')[0])) {
+            reviewButtons.addComponents( 
+                new Discord.MessageButton()
+                .setCustomId('ep_done').setLabel('Push to EP Review')
+                .setStyle('SUCCESS'),
+            );
         } else {
             reviewButtons.addComponents( 
                 new Discord.MessageButton()
@@ -274,11 +271,17 @@ module.exports = {
                 // Artist edit button
                 case 'artist': {
                     await i.deferUpdate();
-                    await i.editReply({ content: 'Type in the artist name(s) (separated with &, DO NOT PUT REMIXERS HERE!)', components: [] });
+                    await i.editReply({ content: 'Type in the artist name(s) (separated with & or x, DO NOT PUT REMIXERS HERE!)', components: [] });
                     const a_filter = m => m.author.id == interaction.user.id;
                     a_collector = int_channel.createMessageCollector({ filter: a_filter, max: 1, time: 60000 });
                     await a_collector.on('collect', async m => {
-                        origArtistArray = m.content.split(' & ');
+                        if (m.content.includes(' x ')) {
+                            m.content = m.content.replace(' & ', ' \\& ');
+                            origArtistArray = m.content;
+                        } else {
+                            origArtistArray = m.content.split(' & ');
+                        }
+
                         songArt = false;
                         if (rmxArtistArray.length == 0) {
                             artistArray = [origArtistArray, vocalistArray];
@@ -432,7 +435,7 @@ module.exports = {
                     if (collector != undefined) collector.stop(); // Collector for all buttons
                     interaction.deleteReply();
 
-                    let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review')[0];
+                    let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review.msg_id');
                     let channelsearch = await find_review_channel(interaction, interaction.user.id, msgtoEdit);
 
                     let msgEmbed;
@@ -440,7 +443,7 @@ module.exports = {
                     let ep_name;
                     let collab;
                     let field_name;
-                    let type = db.user_stats.get(interaction.user.id, 'current_ep_review')[3]; // Type A is when embed length is under 2000 characters, type B is when its over 2000
+                    let type = db.user_stats.get(interaction.user.id, 'current_ep_review.review_type'); // Type A is when embed length is under 2000 characters, type B is when its over 2000
                     let ep_songs;
                     let ep_last_song_button = new Discord.MessageActionRow()
                     .addComponents( 
@@ -459,8 +462,9 @@ module.exports = {
                         msgEmbed = msg.embeds[0];
                         mainArtists = [msgEmbed.title.replace('🌟 ', '').trim().split(' - ')[0].split(' & ')];
                         mainArtists = mainArtists.flat(1);
-                        ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review')[2];
-                        ep_songs = db.reviewDB.get(mainArtists[0], `["${ep_name}"].songs`);
+                        ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name');
+                        ep_songs = (db.user_stats.get(interaction.user.id, 'current_ep_review.track_list') != false 
+                        ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(mainArtists[0], `["${ep_name}"].songs`));
 
                         for (let j = 0; j < artistArray.length; j++) {
                             db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
@@ -479,7 +483,7 @@ module.exports = {
 
                         // If the entire EP/LP review is over 3250 characters, set EP/LP review type to "B" (aka hide any more reviews from that point)
                         if (msgEmbed.length > 3250 && type == 'A') {
-                            db.user_stats.set(interaction.user.id, 'B', 'current_ep_review[3]');
+                            db.user_stats.set(interaction.user.id, 'B', 'current_ep_review.review_type');
                             type = 'B';
                         }
 
@@ -553,6 +557,14 @@ module.exports = {
                         db.reviewDB.set(artistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`);
                     }
 
+                    // Suggest next song to review
+                    let nextSong;
+                    nextSong = ep_songs.findIndex(v => v.includes(songName));
+                    if (nextSong != ep_songs.length - 1) {
+                        nextSong = ep_songs[nextSong + 1];
+                        i.followUp({ content: `The next song you should review is: **${nextSong}**`, ephemeral: true });
+                    }
+
                 } break;
                 case 'done': { // Send the review to the database
                     await i.update({ content: ' ', embeds: [reviewEmbed], components: [] });
@@ -568,9 +580,9 @@ module.exports = {
                     // Setup tags if necessary
                     if (tag != null) {
                         if (db.tags.has(tag)) {
-                            db.tags.push(tag, displaySongName, 'song_list');
+                            db.tags.push(tag, `${origArtistArray.join(' & ')} - ${displaySongName}`, 'song_list');
                         } else {
-                            db.tags.set(tag, [displaySongName], 'song_list');
+                            db.tags.set(tag, [`${origArtistArray.join(' & ')} - ${displaySongName}`], 'song_list');
                             db.tags.set(tag, false, 'image');
                         }
                     }

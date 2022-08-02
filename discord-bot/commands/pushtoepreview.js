@@ -40,6 +40,7 @@ module.exports = {
             let artistArray = parsed_args[2];
             let rmxArtistArray = parsed_args[3];
             let vocalistArray = parsed_args[4];
+            let displaySongName = parsed_args[5];
 
             if (rmxArtistArray.length != 0) {
                 artistArray = rmxArtistArray;
@@ -54,7 +55,7 @@ module.exports = {
             let starred = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].starred`);
             let songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
 
-            let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review')[0];
+            let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review.msg_id');
             let channelsearch = await find_review_channel(interaction, interaction.user.id, msgtoEdit);
 
             let msgEmbed;
@@ -62,15 +63,11 @@ module.exports = {
             let ep_name;
             let collab;
             let field_name;
-            let type = db.user_stats.get(interaction.user.id, 'current_ep_review')[3]; // Type A is when embed length is under 2000 characters, type B is when its over 2000
+            let type = db.user_stats.get(interaction.user.id, 'current_ep_review.review_type'); // Type A is when embed length is under 2000 characters, type B is when its over 2000
 
             if (type == false || type == undefined || type == null) { // If there's not an active EP/LP review
                 return interaction.editReply('You don\'t currently have an active EP/LP review, this command is supposed to be used with an EP/LP review started with `/epreview`!');
             }
-
-            let displaySongName = (`${songName}` + 
-            `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
-            `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
 
             // Edit the EP embed
             await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
@@ -108,7 +105,7 @@ module.exports = {
                     for (let j = 0; j < msgEmbed.fields.length; j++) {
                         msgEmbed.fields[j].value = `*Review hidden to save space*`;
                     }
-                    db.user_stats.set(interaction.user.id, 'B', 'current_ep_review[3]');
+                    db.user_stats.set(interaction.user.id, 'B', 'current_ep_review.review_type');
                     type = 'B';
                 }
 

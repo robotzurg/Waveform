@@ -27,7 +27,7 @@ module.exports = {
 
                 await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
                     if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
-                    artist = data.body.item.artists.map(a => a.name)[0];
+                    artist = data.body.item.artists.map(a => a.name.replace(' & ', ' \\& '))[0];
                     spotifyCheck = true;
                 });
 
@@ -147,6 +147,7 @@ module.exports = {
                         let remixerKeys = db.reviewDB.get(artist, `["${epSongs[ii]}"].remixers`);
                         let collabArray = db.reviewDB.get(artist, `["${epSongs[ii]}"].collab`); // This also doubles as remixer original artists
                         let vocalistArray = db.reviewDB.get(artist, `["${epSongs[ii]}"].vocals`);
+                        collabArray = collabArray.filter(v => !vocalistArray.includes(v));
 
                         if (remixerKeys.length > 0) {
                             songDetails = [`\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
@@ -189,6 +190,7 @@ module.exports = {
                     let remixerKeys = songObj.remixers;
                     let collabArray = songObj.collab; // This also doubles as remixer original artists
                     let vocalistArray = songObj.vocals;
+                    collabArray = collabArray.filter(v => !vocalistArray.includes(v));
 
                     if (remixerKeys.length > 0) {
                         songDetails = [`\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
