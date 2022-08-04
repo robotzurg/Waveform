@@ -32,16 +32,16 @@ module.exports = {
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('song_name');
         let remixers = interaction.options.getString('remixers');
-        let parsed_args = await parse_artist_song_data(interaction, artists, song, remixers);
+        let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
 
-        if (parsed_args == -1) {
+        if (song_info == -1) {
             return;
         }
 
-        let origArtistArray = parsed_args[0];
-        let songName = parsed_args[1];
-        let artistArray = parsed_args[2];
-        let displaySongName = parsed_args[5];
+        let origArtistArray = song_info.prod_artists;
+        let songName = song_info.song_name;
+        let artistArray = song_info.all_artists;
+        let displaySongName = song_info.display_song_name;
 
         let songObj;
         let songEP = false;
@@ -59,6 +59,7 @@ module.exports = {
         }
         let tags = songObj.tags;
         if (tags == undefined) tags = [];
+        tags = [tags].flat(1);
 
         if (remixArray.length != 0) {
             for (let i = 0; i < remixArray.length; i++) {

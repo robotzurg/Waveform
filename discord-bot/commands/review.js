@@ -22,11 +22,11 @@ module.exports = {
                     .setDescription('Your review of the song')
                     .setRequired(false))
 
-            .addStringOption(option => 
+            /*.addStringOption(option => 
                 option.setName('tag')
                     .setDescription('Put a tag you want to set the song to here!')
                     .setAutocomplete(true)
-                    .setRequired(false))
+                    .setRequired(false))*/
 
             .addUserOption(option => 
                 option.setName('user_who_sent')
@@ -70,11 +70,11 @@ module.exports = {
                     .setAutocomplete(true)
                     .setRequired(false))
 
-            .addStringOption(option => 
+            /*.addStringOption(option => 
                 option.setName('tag')
                     .setDescription('Put a tag you want to set the song to here!')
                     .setAutocomplete(true)
-                    .setRequired(false))
+                    .setRequired(false))*/
 
             .addUserOption(option => 
                 option.setName('user_who_sent')
@@ -117,16 +117,16 @@ module.exports = {
             }
         }
 
-        let parsed_args = await parse_artist_song_data(interaction, artists, song, rmxArtistArray, vocalistArray);
-        if (parsed_args == -1) return;
+        let song_info = await parse_artist_song_data(interaction, artists, song, rmxArtistArray, vocalistArray);
+        if (song_info == -1) return;
 
-        let origArtistArray = parsed_args[0];
-        let songName = parsed_args[1];
-        let artistArray = parsed_args[2];
-        rmxArtistArray = parsed_args[3];
-        vocalistArray = parsed_args[4];
-        let displaySongName = parsed_args[5];
-        let origSongName = parsed_args[6];
+        let origArtistArray = song_info.prod_artists;
+        let songName = song_info.song_name;
+        let artistArray = song_info.all_artists;
+        rmxArtistArray = song_info.remix_artists;
+        vocalistArray = song_info.vocal_artists;
+        let displaySongName = song_info.display_song_name;
+        let origSongName = song_info.main_song_name;
 
         let rating = interaction.options.getString('rating');
         if (rating == null) rating = false;

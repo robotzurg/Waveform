@@ -36,17 +36,17 @@ module.exports = {
             let song = interaction.options.getString('song_name');
             let remixers = interaction.options.getString('remixers');
 
-            let parsed_args = await parse_artist_song_data(interaction, artists, song, remixers);
+            let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
 
-            if (parsed_args == -1) {
+            if (song_info == -1) {
                 return;
             }
 
-            let origArtistArray = parsed_args[0];
-            let songName = parsed_args[1];
-            let artistArray = parsed_args[2];
-            let rmxArtistArray = parsed_args[3];
-            let displaySongName = parsed_args[5];
+            let origArtistArray = song_info.prod_artists;
+            let songName = song_info.song_name;
+            let artistArray = song_info.all_artists;
+            let rmxArtistArray = song_info.remix_artists;
+            let displaySongName = song_info.display_song_name;
 
             if (rmxArtistArray.length != 0) {
                 artistArray = rmxArtistArray;

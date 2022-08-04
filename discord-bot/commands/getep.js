@@ -24,12 +24,12 @@ module.exports = {
 
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('ep_name');
-            let parsed_args = await parse_artist_song_data(interaction, artists, ep);
-            if (parsed_args == -1) return;
+            let song_info = await parse_artist_song_data(interaction, artists, ep);
+            if (song_info == -1) return;
 
-            let origArtistArray = parsed_args[0];
-            let epName = parsed_args[1];
-            let artistArray = parsed_args[2];
+            let origArtistArray = song_info.prod_artists;
+            let epName = song_info.song_name;
+            let artistArray = song_info.all_artists;
             let epType = epName.includes(' LP') ? `LP` : `EP`;
 
             let epObj = db.reviewDB.get(artistArray[0], `["${epName}"]`);

@@ -50,15 +50,15 @@ module.exports = {
                     song = `${song[0]}${(remixers != null) ? ` (${remixers.join(' & ')} Remix)` : ``}`;
                 }
 
-                let parsed_args = await parse_artist_song_data(interaction, artists, song, remixers);
+                let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
 
-                if (parsed_args == -1) {
+                if (song_info == -1) {
                     return;
                 }
 
-                let artistArray = parsed_args[2];
-                let songName = parsed_args[1];
-                let rmxArtistArray = parsed_args[3];
+                let artistArray = song_info.all_artists;
+                let songName = song_info.song_name;
+                let rmxArtistArray = song_info.remix_artists;
                 if (rmxArtistArray == undefined) rmxArtistArray = [];
                 if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
 
