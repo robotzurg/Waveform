@@ -84,8 +84,8 @@ module.exports = {
                 mainArtists = [msgEmbed.title.replace('🌟 ', '').trim().split(' - ')[0].split(' & ')];
                 mainArtists = mainArtists.flat(1);
                 ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name');
-                ep_songs = (db.user_stats.get(interaction.user.id, 'current_ep_review.track_list') != false 
-                ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(mainArtists[0], `["${ep_name}"].songs`));
+                ep_songs = db.user_stats.get(interaction.user.id, 'current_ep_review.track_list');
+                if (ep_songs == false) ep_songs = [];
 
                 for (let j = 0; j < artistArray.length; j++) {
                     db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
@@ -175,11 +175,13 @@ module.exports = {
             }
 
             // Suggest next song to review
-            let nextSong;
-            nextSong = ep_songs.findIndex(v => v.includes(songName));
-            if (nextSong != ep_songs.length - 1) {
-                nextSong = ep_songs[nextSong + 1];
-                interaction.followUp({ content: `The next song you should review is: **${nextSong}**`, ephemeral: true });
+            if (ep_songs.length != 0) {
+                let nextSong;
+                nextSong = ep_songs.findIndex(v => v.includes(songName));
+                if (nextSong != ep_songs.length - 1) {
+                    nextSong = ep_songs[nextSong + 1];
+                    interaction.followUp({ content: `The next song you should review is: **${nextSong}**`, ephemeral: true });
+                }
             }
 
             interaction.deleteReply();
