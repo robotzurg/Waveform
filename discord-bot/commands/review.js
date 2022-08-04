@@ -180,12 +180,14 @@ module.exports = {
         const reviewButtons = new Discord.MessageActionRow();
 
         // If we're in an EP/LP review, stick in a button to push to EP review instead of a send to database button.
-        if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false && origArtistArray.includes(db.user_stats.get(interaction.user.id, 'current_ep_review.artist_array')[0])) {
-            reviewButtons.addComponents( 
-                new Discord.MessageButton()
-                .setCustomId('ep_done').setLabel('Push to EP Review')
-                .setStyle('SUCCESS'),
-            );
+        if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
+            if (origArtistArray.includes(db.user_stats.get(interaction.user.id, 'current_ep_review.artist_array')[0])) {
+                reviewButtons.addComponents( 
+                    new Discord.MessageButton()
+                    .setCustomId('ep_done').setLabel('Push to EP Review')
+                    .setStyle('SUCCESS'),
+                );
+            }
         } else {
             reviewButtons.addComponents( 
                 new Discord.MessageButton()
@@ -463,8 +465,8 @@ module.exports = {
                         mainArtists = [msgEmbed.title.replace('🌟 ', '').trim().split(' - ')[0].split(' & ')];
                         mainArtists = mainArtists.flat(1);
                         ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name');
-                        ep_songs = (db.user_stats.get(interaction.user.id, 'current_ep_review.track_list') != false 
-                        ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(mainArtists[0], `["${ep_name}"].songs`));
+                        ep_songs = db.user_stats.get(interaction.user.id, 'current_ep_review.track_list');
+                        if (ep_songs == false) ep_songs = [];
 
                         for (let j = 0; j < artistArray.length; j++) {
                             db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
@@ -558,11 +560,13 @@ module.exports = {
                     }
 
                     // Suggest next song to review
-                    let nextSong;
-                    nextSong = ep_songs.findIndex(v => v.includes(songName));
-                    if (nextSong != ep_songs.length - 1) {
-                        nextSong = ep_songs[nextSong + 1];
-                        i.followUp({ content: `The next song you should review is: **${nextSong}**`, ephemeral: true });
+                    if (ep_songs.length != false) {
+                        let nextSong;
+                        nextSong = ep_songs.findIndex(v => v.includes(songName));
+                        if (nextSong != ep_songs.length - 1) {
+                            nextSong = ep_songs[nextSong + 1];
+                            i.followUp({ content: `The next song you should review is: **${nextSong}**`, ephemeral: true });
+                        }
                     }
 
                 } break;

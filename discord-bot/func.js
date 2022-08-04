@@ -68,6 +68,7 @@ module.exports = {
         let songArg = song;
         let rmxArtistArray = [];
         let passesChecks = true;
+        let trackList = false;
         if (remixers != null) {
             rmxArtistArray = [remixers.split(' & ')];
             rmxArtistArray = rmxArtistArray.flat(1);
@@ -98,11 +99,11 @@ module.exports = {
                 await spotifyApi.getAlbum(data.body.item.album.id)
                 .then(async album_data => {
                     if (interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') {
-                        let track_arr = album_data.body.tracks.items.map(t => t.name);
+                        trackList = album_data.body.tracks.items.map(t => t.name);
                         
                         if (songArg.includes('Remix')) {
                             passesChecks = 'ep';
-                        } else if (track_arr.length <= 1) {
+                        } else if (trackList.length <= 1) {
                             passesChecks = 'length';
                         }
 
@@ -115,7 +116,7 @@ module.exports = {
                         }
 
                         if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false) {
-                            db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: track_arr }, 'current_ep_review');  
+                            db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList }, 'current_ep_review');  
                         }
                     }
                 });
@@ -124,6 +125,11 @@ module.exports = {
             // Check if a podcast is being played, as we don't support that.
             if (isPodcast == true) {
                 interaction.editReply('Podcasts are not supported with `/np`.');
+                return -1;
+            }
+
+            if (passesChecks == 'notplaying') {
+                interaction.editReply('You are not currently playing a song on Spotify.');
                 return -1;
             }
 
@@ -186,9 +192,6 @@ module.exports = {
             } else if (passesChecks == 'length') {
                 interaction.editReply('This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.');
                 return -1;
-            } else if (passesChecks == 'notplaying') {
-                interaction.editReply('You are not currently playing a song on Spotify.');
-                return -1;
             }
             
         } else {
@@ -206,6 +209,12 @@ module.exports = {
 
         artistArray = artistArray.flat(1);
         origArtistArray = artistArray.slice(0);
+
+        if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') {
+            if (db.reviewDB.has(artistArray[0])) trackList = db.reviewDB.get(artistArray[0], `["${songArg}"].songs`);
+            if (!trackList) trackList = false;
+            db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList }, 'current_ep_review');  
+        }
         
         if (db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name') != undefined) {
             if (db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name').includes(' EP') || db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name').includes(' LP')) {
@@ -438,8 +447,8 @@ module.exports = {
 
                 if (tag != null && db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
-                } else {
-                    db.reviewDB.set(artistArray[i], [tag], `["${songName}"].tags`);
+                } else if (tag != null) {
+                    db.reviewDB.set(artistArray[i], [tag], `["${ep_name}"].tags`);
                 }
             }
 
@@ -576,7 +585,7 @@ module.exports = {
                 
                 if (tag != null && db.reviewDB.get(artistArray[i], `["${ep_name}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${ep_name}"].tags`);
-                } else {
+                } else if (tag != null) {
                     db.reviewDB.set(artistArray[i], [tag], `["${ep_name}"].tags`);
                 }
             }

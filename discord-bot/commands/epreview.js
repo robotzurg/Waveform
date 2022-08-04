@@ -514,7 +514,11 @@ module.exports = {
                         }
 
                         await i.editReply({ embeds: [epEmbed], components: [] });
-                        await i.followUp({ content: `The first song you should review for this ${epType} review is **${epSongs[0]}**`, ephemeral: true });
+                        if (epSongs) {
+                            if (epSongs.length != 0) {
+                                await i.followUp({ content: `The first song you should review for this ${epType} review is **${epSongs[0]}**`, ephemeral: true });
+                            }
+                        }
                     } break;
                 }
             });
