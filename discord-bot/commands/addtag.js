@@ -37,20 +37,22 @@ module.exports = {
 	async execute(interaction) {
         try {
 
+        return console.log('This command has been temporarily disabled due to bugs.');
+
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('name');
         let remixers = interaction.options.getString('remixers');
-        let parsed_args = await parse_artist_song_data(interaction, artists, song, remixers);
+        let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
 
-        if (parsed_args == -1) {
+        if (song_info == -1) {
             return;
         }
 
-        let origArtistArray = parsed_args[0];
-        let songName = parsed_args[1];
-        let artistArray = parsed_args[2];
-        let rmxArtistArray = parsed_args[3];
-        let vocalistArray = parsed_args[4];
+        let origArtistArray = song_info.prod_artists;
+        let songName = song_info.song_name;
+        let artistArray = song_info.all_artists;
+        let rmxArtistArray = song_info.remix_artists;
+        let vocalistArray = song_info.vocal_artists;
 
         let tag = interaction.options.getString('tag');
         let tagArt = interaction.options.getString('tag_image');

@@ -27,17 +27,17 @@ module.exports = {
             songCurMs = data.body.progress_ms;
             musicProgressBar = progressbar.splitBar(songLength / 1000, songCurMs / 1000, 12)[0];
             isPlaying = data.body.is_playing;
-            let parsed_args = await parse_artist_song_data(interaction);
+            let song_info = await parse_artist_song_data(interaction);
 
-            if (parsed_args == -1) {
+            if (song_info == -1) {
                 return;
             }
 
-            origArtistArray = parsed_args[0];
-            songName = parsed_args[1];
-            artistArray = parsed_args[2];
-            rmxArtistArray = parsed_args[3];
-            songDisplayName = parsed_args[5];
+            origArtistArray = song_info.prod_artists;
+            songName = song_info.song_name;
+            artistArray = song_info.all_artists;
+            rmxArtistArray = song_info.remix_artists;
+            songDisplayName = song_info.display_song_name;
 
             if (rmxArtistArray.length != 0) {
                 artistArray = rmxArtistArray;

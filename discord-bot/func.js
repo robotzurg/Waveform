@@ -97,7 +97,7 @@ module.exports = {
                 songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
                 await spotifyApi.getAlbum(data.body.item.album.id)
                 .then(async album_data => {
-                    if (interaction.commandName.includes('ep')) {
+                    if (interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') {
                         let track_arr = album_data.body.tracks.items.map(t => t.name);
                         
                         if (songArg.includes('Remix')) {
@@ -114,7 +114,9 @@ module.exports = {
                             songArg = `${songArg} LP`;
                         }
 
-                        db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: track_arr }, 'current_ep_review');  
+                        if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false) {
+                            db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: track_arr }, 'current_ep_review');  
+                        }
                     }
                 });
             });
@@ -278,7 +280,15 @@ module.exports = {
         let displaySongName = (`${songArg}` + 
         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
 
-        return [origArtistArray, songArg, artistArray, rmxArtistArray, vocalistArray, displaySongName, origSongArg];
+        return { 
+            prod_artists: origArtistArray, 
+            song_name: songArg, // Song name with remixers in the name
+            main_song_name: origSongArg, // Song Name without remixers in the name
+            display_song_name: displaySongName, // Song name with remixers and features in the name
+            all_artists: artistArray, 
+            remix_artists: rmxArtistArray, 
+            vocal_artists: vocalistArray,
+        };
     },
 
     // Updates the art for embed messages, NOT in the database. That's done in the !add review commands themselves.
@@ -406,7 +416,7 @@ module.exports = {
                 if (tag != null && db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
                 } else {
-                    db.reviewDB.set(artistArray[i], tag, `["${songName}"].tags`);
+                    db.reviewDB.set(artistArray[i], [tag], `["${songName}"].tags`);
                 }
             } else if (review_object.name != undefined) { // Otherwise if you have no review but the song and artist objects exist
 
@@ -429,7 +439,7 @@ module.exports = {
                 if (tag != null && db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
                 } else {
-                    db.reviewDB.set(artistArray[i], tag, `["${songName}"].tags`);
+                    db.reviewDB.set(artistArray[i], [tag], `["${songName}"].tags`);
                 }
             }
 
@@ -567,7 +577,7 @@ module.exports = {
                 if (tag != null && db.reviewDB.get(artistArray[i], `["${ep_name}"].tags`) != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `["${ep_name}"].tags`);
                 } else {
-                    db.reviewDB.set(artistArray[i], tag, `["${ep_name}"].tags`);
+                    db.reviewDB.set(artistArray[i], [tag], `["${ep_name}"].tags`);
                 }
             }
         }

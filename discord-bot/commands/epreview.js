@@ -21,11 +21,11 @@ module.exports = {
                     .setDescription('Overall Review of the EP/LP. Can be added later.')
                     .setRequired(false))
     
-            .addStringOption(option => 
+            /*.addStringOption(option => 
                 option.setName('tag')
                     .setDescription('Put a tag you want to set the song to here!')
                     .setAutocomplete(true)
-                    .setRequired(false))
+                    .setRequired(false))*/
     
             .addStringOption(option => 
                 option.setName('art')
@@ -62,11 +62,11 @@ module.exports = {
                     .setDescription('Overall Review of the EP/LP. Can be added later.')
                     .setRequired(false))
     
-            .addStringOption(option => 
+            /*.addStringOption(option => 
                 option.setName('tag')
                     .setDescription('Put a tag you want to set the song to here!')
                     .setAutocomplete(true)
-                    .setRequired(false))
+                    .setRequired(false))*/
     
             .addStringOption(option => 
                 option.setName('art')
@@ -90,12 +90,12 @@ module.exports = {
 
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('ep_name');
-            let parsed_args = await parse_artist_song_data(interaction, artists, ep);
-            if (parsed_args == -1) return;
+            let song_info = await parse_artist_song_data(interaction, artists, ep);
+            if (song_info == -1) return;
 
-            let origArtistArray = parsed_args[0];
-            let epName = parsed_args[1];
-            let artistArray = parsed_args[2];
+            let origArtistArray = song_info.prod_artists;
+            let epName = song_info.song_name;
+            let artistArray = song_info.all_artists;
             let epType = epName.includes(' LP') ? `LP` : `EP`;
 
             let art = interaction.options.getString('art');
