@@ -6,38 +6,62 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('editreview')
         .setDescription('Edit a song review.')
-        .addStringOption(option => 
-            option.setName('rating')
-                .setDescription('The new rating of the review.')
-                .setRequired(false))
+        .addSubcommand(subcommand =>
+            subcommand.setName('with_spotify')
+            .setDescription('Edit/add data to a song review with spotify playback data.')
 
-        .addStringOption(option => 
-            option.setName('review')
-                .setDescription('The new written review.')
-                .setRequired(false))
+            .addStringOption(option => 
+                option.setName('rating')
+                    .setDescription('The new rating of the review.')
+                    .setRequired(false))
+    
+            .addStringOption(option => 
+                option.setName('review')
+                    .setDescription('The new written review.')
+                    .setRequired(false))
+    
+            .addUserOption(option => 
+                option.setName('user_who_sent')
+                    .setDescription('The new user who sent you the song for the review')
+                    .setRequired(false)))
 
-        .addUserOption(option => 
-            option.setName('user_who_sent')
-                .setDescription('The new user who sent you the song for the review')
-                .setRequired(false))
+        .addSubcommand(subcommand =>
+            subcommand.setName('manually')
+            .setDescription('Edit/add data to a song review with manually entered information.')
 
-        .addStringOption(option => 
-            option.setName('artist')
-                .setDescription('The artists of the song you would like to edit the review of (No Remixers Here).')
-                .setAutocomplete(true)
-                .setRequired(false))
+            .addStringOption(option => 
+                option.setName('artist')
+                    .setDescription('The artists of the song you would like to edit the review of (No Remixers Here).')
+                    .setAutocomplete(true)
+                    .setRequired(true))
+    
+            .addStringOption(option => 
+                option.setName('song_name')
+                    .setDescription('The song you would like to edit the review of.')
+                    .setAutocomplete(true)
+                    .setRequired(true))
 
-        .addStringOption(option => 
-            option.setName('song_name')
-                .setDescription('The song you would like to edit the review of.')
-                .setAutocomplete(true)
-                .setRequired(false))
+            .addStringOption(option => 
+                option.setName('rating')
+                    .setDescription('The new rating of the review.')
+                    .setRequired(false))
+    
+            .addStringOption(option => 
+                option.setName('review')
+                    .setDescription('The new written review.')
+                    .setRequired(false))
+    
+            .addUserOption(option => 
+                option.setName('user_who_sent')
+                    .setDescription('The new user who sent you the song for the review')
+                    .setRequired(false))
 
-        .addStringOption(option => 
-            option.setName('remixers')
-                .setDescription('Remixers that remixed the song you are editing the review of.')
-                .setAutocomplete(true)
-                .setRequired(false)),
+            .addStringOption(option => 
+                option.setName('remixers')
+                    .setDescription('Remixers that remixed the song you are editing the review of.')
+                    .setAutocomplete(true)
+                    .setRequired(false))),
+
 	async execute(interaction) {
         try {
 
@@ -45,10 +69,7 @@ module.exports = {
         let song = interaction.options.getString('song_name');
         let remixers = interaction.options.getString('remixers');
         let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
-
-        if (song_info == -1) {
-            return;
-        }
+        if (song_info == -1) return;
 
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;

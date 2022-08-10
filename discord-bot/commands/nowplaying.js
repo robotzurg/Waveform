@@ -13,7 +13,7 @@ module.exports = {
         try {
 
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
-        let songArt, spotifyUrl, yourRating, origArtistArray, artistArray, songName, rmxArtistArray, songDisplayName, isPlaying = true, isPodcast = false;
+        let songArt, spotifyUrl, yourRating, origArtistArray, artistArray, songName, songDisplayName, isPlaying = true, isPodcast = false;
         let songLength, songCurMs, musicProgressBar = false; // Spotify API specific variables 
         const spotifyApi = await spotify_api_setup(interaction.user.id);
         
@@ -28,20 +28,12 @@ module.exports = {
             musicProgressBar = progressbar.splitBar(songLength / 1000, songCurMs / 1000, 12)[0];
             isPlaying = data.body.is_playing;
             let song_info = await parse_artist_song_data(interaction);
-
-            if (song_info == -1) {
-                return;
-            }
+            if (song_info == -1) return;
 
             origArtistArray = song_info.prod_artists;
             songName = song_info.song_name;
             artistArray = song_info.all_artists;
-            rmxArtistArray = song_info.remix_artists;
             songDisplayName = song_info.display_song_name;
-
-            if (rmxArtistArray.length != 0) {
-                artistArray = rmxArtistArray;
-            } 
         });
 
         // Check if a podcast is being played, as we don't support that.

@@ -31,21 +31,13 @@ module.exports = {
             let song = interaction.options.getString('song_name');
             let remixers = interaction.options.getString('remixers');
             let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
-            
-            if (song_info == -1) {
-                return interaction.deleteReply();
-            }
+            if (song_info == -1) return interaction.deleteReply();
 
             let origArtistArray = song_info.prod_artists;
             let songName = song_info.song_name;
             let artistArray = song_info.all_artists;
-            let rmxArtistArray = song_info.remix_artists;
             let vocalistArray = song_info.vocal_artists;
             let displaySongName = song_info.display_song_name;
-
-            if (rmxArtistArray.length != 0) {
-                artistArray = rmxArtistArray;
-            } 
 
             if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"]`) == undefined) {
                 return interaction.editReply(`No review found for \`${origArtistArray.join(' & ')} - ${displaySongName}\`.`);
