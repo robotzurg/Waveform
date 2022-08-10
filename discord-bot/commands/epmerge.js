@@ -12,7 +12,7 @@ module.exports = {
         .setDescription('Merge a set of songs into an EP/LP in the database.')
         .addStringOption(option => 
             option.setName('artist')
-                .setDescription('The name of the main artist of the EP/LP.')
+                .setDescription('The name of the main artist(s) of the EP/LP.')
                 .setAutocomplete(true)
                 .setRequired(true))
 
@@ -23,13 +23,13 @@ module.exports = {
 
         .addStringOption(option => 
             option.setName('ep_art')
-                .setDescription('Art for the EP/LP. (type "s" for status ep_art.)')
+                .setDescription('Art link for the EP/LP.')
                 .setRequired(false)),
 	async execute(interaction, client) {
         try {
 
         let artists = interaction.options.getString('artist');
-        let ep = interaction.options.getString('epName');
+        let ep = interaction.options.getString('ep_name');
         let song_info = await parse_artist_song_data(interaction, artists, ep);
         if (song_info == -1) return;
 

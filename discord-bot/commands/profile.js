@@ -120,20 +120,10 @@ module.exports = {
             ratingList = ratingList.filter(v => !Number.isNaN(v));
             ratingAvg = _.mean(ratingList);
 
-            FontLibrary.use("main", [
-                "./LEMONMILK-Light.otf",
-            ]);
-
-            FontLibrary.use("main_med", [
-                "./LEMONMILK-Medium.otf",
-            ]);
-
-            FontLibrary.use("main_reg", [
-                "./LEMONMILK-Regular.otf",
-            ]);
-
+            FontLibrary.use("main", ["./fonts/LEMONMILK-Light.otf"]);
+            FontLibrary.use("main_med", ["./fonts/LEMONMILK-Medium.otf"]);
+            FontLibrary.use("main_reg", ["./fonts/LEMONMILK-Regular.otf"]);
             let ctx = canvas.getContext("2d");
-
             const background = await loadImage('./images/new_wallpaper.png');
             
             // This uses the canvas dimensions to stretch the image onto the entire canvas
@@ -155,7 +145,6 @@ module.exports = {
             ctx.fillText(`Waveform Profile`, 285, 70 + avatar.height / 2);
 
             let offset = 45;
-
             ctx.textAlign = 'center';
             
             ctx.font = `40px main_reg`;

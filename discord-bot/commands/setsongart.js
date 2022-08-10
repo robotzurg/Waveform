@@ -8,7 +8,7 @@ require('dotenv').config();
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('setart')
+        .setName('setsongart')
         .setDescription('Put in some art for a song (or EP/LP) in the database! Using no art argument pulls art from Spotify!')
         .addStringOption(option => 
             option.setName('artist')
@@ -40,19 +40,14 @@ module.exports = {
         let song = interaction.options.getString('name');
         let remixers = interaction.options.getString('remixers');
         let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
-
-        if (song_info == -1) {
-            return;
-        }
+        if (song_info == -1) return;
 
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
         let artistArray = song_info.all_artists;
-        let rmxArtistArray = song_info.remix_artists;
         let vocalistArray = song_info.vocal_artists;
         let songArt = interaction.options.getString('art');
 
-        if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
         let newSong = (db.reviewDB.get(artistArray[0], `["${songName}"]`) != undefined);
         
         if (songArt == null) {
