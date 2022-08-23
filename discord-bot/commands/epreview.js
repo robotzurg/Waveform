@@ -338,8 +338,8 @@ module.exports = {
                         const ra_filter = m => m.author.id == interaction.user.id;
                         ra_collector = interaction.channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                         ra_collector.on('collect', async m => {
-                            overall_rating = parseFloat(m.content);
                             if (overall_rating.includes('/10')) overall_rating = overall_rating.replace('/10', '');
+                            overall_rating = parseFloat(m.content);
                             if (isNaN(overall_rating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
                             epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overall_rating}/10)`);
                             for (let j = 0; j < artistArray.length; j++) {

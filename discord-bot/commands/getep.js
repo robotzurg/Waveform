@@ -126,7 +126,7 @@ module.exports = {
 
                 if (tags.length != 0) epEmbed.setFooter({ text: `Tags: ${tags.join(', ')}` });
 
-                // Button/Select Menu setup
+            // Button/Select Menu setup
             let select_options = [];
             let taggedMemberSel;
             let taggedUserSel;
@@ -141,7 +141,7 @@ module.exports = {
                 if (taggedMemberSel != 'Invalid Member (They have left the server)') {
                     select_options.push({
                         label: `${taggedMemberSel.displayName}`,
-                        description: `${taggedMemberSel.displayName}'s review of the EP/LP.`,
+                        description: `${taggedMemberSel.displayName}'s review of the ${epType}.`,
                         value: `${taggedUserSel.id}`,
                     });
                 }
