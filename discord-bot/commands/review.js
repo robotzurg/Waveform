@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { update_art, review_song, hall_of_fame_check, handle_error, find_review_channel, grab_spotify_art, parse_artist_song_data } = require('../func.js');
+const { update_art, review_song, hall_of_fame_check, handle_error, find_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 require('dotenv').config();
 
@@ -35,7 +35,7 @@ module.exports = {
 
             .addStringOption(option => 
                 option.setName('art')
-                    .setDescription('Image link of the song art (put \'s\' here if you want to use your spotify playback.)')
+                    .setDescription('Image link of the song art (Leave blank for automatic spotify searching.)')
                     .setRequired(false)))
 
         .addSubcommand(subcommand =>
@@ -205,12 +205,14 @@ module.exports = {
 
         // Grab song art if we don't directly specify one
         if (songArt == false || songArt == null || songArt == undefined) {
-            songArt = await grab_spotify_art(origArtistArray, songName);
+            songArt = await grab_spotify_art(origArtistArray, songName, interaction);
             if (db.reviewDB.has(artistArray[0])) {
                 if (db.reviewDB.get(artistArray[0], `["${songName}"].art`) != false && db.reviewDB.get(artistArray[0], `["${songName}"].art`) != undefined) {
                     songArt = await db.reviewDB.get(artistArray[0], `["${songName}"].art`);
                 }
             }
+        } else {
+            if (!isValidURL(songArt)) return interaction.editReply('This song art URL is invalid.');
         }
 
         // Start creation of embed
@@ -254,7 +256,7 @@ module.exports = {
         // End of Embed Code
 
         //Quick thumbnail image check to assure we aren't putting in an avatar, songArt should be set to what we put in the database.
-        if (songArt == undefined || songArt == false || songArt.includes('avatar') || songArt == 'spotify' || songArt == 's') { 
+        if (songArt == undefined || songArt == false || songArt.includes('avatar')) { 
             songArt = false;
         }
 
@@ -299,7 +301,7 @@ module.exports = {
                         // Check if we have art for the edited song info in the database
                         if (songArt == undefined || songArt == false) {
                             // If we don't have art for the edited song info, search it on the spotify API.
-                            songArt = await grab_spotify_art(artistArray, songName);
+                            songArt = await grab_spotify_art(artistArray, songName, interaction);
                             if (songArt == false) songArt = interaction.user.avatarURL({ format: "png", dynamic: false });
                         } else {
                             if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
@@ -337,7 +339,7 @@ module.exports = {
                         // Check if we have art for the edited song info in the database
                         if (songArt == undefined || songArt == false) {
                             // If we don't have art for the edited song info, search it on the spotify API.
-                            songArt = await grab_spotify_art(artistArray, songName);
+                            songArt = await grab_spotify_art(artistArray, songName, interaction);
                             if (songArt == false) songArt = interaction.user.avatarURL({ format: "png", dynamic: false });
                         } else {
                             if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
@@ -557,16 +559,6 @@ module.exports = {
                     // Set msg_id for this review to false, since its part of the EP review message
                     for (let ii = 0; ii < artistArray.length; ii++) {
                         db.reviewDB.set(artistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`);
-                    }
-
-                    // Suggest next song to review
-                    if (ep_songs.length != false) {
-                        let nextSong;
-                        nextSong = ep_songs.findIndex(v => v.includes(songName));
-                        if (nextSong != ep_songs.length - 1) {
-                            nextSong = ep_songs[nextSong + 1];
-                            i.followUp({ content: `The next song you should review is: **${nextSong}**`, ephemeral: true });
-                        }
                     }
 
                 } break;

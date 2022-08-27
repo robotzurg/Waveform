@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 const Discord = require('discord.js');
 const db = require("./db.js");
 const forAsync = require('for-async');
@@ -657,14 +658,22 @@ module.exports = {
      * Searches the spotify API to grab a song or EP/LP art and returns an image link to the song art, or false if it can't find one.
      * @param {Array} artistArray The artist array of the song or EP/LP to search on Spotify.
      * @param {String} name The name of the song or EP/LP to search on Spotify.
+     * @param {Object} interaction The interaction of the discord message
      */
-    grab_spotify_art: async function(artistArray, name) {
+    grab_spotify_art: async function(artistArray, name, interaction) {
         const Spotify = require('node-spotify-api');
         const client_id = process.env.SPOTIFY_API_ID; // Your client id
         const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
-
-        let search = name.replace(' EP', '');
-        search = search.replace(' LP', '');
+        // eslint-disable-next-line no-unused-vars
+        let is_album = false;
+        let search = name;
+        if (interaction.commandName.includes('ep') || name.includes(' EP') || name.includes(' LP')) {
+            //is_album = true;
+            // TODO: Fix later
+        } else {
+            search = name.replace(' EP', '');
+            search = search.replace(' LP', '');
+        }
         const song = `${artistArray[0]} ${search}`;
         let result = false;
         
@@ -676,6 +685,7 @@ module.exports = {
         await spotify.search({ type: "track", query: song }).then(function(data) {  
             let results = data.tracks.items;
             let songData = data.tracks.items[0];
+            console.log(results);
             for (let i = 0; i < results.length; i++) {
                 if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].album.name.toLowerCase()}` == `${song.toLowerCase()}`) {
                     songData = results[i];
@@ -884,4 +894,8 @@ module.exports = {
         }
     },
     
+    isValidURL: function(string) {
+        let res = string.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
+        return (res !== null);
+    },
 };

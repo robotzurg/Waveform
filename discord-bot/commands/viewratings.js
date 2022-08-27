@@ -89,9 +89,9 @@ module.exports = {
 
         ratingList = ratingList.filter(v => !v.includes(' EP'));
         ratingList = ratingList.filter(v => !v.includes(' LP'));
+        ratingList = [...new Set(ratingList)];
 
         if (ratingList.length == 0) return interaction.editReply(`You have never rated a song ${ratingCheck}/10.`);
-
         ratingList.sort();
 
         let pagedRatingList = _.chunk(ratingList, 10);
