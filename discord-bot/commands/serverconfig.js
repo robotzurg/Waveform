@@ -12,11 +12,7 @@ module.exports = {
         .addStringOption(option => 
             option.setName('configuration')
                 .setDescription('Which setting to configure.')
-                .setRequired(false)
-                .addChoice('Review Channel', 'RC')
-                .addChoice('Review Chat Filter', 'RCF')
-                .addChoice('Hall of Fame Channel', 'HFC')
-                .addChoice('Star Cutoff for HoF', 'SC'))
+                .setRequired(false))
 
         .addStringOption(option => 
             option.setName('value')

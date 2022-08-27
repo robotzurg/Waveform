@@ -1,7 +1,7 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data } = require('../func.js');
+const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data, isValidURL } = require('../func.js');
 require('dotenv').config();
 
 module.exports = {
@@ -29,7 +29,7 @@ module.exports = {
     
             .addStringOption(option => 
                 option.setName('art')
-                    .setDescription('Art for the EP/LP. (type "s" for status art, or leave blank for automatic spotify searching.)')
+                    .setDescription('Art for the EP/LP. (Leave blank for automatic spotify searching.)')
                     .setRequired(false))
     
             .addUserOption(option => 
@@ -70,7 +70,7 @@ module.exports = {
     
             .addStringOption(option => 
                 option.setName('art')
-                    .setDescription('Art for the EP/LP. (type "s" for status art, or leave blank for automatic spotify searching.)')
+                    .setDescription('Art for the EP/LP. (Leave blank for automatic spotify searching.)')
                     .setRequired(false))
     
             .addUserOption(option => 
@@ -148,6 +148,8 @@ module.exports = {
                         art = await db.reviewDB.get(artistArray[0], `["${epName}"].art`);
                     }
                 }
+            } else {
+                if (!isValidURL(art)) return interaction.editReply(`This ${epType} art URL is invalid.`);
             }
 
             // Setup buttons
@@ -209,11 +211,6 @@ module.exports = {
                         .setLabel('Delete')
                         .setStyle('DANGER'),
                 );
-            }
-
-            // Final passthrough check
-            if (art != false && art != undefined) {
-                if (art.toLowerCase() == 's') art = false; // final passthrough check
             }
 
             // Set up the embed
@@ -338,8 +335,9 @@ module.exports = {
                         const ra_filter = m => m.author.id == interaction.user.id;
                         ra_collector = interaction.channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                         ra_collector.on('collect', async m => {
+                            overall_rating = m.content;
                             if (overall_rating.includes('/10')) overall_rating = overall_rating.replace('/10', '');
-                            overall_rating = parseFloat(m.content);
+                            overall_rating = parseFloat(overall_rating);
                             if (isNaN(overall_rating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
                             epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overall_rating}/10)`);
                             for (let j = 0; j < artistArray.length; j++) {

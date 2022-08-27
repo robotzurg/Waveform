@@ -80,3 +80,5 @@ discord-bot/package.json
 discord-bot/data/enmap.sqlite
 discord-bot/data/enmap.sqlite-shm
 discord-bot/data/enmap.sqlite-wal
+discord-bot/.DS_Store
+.DS_Store

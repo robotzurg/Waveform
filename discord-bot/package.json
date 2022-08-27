@@ -8,7 +8,7 @@
   "author": "Jeff Turpin",
   "license": "ISC",
   "dependencies": {
-    "@discordjs/builders": "github:discordjs/builders",
+    "@discordjs/builders": "^1.2.0",
     "@discordjs/rest": "^0.1.0-canary.0",
     "axios": "^0.25.0",
     "better-sqlite-pool": "^0.3.0",

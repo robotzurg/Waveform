@@ -1,6 +1,6 @@
 const Discord = require('discord.js');
 const db = require("../db.js");
-const { update_art, review_song, hall_of_fame_check, handle_error, find_review_channel, grab_spotify_art, parse_artist_song_data } = require('../func.js');
+const { update_art, review_song, hall_of_fame_check, handle_error, find_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL } = require('../func.js');
 const { SlashCommandBuilder } = require('@discordjs/builders');
 require('dotenv').config();
 
@@ -35,7 +35,7 @@ module.exports = {
 
             .addStringOption(option => 
                 option.setName('art')
-                    .setDescription('Image link of the song art (put \'s\' here if you want to use your spotify playback.)')
+                    .setDescription('Image link of the song art (Leave blank for automatic spotify searching.)')
                     .setRequired(false)))
 
         .addSubcommand(subcommand =>
@@ -211,6 +211,8 @@ module.exports = {
                     songArt = await db.reviewDB.get(artistArray[0], `["${songName}"].art`);
                 }
             }
+        } else {
+            if (!isValidURL(songArt)) return interaction.editReply('This song art URL is invalid.');
         }
 
         // Start creation of embed
@@ -254,7 +256,7 @@ module.exports = {
         // End of Embed Code
 
         //Quick thumbnail image check to assure we aren't putting in an avatar, songArt should be set to what we put in the database.
-        if (songArt == undefined || songArt == false || songArt.includes('avatar') || songArt == 'spotify' || songArt == 's') { 
+        if (songArt == undefined || songArt == false || songArt.includes('avatar')) { 
             songArt = false;
         }
 

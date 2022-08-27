@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 const Discord = require('discord.js');
 const db = require("./db.js");
 const forAsync = require('for-async');
@@ -884,4 +885,8 @@ module.exports = {
         }
     },
     
+    isValidURL: function(string) {
+        let res = string.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
+        return (res !== null);
+    },
 };
