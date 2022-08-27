@@ -64,6 +64,8 @@ module.exports = {
 
         let rmxArtist = false;
         let temp = '';
+        if (artists != null) artists = artists.trim(); // This is because of a discord mobile bug where it adds spaces at the end of an argument
+        if (song != null) song = song.trim(); // This is because of a discord mobile bug where it adds spaces at the end of an argument
         let origArtistArray = artists;
         let origSongArg = song; // Used to have the non remix name of a song, for reviews
         let songArg = song;
