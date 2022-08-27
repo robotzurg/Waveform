@@ -51,15 +51,14 @@ module.exports = {
             songArt = interaction.user.avatarURL({ format: "png" });
         }
 
+        if (!db.reviewDB.has(artistArray[0])) return interaction.editReply(`${artistArray[0]} not found in database.`);
+        if (db.reviewDB.get(artistArray[0], `["${songName}"]`) == undefined) return interaction.editReply(`${origArtistArray.join(' & ')} - ${songName} not found in database.`);
+        if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"]`) == undefined) return interaction.editReply(`You haven't reviewed ${origArtistArray.join(' & ')} - ${songName}.`);
+        if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].rating`) != false) {
+            if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].rating`) < 8) return interaction.editReply(`You haven't rated ${origArtistArray.join(' & ')} - ${songName} an 8/10 or higher!`);
+        }
+
         for (let i = 0; i < artistArray.length; i++) {
-
-            if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`${artistArray[i]} not found in database.`);
-            if (db.reviewDB.get(artistArray[i], `["${songName}"]`) == undefined) return interaction.editReply(`${origArtistArray.join(' & ')} - ${songName} not found in database.`);
-            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) == undefined) return interaction.editReply(`You haven't reviewed ${origArtistArray.join(' & ')} - ${songName}.`);
-            if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`) != false) {
-                if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`) < 8) return interaction.editReply(`You haven't rated ${origArtistArray.join(' & ')} - ${songName} an 8/10 or higher!`);
-            }
-
             if (star_check == true) {
                 await db.reviewDB.set(artistArray[i], false, `["${songName}"].["${interaction.user.id}"].starred`);
             } else if (star_check == false) {
@@ -71,10 +70,10 @@ module.exports = {
 
         if (star_check == false) {
             db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
-            interaction.editReply(`Star added to ${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }!`);
+            interaction.editReply(`Star added to **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }**!`);
         } else {
             db.user_stats.remove(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
-            interaction.editReply(`Unstarred ${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }.`);
+            interaction.editReply(`Unstarred **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }**.`);
         }
         
         // Hall of Fame stuff

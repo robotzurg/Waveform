@@ -166,16 +166,6 @@ module.exports = {
                 db.reviewDB.set(artistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`);
             }
 
-            // Suggest next song to review
-            if (ep_songs.length != 0) {
-                let nextSong;
-                nextSong = ep_songs.findIndex(v => v.includes(songName));
-                if (nextSong != ep_songs.length - 1) {
-                    nextSong = ep_songs[nextSong + 1];
-                    interaction.followUp({ content: `The next song you should review is: **${nextSong}**`, ephemeral: true });
-                }
-            }
-
             interaction.deleteReply();
 
         } catch (err) {

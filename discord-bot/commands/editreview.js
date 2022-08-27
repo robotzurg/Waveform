@@ -80,6 +80,7 @@ module.exports = {
         if (rating != null) {
             if (rating.includes('/10')) rating = rating.replace('/10', '');
         }
+
         let review = interaction.options.getString('review');
         // Handle new lines
         if (review != null) {
@@ -88,9 +89,7 @@ module.exports = {
             } 
         }
 
-        if (rating == null && review == null && user_who_sent == null) return interaction.editReply('You must supply either a rating change, a review change, or a user_who_sent change.');
         let user_who_sent = interaction.options.getUser('user_who_sent');
-
         let taggedMember;
         let taggedUser;
         let oldrating;
@@ -98,9 +97,7 @@ module.exports = {
         let old_user_who_sent;
         let user_sent_name;
 
-        if (rating == null && review == null && user_who_sent == null) {
-            return interaction.editReply('You must supply either an edit to your review, rating, or the person who sent you the song!');
-        }
+        if (rating == null && review == null && user_who_sent == null) return interaction.editReply('You must supply either a rating change, a review change, or a user_who_sent change.');
 
         if (user_who_sent != null && user_who_sent != undefined) {
             taggedMember = await interaction.guild.members.fetch(user_who_sent);
@@ -115,10 +112,6 @@ module.exports = {
             if (!db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) == undefined) return interaction.editReply(`Review not found!`);
 
             if (rating != null && rating != undefined) {
-                if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`) < 8 && db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) == true) {
-                    return interaction.editReply(`This review has a star on it, so you cannot change the rating to anything under 8.\nRemove the star with \`/setstar\` if you'd like to lower the rating!`);
-                }
-                
                 if (rating < 8 && db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) == true) {
                     return interaction.editReply(`This review has a star on it, so you cannot change the rating to anything under 8.\nRemove the star with \`/setstar\` if you'd like to lower the rating!`);
                 }
@@ -195,7 +188,7 @@ module.exports = {
                         if (review != null && review != undefined && msg_embed_fields[field_num].value != '*Review hidden to save space*') msg_embed_fields[field_num].value = review;
 
                         msg.edit({ embeds: [msgEmbed] });
-                    });
+                    }).catch(() => {});
                 }
             } 
         }

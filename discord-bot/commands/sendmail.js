@@ -36,8 +36,7 @@ module.exports = {
         const spotifyApi = await spotify_api_setup(taggedUser.id);
     
         if (spotifyApi == false) {
-            interaction.editReply('You must use `/login` to use Spotify related features!');
-            return -1;
+            return interaction.editReply('This user may not have a mailbox setup. Tell them to set one up with `/setupmailbox`!');
         }
 
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
@@ -60,6 +59,9 @@ module.exports = {
                 for (let i = 0; i < data.tracks.items.length; i++) {
                     trackUris.push(data.tracks.items[i].uri);
                 }
+                if (!name.includes(' EP') && !name.includes(' LP')) {
+                    name = (data.album_type == 'single') ? name += ' EP' : name += ' LP';
+                }
             }
         }).catch((err) => {
             console.log(err);
@@ -68,7 +70,6 @@ module.exports = {
         // Add tracks to the mailbox playlist
         await spotifyApi.addTracksToPlaylist(playlistId, trackUris)
         .then(() => {
-
             const mailEmbed = new Discord.MessageEmbed()
             .setColor(`${interaction.member.displayHexColor}`)
             .setTitle(`${artists.join(' & ')} - ${name}`)
@@ -89,8 +90,8 @@ module.exports = {
             } else {
                 db.user_stats.push(taggedUser.id, [`**${artists.join(' & ')} - ${name}**`, `${interaction.user.id}`], 'mailbox_list');
             }
-        }, async () => {
-            interaction.editReply(`Waveform ran into an issue sending this mail. Make sure they have set music mailbox setup by using \`/setupmailbox\`!`);
+        }).catch(() => {
+            return interaction.editReply(`Waveform ran into an issue sending this mail. Make sure they have set music mailbox setup by using \`/setupmailbox\`!`);
         });
     },
 };

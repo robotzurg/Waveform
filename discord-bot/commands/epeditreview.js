@@ -72,6 +72,7 @@ module.exports = {
                 if (old_ep_rating == 'false/10') old_ep_rating = "N/A";
                 for (let i = 0; i < artistArray.length; i++) {
                     db.reviewDB.set(artistArray[i], parseFloat(ep_rating), `["${epName}"].["${interaction.user.id}"].rating`);
+                    if (parseFloat(ep_rating) < 8) db.reviewDB.set(artistArray[i], false, `["${epName}"].["${interaction.user.id}"].starred`);
                 }
             }
             

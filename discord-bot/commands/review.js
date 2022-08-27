@@ -205,7 +205,7 @@ module.exports = {
 
         // Grab song art if we don't directly specify one
         if (songArt == false || songArt == null || songArt == undefined) {
-            songArt = await grab_spotify_art(origArtistArray, songName);
+            songArt = await grab_spotify_art(origArtistArray, songName, interaction);
             if (db.reviewDB.has(artistArray[0])) {
                 if (db.reviewDB.get(artistArray[0], `["${songName}"].art`) != false && db.reviewDB.get(artistArray[0], `["${songName}"].art`) != undefined) {
                     songArt = await db.reviewDB.get(artistArray[0], `["${songName}"].art`);
@@ -301,7 +301,7 @@ module.exports = {
                         // Check if we have art for the edited song info in the database
                         if (songArt == undefined || songArt == false) {
                             // If we don't have art for the edited song info, search it on the spotify API.
-                            songArt = await grab_spotify_art(artistArray, songName);
+                            songArt = await grab_spotify_art(artistArray, songName, interaction);
                             if (songArt == false) songArt = interaction.user.avatarURL({ format: "png", dynamic: false });
                         } else {
                             if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
@@ -339,7 +339,7 @@ module.exports = {
                         // Check if we have art for the edited song info in the database
                         if (songArt == undefined || songArt == false) {
                             // If we don't have art for the edited song info, search it on the spotify API.
-                            songArt = await grab_spotify_art(artistArray, songName);
+                            songArt = await grab_spotify_art(artistArray, songName, interaction);
                             if (songArt == false) songArt = interaction.user.avatarURL({ format: "png", dynamic: false });
                         } else {
                             if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
@@ -559,16 +559,6 @@ module.exports = {
                     // Set msg_id for this review to false, since its part of the EP review message
                     for (let ii = 0; ii < artistArray.length; ii++) {
                         db.reviewDB.set(artistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`);
-                    }
-
-                    // Suggest next song to review
-                    if (ep_songs.length != false) {
-                        let nextSong;
-                        nextSong = ep_songs.findIndex(v => v.includes(songName));
-                        if (nextSong != ep_songs.length - 1) {
-                            nextSong = ep_songs[nextSong + 1];
-                            i.followUp({ content: `The next song you should review is: **${nextSong}**`, ephemeral: true });
-                        }
                     }
 
                 } break;

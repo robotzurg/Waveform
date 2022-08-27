@@ -142,7 +142,7 @@ module.exports = {
 
             // Art grabbing
             if (art == false || art == null || art == undefined) {
-                art = await grab_spotify_art(origArtistArray, epName);
+                art = await grab_spotify_art(origArtistArray, epName, interaction);
                 if (db.reviewDB.has(artistArray[0])) {
                     if (db.reviewDB.get(artistArray[0], `["${epName}"].art`) != false && db.reviewDB.get(artistArray[0], `["${epName}"].art`) != undefined) {
                         art = await db.reviewDB.get(artistArray[0], `["${epName}"].art`);
@@ -277,7 +277,7 @@ module.exports = {
                             // Thumbnail image handling
                             if (art == undefined || art == false) {
                                 // If we don't have art for the edited ep info, search it on the spotify API.
-                                art = await grab_spotify_art(artistArray, epName);
+                                art = await grab_spotify_art(artistArray, epName, interaction);
                                 if (art == false) art = interaction.user.avatarURL({ format: "png", dynamic: false });
                             } else {
                                 if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0], `["${epName}"].art`);
@@ -311,7 +311,7 @@ module.exports = {
                             // Thumbnail image handling
                             if (art == undefined || art == false) {
                                 // If we don't have art for the edited ep info, search it on the spotify API.
-                                art = await grab_spotify_art(artistArray, epName);
+                                art = await grab_spotify_art(artistArray, epName, interaction);
                                 if (art == false) art = interaction.user.avatarURL({ format: "png", dynamic: false });
                             } else {
                                 if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0], `["${epName}"].art`);
@@ -494,6 +494,7 @@ module.exports = {
 
                         let epSongs = await (db.user_stats.get(interaction.user.id, 'current_ep_review.track_list') != false 
                         ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(artistArray[0], `["${epName}"].songs`));
+                        if (epSongs == false || epSongs == undefined) epSongs = [];
 
                         // Setup tags if necessary
                         if (tag != null) {
@@ -512,10 +513,8 @@ module.exports = {
                         }
 
                         await i.editReply({ embeds: [epEmbed], components: [] });
-                        if (epSongs) {
-                            if (epSongs.length != 0) {
-                                await i.followUp({ content: `The first song you should review for this ${epType} review is **${epSongs[0]}**`, ephemeral: true });
-                            }
+                        if (epSongs.length != 0) {
+                            await i.followUp({ content: `Here is the order in which you should review the songs on this ${epType}:\n\n**${epSongs.join('\n')}**`, ephemeral: true });
                         }
                     } break;
                 }
