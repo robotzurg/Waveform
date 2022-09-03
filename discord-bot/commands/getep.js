@@ -43,7 +43,7 @@ module.exports = {
             }
 
             let tags = db.reviewDB.get(artistArray[0], `["${epName}"].tags`);
-            if (tags == undefined) tags = [];
+            if (tags == undefined || tags == false || tags == null) tags = [];
 
             let rankNumArray = [];
             let epRankArray = [];
@@ -66,6 +66,7 @@ module.exports = {
                 reviewNum = reviewNum.filter(e => e !== 'tags');
                 let userArray = reviewNum.slice(0);
                 let userIDList = userArray.slice(0);
+                let epnum = 0;
 
                 for (let i = 0; i < reviewNum.length; i++) {
                     let userObj = db.reviewDB.get(artistArray[0], `["${epName}"].["${reviewNum[i]}"]`);
@@ -76,13 +77,9 @@ module.exports = {
                     }
                 }
                 
-                let epnum = 0;
                 for (let i = 0; i < epSongArray.length; i++) {
-
                     let songArtist = artistArray[0];
-
                     let songObj = db.reviewDB.get(songArtist, `["${epSongArray[i]}"]`);
-
                     epnum++;
 
                     reviewNum = get_user_reviews(songObj);

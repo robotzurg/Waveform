@@ -687,7 +687,6 @@ module.exports = {
         await spotify.search({ type: "track", query: song }).then(function(data) {  
             let results = data.tracks.items;
             let songData = data.tracks.items[0];
-            console.log(results);
             for (let i = 0; i < results.length; i++) {
                 if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].album.name.toLowerCase()}` == `${song.toLowerCase()}`) {
                     songData = results[i];
