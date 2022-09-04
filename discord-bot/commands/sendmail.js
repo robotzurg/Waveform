@@ -3,7 +3,8 @@ const Discord = require('discord.js');
 require('dotenv').config();
 const db = require('../db.js');
 const { spotify_api_setup } = require('../func.js');
-const { getData } = require('spotify-url-info');
+const fetch = require('isomorphic-unfetch');
+const { getData } = require('spotify-url-info')(fetch);
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -41,7 +42,7 @@ module.exports = {
 
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
         let trackLink = interaction.options.getString('link');
-        let trackUris = [];
+        let trackUris = []; 
         let name;
         let artists;
         let url;
@@ -50,7 +51,7 @@ module.exports = {
         if (!trackLink.includes('spotify')) return interaction.editReply('The link you put in is not a valid spotify link!');
         await getData(trackLink).then(data => {
             url = data.external_urls.spotify;
-            data.type == 'track' ? songArt = data.album.images[0].url : songArt = data.images[0].url;
+            data.type == 'track' ? songArt = data.coverArt.sources[0].url : songArt = data.coverArt.sources[0].url;
             name = data.name;
             artists = data.artists.map(artist => artist.name);
             if (data.type == 'track' || data.type == 'single') {
