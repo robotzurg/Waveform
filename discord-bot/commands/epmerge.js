@@ -1,7 +1,6 @@
-const Discord = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
 const { handle_error, create_ep_review, parse_artist_song_data } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require("wait");
 const Spotify = require('node-spotify-api');
 require('dotenv').config();
@@ -72,19 +71,19 @@ module.exports = {
         if (!epName.includes(' EP') && !epName.includes(' LP')) epName = `${epName} EP`;
         if (db.reviewDB.get(artistArray[0], `["${epName}"]`) != undefined) return interaction.editReply(`The ${epType} ${artistArray.join(' & ')} - ${epName} already exists in the database.`); 
         
-        const row = new Discord.MessageActionRow()
+        const row = new ActionRowBuilder()
         .addComponents(
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('finish')
                 .setLabel('Finish')
-                .setStyle('SUCCESS'),
-            new Discord.MessageButton()
+                .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
                 .setCustomId('delete')
                 .setLabel('Delete')
-                .setStyle('DANGER'), 
+                .setStyle(ButtonStyle.Danger), 
         );
 
-        let epEmbed = new Discord.MessageEmbed()
+        let epEmbed = new EmbedBuilder()
         .setColor(`${interaction.member.displayHexColor}`)
         .setTitle(`Songs included in the ${epType} ${artistArray.join(' & ')} - ${epName}`);
 

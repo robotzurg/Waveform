@@ -1,6 +1,5 @@
-const Discord = require('discord.js');
 const db = require('../db.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const _ = require('lodash');
 const { handle_error, get_user_reviews } = require('../func.js');
 
@@ -90,15 +89,15 @@ module.exports = {
 
         let paged_star_list = _.chunk(starList, 10);
         let page_num = 0;
-        const row = new Discord.MessageActionRow()
+        const row = new ActionRowBuilder()
         .addComponents(
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('left')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('⬅️'),
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('right')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('➡️'),
         );
 
@@ -111,7 +110,7 @@ module.exports = {
             paged_star_list[i] = paged_star_list[i].join('\n');
         }  
 
-        const starCommandEmbed = new Discord.MessageEmbed()
+        const starCommandEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
             .setThumbnail(user.avatarURL({ format: "png" }))
             .setTitle(`🌟 ${taggedMember.displayName}'s Stars 🌟`)

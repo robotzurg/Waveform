@@ -1,7 +1,6 @@
-const Discord = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
 const { average, get_user_reviews, sort, removeItemOnce, handle_error, spotify_api_setup } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const _ = require('lodash');
 
 module.exports = {
@@ -67,36 +66,36 @@ module.exports = {
             let focusedName = "Singles";
 
             // Setup buttons
-            const type_buttons = new Discord.MessageActionRow()
+            const type_buttons = new ActionRowBuilder()
             .addComponents(
-                new Discord.MessageButton()
+                new ButtonBuilder()
                     .setCustomId('singles')
                     .setLabel('View Singles')
-                    .setStyle('SECONDARY'),
-                new Discord.MessageButton()
+                    .setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder()
                     .setCustomId('ep')
                     .setLabel('View EP/LPs')
-                    .setStyle('SECONDARY'),
-                new Discord.MessageButton()
+                    .setStyle(ButtonStyle.Secondary),
+                new ButtonBuilder()
                     .setCustomId('remixes')
                     .setLabel('View Remixes')
-                    .setStyle('SECONDARY'),
+                    .setStyle(ButtonStyle.Secondary),
             );
 
             // Setup bottom row
-            const page_arrows = new Discord.MessageActionRow()
+            const page_arrows = new ActionRowBuilder()
             .addComponents(
-                new Discord.MessageButton()
+                new ButtonBuilder()
                     .setCustomId('left')
-                    .setStyle('PRIMARY')
+                    .setStyle(ButtonStyle.Primary)
                     .setEmoji('⬅️'),
-                new Discord.MessageButton()
+                new ButtonBuilder()
                     .setCustomId('right')
-                    .setStyle('PRIMARY')
+                    .setStyle(ButtonStyle.Primary)
                     .setEmoji('➡️'),
             );
 
-            const artistEmbed = new Discord.MessageEmbed()
+            const artistEmbed = new EmbedBuilder()
                 .setColor(`${interaction.member.displayHexColor}`)
                 .setTitle(`${artist}'s reviewed tracks`);
                 if (artistImage != false && artistImage != undefined) {
@@ -267,7 +266,7 @@ module.exports = {
                             artistEmbed.setDescription(`*The average rating of this artist is* ***${Math.round(average(rankNumArray) * 10) / 10}!***`);
                         }
 
-                        artistEmbed.addField(focusedName, focusedArray[0].join('\n'));
+                        artistEmbed.addFields([{ name: focusedName, value: focusedArray[0].join('\n') }]);
                         artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
                     } else {
                         artistEmbed.setDescription(`No reviewed songs. :(`);

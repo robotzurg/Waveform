@@ -1,7 +1,6 @@
-const Discord = require('discord.js');
 const db = require("../db.js");
 const { update_art, review_song, hall_of_fame_check, handle_error, find_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 require('dotenv').config();
 
 module.exports = {
@@ -157,50 +156,50 @@ module.exports = {
         }
 
         // Setup review editing buttons
-        const editButtons = new Discord.MessageActionRow()
+        const editButtons = new ActionRowBuilder()
         .addComponents(
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('artist').setLabel('Artist')
-                .setStyle('PRIMARY').setEmoji('📝'),
-            new Discord.MessageButton()
+                .setStyle(ButtonStyle.Primary).setEmoji('📝'),
+            new ButtonBuilder()
                 .setCustomId('song').setLabel('Song')
-                .setStyle('PRIMARY').setEmoji('📝'),
-            new Discord.MessageButton()
+                .setStyle(ButtonStyle.Primary).setEmoji('📝'),
+            new ButtonBuilder()
                 .setCustomId('rating').setLabel('Rating')
-                .setStyle('PRIMARY').setEmoji('📝'),
-            new Discord.MessageButton()
+                .setStyle(ButtonStyle.Primary).setEmoji('📝'),
+            new ButtonBuilder()
                 .setCustomId('review').setLabel('Review')
-                .setStyle('PRIMARY').setEmoji('📝'),
-            new Discord.MessageButton()
-                .setCustomId('star').setLabel('')
-                .setStyle('SECONDARY').setEmoji('🌟'),
+                .setStyle(ButtonStyle.Primary).setEmoji('📝'),
+            new ButtonBuilder()
+                .setCustomId('star')
+                .setStyle(ButtonStyle.Secondary).setEmoji('🌟'),
         );
 
         // Setup review submit button row
-        const reviewButtons = new Discord.MessageActionRow();
+        const reviewButtons = new ActionRowBuilder();
 
         // If we're in an EP/LP review, stick in a button to push to EP review instead of a send to database button.
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
             if (origArtistArray.includes(db.user_stats.get(interaction.user.id, 'current_ep_review.artist_array')[0])) {
                 reviewButtons.addComponents( 
-                    new Discord.MessageButton()
+                    new ButtonBuilder()
                     .setCustomId('ep_done').setLabel('Push to EP Review')
-                    .setStyle('SUCCESS'),
+                    .setStyle(ButtonStyle.Success),
                 );
             }
         } else {
             reviewButtons.addComponents( 
-                new Discord.MessageButton()
+                new ButtonBuilder()
                 .setCustomId('done').setLabel('Send to Database')
-                .setStyle('SUCCESS'),
+                .setStyle(ButtonStyle.Success),
             );
         }
 
         // Add the delete button
         reviewButtons.addComponents(
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('delete').setLabel('Delete')
-                .setStyle('DANGER'),
+                .setStyle(ButtonStyle.Danger),
         );
 
         // Grab song art if we don't directly specify one
@@ -216,7 +215,7 @@ module.exports = {
         }
 
         // Start creation of embed
-        let reviewEmbed = new Discord.MessageEmbed()
+        let reviewEmbed = new EmbedBuilder()
         .setColor(`${interaction.member.displayHexColor}`)
         .setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`)
         .setAuthor({ name: `${interaction.member.displayName}'s review`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` });
@@ -240,7 +239,7 @@ module.exports = {
         if (review == false && rating === false) {
             return interaction.editReply('Your song review must either have a rating or review, it cannot be missing both.');
         } else {
-            if (rating !== false) reviewEmbed.addField('Rating: ', `**${rating}/10**`, true);
+            if (rating !== false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rating}/10**`, inline: true }]);
             if (review != false) reviewEmbed.setDescription(review);
         }
         
@@ -274,8 +273,7 @@ module.exports = {
             switch (i.customId) {
                 // Artist edit button
                 case 'artist': {
-                    await i.deferUpdate();
-                    await i.editReply({ content: 'Type in the artist name(s) (separated with & or x, DO NOT PUT REMIXERS HERE!)', components: [] });
+                    await interaction.editReply({ content: 'Type in the artist name(s) (separated with & or x, DO NOT PUT REMIXERS HERE!)', components: [] });
                     const a_filter = m => m.author.id == interaction.user.id;
                     a_collector = int_channel.createMessageCollector({ filter: a_filter, max: 1, time: 60000 });
                     await a_collector.on('collect', async m => {
@@ -309,7 +307,7 @@ module.exports = {
                         }
                         reviewEmbed.setThumbnail(songArt);
 
-                        await i.editReply({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
+                        await interaction.editReply({ content: ' ', embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
                         m.delete();
                     });
                     
@@ -415,10 +413,9 @@ module.exports = {
                     await i.editReply({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
                 } break;
                 case 'delete': {
-                    await i.deferUpdate();
-
                     try {
                         await interaction.deleteReply();
+                        await i.deleteReply();
                     } catch (err) {
                         console.log(err);
                     }
@@ -449,12 +446,12 @@ module.exports = {
                     let field_name;
                     let type = db.user_stats.get(interaction.user.id, 'current_ep_review.review_type'); // Type A is when embed length is under 2000 characters, type B is when its over 2000
                     let ep_songs;
-                    let ep_last_song_button = new Discord.MessageActionRow()
+                    let ep_last_song_button = new ActionRowBuilder()
                     .addComponents( 
-                        new Discord.MessageButton()
+                        new ButtonBuilder()
                         .setCustomId('finish_ep_review')
                         .setLabel('Finalize the EP/LP Review')
-                        .setStyle('SUCCESS'),
+                        .setStyle(ButtonStyle.Success),
                     );
 
                     // Review the song
@@ -563,7 +560,8 @@ module.exports = {
 
                 } break;
                 case 'done': { // Send the review to the database
-                    await i.update({ content: ' ', embeds: [reviewEmbed], components: [] });
+                    await i.deleteReply();
+                    await interaction.editReply({ content: ' ', embeds: [reviewEmbed], components: [] });
 
                     // Review the song
                     review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, false, tag);

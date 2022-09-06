@@ -1,6 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const Discord = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const { get_user_reviews, handle_error } = require("../func.js");
 const _ = require('lodash');
 
@@ -87,15 +86,15 @@ module.exports = {
 
         let pagedRatingList = _.chunk(ratingList, 10);
         let page_num = 0;
-        const row = new Discord.MessageActionRow()
+        const row = new ActionRowBuilder()
         .addComponents(
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('left')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('⬅️'),
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('right')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('➡️'),
         );
 
@@ -108,7 +107,7 @@ module.exports = {
             pagedRatingList[i] = pagedRatingList[i].join('\n');
         }  
 
-        const ratingListEmbed = new Discord.MessageEmbed()
+        const ratingListEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
             .setThumbnail(taggedUser.avatarURL({ format: "png" }))
             .setAuthor({ name: `All ratings by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ format: "png" }) })

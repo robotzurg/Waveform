@@ -1,5 +1,5 @@
 /* eslint-disable no-useless-escape */
-const Discord = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const db = require("./db.js");
 const forAsync = require('for-async');
 
@@ -618,12 +618,11 @@ module.exports = {
         // Add to the hall of fame channel!
         if (star_count >= db.server_settings.get(interaction.guild.id, 'star_cutoff')) {
             const hofChannel = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel').slice(0, -1).slice(2));
-            const hofEmbed = new Discord.MessageEmbed()
-            
+            const hofEmbed = new EmbedBuilder()
             .setColor(`#FFFF00`)
             .setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`)
             .setDescription(`:star2: **This song currently has ${star_count} stars!** :star2:`)
-            .addField('Starred Reviews:', star_array.join('\n'))
+            .addFields([{ name: 'Starred Reviews:', value: star_array.join('\n') }])
             .setImage(songArt);
             hofEmbed.setFooter({ text: `Use /getsong to get more details about this song!` });
 

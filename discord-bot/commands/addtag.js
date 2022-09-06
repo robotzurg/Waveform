@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 const { handle_error, parse_artist_song_data } = require('../func');
 const db = require('../db.js');
 
@@ -36,8 +36,6 @@ module.exports = {
                 .setRequired(false)),
 	async execute(interaction) {
         try {
-
-        return console.log('This command has been temporarily disabled due to bugs.');
 
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('name');

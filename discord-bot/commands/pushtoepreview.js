@@ -1,7 +1,6 @@
 const db = require("../db.js");
-const { parse_artist_song_data, handle_error, hall_of_fame_check, find_review_channel } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const Discord = require('discord.js');
+const { parse_artist_song_data, handle_error, hall_of_fame_check, find_review_channel, ButtonStyle } = require('../func.js');
+const { ActionRowBuilder, ButtonBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -58,12 +57,12 @@ module.exports = {
             let collab;
             let field_name;
             let type = db.user_stats.get(interaction.user.id, 'current_ep_review.review_type'); // Type A is when embed length is under 2000 characters, type B is when its over 2000
-            let ep_last_song_button = new Discord.MessageActionRow()
+            let ep_last_song_button = new ActionRowBuilder()
             .addComponents( 
-                new Discord.MessageButton()
+                new ButtonBuilder()
                 .setCustomId('finish_ep_review')
                 .setLabel('Finalize the EP/LP Review')
-                .setStyle('SUCCESS'),
+                .setStyle(ButtonStyle.Success),
             );
 
             if (type == false || type == undefined || type == null) { // If there's not an active EP/LP review

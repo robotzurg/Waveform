@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { handle_error } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()

@@ -1,7 +1,6 @@
-const Discord = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const db = require("../db.js");
 const { parse_artist_song_data, handle_error, find_review_channel } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -90,7 +89,7 @@ module.exports = {
 
             if (rreview == 'No written review.' || rreview == "This was from a ranking, so there is no written review for this song.") rreview = '-';
 
-            const reviewEmbed = new Discord.MessageEmbed()
+            const reviewEmbed = new EmbedBuilder()
             .setColor(`${taggedMember.displayHexColor}`);
 
             if (rstarred == false) {
@@ -101,7 +100,7 @@ module.exports = {
 
             reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ format: "png" })}` });
 
-            if (rscore != false) reviewEmbed.addField('Rating: ', `**${rscore}/10**`, true);
+            if (rscore != false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rscore}/10**`, inline: true }]);
             if (rreview != false) reviewEmbed.setDescription(rreview);
 
             let reviewMsgID = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].msg_id`);

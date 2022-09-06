@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 const { handle_error, spotify_api_setup } = require("../func.js");
 
 module.exports = {

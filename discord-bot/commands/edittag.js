@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 const { handle_error, parse_artist_song_data } = require('../func');
 const db = require('../db.js');
 

@@ -1,5 +1,4 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const Discord = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 const db = require('../db.js');
 const { spotify_api_setup } = require('../func.js');
@@ -71,7 +70,7 @@ module.exports = {
         // Add tracks to the mailbox playlist
         await spotifyApi.addTracksToPlaylist(playlistId, trackUris)
         .then(() => {
-            const mailEmbed = new Discord.MessageEmbed()
+            const mailEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
             .setTitle(`${artists.join(' & ')} - ${name}`)
             .setDescription(`This music mail was sent to you by <@${interaction.user.id}>!`)

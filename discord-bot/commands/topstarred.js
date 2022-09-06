@@ -1,6 +1,5 @@
-const Discord = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const db = require('../db.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const { handle_error, get_user_reviews } = require('../func.js');
 
 module.exports = {
@@ -50,7 +49,7 @@ module.exports = {
         starList = starList.slice(0, 10);
 
         const guild = await client.guilds.fetch(interaction.guild.id);
-        const statsEmbed = new Discord.MessageEmbed()
+        const statsEmbed = new EmbedBuilder()
         .setColor(`${interaction.member.displayHexColor}`)
         .setThumbnail(guild.iconURL({ format: 'png' }))
         .setTitle('Top Starred Artists in the Server')

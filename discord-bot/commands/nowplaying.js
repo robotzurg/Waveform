@@ -1,7 +1,6 @@
-const Discord = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const db = require('../db.js');
 const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const ms_format = require('format-duration');
 const progressbar = require('string-progressbar');
 
@@ -41,7 +40,7 @@ module.exports = {
             return interaction.editReply('Podcasts are not supported with `/np`.');
         }
 
-        const npEmbed = new Discord.MessageEmbed()
+        const npEmbed = new EmbedBuilder()
         .setColor(`${interaction.member.displayHexColor}`)
         .setTitle(`${origArtistArray.join(' & ')} - ${songDisplayName}`)
         .setAuthor({ name: `${interaction.member.displayName}'s ${isPlaying ? `current song` : `last song played`}`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` })

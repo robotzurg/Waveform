@@ -1,6 +1,5 @@
-const Discord = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data, isValidURL } = require('../func.js');
 require('dotenv').config();
 
@@ -153,68 +152,67 @@ module.exports = {
             }
 
             // Setup buttons
-            const row = new Discord.MessageActionRow()
+            const row = new ActionRowBuilder()
             .addComponents(
-                new Discord.MessageButton()
+                new ButtonBuilder()
                     .setCustomId('artist')
                     .setLabel('Artist')
-                    .setStyle('PRIMARY')
+                    .setStyle(ButtonStyle.Primary)
                     .setEmoji('📝'),
-                new Discord.MessageButton()
+                new ButtonBuilder()
                     .setCustomId('ep')
                     .setLabel('Name')
-                    .setStyle('PRIMARY')
+                    .setStyle(ButtonStyle.Primary)
                     .setEmoji('📝'),
-                new Discord.MessageButton()
+                new ButtonBuilder()
                     .setCustomId('rating')
                     .setLabel('Rating')
-                    .setStyle('PRIMARY')
+                    .setStyle(ButtonStyle.Primary)
                     .setEmoji('📝'),
-                new Discord.MessageButton()
+                new ButtonBuilder()
                     .setCustomId('review')
                     .setLabel('Review')
-                    .setStyle('PRIMARY')
+                    .setStyle(ButtonStyle.Primary)
                     .setEmoji('📝'),
-                new Discord.MessageButton()
+                new ButtonBuilder()
                     .setCustomId('star')
-                    .setLabel('')
-                    .setStyle('SECONDARY')
+                    .setStyle(ButtonStyle.Secondary)
                     .setEmoji('🌟'),
             );
 
             // Setup bottom row
             if (overall_rating === false && overall_review == false) {
-                row2 = new Discord.MessageActionRow()
+                row2 = new ActionRowBuilder()
                 .addComponents(
-                    new Discord.MessageButton()
+                    new ButtonBuilder()
                         .setCustomId('begin')
                         .setLabel(`Begin ${epType} Review`)
-                        .setStyle('SUCCESS'),
-                    new Discord.MessageButton()
+                        .setStyle(ButtonStyle.Success),
+                    new ButtonBuilder()
                         .setCustomId('delete')
                         .setLabel('Delete')
-                        .setStyle('DANGER'),
+                        .setStyle(ButtonStyle.Danger),
                 );
             } else {
-                row2 = new Discord.MessageActionRow()
+                row2 = new ActionRowBuilder()
                 .addComponents(
-                    new Discord.MessageButton()
+                    new ButtonBuilder()
                         .setCustomId('begin')
                         .setLabel(`Begin ${epType} Review`)
-                        .setStyle('SUCCESS'),
-                    new Discord.MessageButton()
+                        .setStyle(ButtonStyle.Success),
+                    new ButtonBuilder()
                         .setCustomId('done')
                         .setLabel('Send to Database with No Song Reviews')
-                        .setStyle('SUCCESS'),
-                    new Discord.MessageButton()
+                        .setStyle(ButtonStyle.Success),
+                    new ButtonBuilder()
                         .setCustomId('delete')
                         .setLabel('Delete')
-                        .setStyle('DANGER'),
+                        .setStyle(ButtonStyle.Danger),
                 );
             }
 
             // Set up the embed
-            const epEmbed = new Discord.MessageEmbed()
+            const epEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
             .setTitle(`${artistArray.join(' & ')} - ${epName}`)
             .setAuthor({ name: `${interaction.member.displayName}'s ${epType} review`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` });
@@ -235,7 +233,7 @@ module.exports = {
             }
 
             if (taggedUser.id != false) {
-                epEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
+                epEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ format: "png", dynamic: false })}` });
             }
 
             interaction.editReply({ embeds: [epEmbed], components: [row, row2] });
@@ -344,20 +342,20 @@ module.exports = {
                                 db.reviewDB.set(artistArray[j], overall_rating, `["${epName}"].["${interaction.user.id}"].rating`);
                             }
 
-                            row2 = new Discord.MessageActionRow()
+                            row2 = new ActionRowBuilder()
                             .addComponents(
-                                new Discord.MessageButton()
+                                new ButtonBuilder()
                                     .setCustomId('begin')
                                     .setLabel(`Begin ${epType} Review`)
-                                    .setStyle('SUCCESS'),
-                                new Discord.MessageButton()
+                                    .setStyle(ButtonStyle.Success),
+                                new ButtonBuilder()
                                     .setCustomId('done')
                                     .setLabel('Send to Database')
-                                    .setStyle('SUCCESS'),
-                                new Discord.MessageButton()
+                                    .setStyle(ButtonStyle.Success),
+                                new ButtonBuilder()
                                     .setCustomId('delete')
                                     .setLabel('Delete')
-                                    .setStyle('DANGER'),
+                                    .setStyle(ButtonStyle.Danger),
                             );
                             
                             await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
@@ -386,20 +384,20 @@ module.exports = {
                                 db.reviewDB.set(artistArray[j], overall_review, `["${epName}"].["${interaction.user.id}"].review`);
                             }
 
-                            row2 = new Discord.MessageActionRow()
+                            row2 = new ActionRowBuilder()
                             .addComponents(
-                                new Discord.MessageButton()
+                                new ButtonBuilder()
                                     .setCustomId('begin')
                                     .setLabel(`Begin ${epType} Review`)
-                                    .setStyle('SUCCESS'),
-                                new Discord.MessageButton()
+                                    .setStyle(ButtonStyle.Success),
+                                new ButtonBuilder()
                                     .setCustomId('done')
                                     .setLabel('Send to Database with No Song Reviews')
-                                    .setStyle('SUCCESS'),
-                                new Discord.MessageButton()
+                                    .setStyle(ButtonStyle.Success),
+                                new ButtonBuilder()
                                     .setCustomId('delete')
                                     .setLabel('Delete')
-                                    .setStyle('DANGER'),
+                                    .setStyle(ButtonStyle.Danger),
                             );
 
                             await i.editReply({ embeds: [epEmbed], components: [row, row2] });
@@ -472,7 +470,7 @@ module.exports = {
                         }
 
                         if (overall_review != false) epEmbed.setDescription(`${overall_review}`);
-                        if (overall_rating !== false) epEmbed.addField(`Rating`, `**${overall_rating}/10**`);
+                        if (overall_rating !== false) epEmbed.addFields([{ name: `Rating`, value: `**${overall_rating}/10**` }]);
                         if (starred == false) {
                             epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
                         } else {

@@ -1,8 +1,7 @@
 const db = require("../db.js");
 const forAsync = require('for-async');
 const { get_user_reviews, parse_artist_song_data, handle_error, find_review_channel } = require("../func.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const Discord = require("discord.js");
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const Spotify = require('node-spotify-api');
 require('dotenv').config();
 
@@ -154,7 +153,7 @@ module.exports = {
             }
         }
 
-        let displayEmbed = new Discord.MessageEmbed()
+        let displayEmbed = new EmbedBuilder()
         .setColor(`${interaction.member.displayHexColor}`)
         .setDescription(`Art for **${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}** has been changed to the new art below.`)
         .setImage(songArt);

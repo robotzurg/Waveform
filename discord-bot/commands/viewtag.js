@@ -1,6 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const Discord = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const { handle_error } = require("../func.js");
 const _ = require('lodash');
 
@@ -26,15 +25,15 @@ module.exports = {
 
         let pagedSongList = _.chunk(songList, 10);
         let page_num = 0;
-        const row = new Discord.MessageActionRow()
+        const row = new ActionRowBuilder()
         .addComponents(
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('left')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('⬅️'),
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('right')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('➡️'),
         );
 
@@ -47,7 +46,7 @@ module.exports = {
             pagedSongList[i] = pagedSongList[i].join('\n');
         }  
 
-        const songListEmbed = new Discord.MessageEmbed()
+        const songListEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
             .setAuthor({ name: `List of songs with the tag ${tag}` })
             .setDescription(pagedSongList[page_num]);

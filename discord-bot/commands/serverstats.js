@@ -1,7 +1,6 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const { handle_error, get_user_reviews, find_most_duplicate } = require('../func');
 const db = require('../db.js');
-const Discord = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -92,7 +91,7 @@ module.exports = {
 
             const guild = await client.guilds.fetch(interaction.guild.id);
 
-            const statsEmbed = new Discord.MessageEmbed()
+            const statsEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
             .setThumbnail(guild.iconURL({ format: 'png' }))
             .setTitle('General Waveform Stats for this server')

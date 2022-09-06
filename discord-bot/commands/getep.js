@@ -1,7 +1,6 @@
-const Discord = require('discord.js');
 const db = require("../db.js");
 const { average, get_user_reviews, handle_error, create_ep_review, find_review_channel, parse_artist_song_data } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { EmbedBuilder, ActionRowBuilder, SelectMenuBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -53,7 +52,7 @@ module.exports = {
 
             await create_ep_review(interaction, client, origArtistArray, epSongArray, epName, ep_art);
 
-            const epEmbed = new Discord.MessageEmbed()
+            const epEmbed = new EmbedBuilder()
                 .setColor(`${interaction.member.displayHexColor}`)
                 .setTitle(`${origArtistArray} - ${epName} tracks`)
                 .setThumbnail(ep_art);
@@ -97,9 +96,8 @@ module.exports = {
                     }
 
                     reviewNum = reviewNum.length;
-
-                    epEmbed.addField(`${epnum}. ${epSongArray[i]} (Avg: ${(rankNumArray.length != 0) ? `${Math.round(average(rankNumArray) * 10) / 10}` : `N/A`})`, 
-                    `\`${reviewNum} review${reviewNum > 1 ? 's' : ''}\` ${star_num > 0 ? `\`${star_num} 🌟\`` : ''}`);
+                    epEmbed.addFields([{ name: `${epnum}. ${epSongArray[i]} (Avg: ${(rankNumArray.length != 0) ? `${Math.round(average(rankNumArray) * 10) / 10}` : `N/A`})`,
+                     value: `\`${reviewNum} review${reviewNum > 1 ? 's' : ''}\` ${star_num > 0 ? `\`${star_num} 🌟\`` : ''}` }]);
 
                     if (rankNumArray.length != 0) songRankArray.push(Math.round(average(rankNumArray) * 10) / 10);
                 }
@@ -150,9 +148,9 @@ module.exports = {
                 value: `back`,
             });
 
-            const row = new Discord.MessageActionRow()
+            const row = new ActionRowBuilder()
                 .addComponents(
-                    new Discord.MessageSelectMenu()
+                    new SelectMenuBuilder()
                         .setCustomId('select')
                         .setPlaceholder('See other reviews by clicking on me!')
                         .addOptions(select_options),
@@ -188,7 +186,7 @@ module.exports = {
                     ep_sent_by = await interaction.guild.members.fetch(ep_sent_by);
                 }
 
-                const epReviewEmbed = new Discord.MessageEmbed();
+                const epReviewEmbed = new EmbedBuilder();
                 if (epSongArray.length != 0) {
                     for (let i = 0; i < epSongArray.length; i++) {
                         let songName = epSongArray[i];
@@ -222,17 +220,17 @@ module.exports = {
 
                         if (no_songs_review == false) {
                             if (epReviewEmbed.length < 3250) {
-                                epReviewEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
+                                epReviewEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                                 `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
                                 `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
                                 `${rscore != false ? `(${rscore}/10)` : ``}`, 
-                                `${rreview == false ? `*No review written*` : `${rreview}`}`);
+                                value: `${rreview == false ? `*No review written*` : `${rreview}`}` }]);
                             } else {
-                                epReviewEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
+                                epReviewEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                                 `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
                                 `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
                                 `${rscore != false ? `(${rscore}/10)` : ``}`, 
-                                `${rreview == false ? `*No review written*` : `*Review hidden to save space*`}`);
+                                value: `${rreview == false ? `*No review written*` : `*Review hidden to save space*`}` }]);
                             }
                         }
                          
@@ -246,14 +244,14 @@ module.exports = {
                     if (no_songs_review == false) {
                         epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                     } else {
-                        epReviewEmbed.addField(`Rating`, `**${ep_overall_rating}/10**`);
+                        epReviewEmbed.addFields([{ name: `Rating`, value: `**${ep_overall_rating}/10**` }]);
                     }
                     epReviewEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
                 } else if (ep_overall_rating !== false) {
                     if (no_songs_review == false) {
                         epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                     } else {
-                        epEmbed.addField(`Rating`, `**${ep_overall_rating}/10**`);
+                        epEmbed.addFields([{ name: `Rating`, value: `**${ep_overall_rating}/10**` }]);
                     }
                 } else if (ep_overall_review != false) {
                     epReviewEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);

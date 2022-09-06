@@ -1,7 +1,6 @@
-const Discord = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
 const { get_user_reviews, handle_error, spotify_api_setup } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const _ = require('lodash');
 
 module.exports = {
@@ -109,15 +108,15 @@ module.exports = {
 
         let pagedReviewList = _.chunk(reviewedArray, 10);
         let page_num = 0;
-        const row = new Discord.MessageActionRow()
+        const row = new ActionRowBuilder()
         .addComponents(
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('left')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('⬅️'),
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('right')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('➡️'),
         );
 
@@ -130,12 +129,14 @@ module.exports = {
             pagedReviewList[i] = pagedReviewList[i].join('\n');
         }  
 
-        const ratingListEmbed = new Discord.MessageEmbed()
+        const ratingListEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
             .setThumbnail(taggedUser.avatarURL({ format: "png" }))
             .setAuthor({ name: `All ratings for ${artist} by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ format: "png" }) })
-            .addField(`Average Rating`, `${avg}`, true)
-            .addField(`Songs`, `${pagedReviewList[page_num]}`, false);
+            .addFields([
+                { name: `Average Rating`, value: avg, inline: true },
+                { name: `Songs`, value: pagedReviewList[page_num], inline: false },
+            ]);
             if (pagedReviewList.length > 1) {
                 ratingListEmbed.setFooter({ text: `Page 1 / ${pagedReviewList.length}` });
                 interaction.editReply({ embeds: [ratingListEmbed], components: [row] });

@@ -4,17 +4,15 @@ const Discord = require('discord.js');
 const { token_dev } = require('./config.json');
 const db = require('./db');
 const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v9');
+const { Routes, InteractionType } = require('discord-api-types/v9');
 const express = require('express');
 const app = express();
 
 // create a new Discord client and give it some variables
-const { Client, Intents } = require('discord.js');
-const myIntents = new Intents();
-myIntents.add('GUILD_PRESENCES', 'GUILD_MEMBERS', 'GUILD_PRESENCES');
+const { Client, GatewayIntentBits, Partials } = require('discord.js');
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, 
-                            Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_PRESENCES], partials: ['MESSAGE', 'CHANNEL', 'REACTION'] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions, 
+    GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildPresences], partials: [Partials.Channel, Partials.Message, Partials.Reaction] });
 client.commands = new Discord.Collection();
 client.cooldowns = new Discord.Collection();
 const registerCommands = [];
@@ -69,7 +67,7 @@ client.once('ready', async () => {
 // Listen for interactions (INTERACTION COMMAND HANDLER)
 client.on('interactionCreate', async interaction => {
 
-    if (interaction.isAutocomplete()) {
+    if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
 
         try {
             let focused = interaction.options._hoistedOptions;
@@ -201,12 +199,10 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-	if (!interaction.isCommand() && !interaction.isContextMenu()) return;
+	if (!interaction.type === InteractionType.ApplicationCommand) return;
 
     await interaction.deferReply();
-
     const command = client.commands.get(interaction.commandName);
-
     if (!command) return;
 
     if (!client.cooldowns.has(interaction.commandName)) {

@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 const { Canvas, loadImage, FontLibrary } = require('skia-canvas');
 const { get_user_reviews, handle_error, find_most_duplicate } = require("../func.js");
 const _ = require('lodash');

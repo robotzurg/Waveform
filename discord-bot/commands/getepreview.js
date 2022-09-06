@@ -1,6 +1,5 @@
-const Discord = require('discord.js');
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const { handle_error, find_review_channel, parse_artist_song_data } = require('../func.js');
 
 module.exports = {
@@ -82,7 +81,7 @@ module.exports = {
                 ep_sent_by = await interaction.guild.members.fetch(ep_sent_by);
             }
 
-            const epEmbed = new Discord.MessageEmbed();
+            const epEmbed = new EmbedBuilder();
             
             epEmbed.setColor(`${taggedMember.displayHexColor}`);
             epEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName}` : `🌟 ${origArtistArray.join(' & ')} - ${epName} 🌟`);
@@ -91,14 +90,14 @@ module.exports = {
                 if (no_songs_review == false) {
                     epEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                 } else {
-                    epEmbed.addField(`Rating`, `**${ep_overall_rating}/10**`);
+                    epEmbed.addFields([{ name: `Rating`, value: `**${ep_overall_rating}/10**` }]);
                 }
                 epEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
             } else if (ep_overall_rating !== false) {
                 if (no_songs_review == false) {
                     epEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                 } else {
-                    epEmbed.addField(`Rating`, `**${ep_overall_rating}/10**`);
+                    epEmbed.addFields([{ name: `Rating`, value: `**${ep_overall_rating}/10**` }]);
                 }
             } else if (ep_overall_review != false) {
                 epEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
@@ -108,7 +107,7 @@ module.exports = {
 
             epEmbed.setThumbnail(ep_art);
             if (ep_sent_by != false && ep_sent_by != undefined) {
-                epEmbed.setFooter(`Sent by ${ep_sent_by.displayName}`, `${ep_sent_by.user.avatarURL({ format: "png" })}`);
+                epEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}`, iconURL: `${ep_sent_by.user.avatarURL({ format: "png" })}` });
             }
 
             let reviewMsgID = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].msg_id`);
@@ -153,17 +152,17 @@ module.exports = {
                     }
 
                     if (epEmbed.length < 3250) {
-                        epEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
+                        epEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                         `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
                         `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
                         `${rscore != false ? `(${rscore}/10)` : ``}`, 
-                        `${rreview == false ? `*No review written*` : `${rreview}`}`);
+                        value: `${rreview == false ? `*No review written*` : `${rreview}`}` }]);
                     } else {
-                        epEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
+                        epEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                         `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
                         `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
                         `${rscore != false ? `(${rscore}/10)` : ``}`, 
-                        `${rreview == false ? `*No review written*` : `*Review hidden to save space*`}`);
+                        value: `${rreview == false ? `*No review written*` : `*Review hidden to save space*`}` }]);
                     }
                 }
             }

@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 const { parse_artist_song_data, handle_error, find_review_channel } = require("../func.js");
 
 module.exports = {
@@ -143,7 +143,7 @@ module.exports = {
 
                     if (rating != null && rating != undefined) msgEmbed.fields[0].value = `**${rating}/10**`;
                     if (review != null && review != undefined) msgEmbed.setDescription(review);
-                    if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter(`Sent by ${taggedMember.displayName}`, `${taggedUser.avatarURL({ format: "png", dynamic: false })}`);
+                    if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ format: "png", dynamic: false })}` });
 
                     msg.edit({ embeds: [msgEmbed] });
                 });

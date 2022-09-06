@@ -1,6 +1,5 @@
-const Discord = require("discord.js");
 const db = require('../db.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 // TODO: - MAKE THIS A BUNCH OF SUBCOMMANDS!!
 //       - Make the Star Cutoff retroactively remove/add hall of fame entries
@@ -40,14 +39,16 @@ module.exports = {
             const reviewFilter = db.server_settings.get(interaction.guild.id, 'review_filter');
             const starCutoff = db.server_settings.get(interaction.guild.id, 'star_cutoff');
 
-            const configEmbed = new Discord.MessageEmbed()
+            const configEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
             .setTitle('🔧 Waveform Configuration Settings  🔧')
-            .addField('Review Channel:', reviewChannel)
-            .addField('Review Chat Filter:', `\`${reviewFilter}\``)
-            .addField('Hall of Fame Channel:', hofChannel)
-            .addField('Star Cutoff for Hall of Fame:', `\`${starCutoff} ⭐\``)
-            .setFooter(`Config for ${interaction.guild.name}`, interaction.guild.iconURL());
+            .addFields([
+                { name: 'Review Channel:', value: reviewChannel },
+                { name: 'Review Chat Filter:', value: reviewFilter },
+                { name: 'Hall of Fame Channel:', value: hofChannel },
+                { name: 'Star Cutoff for Hall of Fame:', value: `\`${starCutoff} ⭐\`` },
+            ])
+            .setFooter({ text: `Config for ${interaction.guild.name}`, iconURL: interaction.guild.iconURL() });
 
             interaction.editReply({ embeds: [configEmbed] });
         } else {

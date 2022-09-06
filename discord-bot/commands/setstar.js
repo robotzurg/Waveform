@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 const { parse_artist_song_data, hall_of_fame_check, handle_error, find_review_channel } = require('../func.js');
 
 module.exports = {
