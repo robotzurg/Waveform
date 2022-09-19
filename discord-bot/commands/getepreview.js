@@ -56,10 +56,10 @@ module.exports = {
             let rstarred;
 
             let epObj = db.reviewDB.get(artistArray[0], `["${epName}"]`);
-            if (epObj == undefined) return interaction.editReply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
+            if (epObj == undefined) return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
 
             let user_name = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].name`);
-            if (user_name == undefined) return interaction.editReply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` has not been reviewed by the user ${taggedMember.displayName}.`);
+            if (user_name == undefined) return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` has not been reviewed by the user ${taggedMember.displayName}.`);
 
             let ep_overall_rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].rating`);
             let ep_overall_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].review`);
@@ -74,7 +74,7 @@ module.exports = {
             if (ep_songs == false || ep_songs == undefined) ep_songs = [];
 
             if (ep_art == false) {
-                ep_art = taggedUser.avatarURL({ format: "png" });
+                ep_art = taggedUser.avatarURL({ extension: "png" });
             }
 
             if (ep_sent_by != undefined && ep_sent_by != false) {
@@ -103,11 +103,11 @@ module.exports = {
                 epEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
             }
 
-            epEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && ep_songs.length != 0 ? `${taggedMember.displayName}'s mailbox ${epType} review` : `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ format: "png", dynamic: false })}` });
+            epEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && ep_songs.length != 0 ? `${taggedMember.displayName}'s mailbox ${epType} review` : `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
 
             epEmbed.setThumbnail(ep_art);
             if (ep_sent_by != false && ep_sent_by != undefined) {
-                epEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}`, iconURL: `${ep_sent_by.user.avatarURL({ format: "png" })}` });
+                epEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}`, iconURL: `${ep_sent_by.user.avatarURL({ extension: "png" })}` });
             }
 
             let reviewMsgID = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].msg_id`);
@@ -168,9 +168,9 @@ module.exports = {
             }
 
             if (ep_url) {
-                interaction.editReply({ content: `[View ${epType} Review Message](${ep_url})`, embeds: [epEmbed] });
+                interaction.reply({ content: `[View ${epType} Review Message](${ep_url})`, embeds: [epEmbed] });
             } else {
-                interaction.editReply({ embeds: [epEmbed] });
+                interaction.reply({ embeds: [epEmbed] });
             }
 
         } catch (err) {

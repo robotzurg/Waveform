@@ -39,7 +39,7 @@ module.exports = {
             let displaySongName = song_info.display_song_name;
 
             if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"]`) == undefined) {
-                return interaction.editReply(`No review found for \`${origArtistArray.join(' & ')} - ${displaySongName}\`.`);
+                return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${displaySongName}\`.`);
             } 
 
             let review = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].review`);
@@ -66,7 +66,7 @@ module.exports = {
             );
 
             if (type == false || type == undefined || type == null) { // If there's not an active EP/LP review
-                return interaction.editReply('You don\'t currently have an active EP/LP review, this command is supposed to be used with an EP/LP review started with `/epreview`!');
+                return interaction.reply('You don\'t currently have an active EP/LP review, this command is supposed to be used with an EP/LP review started with `/epreview`!');
             }
 
             // Edit the EP embed

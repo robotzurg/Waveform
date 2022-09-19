@@ -33,12 +33,12 @@ module.exports = {
 
             let epObj = db.reviewDB.get(artistArray[0], `["${epName}"]`);
             if (epObj == undefined) {
-                return interaction.editReply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
+                return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
             }
 
             let ep_art = db.reviewDB.get(artistArray[0], `["${epName}"].art`);
             if (ep_art == undefined || ep_art == false) {
-                ep_art = interaction.user.avatarURL({ format: "png", dynamic: false });
+                ep_art = interaction.user.avatarURL({ extension: "png", dynamic: false });
             }
 
             let tags = db.reviewDB.get(artistArray[0], `["${epName}"].tags`);
@@ -156,7 +156,7 @@ module.exports = {
                         .addOptions(select_options),
                 );
 
-            interaction.editReply({ embeds: [epEmbed], components: [row] });
+            interaction.reply({ embeds: [epEmbed], components: [row] });
             let message = await interaction.fetchReply();
         
             const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 120000 });
@@ -164,7 +164,7 @@ module.exports = {
             collector.on('collect', async select => {
 
                 if (select.values[0] == 'back') { // Back Selection
-                    return await select.update({ content: ' ', embeds: [epEmbed], components: [row] });
+                    return await select.update({ content: null, embeds: [epEmbed], components: [row] });
                 }
 
                 const taggedMember = await interaction.guild.members.fetch(select.values[0]);
@@ -257,11 +257,11 @@ module.exports = {
                     epReviewEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
                 }
 
-                epReviewEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && epSongArray.length != 0 ? `${taggedMember.displayName}'s mailbox ${epType} review` : `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ format: "png", dynamic: false })}` });
+                epReviewEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && epSongArray.length != 0 ? `${taggedMember.displayName}'s mailbox ${epType} review` : `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
 
                 epReviewEmbed.setThumbnail(ep_art);
                 if (ep_sent_by != false && ep_sent_by != undefined) {
-                    epReviewEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}`, iconURL: `${ep_sent_by.user.avatarURL({ format: "png" })}` });
+                    epReviewEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}`, iconURL: `${ep_sent_by.user.avatarURL({ extension: "png" })}` });
                 }
 
                 let reviewMsgID = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].msg_id`);

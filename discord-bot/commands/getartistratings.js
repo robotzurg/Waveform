@@ -39,7 +39,7 @@ module.exports = {
         // Spotify Check
         if (artist == null) {
             const spotifyApi = await spotify_api_setup(interaction.user.id);
-            if (spotifyApi == false) return interaction.editReply(`This subcommand requires you to use \`/login\` `);
+            if (spotifyApi == false) return interaction.reply(`This subcommand requires you to use \`/login\` `);
 
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
                 if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
@@ -49,16 +49,16 @@ module.exports = {
 
             // Check if a podcast is being played, as we don't support that.
             if (isPodcast == true) {
-                return interaction.editReply('Podcasts are not supported with `/np`.');
+                return interaction.reply('Podcasts are not supported with `/np`.');
             }
         }
 
         if (spotifyCheck == false) {
-            return interaction.editReply('Spotify playback not detected, please type in the artist name manually or play a song!');
+            return interaction.reply('Spotify playback not detected, please type in the artist name manually or play a song!');
         }
 
         const artistObj = db.reviewDB.get(artist);
-        if (artistObj == undefined) return interaction.editReply('Artist not found in the database.');
+        if (artistObj == undefined) return interaction.reply('Artist not found in the database.');
         let songArray = Object.keys(artistObj);
         let songObj;
         let reviewObj = {};
@@ -131,17 +131,17 @@ module.exports = {
 
         const ratingListEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
-            .setThumbnail(taggedUser.avatarURL({ format: "png" }))
-            .setAuthor({ name: `All ratings for ${artist} by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ format: "png" }) })
+            .setThumbnail(taggedUser.avatarURL({ extension: "png" }))
+            .setAuthor({ name: `All ratings for ${artist} by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png" }) })
             .addFields([
                 { name: `Average Rating`, value: avg, inline: true },
                 { name: `Songs`, value: pagedReviewList[page_num], inline: false },
             ]);
             if (pagedReviewList.length > 1) {
                 ratingListEmbed.setFooter({ text: `Page 1 / ${pagedReviewList.length}` });
-                interaction.editReply({ embeds: [ratingListEmbed], components: [row] });
+                interaction.reply({ embeds: [ratingListEmbed], components: [row] });
             } else {
-                interaction.editReply({ embeds: [ratingListEmbed], components: [] });
+                interaction.reply({ embeds: [ratingListEmbed], components: [] });
             }
         
         if (pagedReviewList.length > 1) {

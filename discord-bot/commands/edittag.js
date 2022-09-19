@@ -27,8 +27,8 @@ module.exports = {
         let tag = interaction.options.getString('tag');
         let newTagName = interaction.options.getString('tag_name');
         let tagArt = interaction.options.getString('tag_image');
-        if (newTagName == null && tagArt == null) return interaction.editReply('You must supply either an image link to the image argument, or a new tag name to the name argument.');
-        if (!db.tags.has(tag)) return interaction.editReply(`A tag with the name ${tag} does not exist in the tag database.`);
+        if (newTagName == null && tagArt == null) return interaction.reply('You must supply either an image link to the image argument, or a new tag name to the name argument.');
+        if (!db.tags.has(tag)) return interaction.reply(`A tag with the name ${tag} does not exist in the tag database.`);
 
         if (tagArt != null) db.tags.set(tag, tagArt, 'image');
         if (newTagName != null) {
@@ -75,7 +75,7 @@ module.exports = {
             db.tags.set(newTagName, tagObj);
         }
 
-        interaction.editReply('Successfully updated the tag info.');
+        interaction.reply('Successfully updated the tag info.');
 
         } catch (err) {
             let error = err;

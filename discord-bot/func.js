@@ -16,7 +16,7 @@ module.exports = {
     },
 
     sort: function(array, lowest_to_highest = false) {
-        // This function sorts an array from highest to lowest based on this format:
+        // This function sorts an array from highest to lowest based on this extension:
         // [ [ num, whatever else ], [ num, whatever else] ]
 
         if (lowest_to_highest == false) {
@@ -333,16 +333,16 @@ module.exports = {
                                 let msgEmbed;
 
                                 channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                    msgEmbed = msg.embeds[0];
+                                    msgEmbed = EmbedBuilder.from(msg.embeds[0]);
                                     msgEmbed.setThumbnail(new_image);
-                                    msg.edit({ content: ' ', embeds: [msgEmbed] });
+                                    msg.edit({ content: null, embeds: [msgEmbed] });
                                     resolve();
                                 }).catch(() => {
                                     channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
                                     channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                        msgEmbed = msg.embeds[0];
+                                        msgEmbed = EmbedBuilder.from(msg.embeds[0]);
                                         msgEmbed.setThumbnail(new_image);
-                                        msg.edit({ content: ' ', embeds: [msgEmbed] });
+                                        msg.edit({ content: null, embeds: [msgEmbed] });
                                         resolve();
                                     });
                                 }).catch((err) => {

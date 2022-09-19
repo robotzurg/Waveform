@@ -12,7 +12,7 @@ const app = express();
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions, 
-    GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildPresences], partials: [Partials.Channel, Partials.Message, Partials.Reaction] });
+    GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildPresences, GatewayIntentBits.MessageContent], partials: [Partials.Channel, Partials.Message, Partials.Reaction] });
 client.commands = new Discord.Collection();
 client.cooldowns = new Discord.Collection();
 const registerCommands = [];
@@ -67,7 +67,7 @@ client.once('ready', async () => {
 // Listen for interactions (INTERACTION COMMAND HANDLER)
 client.on('interactionCreate', async interaction => {
 
-    if (interaction.type === InteractionType.ApplicationCommandAutocomplete) {
+    if (interaction.isAutocomplete()) {
 
         try {
             let focused = interaction.options._hoistedOptions;
@@ -87,9 +87,6 @@ client.on('interactionCreate', async interaction => {
             
             if (focused[0].name == 'artist' || focused[0].name == 'vocalist') {
                 let artist_names = db.reviewDB.keyArray();
-
-                // TODO: Get "og" swapped to the artist names involved on the EP/LP review, for auto-complete to work better!
-                // if (focused[0].value.toLowerCase() == 'og') focused[0].value.replace('og', db.user_stats.get(`${interaction.user.id}.`)); 
 
                 // Search filters
                 artist_names = artist_names.filter(letter_filter);
@@ -124,7 +121,6 @@ client.on('interactionCreate', async interaction => {
                         artist_names = artist_names.flat(1);
                     }
                 }
-
                 interaction.respond(artist_names);
             } else if (focused[0].name == 'name' || focused[0].name == 'song_name' || focused[0].name == 'ep_name') {
                 let artist_songs = db.reviewDB.get(val_artist.split(' & ')[0]);
@@ -199,9 +195,8 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-	if (!interaction.type === InteractionType.ApplicationCommand) return;
+	if (interaction.type !== InteractionType.ApplicationCommand) return;
 
-    await interaction.deferReply();
     const command = client.commands.get(interaction.commandName);
     if (!command) return;
 
@@ -218,7 +213,7 @@ client.on('interactionCreate', async interaction => {
 
         if (now < expirationTime) {
             const timeLeft = (expirationTime - now) / 1000;
-            return interaction.editReply(`Due to system limitations, you must wait ${timeLeft.toFixed(0)} more second(s) before the next use of \`/${interaction.commandName}\`.`);
+            return interaction.reply(`Due to system limitations, you must wait ${timeLeft.toFixed(0)} more second(s) before the next use of \`/${interaction.commandName}\`.`);
         }
 
     }

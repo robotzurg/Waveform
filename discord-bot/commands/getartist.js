@@ -22,7 +22,7 @@ module.exports = {
             // Spotify Check
             if (artist == null) {
                 const spotifyApi = await spotify_api_setup(interaction.user.id);
-                if (spotifyApi == false) return interaction.editReply(`This subcommand requires you to use \`/login\` `);
+                if (spotifyApi == false) return interaction.reply(`This subcommand requires you to use \`/login\` `);
 
                 await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
                     if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
@@ -32,16 +32,16 @@ module.exports = {
 
                 // Check if a podcast is being played, as we don't support that.
                 if (isPodcast == true) {
-                    return interaction.editReply('Podcasts are not supported with `/np`.');
+                    return interaction.reply('Podcasts are not supported with `/np`.');
                 }
             }
 
             if (spotifyCheck == false) {
-                return interaction.editReply('Spotify playback not detected, please type in the artist name manually or play a song!');
+                return interaction.reply('Spotify playback not detected, please type in the artist name manually or play a song!');
             }
 
             const artistObj = db.reviewDB.get(artist);
-            if (artistObj == undefined) return interaction.editReply(`\`${artist}\` not found in the database.`);
+            if (artistObj == undefined) return interaction.reply(`\`${artist}\` not found in the database.`);
             const artistImage = artistObj.Image;
             let songArray = Object.keys(artistObj);
             songArray = songArray.filter(item => item !== 'Image');
@@ -247,15 +247,15 @@ module.exports = {
                 if (singleArray.length != 0) {
                     focusedName = 'Singles';
                     focusedArray = pagedSingleArray;
-                    type_buttons.components[0].style = 'SUCCESS';
+                    type_buttons.components[0].data.style = ButtonStyle.Success;
                 } else if (epArray.length != 0) {
                     focusedName = 'EP/LPs';
                     focusedArray = pagedEpArray;
-                    type_buttons.components[1].style = 'SUCCESS';
+                    type_buttons.components[1].data.style = ButtonStyle.Success;
                 } else if (remixArray.length != 0) {
                     focusedName = 'Remixes';
                     focusedArray = pagedRemixArray;
-                    type_buttons.components[2].style = 'SUCCESS';
+                    type_buttons.components[2].data.style = ButtonStyle.Success;
                 }
 
                 if (rankNumArray.length != 0) { 
@@ -276,9 +276,9 @@ module.exports = {
                 }
 
             if (pages_active[0] == true) {
-                interaction.editReply({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
+                interaction.reply({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
             } else {
-                interaction.editReply({ embeds: [artistEmbed], components: [type_buttons] });
+                interaction.reply({ embeds: [artistEmbed], components: [type_buttons] });
             }
 
             let message = await interaction.fetchReply();
@@ -295,32 +295,32 @@ module.exports = {
                     case 'singles':
                         focusedArray = pagedSingleArray;
                         focusedName = "Singles";
-                        type_buttons.components[0].style = 'SUCCESS';
-                        type_buttons.components[1].style = 'SECONDARY';
-                        type_buttons.components[2].style = 'SECONDARY';
+                        type_buttons.components[0].data.style = ButtonStyle.Success;
+                        type_buttons.components[1].data.style = ButtonStyle.Secondary;
+                        type_buttons.components[2].data.style = ButtonStyle.Secondary;
                         if (pages_active[0] == true) do_arrows = true;
                         page_num = 0; break;
                     case 'ep':
                         focusedArray = pagedEpArray;
                         focusedName = "EPs/LPs";
-                        type_buttons.components[0].style = 'SECONDARY';
-                        type_buttons.components[1].style = 'SUCCESS';
-                        type_buttons.components[2].style = 'SECONDARY';
+                        type_buttons.components[0].data.style = ButtonStyle.Secondary;
+                        type_buttons.components[1].data.style = ButtonStyle.Success;
+                        type_buttons.components[2].data.style = ButtonStyle.Secondary;
                         if (pages_active[1] == true) do_arrows = true;
                         page_num = 0; break;
                     case 'remixes':
                         focusedArray = pagedRemixArray;
                         focusedName = "Remixes";
-                        type_buttons.components[0].style = 'SECONDARY';
-                        type_buttons.components[1].style = 'SECONDARY';
-                        type_buttons.components[2].style = 'SUCCESS';
+                        type_buttons.components[0].data.style = ButtonStyle.Secondary;
+                        type_buttons.components[1].data.style = ButtonStyle.Secondary;
+                        type_buttons.components[2].data.style = ButtonStyle.Success;
                         if (pages_active[2] == true) do_arrows = true;
                         page_num = 0; break;
                 }
 
                 page_num = _.clamp(page_num, 0, focusedArray.length - 1);
-                artistEmbed.fields[0].name = focusedName;
-                artistEmbed.fields[0].value = focusedArray[page_num].join('\n');
+                artistEmbed.data.fields[0].name = focusedName;
+                artistEmbed.data.fields[0].value = focusedArray[page_num].join('\n');
                 artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
 
                 if (do_arrows == false) { 

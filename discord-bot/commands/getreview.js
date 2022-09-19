@@ -63,7 +63,7 @@ module.exports = {
             let songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
 
             rname = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].name`);
-            if (rname == undefined) return interaction.editReply(`No review found for \`${origArtistArray.join(' & ')} - ${songName}\`. *Note that for EP reviews, you need to use \`/getReviewEP\`.*`);
+            if (rname == undefined) return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${songName}\`. *Note that for EP reviews, you need to use \`/getReviewEP\`.*`);
             rreview = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].review`);
             rscore = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].rating`);
             rsentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].sentby`);
@@ -84,7 +84,7 @@ module.exports = {
             if (songArt != false) {
                 songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
             } else {
-                songArt = taggedUser.avatarURL({ format: "png" });
+                songArt = taggedUser.avatarURL({ extension: "png" });
             }
 
             if (rreview == 'No written review.' || rreview == "This was from a ranking, so there is no written review for this song.") rreview = '-';
@@ -98,7 +98,7 @@ module.exports = {
                 reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${displaySongName} :star2:`);
             }
 
-            reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ format: "png" })}` });
+            reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ extension: "png" })}` });
 
             if (rscore != false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rscore}/10**`, inline: true }]);
             if (rreview != false) reviewEmbed.setDescription(rreview);
@@ -113,18 +113,18 @@ module.exports = {
                 }
             }
 
-            reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ format: "png" }) : songArt);
+            reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ extension: "png" }) : songArt);
 
             if (rsentby != false) {
-                reviewEmbed.setFooter({ text: `Sent by ${usrSentBy.displayName}`, iconURL: `${usrSentBy.user.avatarURL({ format: "png" })}` });
+                reviewEmbed.setFooter({ text: `Sent by ${usrSentBy.displayName}`, iconURL: `${usrSentBy.user.avatarURL({ extension: "png" })}` });
             } else if (epfrom != undefined && epfrom != false) {
                 reviewEmbed.setFooter({ text: `from ${epfrom}`, iconURL: db.reviewDB.get(artistArray[0], `["${epfrom}"].art`) });
             }
 
             if ((rurl == undefined && rtimestamp == undefined) || rurl == false) {
-                interaction.editReply({ embeds: [reviewEmbed] });
+                interaction.reply({ embeds: [reviewEmbed] });
             } else {
-                interaction.editReply({ content: `[View Review Message](${rurl})`, embeds: [reviewEmbed] });
+                interaction.reply({ content: `[View Review Message](${rurl})`, embeds: [reviewEmbed] });
             }
 
         } catch (err) {

@@ -65,7 +65,7 @@ module.exports = {
 
         });
 
-        interaction.editReply(`Click on [this link](http://waveformserver.hopto.org/login) to login and authorize Spotify for usage with Waveform!\nYou should only need to do this once.`);
+        interaction.reply(`Click on [this link](http://waveformserver.hopto.org/login) to login and authorize Spotify for usage with Waveform!\nYou should only need to do this once.`);
         await wait(30000);
         await interaction.fetchReply().then(msg => {
             if (!msg.content.includes('successful!')) {

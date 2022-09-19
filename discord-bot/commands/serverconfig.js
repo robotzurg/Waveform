@@ -50,31 +50,31 @@ module.exports = {
             ])
             .setFooter({ text: `Config for ${interaction.guild.name}`, iconURL: interaction.guild.iconURL() });
 
-            interaction.editReply({ embeds: [configEmbed] });
+            interaction.reply({ embeds: [configEmbed] });
         } else {
             if (config == 'RC') {
 
-                if (!value.includes('#')) return interaction.editReply('This config must be a channel.');
+                if (!value.includes('#')) return interaction.reply('This config must be a channel.');
                 db.server_settings.set(interaction.guild.id, value, 'review_channel');
-                return interaction.editReply(`Successfully changed the review channel to ${value}.`);
+                return interaction.reply(`Successfully changed the review channel to ${value}.`);
 
             } else if (config == 'HFC') {
 
-                if (!value.includes('#')) return interaction.editReply('This config must be a channel.');
+                if (!value.includes('#')) return interaction.reply('This config must be a channel.');
                 db.server_settings.set(interaction.guild.id, value, 'hall_of_fame_channel');
-                return interaction.editReply(`Successfully changed the hall of fame channel to ${value}.`);
+                return interaction.reply(`Successfully changed the hall of fame channel to ${value}.`);
 
             } else if (config == 'RCF') {
 
-                if (!value.includes('true') && !value.includes('false')) return interaction.editReply('Parameter must be `true` or `false`.');
+                if (!value.includes('true') && !value.includes('false')) return interaction.reply('Parameter must be `true` or `false`.');
                 db.server_settings.set(interaction.guild.id, (value == 'true'), 'review_filter');
-                return interaction.editReply(`Successfully set the review channel filter to \`${value}\`.`);
+                return interaction.reply(`Successfully set the review channel filter to \`${value}\`.`);
 
             } else if (config == 'SC') {
 
-                if (isNaN(parseInt(value))) return interaction.editReply('Parameter must be a number.');
+                if (isNaN(parseInt(value))) return interaction.reply('Parameter must be a number.');
                 db.server_settings.set(interaction.guild.id, parseInt(value), 'star_cutoff');
-                return interaction.editReply(`Successfully set the hall of fame star cutoff to \`${value}\`.`);
+                return interaction.reply(`Successfully set the hall of fame star cutoff to \`${value}\`.`);
 
             }
         }

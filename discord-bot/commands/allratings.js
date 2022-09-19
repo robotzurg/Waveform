@@ -15,6 +15,8 @@ module.exports = {
 
         try {
 
+        await interaction.reply('Loading rating list, this takes a moment so please be patient!');
+
         let taggedUser = interaction.options.getUser('user');
         let taggedMember;
 
@@ -80,7 +82,7 @@ module.exports = {
             }
         }
 
-        if (Object.keys(ratingList).length == 0) return interaction.editReply(`You have never rated a song before!`);
+        if (Object.keys(ratingList).length == 0) return interaction.reply(`You have never rated a song before!`);
         
         ratingList = Object.entries(ratingList).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]));
 
@@ -109,15 +111,15 @@ module.exports = {
 
         const ratingListEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
-            .setThumbnail(taggedUser.avatarURL({ format: "png" }))
-            .setAuthor({ name: `All ratings by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ format: "png" }) })
+            .setThumbnail(taggedUser.avatarURL({ extension: "png" }))
+            .setAuthor({ name: `All ratings by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png" }) })
             .setDescription(pagedRatingList[page_num]);
             if (pagedRatingList.length > 1) {
                 ratingListEmbed.setFooter({ text: `Page 1 / ${pagedRatingList.length} • ${ratingCount} ratings given` });
-                interaction.editReply({ embeds: [ratingListEmbed], components: [row] });
+                interaction.editReply({ content: null, embeds: [ratingListEmbed], components: [row] });
             } else {
                 ratingListEmbed.setFooter({ text: `${ratingCount} ratings given` });
-                interaction.editReply({ embeds: [ratingListEmbed], components: [] });
+                interaction.editReply({ content: null, embeds: [ratingListEmbed], components: [] });
             }
         
         if (pagedRatingList.length > 1) {
@@ -134,7 +136,7 @@ module.exports = {
             });
 
             collector.on('end', async () => {
-                interaction.editReply({ embeds: [ratingListEmbed], components: [] });
+                interaction.editReply({ content: null, embeds: [ratingListEmbed], components: [] });
             });
         }
 

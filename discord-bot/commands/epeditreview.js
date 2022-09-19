@@ -58,11 +58,11 @@ module.exports = {
             let old_ep_rating;
             let old_ep_review;
 
-            if (ep_rating == null && ep_review == null) return interaction.editReply('You must either edit the ep overall rating, or ep overall review with this command!');
+            if (ep_rating == null && ep_review == null) return interaction.reply('You must either edit the ep overall rating, or ep overall review with this command!');
 
             // Quick checks to see if we've got stuff in the database for this
             for (let i = 0; i < artistArray.length; i++) {
-                if (db.reviewDB.get(artistArray[i], `["${epName}"].["${interaction.user.id}"]`) == undefined) return interaction.editReply(`You don't have a review for ${epName} in the database.`);
+                if (db.reviewDB.get(artistArray[i], `["${epName}"].["${interaction.user.id}"]`) == undefined) return interaction.reply(`You don't have a review for ${epName} in the database.`);
             }
 
             let ep_msg_id = db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].msg_id`);
@@ -102,7 +102,7 @@ module.exports = {
                 }
             }
 
-            interaction.editReply(`Here's what was edited on your ${epType} review of **${artistArray.join(' & ')} - ${epName}**:` +
+            interaction.reply(`Here's what was edited on your ${epType} review of **${artistArray.join(' & ')} - ${epName}**:` +
             `\n${(old_ep_rating != undefined) ? `${epType} Rating: \`${old_ep_rating}\` changed to \`${ep_rating}/10\`` : ``}` +
             `\n${(old_ep_review != undefined) ? `${epType} Review was changed to \`${ep_review}\`` : ``}`);
 

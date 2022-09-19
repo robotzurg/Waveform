@@ -84,7 +84,7 @@ module.exports = {
 
             // Check if we are reviewing in the right chat, if not, boot out
             if (`<#${interaction.channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel') && !mailboxes.some(v => v.includes(interaction.channel.id))) {
-                return interaction.editReply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
+                return interaction.reply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
             }
 
             let artists = interaction.options.getString('artist');
@@ -106,7 +106,7 @@ module.exports = {
             } else {
                 if (overall_rating.includes('/10')) overall_rating = overall_rating.replace('/10', '');
                 overall_rating = parseFloat(overall_rating);
-                if (isNaN(overall_rating)) return interaction.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating!');
+                if (isNaN(overall_rating)) return interaction.reply('The rating you put in is not valid, please make sure you put in an integer or decimal rating!');
             }
 
             let overall_review = interaction.options.getString('overall_review');
@@ -128,7 +128,7 @@ module.exports = {
 
             // Check to make sure "EP" or "LP" is in the ep/lp name
             if (!epName.includes(' EP') && !epName.includes(' LP')) {
-                return interaction.editReply(`You did not add EP or LP (aka album) to the name of the thing you are reviewing, make sure to do that!\n` + 
+                return interaction.reply(`You did not add EP or LP (aka album) to the name of the thing you are reviewing, make sure to do that!\n` + 
                 `For example: \`${epName} EP\` or \`${epName} LP\``);
             }
 
@@ -148,7 +148,7 @@ module.exports = {
                     }
                 }
             } else {
-                if (!isValidURL(art)) return interaction.editReply(`This ${epType} art URL is invalid.`);
+                if (!isValidURL(art)) return interaction.reply(`This ${epType} art URL is invalid.`);
             }
 
             // Setup buttons
@@ -215,10 +215,10 @@ module.exports = {
             const epEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
             .setTitle(`${artistArray.join(' & ')} - ${epName}`)
-            .setAuthor({ name: `${interaction.member.displayName}'s ${epType} review`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` });
+            .setAuthor({ name: `${interaction.member.displayName}'s ${epType} review`, iconURL: `${interaction.user.avatarURL({ extension: "png", dynamic: false })}` });
 
             if (art == false) {
-                epEmbed.setThumbnail(interaction.user.avatarURL({ format: "png", dynamic: false }));
+                epEmbed.setThumbnail(interaction.user.avatarURL({ extension: "png", dynamic: false }));
             } else {
                 epEmbed.setThumbnail(art);
             }
@@ -233,10 +233,10 @@ module.exports = {
             }
 
             if (taggedUser.id != false) {
-                epEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ format: "png", dynamic: false })}` });
+                epEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
             }
 
-            interaction.editReply({ embeds: [epEmbed], components: [row, row2] });
+            interaction.reply({ embeds: [epEmbed], components: [row, row2] });
 
             // Grab message id to put in user_stats and the ep object
             const msg = await interaction.fetchReply();
@@ -276,10 +276,10 @@ module.exports = {
                             if (art == undefined || art == false) {
                                 // If we don't have art for the edited ep info, search it on the spotify API.
                                 art = await grab_spotify_art(artistArray, epName, interaction);
-                                if (art == false) art = interaction.user.avatarURL({ format: "png", dynamic: false });
+                                if (art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             } else {
                                 if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0], `["${epName}"].art`);
-                                if (art == undefined || art == false) art = interaction.user.avatarURL({ format: "png", dynamic: false });
+                                if (art == undefined || art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             }
                             epEmbed.setThumbnail(art);
 
@@ -289,7 +289,7 @@ module.exports = {
                         });
                         
                         a_collector.on('end', async () => {
-                            await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2] });
                         });
                     } break;
                     case 'ep': {
@@ -310,20 +310,20 @@ module.exports = {
                             if (art == undefined || art == false) {
                                 // If we don't have art for the edited ep info, search it on the spotify API.
                                 art = await grab_spotify_art(artistArray, epName, interaction);
-                                if (art == false) art = interaction.user.avatarURL({ format: "png", dynamic: false });
+                                if (art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             } else {
                                 if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0], `["${epName}"].art`);
-                                if (art == undefined || art == false) art = interaction.user.avatarURL({ format: "png", dynamic: false });
+                                if (art == undefined || art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             }
                             epEmbed.setThumbnail(art);
 
-                            await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2] });
                             db.user_stats.set(interaction.user.id, { msg_id: msg.id, artist_array: artistArray, ep_name: epName, review_type: 'A' }, 'current_ep_review');      
                             m.delete();
                         });
                         
                         name_collector.on('end', async () => {
-                            await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2] });
                         });
                     } break;
                     case 'rating': {
@@ -358,12 +358,12 @@ module.exports = {
                                     .setStyle(ButtonStyle.Danger),
                             );
                             
-                            await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2] });
                             m.delete();
                         });
                         
                         ra_collector.on('end', async () => {
-                            await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2] });
                         });
                     } break;
                     case 'review': {
@@ -405,14 +405,12 @@ module.exports = {
                         });
                         
                         re_collector.on('end', async () => {
-                            await i.editReply({ content: ' ', embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2] });
                         });
                     } break;
                     case 'star': {
-                        await i.deferUpdate();
-
                         // If we don't have a 10 rating, the button does nothing.
-                        if (overall_rating < 8) return await i.editReply({ embeds: [epEmbed], components: [row, row2] });
+                        if (overall_rating < 8) return await i.update({ embeds: [epEmbed], components: [row, row2] });
 
                         if (starred == false) {
                             if (overall_rating !== false) {
@@ -430,11 +428,9 @@ module.exports = {
                             starred = false;
                         }
 
-                        await i.editReply({ embeds: [epEmbed], components: [row, row2] });
+                        await i.update({ embeds: [epEmbed], components: [row, row2] });
                     } break;
                     case 'delete': {
-                        await i.deferUpdate();
-
                         try {
                             await interaction.deleteReply();
                         } catch (err) {
@@ -449,8 +445,6 @@ module.exports = {
                         db.user_stats.set(interaction.user.id, false, 'current_ep_review');
                     } break;
                     case 'done': {
-                        await i.deferUpdate(); 
-
                         if (ra_collector != undefined) ra_collector.stop();
                         if (re_collector != undefined) re_collector.stop();
                         if (a_collector != undefined) a_collector.stop();
@@ -477,11 +471,9 @@ module.exports = {
                             epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} 🌟`);
                         }
         
-                        i.editReply({ embeds: [epEmbed], components: [] });
+                        i.update({ embeds: [epEmbed], components: [] });
                     } break;
                     case 'begin': {
-                        await i.deferUpdate();
-
                         if (ra_collector != undefined) ra_collector.stop();
                         if (re_collector != undefined) re_collector.stop();
                         if (a_collector != undefined) a_collector.stop();
@@ -510,7 +502,7 @@ module.exports = {
                             db.reviewDB.set(artistArray[j], msg.url, `["${epName}"].["${interaction.user.id}"].url`);
                         }
 
-                        await i.editReply({ embeds: [epEmbed], components: [] });
+                        await i.update({ embeds: [epEmbed], components: [] });
                         if (epSongs.length != 0) {
                             await i.followUp({ content: `Here is the order in which you should review the songs on this ${epType}:\n\n**${epSongs.join('\n')}**`, ephemeral: true });
                         }

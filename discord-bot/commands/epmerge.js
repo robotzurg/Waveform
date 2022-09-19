@@ -69,7 +69,7 @@ module.exports = {
 
         // Place EP by default if EP or LP is not included in the title.
         if (!epName.includes(' EP') && !epName.includes(' LP')) epName = `${epName} EP`;
-        if (db.reviewDB.get(artistArray[0], `["${epName}"]`) != undefined) return interaction.editReply(`The ${epType} ${artistArray.join(' & ')} - ${epName} already exists in the database.`); 
+        if (db.reviewDB.get(artistArray[0], `["${epName}"]`) != undefined) return interaction.reply(`The ${epType} ${artistArray.join(' & ')} - ${epName} already exists in the database.`); 
         
         const row = new ActionRowBuilder()
         .addComponents(
@@ -91,7 +91,7 @@ module.exports = {
             epEmbed.setThumbnail(ep_art);
         }
 
-        interaction.editReply({ content: `Type in the songs in the ${epType} song list order, one by one.\n` +
+        interaction.reply({ content: `Type in the songs in the ${epType} song list order, one by one.\n` +
         'Make sure they are **JUST** the song name, no features that would be in the song name should be included here.\n' + 
         '(Remember that remixes are not currently supported.)\n' + 
         'When you are finished, click on the "Finish" button, or click the "Delete" button to revert everything you\'ve done.', embeds: [epEmbed], components: [row] });

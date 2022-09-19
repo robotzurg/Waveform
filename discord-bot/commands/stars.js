@@ -16,7 +16,7 @@ module.exports = {
 
         try {
         
-        await interaction.editReply('Loading star list, this takes a moment so please be patient!');
+        await interaction.reply('Loading star list, this takes a moment so please be patient!');
         let user = interaction.options.getUser('user');
 
         if (user == null) user = interaction.user;
@@ -112,7 +112,7 @@ module.exports = {
 
         const starCommandEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
-            .setThumbnail(user.avatarURL({ format: "png" }))
+            .setThumbnail(user.avatarURL({ extension: "png" }))
             .setTitle(`🌟 ${taggedMember.displayName}'s Stars 🌟`)
             .setDescription(paged_star_list[page_num]);
             if (paged_star_list.length > 1) {

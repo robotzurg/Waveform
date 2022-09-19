@@ -77,7 +77,7 @@ module.exports = {
             }
         }
 
-        interaction.editReply(`Added the tag \`${tag}\` to **${tagSongEntry}**`);
+        interaction.reply(`Added the tag \`${tag}\` to **${tagSongEntry}**`);
 
         } catch (err) {
             let error = err;

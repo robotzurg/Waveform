@@ -80,14 +80,14 @@ module.exports = {
             });
         }
 
-        if (songArt == false) return interaction.editReply('You aren\'t playing a spotify song, or your discord spotify status isn\'t working!\nThis also could appear if you attempted to search spotify for a song art, and nothing was found!');
+        if (songArt == false) return interaction.reply('You aren\'t playing a spotify song, or your discord spotify status isn\'t working!\nThis also could appear if you attempted to search spotify for a song art, and nothing was found!');
 
 		if (newSong == true) {
 			for (let i = 0; i < artistArray.length; i++) {
                 db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
 			}
 		} else {
-            return interaction.editReply('This song does not exist in the database, you can only use this command with songs that exist in the database!');
+            return interaction.reply('This song does not exist in the database, you can only use this command with songs that exist in the database!');
         }
 
         // Fix artwork on all reviews for this song
@@ -117,7 +117,7 @@ module.exports = {
                             channelsearch.messages.fetch(msgtoEdit).then(msg => {
                                 msgEmbed = msg.embeds[0];
                                 msgEmbed.setThumbnail(songArt);
-                                msg.edit({ content: ' ', embeds: [msgEmbed] });
+                                msg.edit({ content: null, embeds: [msgEmbed] });
                                 resolve();
                             });
                         });
@@ -158,7 +158,7 @@ module.exports = {
         .setDescription(`Art for **${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}** has been changed to the new art below.`)
         .setImage(songArt);
 
-		return interaction.editReply({ embeds: [displayEmbed] });
+		return interaction.reply({ embeds: [displayEmbed] });
 
         } catch (err) {
             let error = err;

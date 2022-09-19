@@ -9,9 +9,9 @@ module.exports = {
 	async execute(interaction) {
         let mail_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
         if (mail_list == undefined || mail_list == false) {
-            return interaction.editReply('You have nothing in your mailbox.');
+            return interaction.reply('You have nothing in your mailbox.');
         } else if (mail_list.length == 0) {
-            return interaction.editReply('You have nothing in your mailbox.');
+            return interaction.reply('You have nothing in your mailbox.');
         }
         mail_list = mail_list.map(v => `• ${v[0]} sent by <@${v[1]}>\n`);
 
@@ -31,14 +31,14 @@ module.exports = {
 
         const mailEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
-            .setThumbnail(interaction.user.avatarURL({ format: "png" }))
+            .setThumbnail(interaction.user.avatarURL({ extension: "png" }))
             .setTitle(`${interaction.member.displayName}'s Mailbox`)
             .setDescription(paged_mail_list[page_num].join(''));
             if (paged_mail_list.length > 1) {
                 mailEmbed.setFooter({ text: `Page 1 / ${paged_mail_list.length}` });
-                interaction.editReply({ embeds: [mailEmbed], components: [row] });
+                interaction.reply({ embeds: [mailEmbed], components: [row] });
             } else {
-                interaction.editReply({ embeds: [mailEmbed], components: [] });
+                interaction.reply({ embeds: [mailEmbed], components: [] });
             }
         
         if (paged_mail_list.length > 1) {
@@ -58,8 +58,6 @@ module.exports = {
                 interaction.editReply({ embeds: [mailEmbed], components: [] });
             });
         }
-        
-        interaction.editReply({ embeds: [mailEmbed] });
         
     },
 };

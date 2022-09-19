@@ -90,7 +90,7 @@ module.exports = {
         ratingList = ratingList.filter(v => !v.includes(' LP'));
         ratingList = [...new Set(ratingList)];
 
-        if (ratingList.length == 0) return interaction.editReply(`You have never rated a song ${ratingCheck}/10.`);
+        if (ratingList.length == 0) return interaction.reply(`You have never rated a song ${ratingCheck}/10.`);
         ratingList.sort();
 
         let pagedRatingList = _.chunk(ratingList, 10);
@@ -118,15 +118,15 @@ module.exports = {
 
         const ratingListEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
-            .setThumbnail(taggedUser.avatarURL({ format: "png" }))
-            .setAuthor({ name: `List of Songs Rated ${ratingCheck}/10 by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ format: "png" }) })
+            .setThumbnail(taggedUser.avatarURL({ extension: "png" }))
+            .setAuthor({ name: `List of Songs Rated ${ratingCheck}/10 by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png" }) })
             .setDescription(pagedRatingList[page_num]);
             if (pagedRatingList.length > 1) {
                 ratingListEmbed.setFooter({ text: `Page 1 / ${pagedRatingList.length} • ${ratingList.length} songs rated ${ratingCheck}/10` });
-                interaction.editReply({ embeds: [ratingListEmbed], components: [row] });
+                interaction.reply({ embeds: [ratingListEmbed], components: [row] });
             } else {
                 ratingListEmbed.setFooter({ text: `${ratingList.length} songs rated ${ratingCheck}/10` });
-                interaction.editReply({ embeds: [ratingListEmbed], components: [] });
+                interaction.reply({ embeds: [ratingListEmbed], components: [] });
             }
         
         if (pagedRatingList.length > 1) {

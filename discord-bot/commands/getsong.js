@@ -46,7 +46,7 @@ module.exports = {
         let starCount = 0;
 
         songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
-        if (songObj == undefined) { return interaction.editReply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
+        if (songObj == undefined) { return interaction.reply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
         `\nUse \`/getArtist\` to get a full list of this artist's songs.`); }
         songEP = songObj.ep;
         remixArray = songObj.remixers;
@@ -125,7 +125,7 @@ module.exports = {
         if (remixes.length != 0) songEmbed.addFields([{ name: 'Remixes:', value: remixes.join('\n') }]);
 
         if (songArt == false) {
-            songEmbed.setThumbnail(interaction.user.avatarURL({ format: "png" }));
+            songEmbed.setThumbnail(interaction.user.avatarURL({ extension: "png" }));
         } else {
             songEmbed.setThumbnail(songArt);
         }
@@ -173,7 +173,7 @@ module.exports = {
                     .addOptions(select_options),
             );
 
-        interaction.editReply({ embeds: [songEmbed], components: [row] });
+        interaction.reply({ embeds: [songEmbed], components: [row] });
 
         let message = await interaction.fetchReply();
 
@@ -215,15 +215,15 @@ module.exports = {
                     reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${displaySongName} :star2:`);
                 }
     
-                reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ format: "png" })}` });
+                reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ extension: "png" })}` });
     
                 if (rating !== false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rating}/10**`, inline: true }]);
                 if (review != false) reviewEmbed.setDescription(review);
     
-                reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ format: "png" }) : songArt);
+                reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ extension: "png" }) : songArt);
 
                 if (sentby != false) {
-                    reviewEmbed.setFooter({ text: `Sent by ${sentby.displayName}`, iconURL: `${sentby.user.avatarURL({ format: "png" })}` });
+                    reviewEmbed.setFooter({ text: `Sent by ${sentby.displayName}`, iconURL: `${sentby.user.avatarURL({ extension: "png" })}` });
                 } else if (songEP != undefined && songEP != false) {
                     reviewEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0], `["${songEP}"].art`) });
                 }
@@ -248,7 +248,7 @@ module.exports = {
         });
 
         collector.on('end', async () => {
-            interaction.editReply({ content: ` `, embeds: [songEmbed], components: [] });
+            interaction.reply({ content: ` `, embeds: [songEmbed], components: [] });
         });
 
         } catch (err) {

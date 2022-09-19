@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { parse_artist_song_data, handle_error, find_review_channel } = require("../func.js");
 
 module.exports = {
@@ -97,23 +97,23 @@ module.exports = {
         let old_user_who_sent;
         let user_sent_name;
 
-        if (rating == null && review == null && user_who_sent == null) return interaction.editReply('You must supply either a rating change, a review change, or a user_who_sent change.');
+        if (rating == null && review == null && user_who_sent == null) return interaction.reply('You must supply either a rating change, a review change, or a user_who_sent change.');
 
         if (user_who_sent != null && user_who_sent != undefined) {
             taggedMember = await interaction.guild.members.fetch(user_who_sent);
             taggedUser = taggedMember.user;
         }
 
-        if (!db.reviewDB.has(artistArray[0])) return interaction.editReply(`Artist ${artistArray[0]} not found!`);
+        if (!db.reviewDB.has(artistArray[0])) return interaction.reply(`Artist ${artistArray[0]} not found!`);
 
         for (let i = 0; i < artistArray.length; i++) {
-            if (!db.reviewDB.has(artistArray[i])) return interaction.editReply(`Artist ${artistArray[i]} not found!`);
-            if (!db.reviewDB.get(artistArray[i], songName) == undefined) return interaction.editReply(`Song ${songName} not found!`);
-            if (!db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) == undefined) return interaction.editReply(`Review not found!`);
+            if (!db.reviewDB.has(artistArray[i])) return interaction.reply(`Artist ${artistArray[i]} not found!`);
+            if (!db.reviewDB.get(artistArray[i], songName) == undefined) return interaction.reply(`Song ${songName} not found!`);
+            if (!db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) == undefined) return interaction.reply(`Review not found!`);
 
             if (rating != null && rating != undefined) {
                 if (rating < 8 && db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) == true) {
-                    return interaction.editReply(`This review has a star on it, so you cannot change the rating to anything under 8.\nRemove the star with \`/setstar\` if you'd like to lower the rating!`);
+                    return interaction.reply(`This review has a star on it, so you cannot change the rating to anything under 8.\nRemove the star with \`/setstar\` if you'd like to lower the rating!`);
                 }
                 
                 oldrating = db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`);
@@ -138,12 +138,11 @@ module.exports = {
             let channelsearch = await find_review_channel(interaction, interaction.user.id, reviewMsgID);
             if (channelsearch != undefined) {
                 channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
-                    let embed_data = msg.embeds;
-                    let msgEmbed = embed_data[0];
+                    let msgEmbed = EmbedBuilder.from(msg.embeds[0]);
 
-                    if (rating != null && rating != undefined) msgEmbed.fields[0].value = `**${rating}/10**`;
+                    if (rating != null && rating != undefined) msgEmbed.data.fields[0].value = `**${rating}/10**`;
                     if (review != null && review != undefined) msgEmbed.setDescription(review);
-                    if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ format: "png", dynamic: false })}` });
+                    if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
 
                     msg.edit({ embeds: [msgEmbed] });
                 });
@@ -193,7 +192,7 @@ module.exports = {
             } 
         }
 
-        interaction.editReply(`Here's what was edited on your review of **${origArtistArray.join(' & ')} - ${displaySongName}**:\n` +
+        interaction.reply(`Here's what was edited on your review of **${origArtistArray.join(' & ')} - ${displaySongName}**:\n` +
         `${(oldrating != undefined) ? `\`${oldrating}/10\` changed to \`${rating}/10\`\n` : ``}` +
         `${(oldreview != undefined) ? `Review was changed to \`${review}\`\n` : ``}` +
         `${(old_user_who_sent != undefined) ? `User Who Sent was changed to \`${user_sent_name.displayName}\`` : ``}`);
