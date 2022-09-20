@@ -1,6 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const Discord = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const { get_user_reviews, handle_error } = require("../func.js");
 const _ = require('lodash');
 
@@ -32,6 +31,7 @@ module.exports = {
             taggedUser = interaction.user;
         }
 
+        await interaction.reply('Loading rating list, this takes a moment so please be patient!');
         let artistCount = [];
         let songSkip = [];
         let ratingList = [];
@@ -96,15 +96,15 @@ module.exports = {
 
         let pagedRatingList = _.chunk(ratingList, 10);
         let page_num = 0;
-        const row = new Discord.MessageActionRow()
+        const row = new ActionRowBuilder()
         .addComponents(
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('left')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('⬅️'),
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('right')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('➡️'),
         );
 
@@ -117,34 +117,34 @@ module.exports = {
             pagedRatingList[i] = pagedRatingList[i].join('\n');
         }  
 
-        const ratingListEmbed = new Discord.MessageEmbed()
+        const ratingListEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
-            .setThumbnail(taggedUser.avatarURL({ format: "png" }))
-            .setAuthor({ name: `List of Songs Rated ${ratingCheck}/10 by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ format: "png" }) })
+            .setThumbnail(taggedUser.avatarURL({ extension: "png" }))
+            .setAuthor({ name: `List of Songs Rated ${ratingCheck}/10 by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png" }) })
             .setDescription(pagedRatingList[page_num]);
             if (pagedRatingList.length > 1) {
                 ratingListEmbed.setFooter({ text: `Page 1 / ${pagedRatingList.length} • ${ratingList.length} songs rated ${ratingCheck}/10` });
-                interaction.editReply({ embeds: [ratingListEmbed], components: [row] });
+                interaction.editReply({ content: null, embeds: [ratingListEmbed], components: [row] });
             } else {
                 ratingListEmbed.setFooter({ text: `${ratingList.length} songs rated ${ratingCheck}/10` });
-                interaction.editReply({ embeds: [ratingListEmbed], components: [] });
+                interaction.editReply({ content: null, embeds: [ratingListEmbed], components: [] });
             }
         
         if (pagedRatingList.length > 1) {
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ time: 120000 });
+            const collector = message.createMessageComponentCollector({ time: 360000 });
 
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;
                 page_num = _.clamp(page_num, 0, pagedRatingList.length - 1);
                 ratingListEmbed.setDescription(pagedRatingList[page_num]);
                 ratingListEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedRatingList.length} • ${ratingList.length} songs rated ${ratingCheck}/10` });
-                i.update({ embeds: [ratingListEmbed] });
+                i.update({ content: null, embeds: [ratingListEmbed] });
             });
 
             collector.on('end', async () => {
-                interaction.editReply({ embeds: [ratingListEmbed], components: [] });
+                interaction.editReply({ content: null, embeds: [ratingListEmbed], components: [] });
             });
         }
 

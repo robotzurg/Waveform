@@ -1,8 +1,7 @@
-const Discord = require('discord.js');
 const db = require("../db.js");
 const { average, get_user_reviews, parse_artist_song_data, sort, handle_error, find_review_channel } = require('../func.js');
 const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '**11**', '**12**', '**13**', '**14**', '**15**', '**16**', '**17**', '**18**', '**19**', '**20**'];
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { EmbedBuilder, ActionRowBuilder, SelectMenuBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -47,7 +46,7 @@ module.exports = {
         let starCount = 0;
 
         songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
-        if (songObj == undefined) { return interaction.editReply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
+        if (songObj == undefined) { return interaction.reply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
         `\nUse \`/getArtist\` to get a full list of this artist's songs.`); }
         songEP = songObj.ep;
         remixArray = songObj.remixers;
@@ -55,7 +54,7 @@ module.exports = {
             remixArray = [];
         }
         let tags = songObj.tags;
-        if (tags == undefined) tags = [];
+        if (tags == undefined || tags.includes(null)) tags = [];
         tags = [tags].flat(1);
 
         if (remixArray.length != 0) {
@@ -70,7 +69,7 @@ module.exports = {
         const songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
 
         const rankNumArray = [];
-        const songEmbed = new Discord.MessageEmbed()
+        const songEmbed = new EmbedBuilder()
         .setColor(`${interaction.member.displayHexColor}`)
         .setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
 
@@ -118,22 +117,22 @@ module.exports = {
                 userArray[i] = `${numReacts[i + 1]} `.concat(userArray[i]);
             }
             
-            songEmbed.addField('Reviews:', userArray.join('\n'));
+            songEmbed.addFields([{ name: 'Reviews:', value: userArray.join('\n') }]);
         } else {
-            songEmbed.addField('Reviews:', 'No reviews :(');
+            songEmbed.addFields([{ name: 'Reviews:', value: 'No reviews :(' }]);
         }
 
-        if (remixes.length != 0) songEmbed.addField('Remixes:', remixes.join('\n'));
+        if (remixes.length != 0) songEmbed.addFields([{ name: 'Remixes:', value: remixes.join('\n') }]);
 
         if (songArt == false) {
-            songEmbed.setThumbnail(interaction.user.avatarURL({ format: "png" }));
+            songEmbed.setThumbnail(interaction.user.avatarURL({ extension: "png" }));
         } else {
             songEmbed.setThumbnail(songArt);
         }
 
         if (songEP != false) {
             songEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0], `["${songEP}"].art`) });
-            if (tags.length != 0) songEmbed.addField('Tags:', `\`${tags.join(', ')}\``);
+            if (tags.length != 0) songEmbed.addFields([{ name: 'Tags:', value: `\`${tags.join(', ')}\`` }]);
         } else if (tags.length != 0) {
             songEmbed.setFooter({ text: `Tags: ${tags.join(', ')}` });
         }
@@ -166,20 +165,19 @@ module.exports = {
             value: `back`,
         });
 
-        const row = new Discord.MessageActionRow()
+        const row = new ActionRowBuilder()
             .addComponents(
-                new Discord.MessageSelectMenu()
+                new SelectMenuBuilder()
                     .setCustomId('select')
                     .setPlaceholder('See other reviews by clicking on me!')
                     .addOptions(select_options),
             );
 
-        interaction.editReply({ embeds: [songEmbed], components: [row] });
+        interaction.reply({ embeds: [songEmbed], components: [row] });
 
         let message = await interaction.fetchReply();
 
-        const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 120000 });
-
+        const collector = message.createMessageComponentCollector({ time: 360000 });
         collector.on('collect', async i => {
             if (i.customId == 'select') { // Select Menu
 
@@ -207,7 +205,7 @@ module.exports = {
                     sentby = await interaction.guild.members.cache.get(sentby);              
                 }
 
-                const reviewEmbed = new Discord.MessageEmbed()
+                const reviewEmbed = new EmbedBuilder()
                 .setColor(`${taggedMember.displayHexColor}`);
     
                 if (starred == false) {
@@ -216,17 +214,17 @@ module.exports = {
                     reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${displaySongName} :star2:`);
                 }
     
-                reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ format: "png" })}` });
+                reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ extension: "png" })}` });
     
-                if (rating !== false) reviewEmbed.addField('Rating: ', `**${rating}/10**`, true);
+                if (rating !== false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rating}/10**`, inline: true }]);
                 if (review != false) reviewEmbed.setDescription(review);
     
-                reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ format: "png" }) : songArt);
+                reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ extension: "png" }) : songArt);
 
                 if (sentby != false) {
-                    reviewEmbed.setFooter(`Sent by ${sentby.displayName}`, `${sentby.user.avatarURL({ format: "png" })}`);
+                    reviewEmbed.setFooter({ text: `Sent by ${sentby.displayName}`, iconURL: `${sentby.user.avatarURL({ extension: "png" })}` });
                 } else if (songEP != undefined && songEP != false) {
-                    reviewEmbed.setFooter(`from ${songEP}`, db.reviewDB.get(artistArray[0], `["${songEP}"].art`));
+                    reviewEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0], `["${songEP}"].art`) });
                 }
 
                 let reviewMsgID = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].msg_id`);
@@ -249,7 +247,7 @@ module.exports = {
         });
 
         collector.on('end', async () => {
-            interaction.editReply({ content: ` `, embeds: [songEmbed], components: [] });
+            interaction.reply({ content: ` `, embeds: [songEmbed], components: [] });
         });
 
         } catch (err) {

@@ -1,7 +1,6 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const { handle_error, get_user_reviews, find_most_duplicate } = require('../func');
 const db = require('../db.js');
-const Discord = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -10,7 +9,7 @@ module.exports = {
         .setDescription('View general stats about the server\'s bot usage!'),
 	async execute(interaction, client) {
         try {
-            await interaction.editReply('Loading server stats, this may take a bit of time so please be patient!');
+            await interaction.reply('Loading server stats, this may take a bit of time so please be patient!');
             let artistCount = 0;
             let songCount = 0;
             let epCount = 0;
@@ -92,9 +91,9 @@ module.exports = {
 
             const guild = await client.guilds.fetch(interaction.guild.id);
 
-            const statsEmbed = new Discord.MessageEmbed()
+            const statsEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
-            .setThumbnail(guild.iconURL({ format: 'png' }))
+            .setThumbnail(guild.iconURL({ extension: 'png' }))
             .setTitle('General Waveform Stats for this server')
             .addFields(
                 { name: 'Number of Artists', value: `${artistCount}`, inline: true },
@@ -110,7 +109,7 @@ module.exports = {
                 { name: 'Most Given Rating', value: `${mostGivenRating[0][0]} \`(${mostGivenRating[0][1]} times)\`` },
             );
 
-            interaction.editReply({ content: ' ', embeds: [statsEmbed] });
+            interaction.editReply({ content: null, embeds: [statsEmbed] });
 
         } catch (err) {
             let error = err;

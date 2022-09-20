@@ -1,7 +1,6 @@
-const Discord = require('discord.js');
 const db = require("../db.js");
 const { average, get_user_reviews, handle_error, create_ep_review, find_review_channel, parse_artist_song_data } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { EmbedBuilder, ActionRowBuilder, SelectMenuBuilder, SlashCommandBuilder, Embed } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -34,12 +33,12 @@ module.exports = {
 
             let epObj = db.reviewDB.get(artistArray[0], `["${epName}"]`);
             if (epObj == undefined) {
-                return interaction.editReply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
+                return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
             }
 
             let ep_art = db.reviewDB.get(artistArray[0], `["${epName}"].art`);
             if (ep_art == undefined || ep_art == false) {
-                ep_art = interaction.user.avatarURL({ format: "png", dynamic: false });
+                ep_art = interaction.user.avatarURL({ extension: "png", dynamic: false });
             }
 
             let tags = db.reviewDB.get(artistArray[0], `["${epName}"].tags`);
@@ -53,7 +52,7 @@ module.exports = {
 
             await create_ep_review(interaction, client, origArtistArray, epSongArray, epName, ep_art);
 
-            const epEmbed = new Discord.MessageEmbed()
+            const epEmbed = new EmbedBuilder()
                 .setColor(`${interaction.member.displayHexColor}`)
                 .setTitle(`${origArtistArray} - ${epName} tracks`)
                 .setThumbnail(ep_art);
@@ -97,9 +96,8 @@ module.exports = {
                     }
 
                     reviewNum = reviewNum.length;
-
-                    epEmbed.addField(`${epnum}. ${epSongArray[i]} (Avg: ${(rankNumArray.length != 0) ? `${Math.round(average(rankNumArray) * 10) / 10}` : `N/A`})`, 
-                    `\`${reviewNum} review${reviewNum > 1 ? 's' : ''}\` ${star_num > 0 ? `\`${star_num} 🌟\`` : ''}`);
+                    epEmbed.addFields([{ name: `${epnum}. ${epSongArray[i]} (Avg: ${(rankNumArray.length != 0) ? `${Math.round(average(rankNumArray) * 10) / 10}` : `N/A`})`,
+                     value: `\`${reviewNum} review${reviewNum > 1 ? 's' : ''}\` ${star_num > 0 ? `\`${star_num} 🌟\`` : ''}` }]);
 
                     if (rankNumArray.length != 0) songRankArray.push(Math.round(average(rankNumArray) * 10) / 10);
                 }
@@ -150,23 +148,22 @@ module.exports = {
                 value: `back`,
             });
 
-            const row = new Discord.MessageActionRow()
+            const row = new ActionRowBuilder()
                 .addComponents(
-                    new Discord.MessageSelectMenu()
+                    new SelectMenuBuilder()
                         .setCustomId('select')
                         .setPlaceholder('See other reviews by clicking on me!')
                         .addOptions(select_options),
                 );
 
-            interaction.editReply({ embeds: [epEmbed], components: [row] });
+            interaction.reply({ embeds: [epEmbed], components: [row] });
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 120000 });
-
+            const collector = message.createMessageComponentCollector({ time: 360000 });
             collector.on('collect', async select => {
 
                 if (select.values[0] == 'back') { // Back Selection
-                    return await select.update({ content: ' ', embeds: [epEmbed], components: [row] });
+                    return await select.update({ content: null, embeds: [epEmbed], components: [row] });
                 }
 
                 const taggedMember = await interaction.guild.members.fetch(select.values[0]);
@@ -188,7 +185,7 @@ module.exports = {
                     ep_sent_by = await interaction.guild.members.fetch(ep_sent_by);
                 }
 
-                const epReviewEmbed = new Discord.MessageEmbed();
+                const epReviewEmbed = new EmbedBuilder();
                 if (epSongArray.length != 0) {
                     for (let i = 0; i < epSongArray.length; i++) {
                         let songName = epSongArray[i];
@@ -221,18 +218,18 @@ module.exports = {
                         }
 
                         if (no_songs_review == false) {
-                            if (epReviewEmbed.length < 3250) {
-                                epReviewEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
+                            if (new Embed(epReviewEmbed.toJSON()).length < 5250) {
+                                epReviewEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                                 `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
                                 `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
                                 `${rscore != false ? `(${rscore}/10)` : ``}`, 
-                                `${rreview == false ? `*No review written*` : `${rreview}`}`);
+                                value: `${rreview == false ? `*No review written*` : `${rreview}`}` }]);
                             } else {
-                                epReviewEmbed.addField(`${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
+                                epReviewEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                                 `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
                                 `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
                                 `${rscore != false ? `(${rscore}/10)` : ``}`, 
-                                `${rreview == false ? `*No review written*` : `*Review hidden to save space*`}`);
+                                value: `${rreview == false ? `*No review written*` : `*Review hidden to save space*`}` }]);
                             }
                         }
                          
@@ -246,24 +243,24 @@ module.exports = {
                     if (no_songs_review == false) {
                         epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                     } else {
-                        epReviewEmbed.addField(`Rating`, `**${ep_overall_rating}/10**`);
+                        epReviewEmbed.addFields([{ name: `Rating`, value: `**${ep_overall_rating}/10**` }]);
                     }
                     epReviewEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
                 } else if (ep_overall_rating !== false) {
                     if (no_songs_review == false) {
                         epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                     } else {
-                        epEmbed.addField(`Rating`, `**${ep_overall_rating}/10**`);
+                        epEmbed.addFields([{ name: `Rating`, value: `**${ep_overall_rating}/10**` }]);
                     }
                 } else if (ep_overall_review != false) {
                     epReviewEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
                 }
 
-                epReviewEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && epSongArray.length != 0 ? `${taggedMember.displayName}'s mailbox ${epType} review` : `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ format: "png", dynamic: false })}` });
+                epReviewEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && epSongArray.length != 0 ? `${taggedMember.displayName}'s mailbox ${epType} review` : `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
 
                 epReviewEmbed.setThumbnail(ep_art);
                 if (ep_sent_by != false && ep_sent_by != undefined) {
-                    epReviewEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}`, iconURL: `${ep_sent_by.user.avatarURL({ format: "png" })}` });
+                    epReviewEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}`, iconURL: `${ep_sent_by.user.avatarURL({ extension: "png" })}` });
                 }
 
                 let reviewMsgID = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].msg_id`);
@@ -276,9 +273,11 @@ module.exports = {
                     }
                 }
 
-                if (epReviewEmbed.length > 3250) {
-                    for (let i = 0; i < epReviewEmbed.fields.length; i++) {
-                        epReviewEmbed.fields[i].value = `*Review hidden to save space*`;
+                console.log();
+
+                if (new Embed(epReviewEmbed.toJSON()).length > 5250) {
+                    for (let i = 0; i < epReviewEmbed.data.fields.length; i++) {
+                        epReviewEmbed.data.fields[i].value = `*Review hidden to save space*`;
                     }
                 }
 

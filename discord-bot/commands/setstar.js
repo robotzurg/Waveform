@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 const { parse_artist_song_data, hall_of_fame_check, handle_error, find_review_channel } = require('../func.js');
 
 module.exports = {
@@ -48,14 +48,14 @@ module.exports = {
         if (db.reviewDB.get(artistArray[0], `["${songName}"].art`) != false) {
             songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
         } else {
-            songArt = interaction.user.avatarURL({ format: "png" });
+            songArt = interaction.user.avatarURL({ extension: "png" });
         }
 
-        if (!db.reviewDB.has(artistArray[0])) return interaction.editReply(`${artistArray[0]} not found in database.`);
-        if (db.reviewDB.get(artistArray[0], `["${songName}"]`) == undefined) return interaction.editReply(`${origArtistArray.join(' & ')} - ${songName} not found in database.`);
-        if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"]`) == undefined) return interaction.editReply(`You haven't reviewed ${origArtistArray.join(' & ')} - ${songName}.`);
+        if (!db.reviewDB.has(artistArray[0])) return interaction.reply(`${artistArray[0]} not found in database.`);
+        if (db.reviewDB.get(artistArray[0], `["${songName}"]`) == undefined) return interaction.reply(`${origArtistArray.join(' & ')} - ${songName} not found in database.`);
+        if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"]`) == undefined) return interaction.reply(`You haven't reviewed ${origArtistArray.join(' & ')} - ${songName}.`);
         if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].rating`) != false) {
-            if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].rating`) < 8) return interaction.editReply(`You haven't rated ${origArtistArray.join(' & ')} - ${songName} an 8/10 or higher!`);
+            if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].rating`) < 8) return interaction.reply(`You haven't rated ${origArtistArray.join(' & ')} - ${songName} an 8/10 or higher!`);
         }
 
         for (let i = 0; i < artistArray.length; i++) {
@@ -70,10 +70,10 @@ module.exports = {
 
         if (star_check == false) {
             db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
-            interaction.editReply(`Star added to **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }**!`);
+            interaction.reply(`Star added to **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }**!`);
         } else {
             db.user_stats.remove(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
-            interaction.editReply(`Unstarred **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }**.`);
+            interaction.reply(`Unstarred **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }**.`);
         }
         
         // Hall of Fame stuff

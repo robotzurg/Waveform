@@ -4,17 +4,15 @@ const Discord = require('discord.js');
 const { token } = require('./config.json');
 const db = require('./db');
 const { REST } = require('@discordjs/rest');
-const { Routes } = require('discord-api-types/v9');
+const { Routes, InteractionType } = require('discord-api-types/v9');
 const express = require('express');
 const app = express();
 
 // create a new Discord client and give it some variables
-const { Client, Intents } = require('discord.js');
-const myIntents = new Intents();
-myIntents.add('GUILD_PRESENCES', 'GUILD_MEMBERS', 'GUILD_PRESENCES');
+const { Client, GatewayIntentBits, Partials } = require('discord.js');
 
-const client = new Client({ intents: [Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS, 
-                            Intents.FLAGS.GUILD_MEMBERS, Intents.FLAGS.GUILD_PRESENCES], partials: ['MESSAGE', 'CHANNEL', 'REACTION'] });
+const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions, 
+    GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildPresences, GatewayIntentBits.MessageContent], partials: [Partials.Channel, Partials.Message, Partials.Reaction] });
 client.commands = new Discord.Collection();
 client.cooldowns = new Discord.Collection();
 const registerCommands = [];
@@ -90,9 +88,6 @@ client.on('interactionCreate', async interaction => {
             if (focused[0].name == 'artist' || focused[0].name == 'vocalist') {
                 let artist_names = db.reviewDB.keyArray();
 
-                // TODO: Get "og" swapped to the artist names involved on the EP/LP review, for auto-complete to work better!
-                // if (focused[0].value.toLowerCase() == 'og') focused[0].value.replace('og', db.user_stats.get(`${interaction.user.id}.`)); 
-
                 // Search filters
                 artist_names = artist_names.filter(letter_filter);
                 if (artist_names.length > 25) artist_names = artist_names.slice(artist_names.length - 25, artist_names.length).reverse();
@@ -126,7 +121,6 @@ client.on('interactionCreate', async interaction => {
                         artist_names = artist_names.flat(1);
                     }
                 }
-
                 interaction.respond(artist_names);
             } else if (focused[0].name == 'name' || focused[0].name == 'song_name' || focused[0].name == 'ep_name') {
                 let artist_songs = db.reviewDB.get(val_artist.split(' & ')[0]);
@@ -201,12 +195,9 @@ client.on('interactionCreate', async interaction => {
         }
     }
 
-	if (!interaction.isCommand() && !interaction.isContextMenu()) return;
-
-    await interaction.deferReply();
+	if (interaction.type !== InteractionType.ApplicationCommand) return;
 
     const command = client.commands.get(interaction.commandName);
-
     if (!command) return;
 
     if (!client.cooldowns.has(interaction.commandName)) {
@@ -222,7 +213,7 @@ client.on('interactionCreate', async interaction => {
 
         if (now < expirationTime) {
             const timeLeft = (expirationTime - now) / 1000;
-            return interaction.editReply(`Due to system limitations, you must wait ${timeLeft.toFixed(0)} more second(s) before the next use of \`/${interaction.commandName}\`.`);
+            return interaction.reply(`Due to system limitations, you must wait ${timeLeft.toFixed(0)} more second(s) before the next use of \`/${interaction.commandName}\`.`);
         }
 
     }

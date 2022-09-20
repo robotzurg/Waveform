@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { handle_error } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -44,17 +44,17 @@ module.exports = {
         switch (interaction.options.getSubcommand()) {
             case 'fav_song': 
                 db.user_stats.set(interaction.user.id, interaction.options.getString('song_name'), 'fav_song');
-                interaction.editReply(`Set favorite song to ${interaction.options.getString('song_name')}!`);
+                interaction.reply(`Set favorite song to ${interaction.options.getString('song_name')}!`);
             break;
             case 'least_fav_song': 
                 db.user_stats.set(interaction.user.id, interaction.options.getString('song_name'), 'least_fav_song');
-                interaction.editReply(`Set least favorite song to ${interaction.options.getString('song_name')}!`);
+                interaction.reply(`Set least favorite song to ${interaction.options.getString('song_name')}!`);
             break;
             case 'fav_genres':
                 split_genres = interaction.options.getString('genres').split(' & ');
-                if (split_genres.length > 3) return interaction.editReply('Favorite genres are limited to a max of 3 entries. Do not put more then this.');
+                if (split_genres.length > 3) return interaction.reply('Favorite genres are limited to a max of 3 entries. Do not put more then this.');
                 db.user_stats.set(interaction.user.id, split_genres, 'fav_genres');
-                interaction.editReply(`Set favorite genres to ${split_genres.join(' & ')}!`);
+                interaction.reply(`Set favorite genres to ${split_genres.join(' & ')}!`);
             break;
         }
 

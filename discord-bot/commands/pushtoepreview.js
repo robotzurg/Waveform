@@ -1,7 +1,6 @@
 const db = require("../db.js");
 const { parse_artist_song_data, handle_error, hall_of_fame_check, find_review_channel } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const Discord = require('discord.js');
+const { ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle, Embed, EmbedBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -40,7 +39,7 @@ module.exports = {
             let displaySongName = song_info.display_song_name;
 
             if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"]`) == undefined) {
-                return interaction.editReply(`No review found for \`${origArtistArray.join(' & ')} - ${displaySongName}\`.`);
+                return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${displaySongName}\`.`);
             } 
 
             let review = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].review`);
@@ -58,22 +57,22 @@ module.exports = {
             let collab;
             let field_name;
             let type = db.user_stats.get(interaction.user.id, 'current_ep_review.review_type'); // Type A is when embed length is under 2000 characters, type B is when its over 2000
-            let ep_last_song_button = new Discord.MessageActionRow()
+            let ep_last_song_button = new ActionRowBuilder()
             .addComponents( 
-                new Discord.MessageButton()
+                new ButtonBuilder()
                 .setCustomId('finish_ep_review')
                 .setLabel('Finalize the EP/LP Review')
-                .setStyle('SUCCESS'),
+                .setStyle(ButtonStyle.Success),
             );
 
             if (type == false || type == undefined || type == null) { // If there's not an active EP/LP review
-                return interaction.editReply('You don\'t currently have an active EP/LP review, this command is supposed to be used with an EP/LP review started with `/epreview`!');
+                return interaction.reply('You don\'t currently have an active EP/LP review, this command is supposed to be used with an EP/LP review started with `/epreview`!');
             }
 
             // Edit the EP embed
             await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                msgEmbed = msg.embeds[0];
-                mainArtists = [msgEmbed.title.replace('🌟 ', '').trim().split(' - ')[0].split(' & ')];
+                msgEmbed = EmbedBuilder.from(msg.embeds[0]);
+                mainArtists = [msgEmbed.data.title.replace('🌟 ', '').trim().split(' - ')[0].split(' & ')];
                 mainArtists = mainArtists.flat(1);
                 ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name');
                 ep_songs = db.user_stats.get(interaction.user.id, 'current_ep_review.track_list');
@@ -83,8 +82,8 @@ module.exports = {
                     db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
                 }
 
-                if (msgEmbed.thumbnail != undefined && msgEmbed.thumbnail != null && msgEmbed.thumbnail != false && songArt == false) {
-                    songArt = msgEmbed.thumbnail.url;
+                if (msgEmbed.data.thumbnail != undefined && msgEmbed.data.thumbnail != null && msgEmbed.data.thumbnail != false && songArt == false) {
+                    songArt = msgEmbed.data.thumbnail.url;
                 }
 
                 collab = origArtistArray.filter(x => !mainArtists.includes(x)); // Filter out the specific artist in question
@@ -94,8 +93,8 @@ module.exports = {
                     field_name = `${displaySongName}${collab.length != 0 ? ` (with ${collab.join(' & ')})` : ''}${rating !== false ? ` (${rating}/10)` : ``}`;
                 }
 
-                // If the entire EP/LP review is over 3250 characters, set EP/LP review type to "B" (aka hide any more reviews from that point)
-                if (msgEmbed.length > 3250 && type == 'A') {
+                // If the entire EP/LP review is over 5250 characters, set EP/LP review type to "B" (aka hide any more reviews from that point)
+                if (new Embed(msgEmbed.toJSON()).length > 5250 && type == 'A') {
                     db.user_stats.set(interaction.user.id, 'B', 'current_ep_review.review_type');
                     type = 'B';
                 }
@@ -103,20 +102,20 @@ module.exports = {
                 // Check what review type we are and add in reviews to the EP/LP review message accordingly
                 if (type == 'A') {
                     if (review.length <= 1000) {
-                        msgEmbed.fields.push({
+                        msgEmbed.addFields({
                             name: field_name,
                             value: `${review}`,
                             inline: false,
                         });
                     } else {
-                        msgEmbed.fields.push({
+                        msgEmbed.addFields({
                             name: field_name,
                             value: (review != false) ? `*Review hidden to save space*` : `*No review written*`,
                             inline: false,
                         });
                     }
                 } else {
-                    msgEmbed.fields.push({
+                    msgEmbed.addFields({
                         name: field_name,
                         value: (review != false) ? `*Review hidden to save space*` : `*No review written*`,
                         inline: false,
@@ -166,7 +165,7 @@ module.exports = {
                 db.reviewDB.set(artistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`);
             }
 
-            interaction.deleteReply();
+            interaction.reply({ content: 'Pushed to the EP/LP review successfully.', ephemeral: true });
 
         } catch (err) {
             console.log(err);

@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { parse_artist_song_data, hall_of_fame_check, handle_error, find_review_channel } = require("../func.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -89,7 +89,7 @@ module.exports = {
             db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
         }
 
-        await interaction.editReply(`Deleted <@${userToDelete.id}>'s review of ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}.`);
+        await interaction.reply(`Deleted ${interaction.member.displayName}'s review of ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}.`);
 
         } catch (err) {
             let error = err;

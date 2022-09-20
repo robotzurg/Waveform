@@ -1,7 +1,6 @@
-const Discord = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
 const { get_user_reviews, handle_error, spotify_api_setup } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const _ = require('lodash');
 
 module.exports = {
@@ -40,7 +39,7 @@ module.exports = {
         // Spotify Check
         if (artist == null) {
             const spotifyApi = await spotify_api_setup(interaction.user.id);
-            if (spotifyApi == false) return interaction.editReply(`This subcommand requires you to use \`/login\` `);
+            if (spotifyApi == false) return interaction.reply(`This subcommand requires you to use \`/login\` `);
 
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
                 if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
@@ -50,16 +49,16 @@ module.exports = {
 
             // Check if a podcast is being played, as we don't support that.
             if (isPodcast == true) {
-                return interaction.editReply('Podcasts are not supported with `/np`.');
+                return interaction.reply('Podcasts are not supported with `/np`.');
             }
         }
 
         if (spotifyCheck == false) {
-            return interaction.editReply('Spotify playback not detected, please type in the artist name manually or play a song!');
+            return interaction.reply('Spotify playback not detected, please type in the artist name manually or play a song!');
         }
 
         const artistObj = db.reviewDB.get(artist);
-        if (artistObj == undefined) return interaction.editReply('Artist not found in the database.');
+        if (artistObj == undefined) return interaction.reply('Artist not found in the database.');
         let songArray = Object.keys(artistObj);
         let songObj;
         let reviewObj = {};
@@ -109,15 +108,15 @@ module.exports = {
 
         let pagedReviewList = _.chunk(reviewedArray, 10);
         let page_num = 0;
-        const row = new Discord.MessageActionRow()
+        const row = new ActionRowBuilder()
         .addComponents(
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('left')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('⬅️'),
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('right')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('➡️'),
         );
 
@@ -130,28 +129,30 @@ module.exports = {
             pagedReviewList[i] = pagedReviewList[i].join('\n');
         }  
 
-        const ratingListEmbed = new Discord.MessageEmbed()
+        const ratingListEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
-            .setThumbnail(taggedUser.avatarURL({ format: "png" }))
-            .setAuthor({ name: `All ratings for ${artist} by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ format: "png" }) })
-            .addField(`Average Rating`, `${avg}`, true)
-            .addField(`Songs`, `${pagedReviewList[page_num]}`, false);
+            .setThumbnail(taggedUser.avatarURL({ extension: "png" }))
+            .setAuthor({ name: `All ratings for ${artist} by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png" }) })
+            .addFields([
+                { name: `Average Rating`, value: avg, inline: true },
+                { name: `Songs`, value: pagedReviewList[page_num], inline: false },
+            ]);
             if (pagedReviewList.length > 1) {
                 ratingListEmbed.setFooter({ text: `Page 1 / ${pagedReviewList.length}` });
-                interaction.editReply({ embeds: [ratingListEmbed], components: [row] });
+                interaction.reply({ embeds: [ratingListEmbed], components: [row] });
             } else {
-                interaction.editReply({ embeds: [ratingListEmbed], components: [] });
+                interaction.reply({ embeds: [ratingListEmbed], components: [] });
             }
         
         if (pagedReviewList.length > 1) {
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ time: 120000 });
+            const collector = message.createMessageComponentCollector({ time: 360000 });
 
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;
                 page_num = _.clamp(page_num, 0, pagedReviewList.length - 1);
-                ratingListEmbed.fields[1] = { name: `Songs`, value: pagedReviewList[page_num] };
+                ratingListEmbed.data.fields[1] = { name: `Songs`, value: pagedReviewList[page_num] };
                 ratingListEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedReviewList.length}` });
                 i.update({ embeds: [ratingListEmbed] });
             });

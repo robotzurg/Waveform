@@ -1,7 +1,6 @@
-const Discord = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const db = require('../db.js');
 const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const ms_format = require('format-duration');
 const progressbar = require('string-progressbar');
 
@@ -17,7 +16,7 @@ module.exports = {
         let songLength, songCurMs, musicProgressBar = false; // Spotify API specific variables 
         const spotifyApi = await spotify_api_setup(interaction.user.id);
         
-        if (spotifyApi == false) return interaction.editReply(`This command requires you to use \`/login\` `);
+        if (spotifyApi == false) return interaction.reply(`This command requires you to use \`/login\` `);
 
         await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
             if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
@@ -38,13 +37,13 @@ module.exports = {
 
         // Check if a podcast is being played, as we don't support that.
         if (isPodcast == true) {
-            return interaction.editReply('Podcasts are not supported with `/np`.');
+            return interaction.reply('Podcasts are not supported with `/np`.');
         }
 
-        const npEmbed = new Discord.MessageEmbed()
+        const npEmbed = new EmbedBuilder()
         .setColor(`${interaction.member.displayHexColor}`)
         .setTitle(`${origArtistArray.join(' & ')} - ${songDisplayName}`)
-        .setAuthor({ name: `${interaction.member.displayName}'s ${isPlaying ? `current song` : `last song played`}`, iconURL: `${interaction.user.avatarURL({ format: "png", dynamic: false })}` })
+        .setAuthor({ name: `${interaction.member.displayName}'s ${isPlaying ? `current song` : `last song played`}`, iconURL: `${interaction.user.avatarURL({ extension: "png", dynamic: false })}` })
         .setThumbnail(songArt);
 
         if (db.reviewDB.has(artistArray[0])) {
@@ -102,7 +101,7 @@ module.exports = {
             `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
         }
         
-        interaction.editReply({ embeds: [npEmbed] });
+        interaction.reply({ embeds: [npEmbed] });
 
         } catch (err) {
             let error = err;

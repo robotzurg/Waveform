@@ -1,6 +1,5 @@
-const Discord = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const db = require('../db.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const { handle_error, get_user_reviews } = require('../func.js');
 
 module.exports = {
@@ -11,7 +10,7 @@ module.exports = {
 	async execute(interaction, client) {
         try {
 
-        await interaction.editReply('Loading top star list, this takes a moment so please be patient!');
+        await interaction.reply('Loading top star list, this takes a moment so please be patient!');
         let starList = [];
 
         let artistArray = db.reviewDB.keyArray();
@@ -50,13 +49,13 @@ module.exports = {
         starList = starList.slice(0, 10);
 
         const guild = await client.guilds.fetch(interaction.guild.id);
-        const statsEmbed = new Discord.MessageEmbed()
+        const statsEmbed = new EmbedBuilder()
         .setColor(`${interaction.member.displayHexColor}`)
-        .setThumbnail(guild.iconURL({ format: 'png' }))
+        .setThumbnail(guild.iconURL({ extension: 'png' }))
         .setTitle('Top Starred Artists in the Server')
         .setDescription(starList.join('\n'));
 
-        await interaction.editReply({ content: ' ', embeds: [statsEmbed] });
+        await interaction.editReply({ content: null, embeds: [statsEmbed] });
 
         } catch (err) {
             let error = err;

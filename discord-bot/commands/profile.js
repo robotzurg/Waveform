@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 const { Canvas, loadImage, FontLibrary } = require('skia-canvas');
 const { get_user_reviews, handle_error, find_most_duplicate } = require("../func.js");
 const _ = require('lodash');
@@ -27,14 +27,13 @@ module.exports = {
 	admin: false,
 	async execute(interaction) {
 
-        await interaction.editReply('Loading profile, this may take a bit of time so please be patient!');
-
+        await interaction.reply('Loading profile, this may take a bit of time so please be patient!');
         let canvas = new Canvas(1305, 872);
 
         // render to files using a background thread
         async function render() {
             let pngData = await canvas.png;
-            interaction.editReply({ content: ' ', files: [pngData] });
+            interaction.editReply({ content: null, files: [pngData] });
         }
 
         try {
@@ -134,8 +133,7 @@ module.exports = {
 
             // Draw a rectangle with the dimensions of the entire canvas
             ctx.strokeRect(0, 0, canvas.width, canvas.height);
-
-            const avatar = await loadImage(taggedUser.displayAvatarURL({ format: 'png' }));
+            const avatar = await loadImage(taggedUser.avatarURL({ extension: "png" }));
 
             ctx.font = applyText('main_med', 50, canvas.width - 650, canvas, taggedMember.displayName);
             ctx.fillStyle = '#ffffff';
@@ -179,7 +177,6 @@ module.exports = {
             ctx.fillText(`${mostStarred[0][0]} (${mostStarred[0][1]} Stars)`, canvas.width / 2, 845 - offset);
 
             // Recent Review / Recent Stars lists
-
             let stats_x = 210;
             let stats_y = 250;
 

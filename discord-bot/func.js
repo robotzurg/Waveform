@@ -1,5 +1,5 @@
 /* eslint-disable no-useless-escape */
-const Discord = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 const db = require("./db.js");
 const forAsync = require('for-async');
 
@@ -16,7 +16,7 @@ module.exports = {
     },
 
     sort: function(array, lowest_to_highest = false) {
-        // This function sorts an array from highest to lowest based on this format:
+        // This function sorts an array from highest to lowest based on this extension:
         // [ [ num, whatever else ], [ num, whatever else] ]
 
         if (lowest_to_highest == false) {
@@ -58,7 +58,7 @@ module.exports = {
         const { spotify_api_setup } = require('./func.js');
 
         if ((artists == null && song != null) || (artists != null && song == null)) {
-            interaction.editReply('If you are searching for a review manually, you must put in both the artists (in the artist argument) and the song name (in the song_name argument).');
+            interaction.reply('If you are searching for a review manually, you must put in both the artists (in the artist argument) and the song name (in the song_name argument).');
             return -1;
         }
 
@@ -89,7 +89,7 @@ module.exports = {
             let isPodcast = false;
         
             if (spotifyApi == false) {
-                interaction.editReply('You must use `/login` to use Spotify related features!');
+                interaction.reply('You must use `/login` to use Spotify related features!');
                 return -1;
             }
 
@@ -127,12 +127,12 @@ module.exports = {
 
             // Check if a podcast is being played, as we don't support that.
             if (isPodcast == true) {
-                interaction.editReply('Podcasts are not supported with `/np`.');
+                interaction.reply('Podcasts are not supported with `/np`.');
                 return -1;
             }
 
             if (passesChecks == 'notplaying') {
-                interaction.editReply('You are not currently playing a song on Spotify.');
+                interaction.reply('You are not currently playing a song on Spotify.');
                 return -1;
             }
 
@@ -187,13 +187,13 @@ module.exports = {
             }
 
             if (passesChecks == false) {
-                interaction.editReply('This song cannot be parsed properly in the database, and as such cannot be reviewed or have data pulled up for it.');
+                interaction.reply('This song cannot be parsed properly in the database, and as such cannot be reviewed or have data pulled up for it.');
                 return -1;
             } else if (passesChecks == 'ep') {
-                interaction.editReply('This track cannot be added to EP/LP reviews, therefore is invalid to be used in relation with EP/LP commands.');
+                interaction.reply('This track cannot be added to EP/LP reviews, therefore is invalid to be used in relation with EP/LP commands.');
                 return -1;
             } else if (passesChecks == 'length') {
-                interaction.editReply('This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.');
+                interaction.reply('This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.');
                 return -1;
             }
             
@@ -240,14 +240,14 @@ module.exports = {
             if (interaction.commandName != 'review' && interaction.commandName != 'epreview') {
                 for (let i = 0; i < artistArray.length; i++) {
                     if (!db.reviewDB.has(artistArray[i])) {
-                        interaction.editReply(`The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.`);
+                        interaction.reply(`The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.`);
                         return -1;
                     }
                 }
 
                 for (let i = 0; i < rmxArtistArray.length; i++) {
                     if (!db.reviewDB.has(rmxArtistArray[i])) {
-                        interaction.editReply(`The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.`);
+                        interaction.reply(`The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.`);
                         return -1;
                     }
                 }
@@ -333,16 +333,16 @@ module.exports = {
                                 let msgEmbed;
 
                                 channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                    msgEmbed = msg.embeds[0];
+                                    msgEmbed = EmbedBuilder.from(msg.embeds[0]);
                                     msgEmbed.setThumbnail(new_image);
-                                    msg.edit({ content: ' ', embeds: [msgEmbed] });
+                                    msg.edit({ content: null, embeds: [msgEmbed] });
                                     resolve();
                                 }).catch(() => {
                                     channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
                                     channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                        msgEmbed = msg.embeds[0];
+                                        msgEmbed = EmbedBuilder.from(msg.embeds[0]);
                                         msgEmbed.setThumbnail(new_image);
-                                        msg.edit({ content: ' ', embeds: [msgEmbed] });
+                                        msg.edit({ content: null, embeds: [msgEmbed] });
                                         resolve();
                                     });
                                 }).catch((err) => {
@@ -618,12 +618,11 @@ module.exports = {
         // Add to the hall of fame channel!
         if (star_count >= db.server_settings.get(interaction.guild.id, 'star_cutoff')) {
             const hofChannel = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel').slice(0, -1).slice(2));
-            const hofEmbed = new Discord.MessageEmbed()
-            
+            const hofEmbed = new EmbedBuilder()
             .setColor(`#FFFF00`)
             .setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`)
             .setDescription(`:star2: **This song currently has ${star_count} stars!** :star2:`)
-            .addField('Starred Reviews:', star_array.join('\n'))
+            .addFields([{ name: 'Starred Reviews:', value: star_array.join('\n') }])
             .setImage(songArt);
             hofEmbed.setFooter({ text: `Use /getsong to get more details about this song!` });
 
@@ -705,7 +704,7 @@ module.exports = {
     },
 
     handle_error: function(interaction, err) {
-        interaction.editReply({ content: `Waveform ran into an error. Don't worry, the bot is still online!\nError: \`${err}\``, 
+        interaction.channel.send({ content: `Waveform ran into an error. Don't worry, the bot is still online!\nError: \`${err}\``, 
         embeds: [], components: [] });
         let error_channel = interaction.guild.channels.cache.get('933610135719395329');
         let error = String(err.stack);

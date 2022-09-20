@@ -1,6 +1,5 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const db = require('../db.js');
-const Discord = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -10,42 +9,42 @@ module.exports = {
 	async execute(interaction) {
         let mail_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
         if (mail_list == undefined || mail_list == false) {
-            return interaction.editReply('You have nothing in your mailbox.');
+            return interaction.reply('You have nothing in your mailbox.');
         } else if (mail_list.length == 0) {
-            return interaction.editReply('You have nothing in your mailbox.');
+            return interaction.reply('You have nothing in your mailbox.');
         }
         mail_list = mail_list.map(v => `• ${v[0]} sent by <@${v[1]}>\n`);
 
         let paged_mail_list = _.chunk(mail_list, 10);
         let page_num = 0;
-        const row = new Discord.MessageActionRow()
+        const row = new ActionRowBuilder()
         .addComponents(
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('left')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('⬅️'),
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('right')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('➡️'),
         );
 
-        const mailEmbed = new Discord.MessageEmbed()
+        const mailEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
-            .setThumbnail(interaction.user.avatarURL({ format: "png" }))
+            .setThumbnail(interaction.user.avatarURL({ extension: "png" }))
             .setTitle(`${interaction.member.displayName}'s Mailbox`)
             .setDescription(paged_mail_list[page_num].join(''));
             if (paged_mail_list.length > 1) {
                 mailEmbed.setFooter({ text: `Page 1 / ${paged_mail_list.length}` });
-                interaction.editReply({ embeds: [mailEmbed], components: [row] });
+                interaction.reply({ embeds: [mailEmbed], components: [row] });
             } else {
-                interaction.editReply({ embeds: [mailEmbed], components: [] });
+                interaction.reply({ embeds: [mailEmbed], components: [] });
             }
         
         if (paged_mail_list.length > 1) {
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ time: 120000 });
+            const collector = message.createMessageComponentCollector({ time: 360000 });
 
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;
@@ -59,8 +58,6 @@ module.exports = {
                 interaction.editReply({ embeds: [mailEmbed], components: [] });
             });
         }
-        
-        interaction.editReply({ embeds: [mailEmbed] });
         
     },
 };

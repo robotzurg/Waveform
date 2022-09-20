@@ -1,5 +1,4 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const Discord = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 const db = require('../db.js');
 const { spotify_api_setup } = require('../func.js');
@@ -31,13 +30,13 @@ module.exports = {
         } else if (taggedUser != null) {
             taggedMember = await interaction.guild.members.fetch(taggedUser.id);
         } else if (taggedUser == null) {
-            return interaction.editReply(`You must either specify a user in the user argument to send this song to, or be in a mailbox chat!`);
+            return interaction.reply(`You must either specify a user in the user argument to send this song to, or be in a mailbox chat!`);
         }
 
         const spotifyApi = await spotify_api_setup(taggedUser.id);
     
         if (spotifyApi == false) {
-            return interaction.editReply('This user may not have a mailbox setup. Tell them to set one up with `/setupmailbox`!');
+            return interaction.reply('This user may not have a mailbox setup. Tell them to set one up with `/setupmailbox`!');
         }
 
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
@@ -48,7 +47,7 @@ module.exports = {
         let url;
         let songArt;
 
-        if (!trackLink.includes('spotify')) return interaction.editReply('The link you put in is not a valid spotify link!');
+        if (!trackLink.includes('spotify')) return interaction.reply('The link you put in is not a valid spotify link!');
         await getData(trackLink).then(data => {
             url = data.external_urls.spotify;
             data.type == 'track' ? songArt = data.coverArt.sources[0].url : songArt = data.coverArt.sources[0].url;
@@ -71,18 +70,18 @@ module.exports = {
         // Add tracks to the mailbox playlist
         await spotifyApi.addTracksToPlaylist(playlistId, trackUris)
         .then(() => {
-            const mailEmbed = new Discord.MessageEmbed()
+            const mailEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
             .setTitle(`${artists.join(' & ')} - ${name}`)
             .setDescription(`This music mail was sent to you by <@${interaction.user.id}>!`)
             .setThumbnail(songArt);
 
             if (interaction.channel.id != db.user_stats.get(taggedUser.id, 'mailbox')) {
-                interaction.editReply(`Sent [**${artists.join(' & ')} - ${name}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
+                interaction.reply(`Sent [**${artists.join(' & ')} - ${name}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
                 let mail_channel = interaction.guild.channels.cache.get(db.user_stats.get(taggedUser.id, 'mailbox'));
                 mail_channel.send({ content: `You've got mail! 📬`, embeds: [mailEmbed] });
             } else {
-                interaction.editReply({ content: `You've got mail! 📬`, embeds: [mailEmbed] });
+                interaction.reply({ content: `You've got mail! 📬`, embeds: [mailEmbed] });
             }
 
             // Put the song we just mailboxed into a mailbox list for the user, so it can be pulled up with /viewmail
@@ -92,7 +91,7 @@ module.exports = {
                 db.user_stats.push(taggedUser.id, [`**${artists.join(' & ')} - ${name}**`, `${interaction.user.id}`], 'mailbox_list');
             }
         }).catch(() => {
-            return interaction.editReply(`Waveform ran into an issue sending this mail. Make sure they have set music mailbox setup by using \`/setupmailbox\`!`);
+            return interaction.reply(`Waveform ran into an issue sending this mail. Make sure they have set music mailbox setup by using \`/setupmailbox\`!`);
         });
     },
 };

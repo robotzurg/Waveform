@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { SlashCommandBuilder } = require('discord.js');
 const { handle_error } = require("../func.js");
 
 module.exports = {
@@ -9,6 +9,7 @@ module.exports = {
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist.')
+                .setAutocomplete(true)
                 .setRequired(true)),
     admin: true,
 	async execute(interaction) {
@@ -16,7 +17,7 @@ module.exports = {
 
         let artist = interaction.options.getString('artist');
 		db.reviewDB.delete(artist);
-		interaction.editReply(`${artist} deleted from the database.`);
+		interaction.reply(`${artist} deleted from the database.`);
 
         } catch (err) {
             let error = err;

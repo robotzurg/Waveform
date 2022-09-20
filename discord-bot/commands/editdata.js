@@ -1,7 +1,6 @@
 const db = require("../db.js");
 const { parse_artist_song_data, get_user_reviews } = require("../func.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const Discord = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -26,7 +25,7 @@ module.exports = {
                     .setRequired(false))),
 	async execute(interaction) {
         
-        return interaction.editReply('This command is currently under construction and is not currently up yet.');
+        return interaction.reply('This command is currently under construction and is not currently up yet.');
 
         // eslint-disable-next-line no-unreachable
         let origArtistArray = interaction.options.getString('artist');
@@ -65,27 +64,27 @@ module.exports = {
         }
 
         // const editButtons = [
-        //     new Discord.MessageActionRow()
+        //     new ActionRowBuilder()
         //     .addComponents(
-        //         new Discord.MessageButton()
+        //         new ButtonBuilder()
         //             .setCustomId('artist').setLabel('Artists')
-        //             .setStyle('PRIMARY').setEmoji('📝'),
-        //         new Discord.MessageButton()
+        //             .setStyle(ButtonStyle.Primary).setEmoji('📝'),
+        //         new ButtonBuilder()
         //             .setCustomId('song').setLabel('Vocalists')
-        //             .setStyle('PRIMARY').setEmoji('📝'),
+        //             .setStyle(ButtonStyle.Primary).setEmoji('📝'),
         //     ),
-        //     new Discord.MessageActionRow()
+        //     new ActionRowBuilder()
         //     .addComponents(
-        //         new Discord.MessageButton()
+        //         new ButtonBuilder()
         //             .setCustomId('artist').setLabel('Artists')
-        //             .setStyle('PRIMARY').setEmoji('📝'),
-        //         new Discord.MessageButton()
+        //             .setStyle(ButtonStyle.Primary).setEmoji('📝'),
+        //         new ButtonBuilder()
         //             .setCustomId('song').setLabel('Vocalists')
-        //             .setStyle('PRIMARY').setEmoji('📝'),
+        //             .setStyle(ButtonStyle.Primary).setEmoji('📝'),
         //     ),
         // ];
 
-        const editEmbed = new Discord.MessageEmbed()
+        const editEmbed = new EmbedBuilder()
         .setColor(`${interaction.member.displayHexColor}`)
         .setThumbnail(songArt)
         .setDescription('`Song Information:`')
@@ -100,9 +99,9 @@ module.exports = {
         );
 
         if (userArray.length != 0) {
-            editEmbed.addField('Reviewers:', `${userArray.join('\n')}`);
+            editEmbed.addFields([{ name: 'Reviewers:', value: userArray.join('\n') }]);
         }
 
-        interaction.editReply({ embeds: [editEmbed] });
+        interaction.reply({ embeds: [editEmbed] });
 	},
 };

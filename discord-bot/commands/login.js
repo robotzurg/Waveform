@@ -1,4 +1,5 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
+/* eslint-disable no-unreachable */
+const { SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 const SpotifyWebApi = require('spotify-web-api-node');
 const db = require('../db.js');
@@ -10,6 +11,8 @@ module.exports = {
         .setDescription('Login to Spotify through Waveform, to gain access to spotify features!'),
     cooldown: 30,
 	async execute(interaction, client, app) {
+
+        return interaction.reply({ content: 'This command is temporarily unavailable. If you need to login to spotify to use spotify features on Waveform, ask Jeff and he can help you out.', ephemeral: true });
 
         const scopes = [
             'playlist-read-collaborative',
@@ -65,7 +68,7 @@ module.exports = {
 
         });
 
-        interaction.editReply(`Click on [this link](http://waveformserver.hopto.org/login) to login and authorize Spotify for usage with Waveform!\nYou should only need to do this once.`);
+        interaction.reply(`Click on [this link](http://waveformserver.hopto.org/login) to login and authorize Spotify for usage with Waveform!\nYou should only need to do this once.`);
         await wait(30000);
         await interaction.fetchReply().then(msg => {
             if (!msg.content.includes('successful!')) {

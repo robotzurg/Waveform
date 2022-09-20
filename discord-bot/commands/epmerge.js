@@ -1,7 +1,6 @@
-const Discord = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
 const { handle_error, create_ep_review, parse_artist_song_data } = require('../func.js');
-const { SlashCommandBuilder } = require('@discordjs/builders');
 const wait = require("wait");
 const Spotify = require('node-spotify-api');
 require('dotenv').config();
@@ -70,21 +69,21 @@ module.exports = {
 
         // Place EP by default if EP or LP is not included in the title.
         if (!epName.includes(' EP') && !epName.includes(' LP')) epName = `${epName} EP`;
-        if (db.reviewDB.get(artistArray[0], `["${epName}"]`) != undefined) return interaction.editReply(`The ${epType} ${artistArray.join(' & ')} - ${epName} already exists in the database.`); 
+        if (db.reviewDB.get(artistArray[0], `["${epName}"]`) != undefined) return interaction.reply(`The ${epType} ${artistArray.join(' & ')} - ${epName} already exists in the database.`); 
         
-        const row = new Discord.MessageActionRow()
+        const row = new ActionRowBuilder()
         .addComponents(
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('finish')
                 .setLabel('Finish')
-                .setStyle('SUCCESS'),
-            new Discord.MessageButton()
+                .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
                 .setCustomId('delete')
                 .setLabel('Delete')
-                .setStyle('DANGER'), 
+                .setStyle(ButtonStyle.Danger), 
         );
 
-        let epEmbed = new Discord.MessageEmbed()
+        let epEmbed = new EmbedBuilder()
         .setColor(`${interaction.member.displayHexColor}`)
         .setTitle(`Songs included in the ${epType} ${artistArray.join(' & ')} - ${epName}`);
 
@@ -92,7 +91,7 @@ module.exports = {
             epEmbed.setThumbnail(ep_art);
         }
 
-        interaction.editReply({ content: `Type in the songs in the ${epType} song list order, one by one.\n` +
+        interaction.reply({ content: `Type in the songs in the ${epType} song list order, one by one.\n` +
         'Make sure they are **JUST** the song name, no features that would be in the song name should be included here.\n' + 
         '(Remember that remixes are not currently supported.)\n' + 
         'When you are finished, click on the "Finish" button, or click the "Delete" button to revert everything you\'ve done.', embeds: [epEmbed], components: [row] });

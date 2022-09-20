@@ -1,4 +1,5 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
+/* eslint-disable no-unreachable */
+const { SlashCommandBuilder } = require('discord.js');
 const { handle_error, parse_artist_song_data } = require('../func');
 const db = require('../db.js');
 
@@ -37,7 +38,7 @@ module.exports = {
 	async execute(interaction) {
         try {
 
-        return console.log('This command has been temporarily disabled due to bugs.');
+        return interaction.reply('This command (and tagging in general) is temporarily unavailable due to maintenance.');
 
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('name');
@@ -79,7 +80,7 @@ module.exports = {
             }
         }
 
-        interaction.editReply(`Added the tag \`${tag}\` to **${tagSongEntry}**`);
+        interaction.reply(`Added the tag \`${tag}\` to **${tagSongEntry}**`);
 
         } catch (err) {
             let error = err;

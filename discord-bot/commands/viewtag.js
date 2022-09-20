@@ -1,6 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('@discordjs/builders');
-const Discord = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const { handle_error } = require("../func.js");
 const _ = require('lodash');
 
@@ -19,22 +18,22 @@ module.exports = {
         try {
             
         let tag = interaction.options.getString('tag');
-        if (!db.tags.has(tag)) return interaction.editReply(`The tag ${tag} does not exist.`);
+        if (!db.tags.has(tag)) return interaction.reply(`The tag ${tag} does not exist.`);
         let songList = db.tags.get(tag, 'song_list');
         let tagArt = db.tags.get(tag, 'image');
-        if (songList.length == 0) return interaction.editReply(`There are no songs with the tag \`${tag}\`.`);
+        if (songList.length == 0) return interaction.reply(`There are no songs with the tag \`${tag}\`.`);
 
         let pagedSongList = _.chunk(songList, 10);
         let page_num = 0;
-        const row = new Discord.MessageActionRow()
+        const row = new ActionRowBuilder()
         .addComponents(
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('left')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('⬅️'),
-            new Discord.MessageButton()
+            new ButtonBuilder()
                 .setCustomId('right')
-                .setStyle('PRIMARY')
+                .setStyle(ButtonStyle.Primary)
                 .setEmoji('➡️'),
         );
 
@@ -47,7 +46,7 @@ module.exports = {
             pagedSongList[i] = pagedSongList[i].join('\n');
         }  
 
-        const songListEmbed = new Discord.MessageEmbed()
+        const songListEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
             .setAuthor({ name: `List of songs with the tag ${tag}` })
             .setDescription(pagedSongList[page_num]);
@@ -57,16 +56,16 @@ module.exports = {
 
             if (pagedSongList.length > 1) {
                 songListEmbed.setFooter({ text: `Page 1 / ${pagedSongList.length} • ${songList.length} song(s) with the tag ${tag}` });
-                interaction.editReply({ embeds: [songListEmbed], components: [row] });
+                interaction.reply({ embeds: [songListEmbed], components: [row] });
             } else {
                 songListEmbed.setFooter({ text: `${songList.length} song(s) with the tag ${tag}` });
-                interaction.editReply({ embeds: [songListEmbed], components: [] });
+                interaction.reply({ embeds: [songListEmbed], components: [] });
             }
 
         if (pagedSongList.length > 1) {
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ time: 120000 });
+            const collector = message.createMessageComponentCollector({ time: 360000 });
 
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;
