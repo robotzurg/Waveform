@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { average, get_user_reviews, handle_error, create_ep_review, find_review_channel, parse_artist_song_data } = require('../func.js');
-const { EmbedBuilder, ActionRowBuilder, SelectMenuBuilder, SlashCommandBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, SelectMenuBuilder, SlashCommandBuilder, Embed } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -159,8 +159,7 @@ module.exports = {
             interaction.reply({ embeds: [epEmbed], components: [row] });
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 120000 });
-
+            const collector = message.createMessageComponentCollector({ time: 360000 });
             collector.on('collect', async select => {
 
                 if (select.values[0] == 'back') { // Back Selection
@@ -219,7 +218,7 @@ module.exports = {
                         }
 
                         if (no_songs_review == false) {
-                            if (epReviewEmbed.length < 3250) {
+                            if (new Embed(epReviewEmbed.toJSON()).length < 5250) {
                                 epReviewEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                                 `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
                                 `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
@@ -274,9 +273,11 @@ module.exports = {
                     }
                 }
 
-                if (epReviewEmbed.length > 3250) {
-                    for (let i = 0; i < epReviewEmbed.fields.length; i++) {
-                        epReviewEmbed.fields[i].value = `*Review hidden to save space*`;
+                console.log();
+
+                if (new Embed(epReviewEmbed.toJSON()).length > 5250) {
+                    for (let i = 0; i < epReviewEmbed.data.fields.length; i++) {
+                        epReviewEmbed.data.fields[i].value = `*Review hidden to save space*`;
                     }
                 }
 

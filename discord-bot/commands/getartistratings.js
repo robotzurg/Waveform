@@ -147,12 +147,12 @@ module.exports = {
         if (pagedReviewList.length > 1) {
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ time: 120000 });
+            const collector = message.createMessageComponentCollector({ time: 360000 });
 
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;
                 page_num = _.clamp(page_num, 0, pagedReviewList.length - 1);
-                ratingListEmbed.fields[1] = { name: `Songs`, value: pagedReviewList[page_num] };
+                ratingListEmbed.data.fields[1] = { name: `Songs`, value: pagedReviewList[page_num] };
                 ratingListEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedReviewList.length}` });
                 i.update({ embeds: [ratingListEmbed] });
             });

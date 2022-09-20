@@ -54,7 +54,7 @@ module.exports = {
             remixArray = [];
         }
         let tags = songObj.tags;
-        if (tags == undefined) tags = [];
+        if (tags == undefined || tags.includes(null)) tags = [];
         tags = [tags].flat(1);
 
         if (remixArray.length != 0) {
@@ -177,8 +177,7 @@ module.exports = {
 
         let message = await interaction.fetchReply();
 
-        const collector = message.createMessageComponentCollector({ componentType: 'SELECT_MENU', time: 120000 });
-
+        const collector = message.createMessageComponentCollector({ time: 360000 });
         collector.on('collect', async i => {
             if (i.customId == 'select') { // Select Menu
 

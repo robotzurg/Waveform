@@ -44,7 +44,7 @@ module.exports = {
             .setTitle('🔧 Waveform Configuration Settings  🔧')
             .addFields([
                 { name: 'Review Channel:', value: reviewChannel },
-                { name: 'Review Chat Filter:', value: reviewFilter },
+                { name: 'Review Chat Filter:', value: `${reviewFilter}` },
                 { name: 'Hall of Fame Channel:', value: hofChannel },
                 { name: 'Star Cutoff for Hall of Fame:', value: `\`${starCutoff} ⭐\`` },
             ])

@@ -1,3 +1,4 @@
+/* eslint-disable no-unreachable */
 const { SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 const SpotifyWebApi = require('spotify-web-api-node');
@@ -10,6 +11,8 @@ module.exports = {
         .setDescription('Login to Spotify through Waveform, to gain access to spotify features!'),
     cooldown: 30,
 	async execute(interaction, client, app) {
+
+        return interaction.reply({ content: 'This command is temporarily unavailable. If you need to login to spotify to use spotify features on Waveform, ask Jeff and he can help you out.', ephemeral: true });
 
         const scopes = [
             'playlist-read-collaborative',

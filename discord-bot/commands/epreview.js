@@ -470,7 +470,8 @@ module.exports = {
                         } else {
                             epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} 🌟`);
                         }
-        
+
+                        db.user_stats.set(interaction.user.id, false, 'current_ep_review');
                         i.update({ embeds: [epEmbed], components: [] });
                     } break;
                     case 'begin': {

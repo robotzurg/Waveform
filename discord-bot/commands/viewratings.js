@@ -31,6 +31,7 @@ module.exports = {
             taggedUser = interaction.user;
         }
 
+        await interaction.reply('Loading rating list, this takes a moment so please be patient!');
         let artistCount = [];
         let songSkip = [];
         let ratingList = [];
@@ -90,7 +91,7 @@ module.exports = {
         ratingList = ratingList.filter(v => !v.includes(' LP'));
         ratingList = [...new Set(ratingList)];
 
-        if (ratingList.length == 0) return interaction.reply(`You have never rated a song ${ratingCheck}/10.`);
+        if (ratingList.length == 0) return interaction.editReply(`You have never rated a song ${ratingCheck}/10.`);
         ratingList.sort();
 
         let pagedRatingList = _.chunk(ratingList, 10);
@@ -123,27 +124,27 @@ module.exports = {
             .setDescription(pagedRatingList[page_num]);
             if (pagedRatingList.length > 1) {
                 ratingListEmbed.setFooter({ text: `Page 1 / ${pagedRatingList.length} • ${ratingList.length} songs rated ${ratingCheck}/10` });
-                interaction.reply({ embeds: [ratingListEmbed], components: [row] });
+                interaction.editReply({ content: null, embeds: [ratingListEmbed], components: [row] });
             } else {
                 ratingListEmbed.setFooter({ text: `${ratingList.length} songs rated ${ratingCheck}/10` });
-                interaction.reply({ embeds: [ratingListEmbed], components: [] });
+                interaction.editReply({ content: null, embeds: [ratingListEmbed], components: [] });
             }
         
         if (pagedRatingList.length > 1) {
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ time: 120000 });
+            const collector = message.createMessageComponentCollector({ time: 360000 });
 
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;
                 page_num = _.clamp(page_num, 0, pagedRatingList.length - 1);
                 ratingListEmbed.setDescription(pagedRatingList[page_num]);
                 ratingListEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedRatingList.length} • ${ratingList.length} songs rated ${ratingCheck}/10` });
-                i.update({ embeds: [ratingListEmbed] });
+                i.update({ content: null, embeds: [ratingListEmbed] });
             });
 
             collector.on('end', async () => {
-                interaction.editReply({ embeds: [ratingListEmbed], components: [] });
+                interaction.editReply({ content: null, embeds: [ratingListEmbed], components: [] });
             });
         }
 

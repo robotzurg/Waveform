@@ -44,7 +44,7 @@ module.exports = {
         if (paged_mail_list.length > 1) {
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ time: 120000 });
+            const collector = message.createMessageComponentCollector({ time: 360000 });
 
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;

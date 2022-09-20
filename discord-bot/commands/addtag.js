@@ -1,3 +1,4 @@
+/* eslint-disable no-unreachable */
 const { SlashCommandBuilder } = require('discord.js');
 const { handle_error, parse_artist_song_data } = require('../func');
 const db = require('../db.js');
@@ -36,6 +37,8 @@ module.exports = {
                 .setRequired(false)),
 	async execute(interaction) {
         try {
+
+        return interaction.reply('This command (and tagging in general) is temporarily unavailable due to maintenance.');
 
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('name');

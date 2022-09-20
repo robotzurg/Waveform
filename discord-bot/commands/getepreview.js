@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder, Embed } = require('discord.js');
 const { handle_error, find_review_channel, parse_artist_song_data } = require('../func.js');
 
 module.exports = {
@@ -151,7 +151,7 @@ module.exports = {
                         }
                     }
 
-                    if (epEmbed.length < 3250) {
+                    if (new Embed(epEmbed.toJSON()).length < 5250) {
                         epEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                         `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
                         `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
