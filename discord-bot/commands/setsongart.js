@@ -115,7 +115,7 @@ module.exports = {
                         return new Promise(function(resolve) {
                             let msgEmbed;
                             channelsearch.messages.fetch(msgtoEdit).then(msg => {
-                                msgEmbed = msg.embeds[0];
+                                msgEmbed = EmbedBuilder.from(msg.embeds[0]);
                                 msgEmbed.setThumbnail(songArt);
                                 msg.edit({ content: null, embeds: [msgEmbed] });
                                 resolve();
@@ -135,11 +135,9 @@ module.exports = {
                         return new Promise(function(resolve) {
                             let msgtoEdit = item;
                             let msgEmbed;
-                            let embed_data;
 
                             channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                embed_data = msg.embeds;
-                                msgEmbed = embed_data[0];
+                                msgEmbed = EmbedBuilder.from(msg.embeds[0]);
                                 msgEmbed.image.url = songArt;
                                 msg.edit({ embeds: [msgEmbed] });
                                 resolve();
