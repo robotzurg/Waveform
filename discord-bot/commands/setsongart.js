@@ -45,9 +45,11 @@ module.exports = {
         let songName = song_info.song_name;
         let artistArray = song_info.all_artists;
         let vocalistArray = song_info.vocal_artists;
+        // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+        let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
         let songArt = interaction.options.getString('art');
 
-        let newSong = (db.reviewDB.get(artistArray[0], `["${songName}"]`) != undefined);
+        let newSong = (db.reviewDB.get(artistArray[0])[songName] != undefined);
         
         if (songArt == null) {
             const client_id = process.env.SPOTIFY_API_ID; // Your client id
@@ -84,24 +86,24 @@ module.exports = {
 
 		if (newSong == true) {
 			for (let i = 0; i < artistArray.length; i++) {
-                db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
+                db.reviewDB.set(artistArray[i], songArt, `${setterSongName}.art`);
 			}
 		} else {
             return interaction.reply('This song does not exist in the database, you can only use this command with songs that exist in the database!');
         }
 
         // Fix artwork on all reviews for this song
-        const imageSongObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
+        let songObj = db.reviewDB.get(artistArray[0])[songName];
         let msgstoEdit = [];
         let userIDs = [];
         let count = -1;
 
-        if (imageSongObj != undefined) {
+        if (songObj != undefined) {
             
-            let userArray = get_user_reviews(imageSongObj);
+            let userArray = get_user_reviews(songObj);
 
             userArray.forEach(user => {
-                msgstoEdit.push(db.reviewDB.get(artistArray[0], `["${songName}"].["${user}"].msg_id`));
+                msgstoEdit.push(songObj[user].msg_id);
                 userIDs.push(user);
             });
 

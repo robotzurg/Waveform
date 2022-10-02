@@ -35,25 +35,24 @@ module.exports = {
         let artistArray = db.reviewDB.keyArray();
 
         for (let i = 0; i < artistArray.length; i++) {
-            let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
+            let artistObj = db.reviewDB.get(artistArray[i]);
+            let songArray = Object.keys(artistObj);
             songArray = songArray.filter(v => v != 'Image');
 
             for (let j = 0; j < songArray.length; j++) {
-                let userArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"]`);
-                userArray = get_user_reviews(userArray);
+                let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];
+                let userArray = get_user_reviews(songObj);
                 userArray = userArray.filter(v => v == taggedUser.id);
                 if (userArray.length != 0) artistCount.push(artistArray[i]);
                 if (songSkip.includes(`${artistArray[i]} - ${songArray[j]}`)) continue;
 
-                let collabArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].collab`);
-                let vocalistArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].vocals`);
+                let collabArray = songObj.collab;
+                let vocalistArray = songObj.vocals;
                 if (collabArray == undefined) collabArray = [];
                 if (vocalistArray == undefined) vocalistArray = [];
 
                 collabArray = collabArray.filter(v => !vocalistArray.includes(v));
-
                 let otherArtists = [artistArray[i], collabArray].flat(1);
-
                 let allArtists = otherArtists.map(v => {
                     if (v == undefined) {
                         return [];
@@ -63,7 +62,7 @@ module.exports = {
                 allArtists = allArtists.flat(1);
 
                 for (let k = 0; k < userArray.length; k++) {
-                    let userData = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].["${userArray[k]}"]`);
+                    let userData = songObj[userArray[k]];
                     if (userData.rating == undefined || userData.rating == null) continue;
                     ratingCount += 1;
                     userData.rating = userData.rating.toString();

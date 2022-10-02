@@ -39,18 +39,18 @@ module.exports = {
             songArray = songArray.filter(v => v != 'Image');
 
             for (let j = 0; j < songArray.length; j++) {
-                let userArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"]`);
-                if (userArray != null && userArray != undefined) {
-                    userArray = get_user_reviews(userArray);
-                    userArray = userArray.filter(v => v == user.id);
+                let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];
+                let userArray;
+                if (songObj != null && songObj != undefined) {
+                    userArray = get_user_reviews(songObj);
                 } else {
                     userArray = [];
                 }
 
                 if (songSkip.includes(`${artistArray[i]} - ${songArray[j]}`)) continue;
 
-                let mainArtistArray = [artistArray[i], db.reviewDB.get(artistArray[i], `["${songArray[j]}"].collab`)].flat(1);
-                let vocalistArray = db.reviewDB.get(artistArray[i], `[${songArray[j]}].vocals`);
+                let mainArtistArray = [artistArray[i], db.reviewDB.get(artistArray[i])[songArray[j]].collab].flat(1);
+                let vocalistArray = db.reviewDB.get(artistArray[i])[songArray[j]].vocals;
                 let rmxArtistArray = [];
                 if (vocalistArray == undefined) vocalistArray = [];
 
@@ -73,7 +73,7 @@ module.exports = {
 
                 if (userArray.length != 0) {
                     artistCount.push(artistArray[i]);
-                    if (db.reviewDB.get(artistArray[i], `["${songArray[j]}"].["${userArray[0]}"].starred`) == true) {
+                    if (songObj[userArray[0]].starred == true) {
                         starList.push(`${mainArtistArray.join(' & ')} - ${songArray[j]}` + 
                         `${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
                     } 

@@ -34,8 +34,9 @@ module.exports = {
 
                 for (let j = 0; j < songArray.length; j++) {
 
-                    let userArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"]`);
-                    if (userArray != null && userArray != undefined) {
+                    let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];
+                    let userArray;
+                    if (songObj != null && songObj != undefined) {
                         userArray = get_user_reviews(userArray);
                     } else {
                         userArray = [];
@@ -49,7 +50,7 @@ module.exports = {
                         epCount += 1;
                     }
 
-                    let otherArtists = [artistArray[i], db.reviewDB.get(artistArray[i], `["${songArray[j]}"].collab`)].flat(1);
+                    let otherArtists = [artistArray[i], songObj.collab].flat(1);
 
                     let allArtists = otherArtists.map(v => {
                         if (v == undefined) {
@@ -60,7 +61,7 @@ module.exports = {
                     allArtists = allArtists.flat(1);
 
                     for (let k = 0; k < userArray.length; k++) {
-                        let userData = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].["${userArray[k]}"]`);
+                        let userData = songObj[userArray[k]];
                         ratingList.push(parseFloat(userData.rating));
                         if (songArray[j].includes(' EP') || songArray[j].includes(' LP')) {
                             epReviewCount += 1;

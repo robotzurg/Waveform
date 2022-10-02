@@ -44,14 +44,20 @@ module.exports = {
             songArray = songArray.filter(v => v != 'Image');
 
             for (let j = 0; j < songArray.length; j++) {
-                let userArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"]`);
-                userArray = get_user_reviews(userArray);
+                let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];
+                let userArray;
+                if (songObj != null && songObj != undefined) {
+                    userArray = get_user_reviews(songObj);
+                } else {
+                    userArray = [];
+                }
+
                 userArray = userArray.filter(v => v == taggedUser.id);
                 if (userArray.length != 0) artistCount.push(artistArray[i]);
                 if (songSkip.includes(`${artistArray[i]} - ${songArray[j]}`)) continue;
 
-                let collabArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].collab`);
-                let vocalistArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].vocals`);
+                let collabArray = db.reviewDB.get(artistArray[i])[songArray[j]].collab;
+                let vocalistArray = db.reviewDB.get(artistArray[i])[songArray[j]].vocals;
                 if (collabArray == undefined) collabArray = [];
                 if (vocalistArray == undefined) vocalistArray = [];
 
@@ -68,7 +74,7 @@ module.exports = {
                 allArtists = allArtists.flat(1);
 
                 for (let k = 0; k < userArray.length; k++) {
-                    let userData = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].["${userArray[k]}"]`);
+                    let userData = db.reviewDB.get(artistArray[i])[songArray[j]][userArray[k]];
                     if (ratingCheck == parseFloat(userData.rating)) {
                         let primArtist = artistArray[i];
                         if (vocalistArray.includes(artistArray[i])) primArtist = collabArray.shift();

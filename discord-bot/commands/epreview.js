@@ -95,25 +95,27 @@ module.exports = {
             let origArtistArray = song_info.prod_artists;
             let epName = song_info.song_name;
             let artistArray = song_info.all_artists;
+            // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+            let setterEpName = epName.includes('.') ? `["${epName}"]` : epName;
             let epType = epName.includes(' LP') ? `LP` : `EP`;
 
             let art = interaction.options.getString('art');
             if (art == null) art = false;
         
-            let overall_rating = interaction.options.getString('overall_rating');
-            if (overall_rating == null) {
-                overall_rating = false;
+            let overallRating = interaction.options.getString('overall_rating');
+            if (overallRating == null) {
+                overallRating = false;
             } else {
-                if (overall_rating.includes('/10')) overall_rating = overall_rating.replace('/10', '');
-                overall_rating = parseFloat(overall_rating);
-                if (isNaN(overall_rating)) return interaction.reply('The rating you put in is not valid, please make sure you put in an integer or decimal rating!');
+                if (overallRating.includes('/10')) overallRating = overallRating.replace('/10', '');
+                overallRating = parseFloat(overallRating);
+                if (isNaN(overallRating)) return interaction.reply('The rating you put in is not valid, please make sure you put in an integer or decimal rating!');
             }
 
-            let overall_review = interaction.options.getString('overall_review');
-            if (overall_review == null) overall_review = false;
-            if (overall_review != false) {
-                if (overall_review.includes('\\n')) {
-                    overall_review = overall_review.split('\\n').join('\n');
+            let overallReview = interaction.options.getString('overall_review');
+            if (overallReview == null) overallReview = false;
+            if (overallReview != false) {
+                if (overallReview.includes('\\n')) {
+                    overallReview = overallReview.split('\\n').join('\n');
                 }
             }
             
@@ -143,8 +145,8 @@ module.exports = {
             if (art == false || art == null || art == undefined) {
                 art = await grab_spotify_art(origArtistArray, epName, interaction);
                 if (db.reviewDB.has(artistArray[0])) {
-                    if (db.reviewDB.get(artistArray[0], `["${epName}"].art`) != false && db.reviewDB.get(artistArray[0], `["${epName}"].art`) != undefined) {
-                        art = await db.reviewDB.get(artistArray[0], `["${epName}"].art`);
+                    if (db.reviewDB.get(artistArray[0])[epName].art != false && db.reviewDB.get(artistArray[0])[epName].art != undefined) {
+                        art = await db.reviewDB.get(artistArray[0])[epName].art;
                     }
                 }
             } else {
@@ -181,7 +183,7 @@ module.exports = {
             );
 
             // Setup bottom row
-            if (overall_rating === false && overall_review == false) {
+            if (overallRating == false && overallReview == false) {
                 row2 = new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
@@ -223,13 +225,13 @@ module.exports = {
                 epEmbed.setThumbnail(art);
             }
 
-            if (overall_rating !== false && overall_review != false) {
-                epEmbed.setDescription(`*${overall_review}*`);
-                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overall_rating}/10)`);
-            } else if (overall_rating !== false) {
-                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overall_rating}/10)`);
-            } else if (overall_review != false) {
-                epEmbed.setDescription(`*${overall_review}*`);
+            if (overallRating !== false && overallReview != false) {
+                epEmbed.setDescription(`*${overallReview}*`);
+                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overallRating}/10)`);
+            } else if (overallRating !== false) {
+                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overallRating}/10)`);
+            } else if (overallReview != false) {
+                epEmbed.setDescription(`*${overallReview}*`);
             }
 
             if (taggedUser.id != false) {
@@ -278,7 +280,7 @@ module.exports = {
                                 art = await grab_spotify_art(artistArray, epName, interaction);
                                 if (art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             } else {
-                                if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0], `["${epName}"].art`);
+                                if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0])[epName].art;
                                 if (art == undefined || art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             }
                             epEmbed.setThumbnail(art);
@@ -312,7 +314,7 @@ module.exports = {
                                 art = await grab_spotify_art(artistArray, epName, interaction);
                                 if (art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             } else {
-                                if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0], `["${epName}"].art`);
+                                if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0])[epName].art;
                                 if (art == undefined || art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             }
                             epEmbed.setThumbnail(art);
@@ -333,13 +335,13 @@ module.exports = {
                         const ra_filter = m => m.author.id == interaction.user.id;
                         ra_collector = interaction.channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                         ra_collector.on('collect', async m => {
-                            overall_rating = m.content;
-                            if (overall_rating.includes('/10')) overall_rating = overall_rating.replace('/10', '');
-                            overall_rating = parseFloat(overall_rating);
-                            if (isNaN(overall_rating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
-                            epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overall_rating}/10)`);
+                            overallRating = m.content;
+                            if (overallRating.includes('/10')) overallRating = overallRating.replace('/10', '');
+                            overallRating = parseFloat(overallRating);
+                            if (isNaN(overallRating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
+                            epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overallRating}/10)`);
                             for (let j = 0; j < artistArray.length; j++) {
-                                db.reviewDB.set(artistArray[j], overall_rating, `["${epName}"].["${interaction.user.id}"].rating`);
+                                db.reviewDB.set(artistArray[j], overallRating, `${setterEpName}.${interaction.user.id}.rating`);
                             }
 
                             row2 = new ActionRowBuilder()
@@ -373,15 +375,15 @@ module.exports = {
                         const re_filter = m => m.author.id == interaction.user.id;
                         re_collector = interaction.channel.createMessageCollector({ filter: re_filter, max: 1, time: 120000 });
                         re_collector.on('collect', async m => {
-                            overall_review = m.content;
+                            overallReview = m.content;
 
-                            if (overall_review.includes('\\n')) {
-                                overall_review = overall_review.split('\\n').join('\n');
+                            if (overallReview.includes('\\n')) {
+                                overallReview = overallReview.split('\\n').join('\n');
                             }
 
-                            epEmbed.setDescription(`*${overall_review}*`);
+                            epEmbed.setDescription(`*${overallReview}*`);
                             for (let j = 0; j < artistArray.length; j++) {
-                                db.reviewDB.set(artistArray[j], overall_review, `["${epName}"].["${interaction.user.id}"].review`);
+                                db.reviewDB.set(artistArray[j], overallReview, `${setterEpName}.${interaction.user.id}.review`);
                             }
 
                             row2 = new ActionRowBuilder()
@@ -410,18 +412,18 @@ module.exports = {
                     } break;
                     case 'star': {
                         // If we don't have a 10 rating, the button does nothing.
-                        if (overall_rating < 8) return await i.update({ embeds: [epEmbed], components: [row, row2] });
+                        if (overallRating < 8) return await i.update({ embeds: [epEmbed], components: [row, row2] });
 
                         if (starred == false) {
-                            if (overall_rating !== false) {
-                                epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} (${overall_rating}/10) 🌟`);
+                            if (overallRating !== false) {
+                                epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} (${overallRating}/10) 🌟`);
                             } else {
                                 epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} 🌟`);
                             }
                             starred = true;
                         } else {
-                            if (overall_rating !== false) {
-                                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overall_rating}/10)`);
+                            if (overallRating !== false) {
+                                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overallRating}/10)`);
                             } else {
                                 epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
                             }
@@ -451,20 +453,20 @@ module.exports = {
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
-                        review_ep(interaction, artistArray, epName, overall_rating, overall_review, taggedUser, art, starred, tag);
+                        review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, tag);
 
                         // Set message ids
                         for (let j = 0; j < artistArray.length; j++) {
-                            db.reviewDB.set(artistArray[j], msg.id, `["${epName}"].["${interaction.user.id}"].msg_id`);
-                            db.reviewDB.set(artistArray[j], msg.url, `["${epName}"].["${interaction.user.id}"].url`);
+                            db.reviewDB.set(artistArray[j], msg.id, `${setterEpName}.${interaction.user.id}.msg_id`);
+                            db.reviewDB.set(artistArray[j], msg.url, `${setterEpName}.${interaction.user.id}.url`);
                         }
 
                         for (let j = 0; j < artistArray.length; j++) {
-                            db.reviewDB.set(artistArray[j], true, `["${epName}"].["${interaction.user.id}"].no_songs`);
+                            db.reviewDB.set(artistArray[j], true, `${setterEpName}.${interaction.user.id}.no_songs`);
                         }
 
-                        if (overall_review != false) epEmbed.setDescription(`${overall_review}`);
-                        if (overall_rating !== false) epEmbed.addFields([{ name: `Rating`, value: `**${overall_rating}/10**` }]);
+                        if (overallReview != false) epEmbed.setDescription(`${overallReview}`);
+                        if (overallRating !== false) epEmbed.addFields([{ name: `Rating`, value: `**${overallRating}/10**` }]);
                         if (starred == false) {
                             epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
                         } else {
@@ -481,10 +483,10 @@ module.exports = {
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
-                        review_ep(interaction, artistArray, epName, overall_rating, overall_review, taggedUser, art, starred, tag);
+                        review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, tag);
 
                         let epSongs = await (db.user_stats.get(interaction.user.id, 'current_ep_review.track_list') != false 
-                        ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(artistArray[0], `["${epName}"].songs`));
+                        ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(artistArray[0])[epName].songs);
                         if (epSongs == false || epSongs == undefined) epSongs = [];
 
                         // Setup tags if necessary
@@ -499,8 +501,8 @@ module.exports = {
 
                         // Set message ids
                         for (let j = 0; j < artistArray.length; j++) {
-                            db.reviewDB.set(artistArray[j], msg.id, `["${epName}"].["${interaction.user.id}"].msg_id`);
-                            db.reviewDB.set(artistArray[j], msg.url, `["${epName}"].["${interaction.user.id}"].url`);
+                            db.reviewDB.set(artistArray[j], msg.id, `${setterEpName}.${interaction.user.id}.msg_id`);
+                            db.reviewDB.set(artistArray[j], msg.url, `${setterEpName}.${interaction.user.id}.url`);
                         }
 
                         await i.update({ embeds: [epEmbed], components: [] });

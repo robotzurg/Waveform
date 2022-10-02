@@ -47,7 +47,7 @@ module.exports = {
         .setThumbnail(songArt);
 
         if (db.reviewDB.has(artistArray[0])) {
-            let songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
+            let songObj = db.reviewDB.get(artistArray[0])[songName];
             if (songObj != undefined) {
                 let userArray = get_user_reviews(songObj);
                 const rankNumArray = [];
@@ -55,11 +55,11 @@ module.exports = {
                 let yourStar = '';
 
                 for (let i = 0; i < userArray.length; i++) {
-                    if (userArray[i] == `${interaction.user.id}`) yourRating = db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].rating`);
+                    if (userArray[i] == `${interaction.user.id}`) yourRating = songObj[userArray[i]].rating;
                     if (userArray[i] != 'ep') {
                         let rating;
-                        rating = db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].rating`);
-                        if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].starred`) == true) {
+                        rating = songObj[userArray[i]].rating;
+                        if (songObj[userArray[i]].starred == true) {
                             starNum++;
                             if (userArray[i] == `${interaction.user.id}`) {
                                 yourStar = '⭐'; //Added to the end of your rating tab
@@ -84,8 +84,8 @@ module.exports = {
                 }
 
                 if (songObj.ep != undefined && songObj.ep != false) {
-                    if (db.reviewDB.get(artistArray[0], `["${songObj.ep}"].art`) != false) {
-                        npEmbed.setFooter({ text: `from ${songObj.ep}`, iconURL: db.reviewDB.get(artistArray[0], `["${db.reviewDB.get(artistArray[0], `["${songName}"].ep`)}"].art`) });
+                    if (db.reviewDB.get(artistArray[0])[songObj.ep].art != false) {
+                        npEmbed.setFooter({ text: `from ${songObj.ep}`, iconURL: db.reviewDB.get(artistArray[0])[songObj.ep].art });
                     } else {
                         npEmbed.setFooter({ text: `from ${songObj.ep}` });
                     }

@@ -45,9 +45,10 @@ module.exports = {
         let remixes = [];
         let starCount = 0;
 
-        songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
+        songObj = db.reviewDB.get(artistArray[0])[songName];
         if (songObj == undefined) { return interaction.reply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
         `\nUse \`/getArtist\` to get a full list of this artist's songs.`); }
+
         songEP = songObj.ep;
         remixArray = songObj.remixers;
         if (remixArray == undefined) {
@@ -66,7 +67,7 @@ module.exports = {
         
         let userArray = get_user_reviews(songObj);
         let userIDList = userArray.slice(0); //.slice(0) is there to create a COPY, not a REFERENCE.
-        const songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+        const songArt = songObj.art;
 
         const rankNumArray = [];
         const songEmbed = new EmbedBuilder()
@@ -78,8 +79,8 @@ module.exports = {
                 let rating;
                 let ratingDisplay;
                 let starred = false;
-                rating = db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].rating`);
-                if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].starred`) == true) {
+                rating = songObj[userArray[i]].rating;
+                if (songObj[userArray[i]].starred == true) {
                     starCount++;
                     starred = true;
                 }
@@ -131,7 +132,7 @@ module.exports = {
         }
 
         if (songEP != false) {
-            songEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0], `["${songEP}"].art`) });
+            songEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0])[songEP].art });
             if (tags.length != 0) songEmbed.addFields([{ name: 'Tags:', value: `\`${tags.join(', ')}\`` }]);
         } else if (tags.length != 0) {
             songEmbed.setFooter({ text: `Tags: ${tags.join(', ')}` });
@@ -187,17 +188,19 @@ module.exports = {
                 
                 const taggedMember = await interaction.guild.members.fetch(i.values[0]);
                 const taggedUser = taggedMember.user;
-                const starred = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].starred`);
-                const review = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].review`);
-                const rating = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].rating`);
-                let sentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].sentby`);
-                let url = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].url`);
+                let starred = songObj[i.values[0]].starred;
+                let review = songObj[i.values[0]].review;
+                let rating = songObj[i.values[0]].rating;
+                let sentby = songObj[i.values[0]].sentby;
+                let url = songObj[i.values[0]].url;
                 
                 // If we don't have a single review link, we can check for an EP/LP review link
                 if (url == false && (songEP != false && songEP != undefined)) {
-                    let songEPObj = db.reviewDB.get(artistArray[0], `["${songEP}"]`);
-                    if (songEPObj[`${interaction.user.id}`].url != false) {
-                        url = songEPObj[`${interaction.user.id}`].url;
+                    let songEPObj = db.reviewDB.get(artistArray[0])[songEP];
+                    if (songEPObj[`${interaction.user.id}`] != undefined) {
+                        if (songEPObj[`${interaction.user.id}`].url != false) {
+                            url = songEPObj[`${interaction.user.id}`].url;
+                        }
                     }
                 }
 
@@ -224,10 +227,10 @@ module.exports = {
                 if (sentby != false) {
                     reviewEmbed.setFooter({ text: `Sent by ${sentby.displayName}`, iconURL: `${sentby.user.avatarURL({ extension: "png" })}` });
                 } else if (songEP != undefined && songEP != false) {
-                    reviewEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0], `["${songEP}"].art`) });
+                    reviewEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0])[songEP].art });
                 }
 
-                let reviewMsgID = db.reviewDB.get(artistArray[0], `["${songName}"].["${i.values[0]}"].msg_id`);
+                let reviewMsgID = songObj[i.values[0]][`msg_id`];
                 if (reviewMsgID != false && reviewMsgID != undefined) {
                     let channelsearch = await find_review_channel(interaction, i.values[0], reviewMsgID);
                     if (channelsearch != undefined) {
@@ -247,7 +250,7 @@ module.exports = {
         });
 
         collector.on('end', async () => {
-            interaction.reply({ content: ` `, embeds: [songEmbed], components: [] });
+            interaction.editReply({ content: ` `, embeds: [songEmbed], components: [] });
         });
 
         } catch (err) {

@@ -31,24 +31,24 @@ module.exports = {
             let artistArray = song_info.all_artists;
             let epType = epName.includes(' LP') ? `LP` : `EP`;
 
-            let epObj = db.reviewDB.get(artistArray[0], `["${epName}"]`);
+            let epObj = db.reviewDB.get(artistArray[0])[epName];
             if (epObj == undefined) {
                 return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
             }
 
-            let ep_art = db.reviewDB.get(artistArray[0], `["${epName}"].art`);
+            let ep_art = epObj.art;
             if (ep_art == undefined || ep_art == false) {
                 ep_art = interaction.user.avatarURL({ extension: "png", dynamic: false });
             }
 
-            let tags = db.reviewDB.get(artistArray[0], `["${epName}"].tags`);
+            let tags = epObj.tags;
             if (tags == undefined || tags == false || tags == null) tags = [];
 
             let rankNumArray = [];
             let epRankArray = [];
             let songRankArray = [];
             let rating;
-            let epSongArray = db.reviewDB.get(artistArray[0], `["${epName}"].songs`);
+            let epSongArray = epObj.songs;
 
             await create_ep_review(interaction, client, origArtistArray, epSongArray, epName, ep_art);
 
@@ -57,7 +57,7 @@ module.exports = {
                 .setTitle(`${origArtistArray} - ${epName} tracks`)
                 .setThumbnail(ep_art);
 
-                let reviewNum = Object.keys(db.reviewDB.get(artistArray[0], `["${epName}"]`));
+                let reviewNum = Object.keys(db.reviewDB.get(artistArray[0])[epName]);
                 reviewNum = reviewNum.filter(e => e !== 'art');
                 reviewNum = reviewNum.filter(e => e !== 'songs');
                 reviewNum = reviewNum.filter(e => e !== 'collab');
@@ -68,17 +68,16 @@ module.exports = {
                 let epnum = 0;
 
                 for (let i = 0; i < reviewNum.length; i++) {
-                    let userObj = db.reviewDB.get(artistArray[0], `["${epName}"].["${reviewNum[i]}"]`);
+                    let userObj = db.reviewDB.get(artistArray[0])[epName][reviewNum[i]];
                     userArray[i] = `<@${reviewNum[i]}>${(userObj.rating !== false) ? ` \`${userObj.rating}/10\`` : ` \`No Rating\``}`;
-                    rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${reviewNum[i]}"].rating`);
-                    if (rating !== false && rating != undefined && !isNaN(rating)) {
-                        epRankArray.push(parseFloat(rating));
+                    if (userObj.rating !== false && userObj.rating != undefined && !isNaN(userObj.rating)) {
+                        epRankArray.push(userObj.rating);
                     }
                 }
                 
                 for (let i = 0; i < epSongArray.length; i++) {
                     let songArtist = artistArray[0];
-                    let songObj = db.reviewDB.get(songArtist, `["${epSongArray[i]}"]`);
+                    let songObj = db.reviewDB.get(songArtist)[epSongArray[i]];
                     epnum++;
 
                     reviewNum = get_user_reviews(songObj);
@@ -86,8 +85,8 @@ module.exports = {
                     let star_num = 0;
 
                     for (let ii = 0; ii < reviewNum.length; ii++) {
-                        rating = db.reviewDB.get(songArtist, `["${epSongArray[i]}"].["${reviewNum[ii]}"].rating`);
-                        if (db.reviewDB.get(songArtist, `["${epSongArray[i]}"].["${reviewNum[ii]}"].starred`) == true) {
+                        rating = songObj[reviewNum[ii]].rating;
+                        if (songObj[reviewNum[ii]].starred == true) {
                             star_num++;
                         }
                         if (rating !== false) {
@@ -168,14 +167,15 @@ module.exports = {
 
                 const taggedMember = await interaction.guild.members.fetch(select.values[0]);
                 const taggedUser = taggedMember.user;
+                let epReviewObj = epObj[taggedUser.id];
 
-                let ep_url = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].url`);
-                let ep_overall_rating = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].rating`);
-                let ep_overall_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].review`);
-                let no_songs_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].no_songs`);
-                let ep_sent_by = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].sentby`);
+                let ep_url = epReviewObj.url;
+                let ep_overall_rating = epReviewObj.rating;
+                let ep_overall_review = epReviewObj.review;
+                let no_songs_review = epReviewObj.no_songs;
+                let ep_sent_by = epReviewObj.sentby;
                 if (no_songs_review == undefined) no_songs_review = false; // Undefined handling for EP/LP reviews without this
-                let ep_starred = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].starred`);
+                let ep_starred = epReviewObj.starred;
                 let rreview;
                 let rscore;
                 let rsentby;
@@ -191,27 +191,29 @@ module.exports = {
                         let songName = epSongArray[i];
                         let artistsEmbed = [];
                         let vocalistsEmbed = [];
+                        let songObj = db.reviewDB.get(artistArray[0])[songName];
+                        let songReviewObj = songObj[taggedUser.id];
         
-                        rreview = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].review`);
+                        rreview = songReviewObj.review;
                         if (rreview.length > 1000) rreview = '*Review hidden to save space*';
-                        rscore = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].rating`);
-                        rsentby = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].sentby`);
-                        rstarred = db.reviewDB.get(artistArray[0], `["${songName}"].["${taggedUser.id}"].starred`);
+                        rscore = songReviewObj.rating;
+                        rsentby = songReviewObj.sentby;
+                        rstarred = songReviewObj.starred;
         
                         // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
-                        if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`) != undefined) {
-                            if (db.reviewDB.get(artistArray[0], `["${songName}"].collab`).length != 0) {
+                        if (songObj.collab != undefined) {
+                            if (songObj.collab.length != 0) {
                                 artistsEmbed = [];
-                                artistsEmbed.push(db.reviewDB.get(artistArray[0], `["${songName}"].collab`));
+                                artistsEmbed.push(songObj.collab);
                                 artistsEmbed = artistsEmbed.flat(1);
                                 artistsEmbed = artistsEmbed.join(' & ');
                             }
                         }
                 
-                        if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`) != undefined) {
-                            if (db.reviewDB.get(artistArray[0], `["${songName}"].vocals`).length != 0) {
+                        if (songObj.vocals != undefined) {
+                            if (songObj.vocals.length != 0) {
                                 vocalistsEmbed = [];
-                                vocalistsEmbed.push(db.reviewDB.get(artistArray[0], `["${songName}"].vocals`));
+                                vocalistsEmbed.push(songObj.vocals);
                                 vocalistsEmbed = vocalistsEmbed.flat(1);
                                 vocalistsEmbed = vocalistsEmbed.join(' & ');
                             }
@@ -263,7 +265,7 @@ module.exports = {
                     epReviewEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}`, iconURL: `${ep_sent_by.user.avatarURL({ extension: "png" })}` });
                 }
 
-                let reviewMsgID = db.reviewDB.get(artistArray[0], `["${epName}"].["${taggedUser.id}"].msg_id`);
+                let reviewMsgID = epReviewObj.msg_id;
                 if (reviewMsgID != false && reviewMsgID != undefined) {
                     let channelsearch = await find_review_channel(interaction, taggedUser.id, reviewMsgID);
                     if (channelsearch != undefined) {
@@ -272,8 +274,6 @@ module.exports = {
                         });
                     }
                 }
-
-                console.log();
 
                 if (new Embed(epReviewEmbed.toJSON()).length > 5250) {
                     for (let i = 0; i < epReviewEmbed.data.fields.length; i++) {

@@ -69,7 +69,7 @@ module.exports = {
         songArray = songArray.map(item => item.replace('\\', '\\\\'));
 
         for (let i = 0; i < songArray.length; i++) {
-            songObj = db.reviewDB.get(artist, `["${songArray[i]}"]`);
+            songObj = db.reviewDB.get(artist)[songArray[i]];
             userArray = get_user_reviews(songObj);
             userArray = userArray.filter(item => item == taggedUser.id);
             if (userArray.length != 0) {

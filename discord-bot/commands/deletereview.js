@@ -41,18 +41,18 @@ module.exports = {
         let artistArray = song_info.all_artists;
         let rmxArtistArray = song_info.remix_artists;
         let vocalistArray = song_info.vocal_artists;
+        // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+        let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
 
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
-
-        let userToDelete = interaction.user;
-        let rname;
 
         // Update user stats
         if (db.user_stats.get(interaction.user.id, 'recent_review').includes(songName)) {
             db.user_stats.set(interaction.user.id, 'N/A', 'recent_review');
         }
 
-        let reviewMsgID = db.reviewDB.get(artistArray[0], `["${songName}"].["${userToDelete.id}"].msg_id`);
+        // Delete review message
+        let reviewMsgID = db.reviewDB.get(artistArray[0])[songName][interaction.user.id].msg_id;
         if (reviewMsgID != false && reviewMsgID != undefined) {
             let channelsearch = await find_review_channel(interaction, interaction.user.id, reviewMsgID);
             if (channelsearch != undefined) {
@@ -62,31 +62,28 @@ module.exports = {
             }
         }
 
-        let songObj;
         for (let i = 0; i < artistArray.length; i++) {
-            rname = db.reviewDB.get(artistArray[i], `["${songName}"].["${userToDelete.id}"].name`);
-            if (rname == undefined) break;
+            let songObj = db.reviewDB.get(artistArray[i], `["${songName}"]`);
+            let songReviewObj = songObj[interaction.user.id];
+            if (songReviewObj.name == undefined) break;
 
-            songObj = db.reviewDB.get(artistArray[i], `["${songName}"]`);
-
-            if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].starred`) == true) {
+            if (songReviewObj.starred == true) {
                 // Create display song name variable
                 let displaySongName = (`${origSongName}` + 
                 `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
                 `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
                 
                 db.user_stats.remove(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
-                db.reviewDB.set(artistArray[i], false, `["${songName}"].["${interaction.user.id}"].starred`);   
-                hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName,
-                    db.reviewDB.get(artistArray[0], `["${songName}"].art`), true);
+                db.reviewDB.set(artistArray[i], false, `${setterSongName}.${interaction.user.id}.starred`);   
+                hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songObj.art, true);
             }
 
-            delete songObj[`${userToDelete.id}`];
+            delete songObj[`${interaction.user.id}`];
             if (!songName.includes(' EP') && !songName.includes(' LP')) {
-                songObj[`review_num`] -= 1;
+                songObj.review_num -= 1;
             }
 
-            db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
+            db.reviewDB.set(artistArray[i], songObj, `${setterSongName}`);
         }
 
         await interaction.reply(`Deleted ${interaction.member.displayName}'s review of ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}.`);

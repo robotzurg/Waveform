@@ -107,7 +107,7 @@ client.on('interactionCreate', async interaction => {
                                 artist_collab[i] = [];
                                 continue;
                             }
-                            artist_collab[i] = db.reviewDB.get(artist_names[0].name, `["${artist_collab[i]}"].collab`);
+                            artist_collab[i] = db.reviewDB.get(artist_names[0].name)[artist_collab[i]].collab;
                             if (artist_collab[i] == undefined) artist_collab[i] = [];
                             if (artist_collab[i].length > 1) {
                                 artist_collab[i] = artist_collab[i].join(' & ');
@@ -147,8 +147,8 @@ client.on('interactionCreate', async interaction => {
                     if (val_artist_array.length <= 1) {
                         break;
                     } else {
-                        if (db.reviewDB.get(val_artist_array[0], `["${artist_songs[i]}"].collab`) == undefined) return interaction.respond([]);
-                        if (db.reviewDB.get(val_artist_array[0], `["${artist_songs[i]}"].collab`).includes(`${val_artist_array[1]}`)) {
+                        if (db.reviewDB.get(val_artist_array[0])[artist_songs[i]].collab == undefined) return interaction.respond([]);
+                        if (db.reviewDB.get(val_artist_array[0])[artist_songs[i]].collab.includes(`${val_artist_array[1]}`)) {
                             collab_artist_songs.push(artist_songs[i]);
                         }
                     }
@@ -170,7 +170,7 @@ client.on('interactionCreate', async interaction => {
 
             } else if (focused[0].name == 'remixers') {
                 if (db.reviewDB.has(val_artist.split(' & ')[0])) {
-                    let artist_remixers = db.reviewDB.get(val_artist.split(' & ')[0], `["${val_song}"].remixers`);
+                    let artist_remixers = db.reviewDB.get(val_artist.split(' & ')[0])[val_song].remixers;
                     if (artist_remixers == undefined) {
                         interaction.respond([]);
                         return;   

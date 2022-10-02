@@ -21,15 +21,16 @@ module.exports = {
             songArray = songArray.filter(v => v != 'Image');
 
             for (let j = 0; j < songArray.length; j++) {
-                let userArray = db.reviewDB.get(artistArray[i], `["${songArray[j]}"]`);
-                if (userArray != null && userArray != undefined) {
-                    userArray = get_user_reviews(userArray);
+                let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];
+                let userArray;
+                if (songObj != null && songObj != undefined) {
+                    userArray = get_user_reviews(songObj);
                 } else {
                     userArray = [];
                 }
 
                 for (let k = 0; k < userArray.length; k++) {
-                    let userData = db.reviewDB.get(artistArray[i], `["${songArray[j]}"].["${userArray[k]}"]`);
+                    let userData = db.reviewDB.get(artistArray[i])[songArray[j]][userArray[k]];
                     if (userData.starred == true) {
                         starCount += 1;
                     }

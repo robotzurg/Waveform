@@ -104,36 +104,35 @@ module.exports = {
 
                 // Handle EP/LP songs
                 for (let i = 0; i < epKeyArray.length; i++) {
-                    let epCollabArray = db.reviewDB.get(artist, `["${epKeyArray[i]}"].collab`);
+                    let epCollabArray = artistObj[epKeyArray[i]].collab;
                     let epStarNum = 0;
-                    let epReviewNum = Object.keys(db.reviewDB.get(artist, `["${epKeyArray[i]}"]`));
+                    let epReviewNum = Object.keys(artistObj[epKeyArray[i]]);
 
                     epReviewNum = epReviewNum.filter(x => x != 'art');
                     epReviewNum = epReviewNum.filter(x => x != 'collab');
                     epReviewNum = epReviewNum.filter(x => x != 'songs');
 
                     for (let s = 0; s < epReviewNum.length; s++) {
-                        if (db.reviewDB.get(artist, `["${epKeyArray[i]}"].["${epReviewNum[s]}"].starred` == true)) epStarNum += 1;
+                        if (artistObj[epKeyArray[i]][epReviewNum[s]].starred == true) epStarNum += 1;
                     }
 
                     epReviewNum = epReviewNum.length;
-
                     let epDetails = `\`${epReviewNum} reviews\`${epStarNum > 0 ? ` \`${epStarNum} ⭐\`` : ``}`;
 
                     let epData = [`**${epKeyArray[i]}` + 
                     `${(epCollabArray.length != 0) ? ` (with ${epCollabArray.join(' & ')})` : ``} ${epDetails}**`];
-                    let epSongs = db.reviewDB.get(artist, `["${epKeyArray[i]}"].songs`);
+                    let epSongs = artistObj[epKeyArray[i]].songs;
                     if (epSongs == undefined) epSongs = [];
 
                     for (let ii = 0; ii < epSongs.length; ii++) {
                         starNum = 0;
-                        const songObj = db.reviewDB.get(artist, `["${epSongs[ii]}"]`);
-                        reviewNum = parseInt(db.reviewDB.get(artist, `["${epSongs[ii]}"].review_num`));
+                        const songObj = artistObj[epSongs[ii]];
+                        reviewNum = parseInt(artistObj[epSongs[ii]].review_num);
                         let reviews = get_user_reviews(songObj);
                         
                         for (let x = 0; x < reviews.length; x++) {
-                            let rating = db.reviewDB.get(artist, `["${epSongs[ii]}"].["${reviews[x]}"].rating`);
-                            let starred = db.reviewDB.get(artist, `["${epSongs[ii]}"].[${reviews[x]}].starred`);
+                            let rating = songObj[reviews[x]].rating;
+                            let starred = songObj[reviews[x]].starred;
                             rankNumArray.push(parseFloat(rating));
                             if (starred == true) { 
                                 starNum++; 
@@ -143,9 +142,9 @@ module.exports = {
                         }
 
                         let songDetails;
-                        let remixerKeys = db.reviewDB.get(artist, `["${epSongs[ii]}"].remixers`);
-                        let collabArray = db.reviewDB.get(artist, `["${epSongs[ii]}"].collab`); // This also doubles as remixer original artists
-                        let vocalistArray = db.reviewDB.get(artist, `["${epSongs[ii]}"].vocals`);
+                        let remixerKeys = songObj.remixers;
+                        let collabArray = songObj.collab; // This also doubles as remixer original artists
+                        let vocalistArray = songObj.vocals;
                         collabArray = collabArray.filter(v => !vocalistArray.includes(v));
 
                         if (remixerKeys.length > 0) {
@@ -168,15 +167,14 @@ module.exports = {
                 }
 
                 for (let i = 0; i < songArray.length; i++) {
-
                     starNum = 0;
                     const songObj = db.reviewDB.get(artist, `${songArray[i]}`);
-                    reviewNum = parseInt(db.reviewDB.get(artist, `["${songArray[i]}"].review_num`));
+                    reviewNum = parseInt(songObj.review_num);
                     let reviews = get_user_reviews(songObj);
                     
                     for (let ii = 0; ii < reviews.length; ii++) {
-                        let rating = db.reviewDB.get(artist, `["${songArray[i]}"].["${reviews[ii]}"].rating`);
-                        let starred = db.reviewDB.get(artist, `["${songArray[i]}"].[${reviews[ii]}].starred`);
+                        let rating = songObj[reviews[ii]].rating;
+                        let starred = songObj[reviews[ii]].starred;
                         rankNumArray.push(parseFloat(rating));
                         if (starred == true) { 
                             starNum++; 

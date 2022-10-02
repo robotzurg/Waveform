@@ -75,6 +75,8 @@ module.exports = {
         let songName = song_info.song_name;
         let artistArray = song_info.all_artists;
         let displaySongName = song_info.display_song_name;
+        // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+        let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
 
         let rating = interaction.options.getString('rating');
         if (rating != null) {
@@ -94,45 +96,44 @@ module.exports = {
         let taggedUser;
         let oldrating;
         let oldreview;
-        let old_user_who_sent;
         let user_sent_name;
+        let songObj;
+        let songReviewObj;
 
         if (rating == null && review == null && user_who_sent == null) return interaction.reply('You must supply either a rating change, a review change, or a user_who_sent change.');
-
         if (user_who_sent != null && user_who_sent != undefined) {
             taggedMember = await interaction.guild.members.fetch(user_who_sent);
             taggedUser = taggedMember.user;
         }
 
-        if (!db.reviewDB.has(artistArray[0])) return interaction.reply(`Artist ${artistArray[0]} not found!`);
-
         for (let i = 0; i < artistArray.length; i++) {
             if (!db.reviewDB.has(artistArray[i])) return interaction.reply(`Artist ${artistArray[i]} not found!`);
-            if (!db.reviewDB.get(artistArray[i], songName) == undefined) return interaction.reply(`Song ${songName} not found!`);
-            if (!db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) == undefined) return interaction.reply(`Review not found!`);
+            songObj = db.reviewDB.get(artistArray[i])[songName];
+            if (songObj == undefined) return interaction.reply(`Song ${songName} not found!`);
+            songReviewObj = songObj[interaction.user.id];
+            if (songReviewObj == undefined) return interaction.reply(`Review not found!`);
 
             if (rating != null && rating != undefined) {
-                if (rating < 8 && db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].starred`) == true) {
+                if (rating < 8 && songReviewObj.starred == true) {
                     return interaction.reply(`This review has a star on it, so you cannot change the rating to anything under 8.\nRemove the star with \`/setstar\` if you'd like to lower the rating!`);
                 }
                 
-                oldrating = db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].rating`);
-                db.reviewDB.set(artistArray[i], parseFloat(rating), `["${songName}"].["${interaction.user.id}"].rating`);
+                oldrating = songReviewObj.rating;
+                db.reviewDB.set(artistArray[i], parseFloat(rating), `${setterSongName}.${interaction.user.id}.rating`);
             } 
 
             if (review != null && review != undefined) {
-                oldreview = db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"].review`);
-                db.reviewDB.set(artistArray[i], review, `["${songName}"].["${interaction.user.id}"].review`);
+                oldreview = songReviewObj.rating;
+                db.reviewDB.set(artistArray[i], review, `${setterSongName}.${interaction.user.id}.review`);
             }
 
             if (user_who_sent != null && user_who_sent != undefined) {
-                old_user_who_sent = db.reviewDB.set(artistArray[i], user_who_sent.id, `["${songName}"].["${interaction.user.id}"].user_who_sent`);
                 user_sent_name = await interaction.guild.members.fetch(user_who_sent);
-                db.reviewDB.set(artistArray[i], user_who_sent.id, `["${songName}"].["${interaction.user.id}"].user_who_sent`);
+                db.reviewDB.set(artistArray[i], user_who_sent.id, `${setterSongName}.${interaction.user.id}.user_who_sent`);
             }
         }
 
-        let reviewMsgID = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].msg_id`);
+        let reviewMsgID = songReviewObj.msg_id;
 
         if (reviewMsgID != false) {
             let channelsearch = await find_review_channel(interaction, interaction.user.id, reviewMsgID);
@@ -151,19 +152,20 @@ module.exports = {
 
         let primArtist = artistArray[0];
         let epMsgToEdit = false;
-        let ep_from = false;
+        let epObj = false;
 
         for (let i = 0; i < artistArray.length; i++) {
-            ep_from = db.reviewDB.get(primArtist, `["${songName}"].ep`);
-            epMsgToEdit = db.reviewDB.get(artistArray[i], `["${ep_from}"].["${interaction.user.id}"].msg_id`);
+            epObj = db.reviewDB.get(primArtist)[songName].ep;
+            if (epObj == undefined || epObj == false) break;
+            epMsgToEdit = epObj[interaction.user.id].msg_id;
             if (epMsgToEdit != false && epMsgToEdit != undefined && epMsgToEdit != null) {
                 primArtist = artistArray[i];
                 break;
             } 
         }
 
-        if (ep_from != false && ep_from != undefined) {
-            if (db.reviewDB.get(primArtist, `["${ep_from}"].["${interaction.user.id}"]`) != undefined) {
+        if (epObj != false && epObj != undefined) {
+            if (epMsgToEdit != undefined && epMsgToEdit != false) {
                 let displayArtists = origArtistArray.filter(v => v != primArtist);
                 let channelsearch = await find_review_channel(interaction, interaction.user.id, epMsgToEdit);
                 if (channelsearch != undefined) {
@@ -195,7 +197,7 @@ module.exports = {
         interaction.reply(`Here's what was edited on your review of **${origArtistArray.join(' & ')} - ${displaySongName}**:\n` +
         `${(oldrating != undefined) ? `\`${oldrating}/10\` changed to \`${rating}/10\`\n` : ``}` +
         `${(oldreview != undefined) ? `Review was changed to \`${review}\`\n` : ``}` +
-        `${(old_user_who_sent != undefined) ? `User Who Sent was changed to \`${user_sent_name.displayName}\`` : ``}`);
+        `${(user_who_sent != null) ? `User Who Sent was changed to \`${user_sent_name.displayName}\`` : ``}`);
 
         } catch (err) {
             let error = err;
