@@ -214,7 +214,7 @@ module.exports = {
         origArtistArray = artistArray.slice(0);
 
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') {
-            if (db.reviewDB.has(artistArray[0])) trackList = db.reviewDB.get(artistArray[0], `["${songArg}"].songs`);
+            if (db.reviewDB.has(artistArray[0])) trackList = db.reviewDB.get(artistArray[0])[songArg].songs;
             if (!trackList) trackList = false;
             db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList }, 'current_ep_review');  
         }
@@ -254,30 +254,35 @@ module.exports = {
             }
 
             if (db.reviewDB.has(artistArray[0])) {
-                if (db.reviewDB.get(artistArray[0], `["${songArg}"].collab`) != undefined) {
-                    if (db.reviewDB.get(artistArray[0], `["${songArg}"].collab`).length != 0) {
-                        artistArray.push(db.reviewDB.get(artistArray[0], `["${songArg}"].collab`));
-                        origArtistArray.push(db.reviewDB.get(artistArray[0], `["${songArg}"].collab`));
-                        artistArray = artistArray.flat(1);
-                        origArtistArray = artistArray.flat(1);
-                        artistArray = [...new Set(artistArray)];
-                        origArtistArray = [...new Set(origArtistArray)];
+                if (db.reviewDB.get(artistArray[0])[songArg] != undefined) {
+                    if (db.reviewDB.get(artistArray[0])[songArg].collab != undefined) {
+                        if (db.reviewDB.get(artistArray[0])[songArg].collab.length != 0) {
+                            artistArray.push(db.reviewDB.get(artistArray[0])[songArg].collab);
+                            origArtistArray.push(db.reviewDB.get(artistArray[0])[songArg].collab);
+                            artistArray = artistArray.flat(1);
+                            origArtistArray = artistArray.flat(1);
+                            artistArray = [...new Set(artistArray)];
+                            origArtistArray = [...new Set(origArtistArray)];
+                        }
                     }
-                }
 
-                if (db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`) != undefined) {
-                    if (db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`).length != 0 && vocalistArray != db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`)) {
-                        vocalistArray = db.reviewDB.get(artistArray[0], `["${songArg}"].vocals`);
+                
+                    if (db.reviewDB.get(artistArray[0])[songArg].vocals != undefined) {
+                        if (db.reviewDB.get(artistArray[0])[songArg].vocals.length != 0 && vocalistArray != db.reviewDB.get(artistArray[0])[songArg].vocals) {
+                            vocalistArray = db.reviewDB.get(artistArray[0])[songArg].vocals;
+                        }
                     }
                 }
             }
 
             if (rmxArtistArray[0] != undefined) {
                 if (db.reviewDB.has(rmxArtistArray[0])) {
-                    if (db.reviewDB.get(rmxArtistArray[0], `["${songArg}"].rmx_collab`) != undefined) {
-                        if (db.reviewDB.get(rmxArtistArray[0], `["${songArg}"].rmx_collab`).length != 0) {
-                            rmxArtistArray.push(db.reviewDB.get(rmxArtistArray[0], `["${songArg}"].rmx_collab`));
-                            rmxArtistArray = rmxArtistArray.flat(1);
+                    if (db.reviewDB.get(rmxArtistArray[0])[songArg] != undefined) {
+                        if (db.reviewDB.get(rmxArtistArray[0])[songArg].rmx_collab != undefined) {
+                            if (db.reviewDB.get(rmxArtistArray[0])[songArg].rmx_collab.length != 0) {
+                                rmxArtistArray.push(db.reviewDB.get(rmxArtistArray[0])[songArg].rmx_collab);
+                                rmxArtistArray = rmxArtistArray.flat(1);
+                            }
                         }
                     }
                 }
@@ -286,7 +291,6 @@ module.exports = {
 
         origArtistArray = origArtistArray.filter(v => !vocalistArray.includes(v));
         origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
-
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray; // Main artist becomes the remix artists
 
         let displaySongName = (`${songArg}` + 
@@ -307,17 +311,16 @@ module.exports = {
     update_art: function(interaction, first_artist, song_name, new_image) {
         const { get_user_reviews, handle_error } = require('./func.js');
 
-        const imageSongObj = db.reviewDB.get(first_artist, `["${song_name}"]`);
+        const imageSongObj = db.reviewDB.get(first_artist)[song_name];
             if (imageSongObj != undefined) {
                 let msgstoEdit = [];
                 let userIDs = [];
                 let count = -1;
 
                 let userArray = get_user_reviews(imageSongObj);
-
                 if (userArray.length != 0) {
                     userArray.forEach(user => {
-                        msgstoEdit.push(db.reviewDB.get(first_artist, `["${song_name}"].["${user}"].msg_id`));
+                        msgstoEdit.push(db.reviewDB.get(first_artist)[song_name][user].msg_id);
                         userIDs.push(user);
                     });
 
@@ -361,6 +364,9 @@ module.exports = {
             user_who_sent = false;
         }
 
+        // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+        let setterSongName = song.includes('.') ? `["${song}"]` : song;
+
         for (let i = 0; i < artistArray.length; i++) {
 
             if (ep_name == undefined) ep_name = false;
@@ -398,7 +404,7 @@ module.exports = {
 
                 db.reviewDB.set(artistArray[i], song_object);
 
-            } else if(db.reviewDB.get(artistArray[i], `["${songName}"]`) == undefined) { //If the artist db exists, check if the song db doesn't exist
+            } else if (db.reviewDB.get(artistArray[i])[songName] == undefined) { //If the artist db exists, check if the song db doesn't exist
                 const artistObj = db.reviewDB.get(artistArray[i]);
 
                 //Create the object that will be injected into the Artist object
@@ -409,9 +415,9 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], artistObj);
                 
 
-            } else if (db.reviewDB.get(artistArray[i], `["${songName}"].["${interaction.user.id}"]`) && review_object.name != undefined) { // Check if you are already in the system, and replace the review if you are.
+            } else if (db.reviewDB.get(artistArray[i])[songName][interaction.user.id] && review_object.name != undefined) { // Check if you are already in the system, and replace the review if you are.
 
-                const songObj = db.reviewDB.get(artistArray[i], `["${songName}"]`);
+                const songObj = db.reviewDB.get(artistArray[i])[songName];
                 delete songObj[`${interaction.user.id}`];
     
                 const newuserObj = {
@@ -419,20 +425,20 @@ module.exports = {
                 };
 
                 Object.assign(songObj, newuserObj);
-                db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
-                db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
-                if (vocalistArray.length != 0 && vocalistArray != db.reviewDB.get(artistArray[i], `["${songName}"].vocals`)) {
-                    db.reviewDB.set(artistArray[i], vocalistArray, `["${songName}"].vocals`);
+                db.reviewDB.set(artistArray[i], songObj, `${setterSongName}`);
+                db.reviewDB.set(artistArray[i], songArt, `${setterSongName}.art`);
+                if (vocalistArray.length != 0 && vocalistArray != songObj.vocals) {
+                    db.reviewDB.set(artistArray[i], vocalistArray, `${setterSongName}.vocals`);
                 }
                 
-                if (tag != null && db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
-                    db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
+                if (tag != null && songObj.tags != undefined) {
+                    db.reviewDB.push(artistArray[i], tag, `${setterSongName}.tags`);
                 } else {
-                    db.reviewDB.set(artistArray[i], [tag], `["${songName}"].tags`);
+                    db.reviewDB.set(artistArray[i], [tag], `${setterSongName}.tags`);
                 }
             } else if (review_object.name != undefined) { // Otherwise if you have no review but the song and artist objects exist
 
-                const songObj = db.reviewDB.get(artistArray[i], `["${songName}"]`);
+                const songObj = db.reviewDB.get(artistArray[i])[songName];
 
                 //Create the object that will be injected into the Song object
                 const newuserObj = {
@@ -441,23 +447,26 @@ module.exports = {
 
                 //Inject the newsongobject into the songobject and then put it in the database
                 Object.assign(songObj, newuserObj);
-                db.reviewDB.set(artistArray[i], songObj, `["${songName}"]`);
-                db.reviewDB.set(artistArray[i], songArt, `["${songName}"].art`);
-                db.reviewDB.math(artistArray[i], '+', 1, `["${songName}"].review_num`);
-                if (vocalistArray.length != 0 && vocalistArray != db.reviewDB.get(artistArray[i], `["${songName}"].vocals`)) {
-                    db.reviewDB.set(artistArray[i], vocalistArray, `["${songName}"].vocals`);
+                db.reviewDB.set(artistArray[i], songObj, `${setterSongName}`);
+                db.reviewDB.set(artistArray[i], songArt, `${setterSongName}.art`);
+                db.reviewDB.math(artistArray[i], '+', 1, `${setterSongName}.review_num`);
+                if (vocalistArray.length != 0 && vocalistArray != songObj.vocals) {
+                    db.reviewDB.set(artistArray[i], vocalistArray, `${setterSongName}.vocals`);
                 }
 
-                if (tag != null && db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
-                    db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
+                if (tag != null && songObj.tags != undefined) {
+                    db.reviewDB.push(artistArray[i], tag, `${setterSongName}.tags`);
                 } else if (tag != null) {
-                    db.reviewDB.set(artistArray[i], [tag], `["${ep_name}"].tags`);
+                    db.reviewDB.set(artistArray[i], [tag], `${setterSongName}.tags`);
                 }
             }
 
         }
     
         if (rmxArtistArray.length != 0) {
+            // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+            let setterOrigSongName = origSongName.includes('.') ? `["${origSongName}"]` : origSongName;
+
             // This loop is for the original artists on a remix review
             for (let i = 0; i < origArtistArray.length; i++) {
                 let song_object = {
@@ -478,7 +487,7 @@ module.exports = {
 
                     db.reviewDB.set(origArtistArray[i], song_object);
     
-                } else if (db.reviewDB.get(origArtistArray[i], `["${origSongName}"]`) == undefined) { //If the artist db exists, check if the song db doesn't exist
+                } else if (db.reviewDB.get(origArtistArray[i])[origSongName] == undefined) { //If the artist db exists, check if the song db doesn't exist
                     const artistObj = db.reviewDB.get(origArtistArray[i]);
     
                     //Create the object that will be injected into the Artist object
@@ -489,8 +498,8 @@ module.exports = {
                     db.reviewDB.set(origArtistArray[i], artistObj);
     
                 } else {
-                    if (!db.reviewDB.get(origArtistArray[i], `["${origSongName}"].remixers`).includes(rmxArtistArray.join(' & '))) {
-                        db.reviewDB.push(origArtistArray[i], rmxArtistArray.join(' & '), `["${origSongName}"].remixers`);
+                    if (!db.reviewDB.get(origArtistArray[i])[origSongName].remixers.includes(rmxArtistArray.join(' & '))) {
+                        db.reviewDB.push(origArtistArray[i], rmxArtistArray.join(' & '), `${setterOrigSongName}.remixers`);
                     }
                 }
             }
@@ -514,7 +523,7 @@ module.exports = {
 
                     db.reviewDB.set(vocalistArray[i], song_object);
     
-                } else if(db.reviewDB.get(vocalistArray[i], `["${origSongName}"]`) == undefined) { //If the artist db exists, check if the song db doesn't exist
+                } else if(db.reviewDB.get(vocalistArray[i])[origSongName] == undefined) { //If the artist db exists, check if the song db doesn't exist
                     const artistObj = db.reviewDB.get(vocalistArray[i]);
     
                     //Create the object that will be injected into the Artist object
@@ -525,8 +534,8 @@ module.exports = {
                     db.reviewDB.set(vocalistArray[i], artistObj);
     
                 } else {
-                    if (!db.reviewDB.get(vocalistArray[i], `["${origSongName}"].remixers`).includes(rmxArtistArray.join(' & '))) {
-                        db.reviewDB.push(vocalistArray[i], rmxArtistArray.join(' & '), `["${origSongName}"].remixers`);
+                    if (!db.reviewDB.get(vocalistArray[i])[origSongName].remixers.includes(rmxArtistArray.join(' & '))) {
+                        db.reviewDB.push(vocalistArray[i], rmxArtistArray.join(' & '), `${setterOrigSongName}.remixers`);
                     }
                 }
             }
@@ -534,6 +543,9 @@ module.exports = {
     },
 
     review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred, tag) {
+
+        // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+        let setterEpName = ep_name.includes('.') ? `["${ep_name}"]` : ep_name;
 
         // Add in the EP object/review
         for (let i = 0; i < artistArray.length; i++) {
@@ -570,26 +582,26 @@ module.exports = {
 
             if (!db.reviewDB.has(artistArray[i])) {
                 db.reviewDB.set(artistArray[i], epObject);
-            } else if (!db.reviewDB.get(artistArray[i], `["${ep_name}"]`)) {
+            } else if (!db.reviewDB.get(artistArray[i])[ep_name]) {
                 let db_artist_obj = db.reviewDB.get(artistArray[i]);
                 Object.assign(db_artist_obj, epObject);
                 db.reviewDB.set(artistArray[i], db_artist_obj);
             } else {
-                const db_song_obj = db.reviewDB.get(artistArray[i], `["${ep_name}"]`);
+                const db_song_obj = db.reviewDB.get(artistArray[i])[ep_name];
                 let new_user_obj = {
                     [`${interaction.user.id}`]: reviewObject,
                 };
 
                 Object.assign(db_song_obj, new_user_obj);
-                db.reviewDB.set(artistArray[i], db_song_obj, `["${ep_name}"]`);
+                db.reviewDB.set(artistArray[i], db_song_obj, `${setterEpName}"]`);
                 if (art != undefined && art != false && art != null && !art.includes('avatar')) {
-                    db.reviewDB.set(artistArray[i], art, `["${ep_name}"].art`);
+                    db.reviewDB.set(artistArray[i], art, `${setterEpName}.art`);
                 }
                 
-                if (tag != null && db.reviewDB.get(artistArray[i], `["${ep_name}"].tags`) != undefined) {
-                    db.reviewDB.push(artistArray[i], tag, `["${ep_name}"].tags`);
+                if (tag != null && db.reviewDB.get(artistArray[i])[ep_name].tags != undefined) {
+                    db.reviewDB.push(artistArray[i], tag, `${setterEpName}.tags`);
                 } else if (tag != null) {
-                    db.reviewDB.set(artistArray[i], [tag], `["${ep_name}"].tags`);
+                    db.reviewDB.set(artistArray[i], [tag], `${setterEpName}.tags`);
                 }
             }
         }
@@ -599,15 +611,16 @@ module.exports = {
         
         const { get_user_reviews, handle_error } = require('./func.js');
 
-        const songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
-
+        const songObj = db.reviewDB.get(artistArray[0])[songName];
+        // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+        let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
         let star_array = [];
         let star_count = 0;
         let userArray = get_user_reviews(songObj);
 
         for (let i = 0; i < userArray.length; i++) {
             let star_check;
-            star_check = db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].starred`);
+            star_check = songObj[userArray[i]].starred;
 
             if (star_check == true) {
                 star_count++;
@@ -630,7 +643,7 @@ module.exports = {
                 hofChannel.send({ embeds: [hofEmbed] }).then(hof_msg => {
                     db.hall_of_fame.set(songName, hof_msg.id);
                     for (let i = 0; i < artistArray.length; i++) {
-                        db.reviewDB.set(artistArray[i], hof_msg.id, `["${songName}"].hof_id`);
+                        db.reviewDB.set(artistArray[i], hof_msg.id, `${setterSongName}.hof_id`);
                     }
                 }).catch((err) => {
                     handle_error(interaction, err);
@@ -642,7 +655,7 @@ module.exports = {
                     handle_error(interaction, err);
                 });
             }
-        } else if (check_to_remove == true && db.reviewDB.get(artistArray[0], `["${songName}"].hof_id`) != false && db.reviewDB.get(artistArray[0], `["${songName}"].hof_id`) != undefined) {
+        } else if (check_to_remove == true && songObj.hof_id != false && songObj.hof_id != undefined) {
             const hofChannel = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel').slice(0, -1).slice(2));
             hofChannel.messages.fetch(`${db.hall_of_fame.get(songName)}`).then(msg => {
                 msg.delete();
@@ -704,8 +717,12 @@ module.exports = {
     },
 
     handle_error: function(interaction, err) {
-        interaction.channel.send({ content: `Waveform ran into an error. Don't worry, the bot is still online!\nError: \`${err}\``, 
-        embeds: [], components: [] });
+        interaction.editReply({ content: `Waveform ran into an error. Don't worry, the bot is still online!\nError: \`${err}\``, 
+        embeds: [], components: [] }).catch(() => {
+            interaction.reply({ content: `Waveform ran into an error. Don't worry, the bot is still online!\nError: \`${err}\``, 
+            embeds: [], components: [] });
+        });
+
         let error_channel = interaction.guild.channels.cache.get('933610135719395329');
         let error = String(err.stack);
         interaction.fetchReply().then(msg => {
@@ -744,8 +761,9 @@ module.exports = {
             let songCollabArray = [];
             let songVocalistArray = [];
             let userArray;
-
-            let songObj = db.reviewDB.get(origArtistArray[0], `["${songArray[i]}"]`);
+            let songObj = db.reviewDB.get(origArtistArray[0])[songArray[i]];
+            // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+            let setterSongName = songArray[i].includes('.') ? `["${songArray[i]}"]` : songArray[i];
 
             if (all_reviewed_users.length == 0) {
                 all_reviewed_users = get_user_reviews(songObj);        
@@ -784,7 +802,7 @@ module.exports = {
             }
 
             for (let j = 0; j < songArtistArray.length; j++) {
-                db.reviewDB.set(songArtistArray[j], ep_name, `["${songArray[i]}"].ep`);
+                db.reviewDB.set(songArtistArray[j], ep_name, `${setterSongName}.ep`);
             }
 
         }
@@ -793,7 +811,7 @@ module.exports = {
 
         for (let i = 0; i < origArtistArray.length; i++) {
 
-            if (db.reviewDB.get(origArtistArray[0], `["${ep_name}"]`) == undefined) {  
+            if (db.reviewDB.get(origArtistArray[0])[ep_name] == undefined) {  
                 ep_object = {
                     [ep_name]: {
                         art: ep_art,
@@ -805,7 +823,7 @@ module.exports = {
             } else {
                 ep_object = db.reviewDB.get(origArtistArray[i]);
                 
-                let epUserArray = Object.keys(db.reviewDB.get(origArtistArray[i], `["${ep_name}"]`));
+                let epUserArray = Object.keys(db.reviewDB.get(origArtistArray[i])[ep_name]);
                 epUserArray = epUserArray.filter(e => e !== 'art');
                 epUserArray = epUserArray.filter(e => e !== 'songs');
                 epUserArray = epUserArray.filter(e => e !== 'collab');

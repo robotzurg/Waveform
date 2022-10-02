@@ -41,21 +41,19 @@ module.exports = {
         rmxArtistArray = song_info.remix_artists;
         let vocalistArray = song_info.vocal_artists;
         let displaySongName = song_info.display_song_name;
-        let songArt;
+        // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+        // eslint-disable-next-line no-unused-vars
+        let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
+        let songObj = db.reviewDB.get(artistArray[0])[songName];
+        let songArt = songObj.art != undefined ? songObj.art : false;
 
-        if (db.reviewDB.get(artistArray[0], `["${songName}"].art`) != false && db.reviewDB.get(artistArray[0], `["${songName}"].art`) != undefined) {
-            songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
-        }
-
-        let remixers = db.reviewDB.get(artistArray[0], `["${songName}"].remixers`);
-        let tags = db.reviewDB.get(artistArray[0], `["${songName}"].tags`);
-        if (tags == undefined) tags = [];
-
-        let userArray = get_user_reviews(db.reviewDB.get(artistArray[0], `["${songName}"]`));
+        let remixers = songObj.remixers;
+        let tags = songObj.tags != undefined ? songObj.tags : [];
+        let userArray = get_user_reviews(songObj);
 
         for (let i = 0; i < userArray.length; i++) {
             if (userArray[i] != 'EP') {
-                if (db.reviewDB.get(artistArray[0], `["${songName}"].["${userArray[i]}"].starred`) == true) {
+                if (songObj[userArray[i]].starred == true) {
                     userArray[i] = `:star2: <@${userArray[i]}>`;
                 } else {
                     userArray[i] = `<@${userArray[i]}>`;

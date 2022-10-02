@@ -126,6 +126,8 @@ module.exports = {
         vocalistArray = song_info.vocal_artists;
         let displaySongName = song_info.display_song_name;
         let origSongName = song_info.main_song_name;
+        // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+        let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
 
         let rating = interaction.options.getString('rating');
         if (rating == null) rating = false;
@@ -206,8 +208,10 @@ module.exports = {
         if (songArt == false || songArt == null || songArt == undefined) {
             songArt = await grab_spotify_art(origArtistArray, songName, interaction);
             if (db.reviewDB.has(artistArray[0])) {
-                if (db.reviewDB.get(artistArray[0], `["${songName}"].art`) != false && db.reviewDB.get(artistArray[0], `["${songName}"].art`) != undefined) {
-                    songArt = await db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+                if (db.reviewDB.get(artistArray[0])[songName] != undefined) {
+                    if (db.reviewDB.get(artistArray[0])[songName].art != false && db.reviewDB.get(artistArray[0])[songName].art != undefined) {
+                        songArt = await db.reviewDB.get(artistArray[0])[songName].art;
+                    }
                 }
             }
         } else {
@@ -303,7 +307,7 @@ module.exports = {
                             songArt = await grab_spotify_art(artistArray, songName, interaction);
                             if (songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: false });
                         } else {
-                            if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+                            if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0])[songName].art;
                             if (songArt == undefined || songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: false });
                         }
                         reviewEmbed.setThumbnail(songArt);
@@ -341,7 +345,7 @@ module.exports = {
                             songArt = await grab_spotify_art(artistArray, songName, interaction);
                             if (songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: false });
                         } else {
-                            if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+                            if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0])[songName].art;
                             if (songArt == undefined || songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: false });
                         }
                         reviewEmbed.setThumbnail(songArt);
@@ -464,7 +468,7 @@ module.exports = {
                         if (ep_songs == false) ep_songs = [];
 
                         for (let j = 0; j < artistArray.length; j++) {
-                            db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
+                            db.reviewDB.set(artistArray[j], ep_name, `${setterSongName}.ep`);
                         }
 
                         if (msgEmbed.data.thumbnail != undefined && msgEmbed.data.thumbnail != null && msgEmbed.data.thumbnail != false && songArt == false) {
@@ -529,7 +533,7 @@ module.exports = {
                         // Star reaction stuff for hall of fame
                         if (rating >= 8 && starred == true) {
                             for (let x = 0; x < artistArray.length; x++) {
-                                db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
+                                db.reviewDB.set(artistArray[x], true, `${setterSongName}.${interaction.user.id}.starred`);
                             }
 
                             db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
@@ -545,13 +549,14 @@ module.exports = {
                     for (let ii = 0; ii < mainArtists.length; ii++) {
                         // Update EP details
                         if (!ep_songs.includes(ep_name)) {
-                            await db.reviewDB.push(mainArtists[ii], songName, `["${ep_name}"].songs`);
+                            let setterEpName = ep_name.includes('.') ? `["${ep_name}"]` : ep_name;
+                            await db.reviewDB.push(mainArtists[ii], songName, `${setterEpName}.songs`);
                         }
                     }
 
                     // Set msg_id for this review to false, since its part of the EP review message
                     for (let ii = 0; ii < artistArray.length; ii++) {
-                        db.reviewDB.set(artistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`);
+                        db.reviewDB.set(artistArray[ii], false, `${setterSongName}.${interaction.user.id}.msg_id`);
                     }
 
                 } break;
@@ -578,14 +583,14 @@ module.exports = {
 
                     // Setting the message id and url for the message we just sent
                     for (let ii = 0; ii < artistArray.length; ii++) {
-                        db.reviewDB.set(artistArray[ii], msg.id, `["${songName}"].["${interaction.user.id}"].msg_id`); 
-                        db.reviewDB.set(artistArray[ii], msg.url, `["${songName}"].["${interaction.user.id}"].url`); 
+                        db.reviewDB.set(artistArray[ii], msg.id, `${setterSongName}.${interaction.user.id}.msg_id`); 
+                        db.reviewDB.set(artistArray[ii], msg.url, `${setterSongName}.${interaction.user.id}.url`); 
                     }
 
                     // Star reaction stuff for hall of fame
                     if (rating >= 8 && starred == true) {
                         for (let x = 0; x < artistArray.length; x++) {
-                            db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
+                            db.reviewDB.set(artistArray[x], true, `${setterSongName}.${interaction.user.id}.starred`);
                         }
 
                         db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');

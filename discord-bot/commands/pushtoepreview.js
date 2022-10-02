@@ -37,15 +37,20 @@ module.exports = {
             let artistArray = song_info.all_artists;
             let vocalistArray = song_info.vocal_artists;
             let displaySongName = song_info.display_song_name;
+            // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+            let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
 
-            if (db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"]`) == undefined) {
+            if (db.reviewDB.get(artistArray[0])[songName][interaction.user.id] == undefined) {
                 return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${displaySongName}\`.`);
             } 
 
-            let review = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].review`);
-            let rating = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].rating`);
-            let starred = db.reviewDB.get(artistArray[0], `["${songName}"].["${interaction.user.id}"].starred`);
-            let songArt = db.reviewDB.get(artistArray[0], `["${songName}"].art`);
+            let songObj = db.reviewDB.get(artistArray[0])[songName];
+            let songReviewObj = songObj[interaction.user.id];
+
+            let review = songReviewObj.review;
+            let rating = songReviewObj.rating;
+            let starred = songReviewObj.starred;
+            let songArt = songObj.art;
 
             let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review.msg_id');
             let channelsearch = await find_review_channel(interaction, interaction.user.id, msgtoEdit);
@@ -53,6 +58,7 @@ module.exports = {
             let msgEmbed;
             let mainArtists;
             let ep_name;
+            let setterEpName;
             let ep_songs;
             let collab;
             let field_name;
@@ -75,11 +81,13 @@ module.exports = {
                 mainArtists = [msgEmbed.data.title.replace('🌟 ', '').trim().split(' - ')[0].split(' & ')];
                 mainArtists = mainArtists.flat(1);
                 ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name');
+                // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+                setterEpName = ep_name.includes('.') ? `["${ep_name}"]` : ep_name;
                 ep_songs = db.user_stats.get(interaction.user.id, 'current_ep_review.track_list');
                 if (ep_songs == false) ep_songs = [];
 
                 for (let j = 0; j < artistArray.length; j++) {
-                    db.reviewDB.set(artistArray[j], ep_name, `["${songName}"].ep`);
+                    db.reviewDB.set(artistArray[j], ep_name, `${setterSongName}.ep`);
                 }
 
                 if (msgEmbed.data.thumbnail != undefined && msgEmbed.data.thumbnail != null && msgEmbed.data.thumbnail != false && songArt == false) {
@@ -144,7 +152,7 @@ module.exports = {
                 // Star reaction stuff for hall of fame
                 if (rating >= 8 && starred == true) {
                     for (let x = 0; x < artistArray.length; x++) {
-                        db.reviewDB.set(artistArray[x], true, `["${songName}"].["${interaction.user.id}"].starred`);
+                        db.reviewDB.set(artistArray[x], true, `${setterSongName}.${interaction.user.id}.starred`);
                     }
 
                     db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
@@ -157,12 +165,12 @@ module.exports = {
 
             for (let ii = 0; ii < mainArtists.length; ii++) {
                 // Update EP details
-                db.reviewDB.push(mainArtists[ii], songName, `["${ep_name}"].songs`);
+                db.reviewDB.push(mainArtists[ii], songName, `${setterEpName}.songs`);
             }
 
             // Set msg_id for this review to false, since its part of the EP review message
             for (let ii = 0; ii < artistArray.length; ii++) {
-                db.reviewDB.set(artistArray[ii], false, `["${songName}"].["${interaction.user.id}"].msg_id`);
+                db.reviewDB.set(artistArray[ii], false, `${setterSongName}.${interaction.user.id}.msg_id`);
             }
 
             interaction.reply({ content: 'Pushed to the EP/LP review successfully.', ephemeral: true });

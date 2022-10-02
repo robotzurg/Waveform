@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const { handle_error, find_review_channel, parse_artist_song_data } = require('../func.js');
 
 module.exports = {
@@ -51,51 +51,54 @@ module.exports = {
 
             let epName = song_info.song_name;
             let artistArray = song_info.all_artists;
+            // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+            let setterEpName = epName.includes('.') ? `["${epName}"]` : epName;
             let epType = epName.includes(' LP') ? `LP` : `EP`;
-            let ep_rating = interaction.options.getString('ep_rating');
-            if (ep_rating.includes('/10')) ep_rating = ep_rating.replace('/10', '');
-            let ep_review = interaction.options.getString('ep_review');
-            let old_ep_rating;
-            let old_ep_review;
+            let epRating = interaction.options.getString('ep_rating');
+            if (epRating.includes('/10')) epRating = epRating.replace('/10', '');
+            let epReview = interaction.options.getString('ep_review');
+            let oldEpRating;
+            let oldEpReview;
 
-            if (ep_rating == null && ep_review == null) return interaction.reply('You must either edit the ep overall rating, or ep overall review with this command!');
+            if (epRating == null && epReview == null) return interaction.reply('You must either edit the ep overall rating, or ep overall review with this command!');
 
             // Quick checks to see if we've got stuff in the database for this
             for (let i = 0; i < artistArray.length; i++) {
-                if (db.reviewDB.get(artistArray[i], `["${epName}"].["${interaction.user.id}"]`) == undefined) return interaction.reply(`You don't have a review for ${epName} in the database.`);
+                if (db.reviewDB.get(artistArray[i])[epName][interaction.user.id] == undefined) return interaction.reply(`You don't have a review for ${epName} in the database.`);
             }
 
-            let ep_msg_id = db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].msg_id`);
+            let epObj = db.reviewDB.get(artistArray[0])[epName];
+            let epReviewObj = epObj[interaction.user.id];
 
-            if (ep_rating != null) {
-                old_ep_rating = `${db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].rating`)}/10`;
-                if (old_ep_rating == 'false/10') old_ep_rating = "N/A";
+            if (epRating != null) {
+                oldEpRating = `${epReviewObj.rating}/10`;
+                if (oldEpRating == 'false/10') oldEpRating = "N/A";
                 for (let i = 0; i < artistArray.length; i++) {
-                    db.reviewDB.set(artistArray[i], parseFloat(ep_rating), `["${epName}"].["${interaction.user.id}"].rating`);
-                    if (parseFloat(ep_rating) < 8) db.reviewDB.set(artistArray[i], false, `["${epName}"].["${interaction.user.id}"].starred`);
+                    db.reviewDB.set(artistArray[i], parseFloat(epRating), `${setterEpName}.${interaction.user.id}.rating`);
+                    if (parseFloat(epRating) < 8) db.reviewDB.set(artistArray[i], false, `${setterEpName}.${interaction.user.id}.starred`);
                 }
             }
             
-            if (ep_review != null) {
-                old_ep_review = db.reviewDB.get(artistArray[0], `["${epName}"].["${interaction.user.id}"].review`);
-                if (ep_review.includes('\\n')) {
-                    ep_review = ep_review.split('\\n').join('\n');
+            if (epReview != null) {
+                oldEpReview = epReviewObj.review;
+                if (epReview.includes('\\n')) {
+                    epReview = epReview.split('\\n').join('\n');
                 }
                 for (let i = 0; i < artistArray.length; i++) {
-                    db.reviewDB.set(artistArray[i], ep_review, `["${epName}"].["${interaction.user.id}"].review`);
+                    db.reviewDB.set(artistArray[i], epReview, `${setterEpName}.${interaction.user.id}.review`);
                 }
             }
 
-            if (ep_msg_id != false && ep_msg_id != undefined) {
-                let channelsearch = await find_review_channel(interaction, interaction.user.id, ep_msg_id);
+            if (epReviewObj.msg_id != false && epReviewObj.msg_id != undefined) {
+                let channelsearch = await find_review_channel(interaction, interaction.user.id, epReviewObj.msg_id);
                 if (channelsearch != undefined) {
-                    await channelsearch.messages.fetch(ep_msg_id).then(msg => {
-                        let msgEmbed = msg.embeds[0];
-                        if (ep_rating != null) {
-                            msgEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${ep_rating}/10)`);
+                    await channelsearch.messages.fetch(epReviewObj.msg_id).then(msg => {
+                        let msgEmbed = EmbedBuilder.from(msg.embeds[0]);
+                        if (epRating != null) {
+                            msgEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${epRating}/10)`);
                         }
-                        if (ep_review != null) {
-                            msgEmbed.setDescription(`*${ep_review}*`);
+                        if (epReview != null) {
+                            msgEmbed.setDescription(`*${epReview}*`);
                         }
                         msg.edit({ embeds: [msgEmbed] });
                     });
@@ -103,8 +106,8 @@ module.exports = {
             }
 
             interaction.reply(`Here's what was edited on your ${epType} review of **${artistArray.join(' & ')} - ${epName}**:` +
-            `\n${(old_ep_rating != undefined) ? `${epType} Rating: \`${old_ep_rating}\` changed to \`${ep_rating}/10\`` : ``}` +
-            `\n${(old_ep_review != undefined) ? `${epType} Review was changed to \`${ep_review}\`` : ``}`);
+            `\n${(oldEpRating != undefined) ? `${epType} Rating: \`${oldEpRating}\` changed to \`${epRating}/10\`` : ``}` +
+            `\n${(oldEpReview != undefined) ? `${epType} Review was changed to \`${epReview}\`` : ``}`);
 
         } catch (err) {
             let error = err;

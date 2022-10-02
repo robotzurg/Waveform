@@ -51,6 +51,8 @@ module.exports = {
         let artistArray = song_info.all_artists;
         let rmxArtistArray = song_info.remix_artists;
         let vocalistArray = song_info.vocal_artists;
+        // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+        let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
 
         let tag = interaction.options.getString('tag');
         let tagArt = interaction.options.getString('tag_image');
@@ -58,9 +60,7 @@ module.exports = {
 
         if (rmxArtistArray == undefined) rmxArtistArray = [];
         if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
-
-        let songObj = db.reviewDB.get(artistArray[0], `["${songName}"]`);
-        if (songObj == undefined) { return interaction.editReply(`The thing you tried to add a tag to, \`${origArtistArray.join(' & ')} - ${songName}\`, does not exist.`); }
+        if (db.reviewDB.get(artistArray[0])[songName] == undefined) { return interaction.reply(`The thing you tried to add a tag to, \`${origArtistArray.join(' & ')} - ${songName}\`, does not exist.`); }
 
         let tagSongEntry = (`${origArtistArray.join(' & ')} - ${songName}` + 
         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
@@ -73,10 +73,10 @@ module.exports = {
         db.tags.set(tag, tagArt, 'image');
 
         for (let i = 0; i < artistArray.length; i++) {
-            if (db.reviewDB.get(artistArray[i], `["${songName}"].tags`) != undefined) {
-                db.reviewDB.push(artistArray[i], tag, `["${songName}"].tags`);
+            if (db.reviewDB.get(artistArray[i])[songName].tags != undefined) {
+                db.reviewDB.push(artistArray[i], tag, `${setterSongName}.tags`);
             } else {
-                db.reviewDB.set(artistArray[i], [tag], `["${songName}"].tags`);
+                db.reviewDB.set(artistArray[i], [tag], `${setterSongName}.tags`);
             }
         }
 

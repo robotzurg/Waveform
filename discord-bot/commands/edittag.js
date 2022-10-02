@@ -59,18 +59,20 @@ module.exports = {
                 let artistArray = song_info.all_artists;
                 let songName = song_info.song_name;
                 let rmxArtistArray = song_info.remix_artists;
+                // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+                let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
                 if (rmxArtistArray == undefined) rmxArtistArray = [];
                 if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
 
                 for (let j = 0; j < artistArray.length; j++) {
-                    let songTagsList = db.reviewDB.get(artistArray[j], `["${songName}"].tags`);
+                    let songTagsList = db.reviewDB.get(artistArray[j])[songName].tags;
                     songTagsList = songTagsList.map(element => {
                         if (element == tag) {
                             return newTagName;
                         }
                         return element;
                     });
-                    db.reviewDB.set(artistArray[j], songTagsList, `["${songName}"].tags`);
+                    db.reviewDB.set(artistArray[j], songTagsList, `${setterSongName}.tags`);
                 }
             }
             let tagObj = db.tags.get(tag);

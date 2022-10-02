@@ -14,6 +14,8 @@ module.exports = {
     admin: true,
 	async execute(interaction) {
         try {
+            
+        // TODO: Make this command also delete any collaborative songs this artist was involved in, in the database.
 
         let artist = interaction.options.getString('artist');
 		db.reviewDB.delete(artist);
