@@ -145,8 +145,10 @@ module.exports = {
             if (art == false || art == null || art == undefined) {
                 art = await grab_spotify_art(origArtistArray, epName, interaction);
                 if (db.reviewDB.has(artistArray[0])) {
-                    if (db.reviewDB.get(artistArray[0])[epName].art != false && db.reviewDB.get(artistArray[0])[epName].art != undefined) {
-                        art = await db.reviewDB.get(artistArray[0])[epName].art;
+                    if (db.reviewDB.get(artistArray[0][epName]) != undefined) {
+                        if (db.reviewDB.get(artistArray[0])[epName].art != false && db.reviewDB.get(artistArray[0])[epName].art != undefined) {
+                            art = await db.reviewDB.get(artistArray[0])[epName].art;
+                        }
                     }
                 }
             } else {
