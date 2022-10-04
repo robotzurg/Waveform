@@ -157,6 +157,7 @@ module.exports = {
         for (let i = 0; i < artistArray.length; i++) {
             epObj = db.reviewDB.get(primArtist)[songName].ep;
             if (epObj == undefined || epObj == false) break;
+            if (epObj[interaction.user.id] == undefined || epObj[interaction.user.id] == false) break;
             epMsgToEdit = epObj[interaction.user.id].msg_id;
             if (epMsgToEdit != false && epMsgToEdit != undefined && epMsgToEdit != null) {
                 primArtist = artistArray[i];
