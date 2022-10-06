@@ -43,6 +43,7 @@ module.exports = {
                 let userArray;
                 if (songObj != null && songObj != undefined) {
                     userArray = get_user_reviews(songObj);
+                    userArray = userArray.filter(v => v == user.id);
                 } else {
                     userArray = [];
                 }
