@@ -49,8 +49,9 @@ module.exports = {
 
         if (!trackLink.includes('spotify')) return interaction.reply('The link you put in is not a valid spotify link!');
         await getData(trackLink).then(data => {
+            console.log(data);
             url = data.external_urls.spotify;
-            data.type == 'track' ? songArt = data.coverArt.sources[0].url : songArt = data.coverArt.sources[0].url;
+            data.type == 'track' ? songArt = data.coverArt.sources[0].url : songArt = data.images[0].url;
             name = data.name;
             artists = data.artists.map(artist => artist.name);
             if (data.type == 'track' || data.type == 'single') {
