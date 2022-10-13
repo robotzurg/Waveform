@@ -171,8 +171,8 @@ module.exports = {
                 let channelsearch = await find_review_channel(interaction, interaction.user.id, epMsgToEdit);
                 if (channelsearch != undefined) {
                     channelsearch.messages.fetch(`${epMsgToEdit}`).then(msg => {
-                        let msgEmbed = msg.embeds[0];
-                        let msg_embed_fields = msgEmbed.fields;
+                        let msgEmbed = EmbedBuilder.from(msg.embeds[0]);
+                        let msg_embed_fields = msgEmbed.data.fields;
                         let field_num = -1;
                         for (let i = 0; i < msg_embed_fields.length; i++) {
                             if (msg_embed_fields[i].name.includes(songName)) {
