@@ -58,7 +58,7 @@ module.exports = {
         }
 
         const artistObj = db.reviewDB.get(artist);
-        if (artistObj == undefined) return interaction.reply('Artist not found in the database.');
+        if (artistObj == undefined) return interaction.reply(`${artist} was not found in the database.`);
         let songArray = Object.keys(artistObj);
         let songObj;
         let reviewObj = {};

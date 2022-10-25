@@ -48,6 +48,8 @@ module.exports = {
             let epKeyArray = songArray.filter(item => item.includes(' LP') || item.includes(' EP'));
             songArray = songArray.filter(item => !item.includes(' LP') && !item.includes(' EP'));
 
+            console.log(epKeyArray);
+
             let reviewNum;
             let singleArray = [];
             let pagedSingleArray = [];
@@ -105,6 +107,7 @@ module.exports = {
                 // Handle EP/LP songs
                 for (let i = 0; i < epKeyArray.length; i++) {
                     let epCollabArray = artistObj[epKeyArray[i]].collab;
+                    if (epCollabArray == undefined || epCollabArray == false) epCollabArray = [];
                     let epStarNum = 0;
                     let epReviewNum = Object.keys(artistObj[epKeyArray[i]]);
 

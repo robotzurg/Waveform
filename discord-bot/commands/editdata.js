@@ -49,9 +49,9 @@ module.exports = {
         let songArt = songObj.art != undefined ? songObj.art : false;
         let songType = songName.includes('Remix') ? 'Remix' : 'Single';
         let remixers = songObj.remixers;
-        let tags = songObj.tags != undefined ? songObj.tags : [];
-        if (tags.includes(null)) {
-            tags = [];
+        let tagsArray = songObj.tags != undefined ? songObj.tags : [];
+        if (tagsArray.includes(null)) {
+            tagsArray = [];
         }
         let epFrom = songObj.ep;
         let userArray = get_user_reviews(songObj);
@@ -119,7 +119,7 @@ module.exports = {
             { name: 'Remixers:', value: `${remixers.length != 0 ? remixers.join('\n') : `N/A`}`, inline: true },
             { name: 'Song Name:', value: `${songName}`, inline: true },
             { name: 'Song Type:', value: `${songType}`, inline: true },
-            { name: 'Tags:', value: `${tags.length != 0 ? `${tags.join('\n')}` : `N/A`}`, inline: true },
+            { name: 'Tags:', value: `${tagsArray.length != 0 ? `${tagsArray.join('\n')}` : `N/A`}`, inline: true },
         );
 
         if (userArray.length != 0) {
@@ -173,8 +173,23 @@ module.exports = {
                 .addOptions(v_select_options),
         );
         let vocalist_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
-        
-        
+
+        let t_select_options = [];
+        for (let j = 0; j < tagsArray.length; j++) {
+            v_select_options.push({
+                label: `${tagsArray[j]}`,
+                description: `Select this to remove ${tagsArray[j]} as a tag on the song.`,
+                value: `${tagsArray[j]}`,
+            });
+        }
+        let tagRemoveSelect = new ActionRowBuilder()
+        .addComponents(
+            new SelectMenuBuilder()
+                .setCustomId('tags_remove_sel')
+                .setPlaceholder('Tags')
+                .addOptions(t_select_options),
+        );
+        let tag_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
 
         collector.on('collect', async i => {
             if (i.customId == 'confirm') {
@@ -182,12 +197,18 @@ module.exports = {
                 // Reset adjust buttons when we go back to main menu
                 adjustButtons.components[0].setDisabled(false);
                 adjustButtons.components[1].setDisabled(false);
+                await artist_r_collector.stop();
+                await vocalist_r_collector.stop();
+                await tag_r_collector.stop();
+                await msg_collector.stop();
                 i.update({ content: ' ', embeds: [editEmbed], components: [editButtons[0], editButtons[1]] });
             }
 
             if (i.customId == 'artists' || ((i.customId == 'add' || i.customId == 'remove') && mode == 'artists')) {
                 mode = 'artists';
                 adjustButtons.components[1].setDisabled(origArtistArray.length <= 1);
+                artist_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
+                msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
                 if (i.customId == 'artists') {
                     await i.update({ 
                         content: `**Would you like to add or remove artists from ${origArtistArray.join(' & ')} - ${displaySongName}?**`,
@@ -204,7 +225,7 @@ module.exports = {
                             components: [confirmButton],
                         });
 
-                        msg_collector.on('collect', async msg => {
+                        await msg_collector.on('collect', async msg => {
                             if (mode == 'artists_add') {
                                 if (!origArtistArray.includes(msg.content)) {
                                     origArtistArray.push(msg.content);
@@ -223,6 +244,14 @@ module.exports = {
                                     editEmbed.data.fields[0].value = origArtistArray.join('\n');
                                     editEmbed.data.fields[1].value = vocalistArray.length != 0 ? vocalistArray.join('\n') : `N/A`;
                                     editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+
+                                    // Edit the database
+                                    songObj = db.reviewDB.get(origArtistArray[0], `${setterSongName}`);
+                                    db.reviewDB.set(msg.content, songObj, `${setterSongName}`);
+
+                                    for (let j = 0; j < origArtistArray.length; j++) {
+                                        db.reviewDB.set(origArtistArray[j], origArtistArray.filter(v => v != origArtistArray[j]), `${setterSongName}.collab`);
+                                    }
 
                                     // Update message
                                     await i.editReply({ 
@@ -254,10 +283,20 @@ module.exports = {
 
                                 editEmbed.data.fields[0].value = origArtistArray.join('\n');
                                 editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
-                                artistRemoveSelect.components[0].setOptions(a_select_options.filter(v => v.label != sel.values[0]));
+                                a_select_options = a_select_options.filter(v => v.label != sel.values[0]);
+                                artistRemoveSelect.components[0].setOptions(a_select_options);
                                 if (origArtistArray.length == 1) {
                                     artistRemoveSelect.components[0].setDisabled(true);
                                     artistRemoveSelect.components[0].setPlaceholder(`1 artist left: ${origArtistArray[0]}`);
+                                }
+
+                                // Edit the database
+                                let artistObj = db.reviewDB.get(sel.values[0]);
+                                delete artistObj[`${songName}`];
+                                db.reviewDB.set(sel.values[0], artistObj);
+
+                                for (let j = 0; j < origArtistArray.length; j++) {
+                                    db.reviewDB.set(origArtistArray[j], origArtistArray.filter(v => v != origArtistArray[j]), `${setterSongName}.collab`);
                                 }
 
                                 sel.update({
@@ -272,6 +311,8 @@ module.exports = {
             } else if (i.customId == 'vocalists' || ((i.customId == 'add' || i.customId == 'remove') && mode == 'vocalists')) {
                 mode = 'vocalists';
                 adjustButtons.components[1].setDisabled(vocalistArray.length == 0);
+                vocalist_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
+                msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
                 if (i.customId == 'vocalists') {
                     await i.update({ 
                         content: `**Would you like to add or remove vocalists from ${origArtistArray.join(' & ')} - ${displaySongName}?**`,
@@ -331,9 +372,10 @@ module.exports = {
                                 displaySongName = (`${songName}` + 
                                 `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
 
-                                editEmbed.data.fields[0].value = vocalistArray.length != 0 ? vocalistArray.join('\n') : 'N/A';
+                                editEmbed.data.fields[1].value = vocalistArray.length != 0 ? vocalistArray.join('\n') : 'N/A';
                                 editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
-                                vocalistRemoveSelect.components[0].setOptions(v_select_options.filter(v => v.label != sel.values[0]));
+                                v_select_options = v_select_options.filter(v => v.label != sel.values[0]);
+                                vocalistRemoveSelect.components[0].setOptions(v_select_options);
                                 if (vocalistArray.length == 0) {
                                     sel.update({
                                         content: `**No vocalists left to remove, click confirm to return back to the main menu.**`,
@@ -354,6 +396,7 @@ module.exports = {
                 // Pass
             } else if (i.customId == 'song_name') {
                 mode = 'song_name';
+                msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
                 await i.update({ 
                     content: `**Type in the new name of the song. When you are finished, press confirm.**\n` +
                     `Song Name: \`${songName}\``,
@@ -375,8 +418,81 @@ module.exports = {
                         msg.delete();
                     }
                 });
-            } else if (i.customId == 'tags') {
-                // Pass
+            } else if (i.customId == 'tags' || ((i.customId == 'add' || i.customId == 'remove') && mode == 'tags')) {
+                mode = 'tags';
+                adjustButtons.components[1].setDisabled(tagsArray.length == 0);
+                tag_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
+                msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
+                if (i.customId == 'tags') {
+                    await i.update({ 
+                        content: `**Would you like to add or remove tags from ${origArtistArray.join(' & ')} - ${displaySongName}?**`,
+                        embeds: [], 
+                        components: [adjustButtons],
+                    });
+                } else {
+                    if (i.customId == 'add') { // If we are adding data
+                        mode = 'tags_add';
+                        await i.update({ 
+                            content: `**Type in the name of the tags you would like to add one by one. When you are finished, press confirm.**\n` +
+                            `__**Tags:**__\n\`\`\`\n${tagsArray.length != 0 ? tagsArray.join('\n') : ' '}\`\`\``,
+                            embeds: [], 
+                            components: [confirmButton],
+                        });
+
+                        msg_collector.on('collect', async msg => {
+                            if (mode == 'tags_add') {
+                                if (!tagsArray.includes(msg.content)) {
+                                    tagsArray.push(msg.content);
+
+                                    // Update select menu options
+                                    t_select_options.push({
+                                        label: `${msg.content}`,
+                                        description: `Select this to remove ${msg.content} as a tag on the song.`,
+                                        value: `${msg.content}`,
+                                    });
+                                    tagRemoveSelect.components[0].setOptions(t_select_options);
+
+                                    // Update the embed
+                                    editEmbed.data.fields[5].value = tagsArray.join('\n');
+                                    await i.editReply({ 
+                                        content: `**Type in the name of the Tags you would like to add, one by one. When you are finished, press confirm.**\n` +
+                                        `__**Tags:**__\n\`\`\`\n${tagsArray.length != 0 ? tagsArray.join('\n') : ' '}\`\`\``,
+                                    });
+                                }
+                                await msg.delete();
+                            }
+                        });
+                    } else if (i.customId == 'remove') { // If we are removing data
+                        mode = 'tags_remove';
+                        await i.update({ 
+                            content: `**Select tags that you would like to remove, one by one in the select menu. When you are finished, press confirm.**`,
+                            embeds: [], 
+                            components: [tagRemoveSelect, confirmButton],
+                        });
+
+                        tag_r_collector.on('collect', async sel => {
+                            if (sel.customId == 'tags_remove_sel') {
+                                tagsArray = tagsArray.filter(v => v != sel.values[0]);
+
+                                editEmbed.data.fields[5].value = tagsArray.length != 0 ? tagsArray.join('\n') : 'N/A';
+                                t_select_options = t_select_options.filter(v => v.label != sel.values[0]);
+                                tagRemoveSelect.components[0].setOptions(t_select_options);
+                                if (tagsArray.length == 0) {
+                                    sel.update({
+                                        content: `**No tags left to remove, click confirm to return back to the main menu.**`,
+                                        components: [confirmButton],
+                                    });
+                                } else {
+                                    sel.update({
+                                        content: `**Select tags that you would like to remove, one by one in the select menu. When you are finished, press confirm.**\n` +
+                                        `Successfully removed **${sel.values[0]}**.`,
+                                        components: [tagRemoveSelect, confirmButton],
+                                    });
+                                }
+                            }
+                        });
+                    }
+                }
             }
         });
 
