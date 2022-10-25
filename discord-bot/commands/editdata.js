@@ -8,7 +8,7 @@ module.exports = {
 		.setDescription('Edit the various data of a song or an EP/LP in the database.')
         .addSubcommand(subcommand =>
             subcommand.setName('song')
-            .setDescription('Edit the various data of a song or remix.')
+            .setDescription('Edit the various data of a song or remix (Remixes not supported yet).')
             .addStringOption(option => 
                 option.setName('artist')
                     .setDescription('The name of the artist(s).')
@@ -24,10 +24,6 @@ module.exports = {
                     .setDescription('The name of remixers on the original song, if any')
                     .setRequired(false))),
 	async execute(interaction) {
-        
-        // return interaction.reply('This command is currently under construction and is not currently up yet.');
-
-        // eslint-disable-next-line no-unreachable
         let origArtistArray = interaction.options.getString('artist');
         let songName = interaction.options.getString('song_name');
         let rmxArtistArray = interaction.options.getString('remixers');
@@ -44,6 +40,7 @@ module.exports = {
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         // eslint-disable-next-line no-unused-vars
         let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
+        
         let songObj = db.reviewDB.get(artistArray[0])[songName];
         if (songObj == undefined) return interaction.reply(`The song ${origArtistArray.join(' & ')} - ${displaySongName} is not in the database.`);
         let songArt = songObj.art != undefined ? songObj.art : false;
@@ -78,7 +75,7 @@ module.exports = {
                     .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
                 new ButtonBuilder()
                     .setCustomId('remixers').setLabel('Remixers')
-                    .setStyle(ButtonStyle.Secondary).setEmoji('📝').setDisabled(songType != 'Remix'),
+                    .setStyle(ButtonStyle.Secondary).setEmoji('📝').setDisabled(true),
             ),
             new ActionRowBuilder()
             .addComponents(
@@ -135,9 +132,10 @@ module.exports = {
         let mode = 'main';
         let message = await interaction.fetchReply();
         const int_filter = i => i.user.id == interaction.user.id;
-        const collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
+        const menu_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
+        let msg_collector;
+        let remove_collector;
         let msg_filter = m => m.author.id == interaction.user.id;
-        let msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
 
         // Setup for remove select menus
         let a_select_options = [];
@@ -158,11 +156,11 @@ module.exports = {
         let artist_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
 
         let v_select_options = [];
-        for (let j = 0; j < vocalistArray.length; j++) {
+        for (let i = 0; i < vocalistArray.length; i++) {
             v_select_options.push({
-                label: `${vocalistArray[j]}`,
-                description: `Select this to remove ${vocalistArray[j]} as a vocalist.`,
-                value: `${vocalistArray[j]}`,
+                label: `${vocalistArray[i]}`,
+                description: `Select this to remove ${vocalistArray[i]} as a vocalist.`,
+                value: `${vocalistArray[i]}`,
             });
         }
         let vocalistRemoveSelect = new ActionRowBuilder()
@@ -191,7 +189,7 @@ module.exports = {
         );
         let tag_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
 
-        collector.on('collect', async i => {
+        menu_collector.on('collect', async i => {
             if (i.customId == 'confirm') {
                 mode = 'main';
                 // Reset adjust buttons when we go back to main menu
@@ -275,7 +273,8 @@ module.exports = {
                             components: [artistRemoveSelect, confirmButton],
                         });
 
-                        artist_r_collector.on('collect', async sel => {
+                        remove_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
+                        remove_collector.on('collect', async sel => {
                             if (sel.customId == 'artists_remove_sel') {
                                 origArtistArray = origArtistArray.filter(v => v != sel.values[0]);
                                 displaySongName = (`${songName}` + 
@@ -329,6 +328,7 @@ module.exports = {
                             components: [confirmButton],
                         });
 
+                        msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
                         msg_collector.on('collect', async msg => {
                             if (mode == 'vocalists_add') {
                                 if (!vocalistArray.includes(msg.content)) {
@@ -366,7 +366,8 @@ module.exports = {
                             components: [vocalistRemoveSelect, confirmButton],
                         });
 
-                        vocalist_r_collector.on('collect', async sel => {
+                        remove_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
+                        remove_collector.on('collect', async sel => {
                             if (sel.customId == 'vocalists_remove_sel') {
                                 vocalistArray = vocalistArray.filter(v => v != sel.values[0]);
                                 displaySongName = (`${songName}` + 
@@ -393,7 +394,7 @@ module.exports = {
                     }
                 }
             } else if (i.customId == 'remixers' || ((i.customId == 'add' || i.customId == 'remove') && mode == 'remixers')) {
-                // Pass
+                // TODO: Add support for this later
             } else if (i.customId == 'song_name') {
                 mode = 'song_name';
                 msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
@@ -404,6 +405,7 @@ module.exports = {
                     components: [confirmButton],
                 });
 
+                msg_collector = message.createMessageCollector({ filter: msg_filter, time: 720000 });
                 msg_collector.on('collect', async msg => {
                     if (mode == 'song_name') {
                         songName = msg.content;
@@ -496,7 +498,7 @@ module.exports = {
             }
         });
 
-        collector.on('end', async () => {
+        menu_collector.on('end', async () => {
             interaction.editReply({ embeds: [editEmbed], components: [] });
         });
 	},
