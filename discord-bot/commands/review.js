@@ -188,6 +188,12 @@ module.exports = {
                     .setCustomId('ep_done').setLabel('Push to EP Review')
                     .setStyle(ButtonStyle.Success),
                 );
+            } else {
+                reviewButtons.addComponents( 
+                    new ButtonBuilder()
+                    .setCustomId('done').setLabel('Send to Database')
+                    .setStyle(ButtonStyle.Success),
+                );
             }
         } else {
             reviewButtons.addComponents( 

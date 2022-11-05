@@ -118,7 +118,7 @@ module.exports = {
                             songArg = `${songArg} LP`;
                         }
 
-                        if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false) {
+                        if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
                             db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList }, 'current_ep_review');  
                         }
                     }
@@ -219,7 +219,7 @@ module.exports = {
         artistArray = artistArray.flat(1);
         origArtistArray = artistArray.slice(0);
 
-        if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') {
+        if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
             if (db.reviewDB.has(artistArray[0])) trackList = db.reviewDB.get(artistArray[0])[songArg].songs;
             if (!trackList) trackList = false;
             db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList }, 'current_ep_review');  

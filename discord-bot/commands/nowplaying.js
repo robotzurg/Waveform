@@ -78,8 +78,7 @@ module.exports = {
                     `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                     `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
                 } else {
-                    npEmbed.setDescription(`This song has not been reviewed in the database.` + 
-                    `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
+                    npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                     `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
                 }
 
@@ -93,13 +92,11 @@ module.exports = {
                     }
                 }
             } else {
-                npEmbed.setDescription(`This song has not been reviewed in the database.` + 
-                `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
+                npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                 `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
             }
         } else {
-            npEmbed.setDescription(`This song has not been reviewed in the database.` + 
-            `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
+            npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
             `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
         }
         

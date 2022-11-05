@@ -48,8 +48,6 @@ module.exports = {
             let epKeyArray = songArray.filter(item => item.includes(' LP') || item.includes(' EP'));
             songArray = songArray.filter(item => !item.includes(' LP') && !item.includes(' EP'));
 
-            console.log(epKeyArray);
-
             let reviewNum;
             let singleArray = [];
             let pagedSingleArray = [];
