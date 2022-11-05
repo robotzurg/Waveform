@@ -51,7 +51,6 @@ module.exports = {
                 taggedMember = await interaction.guild.members.fetch(taggedUser.id);
             }
 
-            let rname;
             let rreview;
             let rscore;
             let rsentby;
@@ -61,12 +60,11 @@ module.exports = {
             let rtimestamp;
             let songObj = db.reviewDB.get(artistArray[0])[songName];
             let songReviewObj = songObj[taggedUser.id];
+            if (songReviewObj == undefined) return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${songName}\`. *Note that for EP reviews, you need to use \`/getReviewEP\`.*`);
 
             let epfrom = songObj.ep;
             let songArt = songObj.art;
 
-            rname = songReviewObj.name;
-            if (rname == undefined) return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${songName}\`. *Note that for EP reviews, you need to use \`/getReviewEP\`.*`);
             rreview = songReviewObj.review;
             rscore = songReviewObj.rating;
             rsentby = songReviewObj.sentby;

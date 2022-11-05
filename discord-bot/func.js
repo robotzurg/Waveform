@@ -150,7 +150,7 @@ module.exports = {
                 if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
             }
 
-            if (songArg.includes('Remix') && songArg.includes(' - ') && !songArg.includes('Remix)') && !songArg.includes('Remix]')) {
+            if ((songArg.includes('Remix') && songArg.includes(' - ')) && !songArg.includes('Remix)') && !songArg.includes('Remix]')) {
                 songArg = songArg.split(' - ');
                 rmxArtist = songArg[1].slice(0, -6);
                 rmxArtist = rmxArtist.replace(' VIP', '');
@@ -164,20 +164,26 @@ module.exports = {
 
             if (songArg.includes('feat.')) {
                 songArg = songArg.split(' (feat. ');
-                if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1].slice(0, -1));
+                songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
+                songArg[1] = songArg[1].split(')')[0];
+                if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1]);
                 origSongArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
                 songArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
             }
     
             if (songArg.includes('ft. ')) {
-                songArg = songArg.split(' (ft. ');
+                songArg = songArg.split(' (feat. ');
+                songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
+                songArg[1] = songArg[1].split(')')[0];
                 if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1].slice(0, -1));
                 origSongArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
                 songArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
             }
     
             if (songArg.includes('(with ')) {
-                songArg = songArg.split(' (with ');
+                songArg = songArg.split(' (feat. ');
+                songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
+                songArg[1] = songArg[1].split(')')[0];
                 origSongArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
                 songArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
             }

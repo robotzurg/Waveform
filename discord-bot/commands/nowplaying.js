@@ -84,10 +84,12 @@ module.exports = {
                 }
 
                 if (songObj.ep != undefined && songObj.ep != false) {
-                    if (db.reviewDB.get(artistArray[0])[songObj.ep].art != false) {
-                        npEmbed.setFooter({ text: `from ${songObj.ep}`, iconURL: db.reviewDB.get(artistArray[0])[songObj.ep].art });
-                    } else {
-                        npEmbed.setFooter({ text: `from ${songObj.ep}` });
+                    if (db.reviewDB.get(db.reviewDB.get(artistArray[0])[songObj.ep]) != undefined) {
+                        if (db.reviewDB.get(artistArray[0])[songObj.ep].art != false) {
+                            npEmbed.setFooter({ text: `from ${songObj.ep}`, iconURL: db.reviewDB.get(artistArray[0])[songObj.ep].art });
+                        } else {
+                            npEmbed.setFooter({ text: `from ${songObj.ep}` });
+                        }
                     }
                 }
             } else {

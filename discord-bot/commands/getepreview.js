@@ -151,6 +151,7 @@ module.exports = {
                             vocalistsEmbed.push(songObj.vocals);
                             vocalistsEmbed = vocalistsEmbed.flat(1);
                             vocalistsEmbed = vocalistsEmbed.join(' & ');
+                            artistsEmbed = artistsEmbed.split(' & ').filter(v => !vocalistsEmbed.includes(v)).join(' & ');
                         }
                     }
 
