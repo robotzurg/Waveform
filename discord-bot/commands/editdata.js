@@ -24,6 +24,9 @@ module.exports = {
                     .setDescription('The name of remixers on the original song, if any')
                     .setRequired(false))),
 	async execute(interaction) {
+
+        return interaction.reply('This command is not ready yet.');
+
         let origArtistArray = interaction.options.getString('artist');
         let songName = interaction.options.getString('song_name');
         let rmxArtistArray = interaction.options.getString('remixers');

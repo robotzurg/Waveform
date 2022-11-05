@@ -87,6 +87,7 @@ module.exports = {
 
                 if (rating === false) {
                     ratingDisplay = 'No Rating';
+                    rating = -100 - i; // To put it on the bottom of the rating list.
                 } else {
                     rankNumArray.push(parseFloat(rating)); 
                     ratingDisplay = `${rating}/10`;
@@ -118,6 +119,8 @@ module.exports = {
                 userArray[i] = `${numReacts[i + 1]} `.concat(userArray[i]);
             }
             
+            console.log(userArray);
+
             songEmbed.addFields([{ name: 'Reviews:', value: userArray.join('\n') }]);
         } else {
             songEmbed.addFields([{ name: 'Reviews:', value: 'No reviews :(' }]);

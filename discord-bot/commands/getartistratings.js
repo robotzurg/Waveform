@@ -43,7 +43,7 @@ module.exports = {
 
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
                 if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
-                artist = data.body.item.artists.map(a => a.name)[0];
+                artist = data.body.item.artists.map(a => a.name.replace(' & ', ' \\& '))[0];
                 spotifyCheck = true;
             });
 
