@@ -36,7 +36,6 @@ module.exports = {
 		const descInput = new TextInputBuilder()
 			.setCustomId('desc')
 			.setLabel("Write any extra details that might help me.")
-            .setRequired(false)
 			.setStyle(TextInputStyle.Paragraph);
 
 		// An action row only holds one text input,
@@ -63,7 +62,6 @@ module.exports = {
             let song = submitted.fields.getTextInputValue('song');
             let review_type = submitted.fields.getTextInputValue('type');
             let desc = submitted.fields.getTextInputValue('desc');
-            if (desc == null) desc = 'N/A';
 
             await submitted.reply('Successfully submitted a bug report!');
 
