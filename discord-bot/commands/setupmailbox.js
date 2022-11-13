@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder, ChannelType } = require('discord.js');
+const { SlashCommandBuilder, ChannelType, PermissionsBitField } = require('discord.js');
 const { handle_error, spotify_api_setup } = require("../func.js");
 
 module.exports = {
@@ -44,7 +44,7 @@ module.exports = {
             permissionOverwrites: [
                 { 
                     id: interaction.user.id, 
-                    allow: ['MANAGE_MESSAGES'],
+                    allow: [PermissionsBitField.Flags.ManageMessages],
                 },
             ],
           });
