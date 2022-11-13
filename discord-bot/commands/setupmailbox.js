@@ -19,7 +19,8 @@ module.exports = {
 
         // Setup spotify web api stuff
         const spotifyApi = await spotify_api_setup(interaction.user.id);
-        if (spotifyApi == false) return interaction.reply(`This command requires you to use \`/login\` `);
+        let spotifyCheck = true;
+        if (spotifyApi == false) spotifyCheck = false;
         await interaction.reply('Setting up mailbox...');
 
         let playlist_name = interaction.options.getString('playlist_name');
@@ -50,20 +51,29 @@ module.exports = {
           channel.setParent(category, { lockPermissions: false });
         }
 
-        await spotifyApi.createPlaylist(playlist_name, { 'description': playlist_desc, 'public': true })
-        .then(async function(data) {
-            db.user_stats.set(interaction.user.id, data.body.id, 'mailbox_playlist_id');
+        if (spotifyCheck != false) { 
+            await spotifyApi.createPlaylist(playlist_name, { 'description': playlist_desc, 'public': true })
+            .then(async function(data) {
+                db.user_stats.set(interaction.user.id, data.body.id, 'mailbox_playlist_id');
+                db.user_stats.set(interaction.user.id, channel.id, 'mailbox');
+                db.server_settings.push(interaction.guild.id, [interaction.user.id, channel.id], 'mailboxes');
+                await interaction.editReply(`Your mailbox has now been setup on Spotify, and \`/sendmail\` can now be used with it!\n` + 
+                `If you need to delete the playlist for whatever reason, make sure you run this command again to setup a new one!\n\n` + 
+                `You should also have a new channel created under your name in the "Mailboxes" category, this is where all of your mailbox happenings will be in!\n` + 
+                `You can use this chat to review your mailbox tracks, and it will also have messages sent in it any time you receive new mail.\n\n` +
+                `**NOTE: DO NOT DELETE THIS PLAYLIST OR THE MAILBOX TEXT CHANNEL, OR ELSE YOUR MAILBOX WILL NOT WORK PROPERLY!**`);
+            }, async function(err) {
+                await interaction.editReply(`Something went wrong with your mailbox creation, you should probably let Jeff know!`);
+                console.log('Something went wrong!', err);
+            });
+        } else {
+            db.user_stats.set(interaction.user.id, false, 'mailbox_playlist_id');
             db.user_stats.set(interaction.user.id, channel.id, 'mailbox');
             db.server_settings.push(interaction.guild.id, [interaction.user.id, channel.id], 'mailboxes');
-            await interaction.editReply(`Your mailbox has now been setup on Spotify, and \`/sendmail\` can now be used with it!\n` + 
-            `If you need to delete the playlist for whatever reason, make sure you run this command again to setup a new one!\n\n` + 
-            `You should also have a new channel created under your name in the "Mailboxes" category, this is where all of your mailbox happenings will be in!\n` + 
-            `You can use this chat to review your mailbox tracks, and it will also have messages sent in it any time you receive new mail.\n\n` +
-            `**NOTE: DO NOT DELETE THIS PLAYLIST OR THE MAILBOX TEXT CHANNEL, OR ELSE YOUR MAILBOX WILL NOT WORK PROPERLY!**`);
-        }, async function(err) {
-            await interaction.editReply(`Something went wrong with your mailbox creation, you should probably let Jeff know!`);
-            console.log('Something went wrong!', err);
-        });
+            await interaction.editReply(`Your mailbox has now been setup on Waveform. Because this is not a spotify linked mailbox, it cannot be sent Spotify Links, but users can send you mail manually in your channel!`);
+        }
+
+        
 
         } catch (err) {
             let error = err;
