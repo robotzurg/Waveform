@@ -36,7 +36,7 @@ module.exports = {
         const spotifyApi = await spotify_api_setup(taggedUser.id);
     
         if (spotifyApi == false) {
-            return interaction.reply('This user may not have a mailbox setup. Tell them to set one up with `/setupmailbox`!');
+            return interaction.reply('This user either does not have a mailbox setup, or has a non-spotify mailbox, thus cannot have mail sent this way.');
         }
 
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
