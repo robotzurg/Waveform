@@ -5,8 +5,6 @@ const { token_dev } = require('./config.json');
 const db = require('./db');
 const { REST } = require('@discordjs/rest');
 const { Routes, InteractionType } = require('discord-api-types/v9');
-const express = require('express');
-const app = express();
 
 // create a new Discord client and give it some variables
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
@@ -222,12 +220,7 @@ client.on('interactionCreate', async interaction => {
 	setTimeout(() => client.cooldowns.delete(interaction.commandName), cooldownAmount); 
 
     try {
-        if (app._router != undefined) {
-            let routes = app._router.stack;
-            routes = routes.slice(0, 2);
-            app._router.stack = routes;
-        }
-        await command.execute(interaction, client, app);
+        await command.execute(interaction, client);
     } catch (error) {
         await console.error(error);
         await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
@@ -258,7 +251,3 @@ client.on('guildMemberAdd', async (member) => {
 
 // login to Discord
 client.login(token_dev);
-
-// app.listen(3000, async () => {
-//     console.log("Server listening on Port", 3000);
-// });

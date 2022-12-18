@@ -48,25 +48,28 @@ module.exports = {
         let songArt;
 
         if (!trackLink.includes('spotify')) return interaction.reply('The link you put in is not a valid spotify link!');
-        await getData(trackLink).then(data => {
-            console.log(data);
-            url = data.external_urls.spotify;
-            data.type == 'track' ? songArt = data.coverArt.sources[0].url : songArt = data.images[0].url;
-            name = data.name;
-            artists = data.artists.map(artist => artist.name);
-            if (data.type == 'track' || data.type == 'single') {
-                trackUris.push(data.uri); // Used to add to playlist
-            } else if (data.type == 'album') {
-                for (let i = 0; i < data.tracks.items.length; i++) {
-                    trackUris.push(data.tracks.items[i].uri);
+        if (trackLink.includes('track')) {
+            await getData(trackLink).then(data => {
+                url = trackLink;
+                data.type == 'track' ? songArt = data.coverArt.sources[0].url : songArt = data.images[0].url;
+                name = data.name;
+                artists = data.artists.map(artist => artist.name);
+                if (data.type == 'track' || data.type == 'single') {
+                    trackUris.push(data.uri); // Used to add to playlist
+                } else if (data.type == 'album') {
+                    for (let i = 0; i < data.tracks.items.length; i++) {
+                        trackUris.push(data.tracks.items[i].uri);
+                    }
+                    if (!name.includes(' EP') && !name.includes(' LP')) {
+                        name = (data.album_type == 'single') ? name += ' EP' : name += ' LP';
+                    }
                 }
-                if (!name.includes(' EP') && !name.includes(' LP')) {
-                    name = (data.album_type == 'single') ? name += ' EP' : name += ' LP';
-                }
-            }
-        }).catch((err) => {
-            console.log(err);
-        });
+            }).catch((err) => {
+                console.log(err);
+            });
+        } else {
+            return interaction.reply('Albums are not currently supported with mailboxes due to a critical bug. Jeff is aware, and trying to fix it!');
+        }
 
         // Add tracks to the mailbox playlist
         await spotifyApi.addTracksToPlaylist(playlistId, trackUris)
