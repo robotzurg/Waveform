@@ -41,6 +41,8 @@ module.exports = {
         let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
         if (song_info == -1) return;
 
+        console.log(song_info);
+
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
         let artistArray = song_info.all_artists;
@@ -66,10 +68,10 @@ module.exports = {
                 let results = data.tracks.items;
                 let songData = data.tracks.items[0];
                 for (let i = 0; i < results.length; i++) {
-                    if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].album.name.toLowerCase()}` == `${song.toLowerCase()}`) {
+                    if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].album.name.toLowerCase()}` == `${songName.toLowerCase()}`) {
                         songData = results[i];
                         break;
-                    } else if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].name.toLowerCase()}` == `${song.toLowerCase()}`) {
+                    } else if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].name.toLowerCase()}` == `${songName.toLowerCase()}`) {
                         songData = results[i];
                     }
                 }

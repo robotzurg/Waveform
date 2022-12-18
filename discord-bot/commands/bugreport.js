@@ -64,7 +64,7 @@ module.exports = {
             let desc = submitted.fields.getTextInputValue('desc');
 
             await submitted.reply('Successfully submitted a bug report!');
-
+            
             let bugChannel = interaction.guild.channels.cache.get('1038260795584303184');
             let bugEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)

@@ -125,6 +125,9 @@ module.exports = {
                 });
             });
 
+            // Fix capitals
+            songArg = songArg.replace('(With', '(with');
+
             // Check if a podcast is being played, as we don't support that.
             if (isPodcast == true) {
                 interaction.reply('Podcasts are not supported with `/np`.');
@@ -166,9 +169,10 @@ module.exports = {
                 songArg = songArg.split(' (feat. ');
                 songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
                 songArg[1] = songArg[1].split(')')[0];
+                console.log(songArg);
                 if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1]);
-                origSongArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
-                songArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
+                origSongArg = `${songArg[0]}`;
+                songArg = `${songArg[0]}`;
             }
     
             if (songArg.includes('ft. ')) {
@@ -176,12 +180,12 @@ module.exports = {
                 songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
                 songArg[1] = songArg[1].split(')')[0];
                 if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1].slice(0, -1));
-                origSongArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
-                songArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
+                origSongArg = `${songArg[0]}`;
+                songArg = `${songArg[0]}`;
             }
     
             if (songArg.includes('(with ')) {
-                songArg = songArg.split(' (feat. ');
+                songArg = songArg.split(' (with ');
                 songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
                 songArg[1] = songArg[1].split(')')[0];
                 origSongArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
@@ -220,7 +224,7 @@ module.exports = {
         origArtistArray = artistArray.slice(0);
 
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
-            if (db.reviewDB.has(artistArray[0])) trackList = db.reviewDB.get(artistArray[0])[songArg].songs;
+            if (db.reviewDB.has(artistArray[0]) && db.reviewDB.get(artistArray[0][songArg] != undefined)) trackList = db.reviewDB.get(artistArray[0])[songArg].songs;
             if (!trackList) trackList = false;
             db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList }, 'current_ep_review');  
         }
