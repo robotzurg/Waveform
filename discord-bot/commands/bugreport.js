@@ -5,7 +5,9 @@ const { handle_error } = require('../func');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('bugreport')
-        .setDescription('Report a bug to Jeffdev, Waveform\'s developer.'),
+        .setDescription('Submit a bug report.')
+        .setDMPermission(false),
+    help_desc: `Creates a modal form that allows you to fill out a bug report to send to Jeffdev, Waveform's Developer.`,
 	async execute(interaction) {
         try {
 

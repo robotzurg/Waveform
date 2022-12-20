@@ -5,24 +5,26 @@ const { parse_artist_song_data, handle_error, find_review_channel } = require(".
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('editreview')
-        .setDescription('Edit a song review.')
+        .setDescription('Edit a song review you\'ve made.')
+        .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand.setName('with_spotify')
             .setDescription('Edit/add data to a song review with spotify playback data.')
 
             .addStringOption(option => 
                 option.setName('rating')
-                    .setDescription('The new rating of the review.')
-                    .setRequired(false))
+                    .setDescription('The newly edited rating of the song.')
+                    .setRequired(false)
+                    .setMaxLength(3))
     
             .addStringOption(option => 
                 option.setName('review')
-                    .setDescription('The new written review.')
+                    .setDescription('The newly edited written review.')
                     .setRequired(false))
     
             .addUserOption(option => 
                 option.setName('user_who_sent')
-                    .setDescription('The new user who sent you the song for the review')
+                    .setDescription('The newly edited user who sent you this song.')
                     .setRequired(false)))
 
         .addSubcommand(subcommand =>
@@ -31,37 +33,39 @@ module.exports = {
 
             .addStringOption(option => 
                 option.setName('artist')
-                    .setDescription('The artists of the song you would like to edit the review of (No Remixers Here).')
+                    .setDescription('The name of primary artist(s).')
                     .setAutocomplete(true)
                     .setRequired(true))
     
             .addStringOption(option => 
                 option.setName('song_name')
-                    .setDescription('The song you would like to edit the review of.')
+                    .setDescription('The song name.')
                     .setAutocomplete(true)
                     .setRequired(true))
 
             .addStringOption(option => 
                 option.setName('rating')
-                    .setDescription('The new rating of the review.')
-                    .setRequired(false))
+                    .setDescription('The newly edited rating of the song.')
+                    .setRequired(false)
+                    .setMaxLength(3))
     
             .addStringOption(option => 
                 option.setName('review')
-                    .setDescription('The new written review.')
+                    .setDescription('The newly edited written review.')
                     .setRequired(false))
     
             .addUserOption(option => 
                 option.setName('user_who_sent')
-                    .setDescription('The new user who sent you the song for the review')
+                    .setDescription('The newly edited user who sent you this song.')
                     .setRequired(false))
 
             .addStringOption(option => 
                 option.setName('remixers')
-                    .setDescription('Remixers that remixed the song you are editing the review of.')
+                    .setDescription('Remixers involved in a remix of a song, for remix reviews.')
                     .setAutocomplete(true)
                     .setRequired(false))),
-
+    help_desc: `Allows you to edit a review you have made for a song in the review database, and edits the review message in your review channel with the newly edited review.\n` +
+    `Can be used for singles, remixes, or songs on an EP/LP review, but this CANNOT be used for EP/LP overall reviews or ratings. Use \`/epeditreview\` for that.`,
 	async execute(interaction) {
         try {
 
@@ -155,7 +159,7 @@ module.exports = {
         let epObj = false;
 
         for (let i = 0; i < artistArray.length; i++) {
-            epObj = db.reviewDB.get(primArtist)[songName].ep;
+            epObj = db.reviewDB.get(primArtist, db.reviewDB.get(primArtist)[songName].ep);
             if (epObj == undefined || epObj == false) break;
             if (epObj[interaction.user.id] == undefined || epObj[interaction.user.id] == false) break;
             epMsgToEdit = epObj[interaction.user.id].msg_id;

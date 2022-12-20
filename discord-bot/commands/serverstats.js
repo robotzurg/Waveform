@@ -6,7 +6,9 @@ const _ = require('lodash');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('serverstats')
-        .setDescription('View general stats about the server\'s bot usage!'),
+        .setDescription('View general Waveform stats about the server.')
+        .setDMPermission(false),
+    help_desc: `TBD`,
 	async execute(interaction, client) {
         try {
             await interaction.reply('Loading server stats, this may take a bit of time so please be patient!');
@@ -37,10 +39,11 @@ module.exports = {
                     let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];
                     let userArray;
                     if (songObj != null && songObj != undefined) {
-                        userArray = get_user_reviews(userArray);
+                        userArray = get_user_reviews(songObj);
                     } else {
                         userArray = [];
                     }
+
                     if (userArray.length != 0) artistList.push(artistArray[i]);
                     if (songSkip.includes(`${artistArray[i]} - ${songArray[j]}`)) continue;
 

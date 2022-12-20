@@ -6,12 +6,13 @@ const { handle_error, get_user_reviews } = require('../func.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('stars')
-        .setDescription('See a full list of all the stars a user has on songs in the database.')
+        .setDescription('Get a list of all stars a user has given.')
+        .setDMPermission(false)
         .addUserOption(option => 
             option.setName('user')
                 .setDescription('User to see stars from. (Optional, Defaults to yourself)')
                 .setRequired(false)),
-    admin: false,
+    help_desc: `TBD`,
 	async execute(interaction) {
 
         try {

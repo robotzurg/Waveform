@@ -5,7 +5,8 @@ const { SlashCommandBuilder } = require('discord.js');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('setprofile')
-		.setDescription('Setup aspects of your Waveform profile!')
+		.setDescription('Edit your Waveform profile.')
+        .setDMPermission(false)
         .addSubcommand((subcommand) =>
             subcommand.setName('fav_song')
             .setDescription("Set what your favorite song currently is on your Waveform Profile!")
@@ -36,7 +37,7 @@ module.exports = {
                 .setRequired(true),
             ),
         ),
-
+    help_desc: `TBD`,
 	async execute(interaction) {
         try {
             

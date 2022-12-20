@@ -1,4 +1,3 @@
-/* eslint-disable no-unreachable */
 const { SlashCommandBuilder } = require('discord.js');
 const { handle_error, parse_artist_song_data } = require('../func');
 const db = require('../db.js');
@@ -6,10 +5,11 @@ const db = require('../db.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('addtag')
-        .setDescription('Add a tag to a song or EP/LP!')
+        .setDescription('Add a tag to a song or EP/LP.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('tag')
-                .setDescription('The tag you would like to assign to the song.')
+                .setDescription('The tag you would like to assign.')
                 .setAutocomplete(true)
                 .setRequired(true))
 
@@ -21,7 +21,7 @@ module.exports = {
 
         .addStringOption(option => 
             option.setName('name')
-                .setDescription('The name of the song or EP/LP.')
+                .setDescription('The name of the song/EP/LP.')
                 .setAutocomplete(true)
                 .setRequired(false))
             
@@ -33,12 +33,15 @@ module.exports = {
 
         .addStringOption(option => 
             option.setName('tag_image')
-                .setDescription('An image for the tag. (MUST BE A VALID IMAGE LINK)')
+                .setDescription('An image link for the tag.')
                 .setRequired(false)),
+    help_desc: `Creates (or replaces) a song tag and adds it to the specified song.\n\n` + 
+    `Leaving the artist and song name arguments blank will pull from currently playing song on Spotify, if you are logged in to Waveform with Spotify.\n\n` + 
+    `Not currently functional due to bugs.`,
 	async execute(interaction) {
         try {
 
-        return interaction.reply('This command (and tagging in general) is temporarily unavailable due to maintenance.');
+            if (interaction.user.id != '122568101995872256') return interaction.reply('This command is under construction.');
 
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('name');

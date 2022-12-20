@@ -8,7 +8,8 @@ const { getData } = require('spotify-url-info')(fetch);
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('sendmail')
-        .setDescription('Send a song to a users mailbox playlist! (THIS REQUIRES SPOTIFY AUTHENTICATION WITH /LOGIN)')
+        .setDescription('Send a song/EP/LP to a users Waveform Mailbox.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('link')
                 .setDescription('Link to the song you would like to send to the mailbox (MUST BE A SPOTIFY LINK)')
@@ -17,6 +18,7 @@ module.exports = {
             option.setName('user')
                 .setDescription('User whose mailbox you would like to send a song to (MUST BE CONNECTED TO SPOTIFY)')
                 .setRequired(false)),
+    help_desc: `TBD`,
 	async execute(interaction, client) {
 
         let taggedUser = interaction.options.getUser('user');

@@ -5,7 +5,8 @@ const { SlashCommandBuilder } = require('discord.js');
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('deletereview')
-		.setDescription('Delete a review!')
+		.setDescription('Delete a review you\'ve made.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
@@ -14,16 +15,18 @@ module.exports = {
 
         .addStringOption(option => 
             option.setName('name')
-                .setDescription('The name of the song or EP/LP.')
+                .setDescription('The name of the song/EP/LP.')
                 .setAutocomplete(true)
                 .setRequired(false))
 
         .addStringOption(option => 
             option.setName('remixers')
-                .setDescription('Remix artists on the song, use this to delete remix reviews.')
+                .setDescription('Remix artists on the song, for remix reviews.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-	admin: false,
+    help_desc: `Delete a review you have made from the review database.\n` + 
+    `This only deletes YOUR review, not anyone else's review or the song/artist data itself.\n\n` + 
+    `Leaving the artist and song name arguments blank will pull from currently playing song on Spotify, if you are logged in to Waveform with Spotify.\n\n`,
     async execute(interaction) {
 
         try {

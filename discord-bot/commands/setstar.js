@@ -5,7 +5,8 @@ const { parse_artist_song_data, hall_of_fame_check, handle_error, find_review_ch
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('setstar')
-		.setDescription('Change review to be starred or not starred')
+		.setDescription('Toggle a star on a review you have made.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
@@ -23,8 +24,7 @@ module.exports = {
                 .setDescription('Remix artists on the song.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-    
-    admin: false,
+    help_desc: `TBD`,
 	async execute(interaction) {
         try {
 

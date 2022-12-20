@@ -1,4 +1,3 @@
-/* eslint-disable no-unreachable */
 const { SlashCommandBuilder } = require('discord.js');
 const { handle_error, parse_artist_song_data } = require('../func');
 const db = require('../db.js');
@@ -6,7 +5,8 @@ const db = require('../db.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('edittag')
-        .setDescription('Edit an existing tag in Waveform!')
+        .setDescription('Edit a song tag.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('tag')
                 .setDescription('The tag you would like to edit.')
@@ -22,10 +22,12 @@ module.exports = {
             option.setName('tag_image')
                 .setDescription('An image you want to add to the tag. (MUST BE A VALID IMAGE LINK)')
                 .setRequired(false)),
+    help_desc: `Allows you to edit an existing song tag to change it's name or image attached to it.\n\n` + 
+    `Not currently functional due to bugs.`,
 	async execute(interaction) {
         try {
 
-        return interaction.reply('This command (and tagging in general) is temporarily unavailable due to maintenance.');
+        if (interaction.user.id != '122568101995872256') return interaction.reply('This command is under construction.');
 
         let tag = interaction.options.getString('tag');
         let newTagName = interaction.options.getString('tag_name');

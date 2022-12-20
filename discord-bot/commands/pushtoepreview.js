@@ -6,6 +6,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('pushtoepreview')
         .setDescription('Push an existing review to an EP/LP review.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
@@ -23,7 +24,7 @@ module.exports = {
                 .setDescription('Remix artists on the song.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-	admin: false,
+    help_desc: `TBD`,
 	async execute(interaction) {
         try {
             let artists = interaction.options.getString('artist');

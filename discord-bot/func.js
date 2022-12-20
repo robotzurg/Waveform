@@ -139,16 +139,22 @@ module.exports = {
                 return -1;
             }
 
+            let rmx_delimiter = ' & ';
+
             if (songArg.includes(' Remix)') || songArg.includes(' Remix]')) {
                 songArg = songArg.replace('[', '(');
                 songArg = songArg.replace(']', ')');
+
                 temp = songArg.split(' Remix)')[0].split('(');
                 rmxArtist = temp[temp.length - 1];
+
+                // Input validation
                 rmxArtist = rmxArtist.replace(' VIP', '');
+                if (rmxArtist.includes(' and ')) rmx_delimiter = ' and ';
+                if (rmxArtist.includes(' x ')) rmx_delimiter = ' x ';
                 origSongArg = temp[0].trim();
-                songArg = `${temp[0].trim()} (${rmxArtist} Remix)`;
-                rmxArtistArray = [rmxArtist.split(' & ')];
-                rmxArtistArray = rmxArtistArray.flat(1);
+                rmxArtistArray = rmxArtist.split(rmx_delimiter);
+                songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
                 origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
                 if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
             }
@@ -157,10 +163,11 @@ module.exports = {
                 songArg = songArg.split(' - ');
                 rmxArtist = songArg[1].slice(0, -6);
                 rmxArtist = rmxArtist.replace(' VIP', '');
+                if (rmxArtist.includes(' and ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' and ';
+                if (rmxArtist.includes(' x ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' x ';
                 origSongArg = songArg[0];
-                songArg = `${songArg[0]} (${rmxArtist} Remix)`;
-                rmxArtistArray = [rmxArtist.split(' & ')];
-                rmxArtistArray = rmxArtistArray.flat(1);
+                rmxArtistArray = rmxArtist.split(rmx_delimiter);
+                songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
                 origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
                 if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
             }
@@ -191,6 +198,8 @@ module.exports = {
                 origSongArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
                 songArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
             }
+
+            console.log(rmxArtistArray);
 
             if (origArtistArray.length == 0) {
                 passesChecks = false;

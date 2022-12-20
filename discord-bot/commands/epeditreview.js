@@ -5,11 +5,11 @@ const { handle_error, find_review_channel, parse_artist_song_data } = require('.
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('epeditreview')
-        .setDescription('Edit/add data to an EP/LP review')
+        .setDescription('Edit/add a overall rating/review to an EP/LP review')
+        .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand.setName('with_spotify')
             .setDescription('Edit/add data to an EP/LP review with spotify playback data.')
-
             .addStringOption(option => 
                 option.setName('ep_rating')
                     .setDescription('The new rating of the EP/LP.')
@@ -22,7 +22,6 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand.setName('manually')
             .setDescription('Edit/add data to an EP/LP with manually entered information.')
-
             .addStringOption(option => 
                 option.setName('artist')
                     .setDescription('The name of the MAIN EP/LP artist(s). (separate with &, Do not put any one-off collaborators here.)')
@@ -41,7 +40,7 @@ module.exports = {
                 option.setName('ep_review')
                     .setDescription('The new written overall review of the EP/LP.')
                     .setRequired(false))),
-	admin: false,
+	help_desc: `TBD`,
 	async execute(interaction) {
         try {
             let artists = interaction.options.getString('artist');

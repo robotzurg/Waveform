@@ -1,13 +1,14 @@
 const db = require('../db.js');
-const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 
-// TODO: - MAKE THIS A BUNCH OF SUBCOMMANDS!!
-//       - Make the Star Cutoff retroactively remove/add hall of fame entries
+// TODO: Honestly, just re-write this whole command, it's confusing to use.
 
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('serverconfig')
-		.setDescription('Configure settings for the server on Waveform. Using no arguments shows the config list.')
+		.setDescription('Configure Waveform preferences for the server.')
+        .setDefaultMemberPermissions(PermissionFlagsBits.Administrator)
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('configuration')
                 .setDescription('Which setting to configure.')
@@ -17,7 +18,7 @@ module.exports = {
             option.setName('value')
                 .setDescription('The value to put in for the configuration (REQUIRES AN ARGUMENT PLACED INTO CONFIGURATION.)')
                 .setRequired(false)),
-    admin: true,
+    help_desc: `TBD`,
 	execute(interaction) {
 
         let config = interaction.options.getString('configuration');

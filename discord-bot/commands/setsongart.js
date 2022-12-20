@@ -8,7 +8,8 @@ require('dotenv').config();
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('setsongart')
-        .setDescription('Put in some art for a song (or EP/LP) in the database! Using no art argument pulls art from Spotify!')
+        .setDescription('Edit the art of a song/EP/LP.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
@@ -31,7 +32,7 @@ module.exports = {
                 .setDescription('The remixers on the song, if this is a remix.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-	admin: false,
+    help_desc: `TBD`,
 	async execute(interaction) {
         try {
 

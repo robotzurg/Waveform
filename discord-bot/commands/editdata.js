@@ -5,7 +5,8 @@ const { EmbedBuilder, SlashCommandBuilder, ButtonBuilder, ActionRowBuilder, Butt
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('editdata')
-		.setDescription('Edit the various data of a song or an EP/LP in the database.')
+		.setDescription('Edit metadata of a song or an EP/LP.')
+        .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand.setName('song')
             .setDescription('Edit the various data of a song or remix (Remixes not supported yet).')
@@ -16,16 +17,20 @@ module.exports = {
                     .setRequired(false))
             .addStringOption(option => 
                 option.setName('song_name')
-                    .setDescription('The old name of the song or EP/LP.')
+                    .setDescription('The old name of the song/EP/LP.')
                     .setAutocomplete(true)
                     .setRequired(false))
             .addStringOption(option => 
                 option.setName('remixers')
-                    .setDescription('The name of remixers on the original song, if any')
+                    .setDescription('The name of remixers on the original song, for remixes.')
                     .setRequired(false))),
+    help_desc: `Allows you to edit the metadata of a song, or an EP/LP in the database, depending on which subcommand you use.\n` + 
+    `Editable data includes collaborators, vocalists, remixers, song name, tags, and remixers.\n\n` +
+    `Leaving the artist and song name arguments blank will pull from currently playing song on Spotify, if you are logged in to Waveform with Spotify.\n\n` +
+    `Not currently functional due to being unfinished.`,
 	async execute(interaction) {
 
-        return interaction.reply('This command is not ready yet.');
+        if (interaction.user.id != '122568101995872256') return interaction.reply('This command is under construction.');
 
         let origArtistArray = interaction.options.getString('artist');
         let songName = interaction.options.getString('song_name');

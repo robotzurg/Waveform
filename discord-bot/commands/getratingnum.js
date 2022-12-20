@@ -5,18 +5,21 @@ const _ = require('lodash');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('viewratings')
-        .setDescription('View a specified list of ratings based on a number you put in!')
+        .setName('getratingnum')
+        .setDescription('Get a list of all songs rated with a specific rating.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('rating')
                 .setDescription('What rating you want to see a list of.')
                 .setAutocomplete(false)
-                .setRequired(true))
+                .setRequired(true)
+                .setMaxLength(3))
             
         .addUserOption(option => 
             option.setName('user')
                 .setDescription('User whose list you want to see. Defaults to yourself.')
                 .setRequired(false)),
+    help_desc: `TBD`,
 	async execute(interaction) {
 
         try {

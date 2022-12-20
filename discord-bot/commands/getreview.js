@@ -5,7 +5,8 @@ const { parse_artist_song_data, handle_error, find_review_channel } = require('.
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('getreview')
-        .setDescription('Get a review someone has written in the database!')
+        .setDescription('Get a song review from a user.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
@@ -28,7 +29,7 @@ module.exports = {
                 .setDescription('Remix artists on the song.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-	admin: false,
+    help_desc: `TBD`,
 	async execute(interaction) {
         try {
             let artists = interaction.options.getString('artist');

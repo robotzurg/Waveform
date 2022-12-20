@@ -6,7 +6,8 @@ const _ = require('lodash');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('getartistratings')
-        .setDescription('Get all the songs from an artist and display them in an embed message.')
+        .setDescription('Get all of a users ratings of an artists songs.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist.')
@@ -18,7 +19,7 @@ module.exports = {
                 .setDescription('The user who you would like to use for this command (defaults to yourself)')
                 .setRequired(false)),
 
-    admin: false,
+    help_desc: `TBD`,
 	async execute(interaction) {
         try {
 

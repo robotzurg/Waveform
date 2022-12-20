@@ -5,7 +5,8 @@ const { handle_error, find_review_channel, parse_artist_song_data } = require('.
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('getepreview')
-        .setDescription('Get an EP review from a user on the server that they have written!')
+        .setDescription('Get an EP/LP review from a user.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
@@ -22,7 +23,7 @@ module.exports = {
             option.setName('user')
                 .setDescription('User who made the review. Defaults to yourself.')
                 .setRequired(false)),
-    admin: false,
+    help_desc: `TBD`,
 	async execute(interaction) {
 
         try {
