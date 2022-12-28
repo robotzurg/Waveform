@@ -5,7 +5,9 @@ const _ = require('lodash');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('viewmail')
-        .setDescription('View your mailbox and who has sent you what!'),
+        .setDescription('View your local Waveform Mailbox list.')
+        .setDMPermission(false),
+    help_desc: `TBD`,
 	async execute(interaction) {
         let mail_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
         if (mail_list == undefined || mail_list == false) {

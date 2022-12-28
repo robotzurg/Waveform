@@ -6,7 +6,8 @@ const { EmbedBuilder, ActionRowBuilder, SelectMenuBuilder, SlashCommandBuilder }
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('getsong')
-        .setDescription('Get all the data about a song and displays it in an embed message.')
+        .setDescription('Get data about a song.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
@@ -24,7 +25,7 @@ module.exports = {
                 .setDescription('Remix artists on the song, if any.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-	admin: false,
+    help_desc: `TBD`,
 	async execute(interaction) {
         try {
 

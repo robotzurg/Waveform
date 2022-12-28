@@ -7,7 +7,9 @@ const progressbar = require('string-progressbar');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('nowplaying')
-        .setDescription('Display your currently playing song on Spotify!'),
+        .setDescription('Display your currently playing song on Spotify.')
+        .setDMPermission(false),
+    help_desc: `TBD`,
 	async execute(interaction) {
         try {
 

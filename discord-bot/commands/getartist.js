@@ -6,13 +6,14 @@ const _ = require('lodash');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('getartist')
-        .setDescription('Get all the songs from an artist and display them in an embed message.')
+        .setDescription('Get all the songs/EPs/LPs/remixes from an artist.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s). (DO NOT PUT ANY REMIXERS HERE) (Leave empty to use spotify playback)')
                 .setAutocomplete(true)
                 .setRequired(false)),
-    admin: false,
+    help_desc: `TBD`,
 	async execute(interaction) {
         try {
             let spotifyCheck;

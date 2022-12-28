@@ -19,12 +19,13 @@ const applyText = (font, fontSize, cutoff, canvas, text) => {
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('profile')
-        .setDescription('Display your (or others) user profile!')
+        .setDescription('Get a user profile.')
+        .setDMPermission(false)
         .addUserOption(option => 
             option.setName('user')
                 .setDescription('The user whose profile you\'d like to see.')
                 .setRequired(false)),
-	admin: false,
+    help_desc: `TBD`,
 	async execute(interaction) {
 
         await interaction.reply('Loading profile, this may take a bit of time so please be patient!');

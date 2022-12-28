@@ -6,14 +6,16 @@ require('dotenv').config();
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('epreview')
-        .setDescription('Review an EP or LP in Waveform.')
+        .setDescription('Review an EP/LP.')
+        .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand.setName('with_spotify')
             .setDescription('Review an EP/LP by utilizing the album of your currently playing spotify song. (requires login)')
             .addStringOption(option => 
                 option.setName('overall_rating')
                     .setDescription('Overall Rating of the EP/LP. Out of 10, decimals allowed. Can be added later.')
-                    .setRequired(false))
+                    .setRequired(false)
+                    .setMaxLength(3))
     
             .addStringOption(option => 
                 option.setName('overall_review')
@@ -54,7 +56,8 @@ module.exports = {
             .addStringOption(option => 
                 option.setName('overall_rating')
                     .setDescription('Overall Rating of the EP/LP. Out of 10, decimals allowed. Can be added later.')
-                    .setRequired(false))
+                    .setRequired(false)
+                    .setMaxLength(3))
     
             .addStringOption(option => 
                 option.setName('overall_review')
@@ -76,7 +79,7 @@ module.exports = {
                 option.setName('user_who_sent')
                     .setDescription('User who sent you this EP/LP in Mailbox. Ignore if not a mailbox review.')
                     .setRequired(false))),
-	admin: false,
+    help_desc: `TBD`,
 	async execute(interaction) {
         try {
 

@@ -5,7 +5,8 @@ const { EmbedBuilder, ActionRowBuilder, SelectMenuBuilder, SlashCommandBuilder, 
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('getep')
-        .setDescription('Get all the songs from a specific EP and display them in an embed message.')
+        .setDescription('Get data about an EP/LP.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
@@ -17,7 +18,7 @@ module.exports = {
                 .setDescription('The name of the EP.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-    admin: false,
+    help_desc: `TBD`,
 	async execute(interaction, client) {
         try {
 

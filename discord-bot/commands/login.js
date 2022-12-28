@@ -6,7 +6,9 @@ const db = require('../db.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('login')
-        .setDescription('Login to Spotify through Waveform, to gain access to spotify features!'),
+        .setDescription('Connect your Spotify account to Waveform.')
+        .setDMPermission(false),
+    help_desc: `TBD`,
 	async execute(interaction) {
 
         interaction.reply('Here is how you login to Waveform with Spotify!\nGo to [this website](https://nimble-kataifi-dbceca.netlify.app/), then with the refresh token it returns, send the refresh token here (as a message), and you\'ll be all set!');
@@ -16,6 +18,7 @@ module.exports = {
 
         collector.on('collect', async token => {
             await db.user_stats.set(interaction.user.id, token.content, 'refresh_token');
+            await db.user_stats.set(interaction.user.id, 'na', 'access_token');
             interaction.editReply('Authentication successful! You can now use the Spotify API with Waveform.\n' + 
             'Make sure to use `/setupmailbox` to setup your Waveform Mailbox, now that you have logged in!');
             token.delete();

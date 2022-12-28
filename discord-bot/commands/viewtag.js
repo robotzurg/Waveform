@@ -6,13 +6,14 @@ const _ = require('lodash');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('viewtag')
-        .setDescription('View a list of all songs tagged with a specific tag!')
+        .setDescription('View all songs tagged with a specific tag.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('tag')
                 .setDescription('What rating you want to see a list of.')
                 .setAutocomplete(true)
                 .setRequired(true)),
-
+    help_desc: `TBD`,
 	async execute(interaction) {
 
         try {

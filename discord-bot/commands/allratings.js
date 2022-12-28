@@ -6,11 +6,13 @@ const _ = require('lodash');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('allratings')
-        .setDescription('View an ordered list of all of your ratings in the bot!')
+        .setDescription('View a list of all ratings a user has given.')
+        .setDMPermission(false)
         .addUserOption(option => 
             option.setName('user')
                 .setDescription('User whose list you want to see. Defaults to yourself.')
                 .setRequired(false)),
+    help_desc: `Gets a full list of every rating a specified user has given, and how many times they have given that rating.`,
 	async execute(interaction) {
 
         try {

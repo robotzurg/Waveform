@@ -5,7 +5,8 @@ const { handle_error, spotify_api_setup } = require("../func.js");
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('setupmailbox')
-        .setDescription('Setup a mailbox in Waveform through Spotify itself!')
+        .setDescription('Setup a Waveform Mailbox.')
+        .setDMPermission(false)
         .addStringOption(option => 
             option.setName('playlist_name')
                 .setDescription('The name of the mailbox playlist on Spotify (defaults to Waveform Mailbox)')
@@ -14,6 +15,7 @@ module.exports = {
             option.setName('playlist_desc')
                 .setDescription('The description for your mailbox playlist on Spotify.')
                 .setRequired(false)),
+    help_desc: `TBD`,
 	async execute(interaction) {
         try {
 

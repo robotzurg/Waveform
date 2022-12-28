@@ -6,7 +6,8 @@ require('dotenv').config();
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('review')
-        .setDescription('Review a song using Waveform.')
+        .setDescription('Review a song.')
+        .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand.setName('with_spotify')
             .setDescription('Review a song by utilizing your currently playing spotify song (requires login).')
@@ -14,7 +15,8 @@ module.exports = {
             .addStringOption(option => 
                 option.setName('rating')
                     .setDescription('Rating for the song (1-10, decimals allowed.)')
-                    .setRequired(false))
+                    .setRequired(false)
+                    .setMaxLength(3))
 
             .addStringOption(option => 
                 option.setName('review')
@@ -56,7 +58,8 @@ module.exports = {
             .addStringOption(option => 
                 option.setName('rating')
                     .setDescription('Rating for the song (1-10, decimals allowed.)')
-                    .setRequired(false))
+                    .setRequired(false)
+                    .setMaxLength(3))
 
             .addStringOption(option => 
                 option.setName('review')
@@ -89,6 +92,7 @@ module.exports = {
                 option.setName('vocalist')
                     .setDescription('If you want the song name to have a (ft.) in it for artists, use this argument.')
                     .setAutocomplete(true))),
+    help_desc: `TBD`,
 	async execute(interaction) {
         try {
 
