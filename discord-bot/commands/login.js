@@ -18,6 +18,7 @@ module.exports = {
 
         collector.on('collect', async token => {
             await db.user_stats.set(interaction.user.id, token.content, 'refresh_token');
+            await db.user_stats.set(interaction.user.id, 'na', 'access_token');
             interaction.editReply('Authentication successful! You can now use the Spotify API with Waveform.\n' + 
             'Make sure to use `/setupmailbox` to setup your Waveform Mailbox, now that you have logged in!');
             token.delete();
