@@ -4,6 +4,7 @@ const db = require('../db.js');
 const { spotify_api_setup } = require('../func.js');
 const fetch = require('isomorphic-unfetch');
 const { getData } = require('spotify-url-info')(fetch);
+const _ = require('lodash');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -20,7 +21,7 @@ module.exports = {
                 .setRequired(false)),
     help_desc: `TBD`,
 	async execute(interaction, client) {
-
+        interaction.deferReply();
         let taggedUser = interaction.options.getUser('user');
         let taggedMember;
         let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
@@ -32,46 +33,48 @@ module.exports = {
         } else if (taggedUser != null) {
             taggedMember = await interaction.guild.members.fetch(taggedUser.id);
         } else if (taggedUser == null) {
-            return interaction.reply(`You must either specify a user in the user argument to send this song to, or be in a mailbox chat!`);
+            return interaction.editReply(`You must either specify a user in the user argument to send this song to, or be in a mailbox chat!`);
         }
 
         const spotifyApi = await spotify_api_setup(taggedUser.id);
     
         if (spotifyApi == false) {
-            return interaction.reply('This user either does not have a mailbox setup, or has a non-spotify mailbox, thus cannot have mail sent this way.');
+            return interaction.editReply('This user either does not have a mailbox setup, or has a non-spotify mailbox, thus cannot have mail sent this way.');
         }
 
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
         let trackLink = interaction.options.getString('link');
         let trackUris = []; 
+        let trackDurs = []; // Track durations
         let name;
         let artists;
         let url;
         let songArt;
 
-        if (!trackLink.includes('spotify')) return interaction.reply('The link you put in is not a valid spotify link!');
-        if (trackLink.includes('track')) {
-            await getData(trackLink).then(data => {
-                url = trackLink;
-                data.type == 'track' ? songArt = data.coverArt.sources[0].url : songArt = data.images[0].url;
-                name = data.name;
-                artists = data.artists.map(artist => artist.name);
-                if (data.type == 'track' || data.type == 'single') {
-                    trackUris.push(data.uri); // Used to add to playlist
-                } else if (data.type == 'album') {
-                    for (let i = 0; i < data.tracks.items.length; i++) {
-                        trackUris.push(data.tracks.items[i].uri);
-                    }
-                    if (!name.includes(' EP') && !name.includes(' LP')) {
-                        name = (data.album_type == 'single') ? name += ' EP' : name += ' LP';
+        if (!trackLink.includes('spotify')) return interaction.editReply('The link you put in is not a valid spotify link!');
+        await getData(trackLink).then(data => {
+            url = trackLink;
+            songArt = data.coverArt.sources[0].url;
+            name = data.name;
+            data.type == 'album' ? artists = [data.subtitle] : artists = data.artists.map(artist => artist.name);
+            if (data.type == 'track' || data.type == 'single') {
+                trackUris.push(data.uri); // Used to add to playlist
+            } else if (data.type == 'album') {
+                for (let i = 0; i < data.trackList.length; i++) {
+                    trackUris.push(data.trackList[i].uri);
+                    trackDurs.push(data.trackList[i].duration);
+                }
+                if (!name.includes(' EP') && !name.includes(' LP')) {
+                    if (_.sum(trackDurs) >= 1.8e+6 || data.trackList.length >= 7) {
+                        name += ' LP';
+                    } else {
+                        name += ' EP';
                     }
                 }
-            }).catch((err) => {
-                console.log(err);
-            });
-        } else {
-            return interaction.reply('Albums are not currently supported with mailboxes due to a critical bug. Jeff is aware, and trying to fix it!');
-        }
+            }
+        }).catch((err) => {
+            console.log(err);
+        });
 
         // Add tracks to the mailbox playlist
         await spotifyApi.addTracksToPlaylist(playlistId, trackUris)
@@ -83,11 +86,11 @@ module.exports = {
             .setThumbnail(songArt);
 
             if (interaction.channel.id != db.user_stats.get(taggedUser.id, 'mailbox')) {
-                interaction.reply(`Sent [**${artists.join(' & ')} - ${name}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
+                interaction.editReply(`Sent [**${artists.join(' & ')} - ${name}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
                 let mail_channel = interaction.guild.channels.cache.get(db.user_stats.get(taggedUser.id, 'mailbox'));
                 mail_channel.send({ content: `You've got mail! 📬`, embeds: [mailEmbed] });
             } else {
-                interaction.reply({ content: `You've got mail! 📬`, embeds: [mailEmbed] });
+                interaction.editReply({ content: `You've got mail! 📬`, embeds: [mailEmbed] });
             }
 
             // Put the song we just mailboxed into a mailbox list for the user, so it can be pulled up with /viewmail
@@ -97,7 +100,7 @@ module.exports = {
                 db.user_stats.push(taggedUser.id, [`**${artists.join(' & ')} - ${name}**`, `${interaction.user.id}`], 'mailbox_list');
             }
         }).catch(() => {
-            return interaction.reply(`Waveform ran into an issue sending this mail. Make sure they have set music mailbox setup by using \`/setupmailbox\`!`);
+            return interaction.editReply(`Waveform ran into an issue sending this mail. Make sure they have set music mailbox setup by using \`/setupmailbox\`!`);
         });
     },
 };

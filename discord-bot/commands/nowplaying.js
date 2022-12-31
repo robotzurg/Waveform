@@ -12,13 +12,13 @@ module.exports = {
     help_desc: `TBD`,
 	async execute(interaction) {
         try {
-
+        interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
         let songArt, spotifyUrl, yourRating, origArtistArray, artistArray, songName, songDisplayName, isPlaying = true, isPodcast = false;
         let songLength, songCurMs, musicProgressBar = false; // Spotify API specific variables 
         const spotifyApi = await spotify_api_setup(interaction.user.id);
         
-        if (spotifyApi == false) return interaction.reply(`This command requires you to use \`/login\` `);
+        if (spotifyApi == false) return interaction.editReply(`This command requires you to use \`/login\` `);
 
         await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
             if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
@@ -39,7 +39,7 @@ module.exports = {
 
         // Check if a podcast is being played, as we don't support that.
         if (isPodcast == true) {
-            return interaction.reply('Podcasts are not supported with `/np`.');
+            return interaction.editReply('Podcasts are not supported with `/np`.');
         }
 
         const npEmbed = new EmbedBuilder()
@@ -102,7 +102,7 @@ module.exports = {
             `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
         }
         
-        interaction.reply({ embeds: [npEmbed] });
+        interaction.editReply({ embeds: [npEmbed] });
 
         } catch (err) {
             let error = err;
