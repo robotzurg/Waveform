@@ -176,7 +176,6 @@ module.exports = {
                 songArg = songArg.split(' (feat. ');
                 songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
                 songArg[1] = songArg[1].split(')')[0];
-                console.log(songArg);
                 if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1]);
                 origSongArg = `${songArg[0]}`;
                 songArg = `${songArg[0]}`;
@@ -198,8 +197,6 @@ module.exports = {
                 origSongArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
                 songArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
             }
-
-            console.log(rmxArtistArray);
 
             if (origArtistArray.length == 0) {
                 passesChecks = false;
