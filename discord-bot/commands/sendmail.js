@@ -21,7 +21,7 @@ module.exports = {
                 .setRequired(false)),
     help_desc: `TBD`,
 	async execute(interaction, client) {
-        interaction.deferReply();
+        await interaction.deferReply();
         let taggedUser = interaction.options.getUser('user');
         let taggedMember;
         let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');

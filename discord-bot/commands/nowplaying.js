@@ -12,7 +12,7 @@ module.exports = {
     help_desc: `TBD`,
 	async execute(interaction) {
         try {
-        interaction.deferReply();
+        await interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
         let songArt, spotifyUrl, yourRating, origArtistArray, artistArray, songName, songDisplayName, isPlaying = true, isPodcast = false;
         let songLength, songCurMs, musicProgressBar = false; // Spotify API specific variables 
