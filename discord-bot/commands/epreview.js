@@ -93,7 +93,10 @@ module.exports = {
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('ep_name');
             let song_info = await parse_artist_song_data(interaction, artists, ep);
-            if (song_info == -1) return;
+            if (song_info == -1) {
+                await interaction.reply('Waveform ran into an issue pulling up song data.');
+                return;
+            }
 
             let origArtistArray = song_info.prod_artists;
             let epName = song_info.song_name;

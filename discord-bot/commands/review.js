@@ -95,14 +95,14 @@ module.exports = {
     help_desc: `TBD`,
 	async execute(interaction) {
         try {
-
+        await interaction.deferReply();
         // These variables are here so that we can start a review from anywhere else
         let int_channel = interaction.channel;
         let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
 
         // Check if we are reviewing in the right chat, if not, boot out
         if (`<#${int_channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel') && !mailboxes.some(v => v.includes(int_channel.id))) {
-            return interaction.reply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
+            return await interaction.editReply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
         }
 
         let vocalistArray = interaction.options.getString('vocalist');
@@ -114,14 +114,17 @@ module.exports = {
         // Songname check to avoid not using the arguments properly.
         if (song != null) {
             if (song.includes('Remix)') || song.includes('ft.') || song.includes('feat.')) {
-                await interaction.reply('Please make sure that no artist names are placed in the song name argument.\n' + 
+                await interaction.editReply('Please make sure that no artist names are placed in the song name argument.\n' + 
                 'For example, do not put `Song (Dude Remix)`, just put `Song`, and put the remixer in the Remixers argument.');
                 return;
             }
         }
 
         let song_info = await parse_artist_song_data(interaction, artists, song, rmxArtistArray, vocalistArray);
-        if (song_info == -1) return;
+        if (song_info == -1) {
+            await interaction.editReply('Waveform ran into an issue pulling up song data.');
+            return;
+        } 
 
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
@@ -225,7 +228,7 @@ module.exports = {
                 }
             }
         } else {
-            if (!isValidURL(songArt)) return interaction.reply('This song art URL is invalid.');
+            if (!isValidURL(songArt)) return await interaction.editReply('This song art URL is invalid.');
         }
 
         // Start creation of embed
@@ -238,8 +241,8 @@ module.exports = {
         if (rating !== false) {
             if (rating.includes('/10')) rating = rating.replace('/10', '');
             rating = parseFloat(rating);
-            if (isNaN(rating)) return interaction.reply(`The rating \`${rating}\` is not valid, please make sure you put in an integer or decimal rating!`);
-            if (rating < 0 || rating > 10) return interaction.reply(`The rating \`${rating}\` is not a number in between 0 and 10. It must be between those 2 numbers.`);
+            if (isNaN(rating)) return await interaction.editReply(`The rating \`${rating}\` is not valid, please make sure you put in an integer or decimal rating!`);
+            if (rating < 0 || rating > 10) return await interaction.editReply(`The rating \`${rating}\` is not a number in between 0 and 10. It must be between those 2 numbers.`);
         }
 
         // \n parse handling, to allow for line breaks in reviews on Discord PC
@@ -251,7 +254,7 @@ module.exports = {
         }
 
         if (review == false && rating === false) {
-            return interaction.reply('Your song review must either have a rating or review, it cannot be missing both.');
+            return await interaction.editReply('Your song review must either have a rating or review, it cannot be missing both.');
         } else {
             if (rating !== false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rating}/10**`, inline: true }]);
             if (review != false) reviewEmbed.setDescription(review);
@@ -274,7 +277,7 @@ module.exports = {
         }
 
         // Send the review embed
-        interaction.reply({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
+        await interaction.editReply({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
 
         const filter = i => i.user.id == interaction.user.id;
         const collector = int_channel.createMessageComponentCollector({ filter, time: 100000000 });

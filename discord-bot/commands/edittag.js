@@ -56,7 +56,10 @@ module.exports = {
                 }
 
                 let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
-                if (song_info == -1) return;
+                if (song_info == -1) {
+                    await interaction.reply('Waveform ran into an issue pulling up song data.');
+                    return;
+                }
 
                 let artistArray = song_info.all_artists;
                 let songName = song_info.song_name;
