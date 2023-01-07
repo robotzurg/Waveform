@@ -29,7 +29,10 @@ module.exports = {
             musicProgressBar = progressbar.splitBar(songLength / 1000, songCurMs / 1000, 12)[0];
             isPlaying = data.body.is_playing;
             let song_info = await parse_artist_song_data(interaction);
-            if (song_info == -1) return;
+            if (song_info == -1) {
+                await interaction.editReply('Waveform ran into an issue pulling up song data.');
+                return;
+            }
 
             origArtistArray = song_info.prod_artists;
             songName = song_info.song_name;

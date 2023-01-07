@@ -58,7 +58,7 @@ module.exports = {
         const { spotify_api_setup } = require('./func.js');
 
         if ((artists == null && song != null) || (artists != null && song == null)) {
-            interaction.reply('If you are searching for a review manually, you must put in both the artists (in the artist argument) and the song name (in the song_name argument).');
+            //interaction.reply('If you are searching for a review manually, you must put in both the artists (in the artist argument) and the song name (in the song_name argument).');
             return -1;
         }
 
@@ -89,7 +89,7 @@ module.exports = {
             let isPodcast = false;
         
             if (spotifyApi == false) {
-                interaction.reply('You must use `/login` to use Spotify related features!');
+                //interaction.reply('You must use `/login` to use Spotify related features!');
                 return -1;
             }
 
@@ -130,12 +130,12 @@ module.exports = {
 
             // Check if a podcast is being played, as we don't support that.
             if (isPodcast == true) {
-                interaction.reply('Podcasts are not supported with `/np`.');
+                //interaction.reply('Podcasts are not supported with `/np`.');
                 return -1;
             }
 
             if (passesChecks == 'notplaying') {
-                interaction.reply('You are not currently playing a song on Spotify.');
+                //interaction.reply('You are not currently playing a song on Spotify.');
                 return -1;
             }
 
@@ -203,13 +203,13 @@ module.exports = {
             }
 
             if (passesChecks == false) {
-                interaction.reply('This song cannot be parsed properly in the database, and as such cannot be reviewed or have data pulled up for it.');
+                //interaction.reply('This song cannot be parsed properly in the database, and as such cannot be reviewed or have data pulled up for it.');
                 return -1;
             } else if (passesChecks == 'ep') {
-                interaction.reply('This track cannot be added to EP/LP reviews, therefore is invalid to be used in relation with EP/LP commands.');
+                //interaction.reply('This track cannot be added to EP/LP reviews, therefore is invalid to be used in relation with EP/LP commands.');
                 return -1;
             } else if (passesChecks == 'length') {
-                interaction.reply('This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.');
+                //interaction.reply('This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.');
                 return -1;
             }
             
@@ -256,14 +256,14 @@ module.exports = {
             if (interaction.commandName != 'review' && interaction.commandName != 'epreview') {
                 for (let i = 0; i < artistArray.length; i++) {
                     if (!db.reviewDB.has(artistArray[i])) {
-                        interaction.reply(`The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.`);
+                       // interaction.reply(`The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.`);
                         return -1;
                     }
                 }
 
                 for (let i = 0; i < rmxArtistArray.length; i++) {
                     if (!db.reviewDB.has(rmxArtistArray[i])) {
-                        interaction.reply(`The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.`);
+                        //interaction.reply(`The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.`);
                         return -1;
                     }
                 }

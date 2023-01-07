@@ -37,7 +37,10 @@ module.exports = {
         let rmxArtistArray = interaction.options.getString('remixers');
 
         let song_info = await parse_artist_song_data(interaction, origArtistArray, songName, rmxArtistArray);
-        if (song_info == -1) return;
+        if (song_info == -1) {
+            await interaction.reply('Waveform ran into an issue pulling up song data.');
+            return;
+        } ;
 
         origArtistArray = song_info.prod_artists;
         songName = song_info.song_name;
