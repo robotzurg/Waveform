@@ -232,7 +232,7 @@ client.on('guildMemberAdd', async (member) => {
 
     if (!db.user_stats.has(member.user.id)) {
         db.user_stats.set(member.user.id, {
-            "access_token": false,
+            "access_token": "",
             "refresh_token": false,
             "current_ep_review": false,
             "fav_genres": [],

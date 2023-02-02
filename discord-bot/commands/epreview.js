@@ -106,7 +106,7 @@ module.exports = {
             let epType = epName.includes(' LP') ? `LP` : `EP`;
 
             let art = interaction.options.getString('art');
-            if (art == null) art = false;
+            if (art == null) art = song_info.art;
         
             let overallRating = interaction.options.getString('overall_rating');
             if (overallRating == null) {
@@ -149,7 +149,7 @@ module.exports = {
 
             // Art grabbing
             if (art == false || art == null || art == undefined) {
-                art = await grab_spotify_art(origArtistArray, epName, interaction);
+                art = await grab_spotify_art(origArtistArray, epName);
                 if (db.reviewDB.has(artistArray[0])) {
                     if (db.reviewDB.get(artistArray[0][epName]) != undefined) {
                         if (db.reviewDB.get(artistArray[0])[epName].art != false && db.reviewDB.get(artistArray[0])[epName].art != undefined) {
@@ -246,7 +246,7 @@ module.exports = {
                 epEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
             }
 
-            interaction.reply({ embeds: [epEmbed], components: [row, row2] });
+            await interaction.reply({ embeds: [epEmbed], components: [row, row2] });
 
             // Grab message id to put in user_stats and the ep object
             const msg = await interaction.fetchReply();
@@ -285,7 +285,7 @@ module.exports = {
                             // Thumbnail image handling
                             if (art == undefined || art == false) {
                                 // If we don't have art for the edited ep info, search it on the spotify API.
-                                art = await grab_spotify_art(artistArray, epName, interaction);
+                                art = await grab_spotify_art(artistArray, epName);
                                 if (art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             } else {
                                 if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0])[epName].art;
@@ -319,7 +319,7 @@ module.exports = {
                             // Thumbnail image handling
                             if (art == undefined || art == false) {
                                 // If we don't have art for the edited ep info, search it on the spotify API.
-                                art = await grab_spotify_art(artistArray, epName, interaction);
+                                art = await grab_spotify_art(artistArray, epName);
                                 if (art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             } else {
                                 if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0])[epName].art;

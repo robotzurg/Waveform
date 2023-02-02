@@ -14,8 +14,8 @@ module.exports = {
         try {
         await interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
-        let songArt, spotifyUrl, yourRating, origArtistArray, artistArray, songName, songDisplayName, isPlaying = true, isPodcast = false;
-        let songLength, songCurMs, musicProgressBar = false; // Spotify API specific variables 
+        let songArt, spotifyUrl, yourRating, origArtistArray, artistArray, songName, songDisplayName, isPlaying = true, isPodcast = false, validSong = true;
+        let songLength, songCurMs, musicProgressBar = false; // Song length bar variables
         const spotifyApi = await spotify_api_setup(interaction.user.id);
         
         if (spotifyApi == false) return interaction.editReply(`This command requires you to use \`/login\` `);
@@ -30,8 +30,7 @@ module.exports = {
             isPlaying = data.body.is_playing;
             let song_info = await parse_artist_song_data(interaction);
             if (song_info == -1) {
-                await interaction.editReply('Waveform ran into an issue pulling up song data.');
-                return;
+                validSong = false;
             }
 
             origArtistArray = song_info.prod_artists;
@@ -43,6 +42,8 @@ module.exports = {
         // Check if a podcast is being played, as we don't support that.
         if (isPodcast == true) {
             return interaction.editReply('Podcasts are not supported with `/np`.');
+        } else if (validSong == false) {
+            return interaction.editReply(`This song has an invalid song layout, and cannot be parsed by Waveform, therefore cannot be pulled up.`);
         }
 
         const npEmbed = new EmbedBuilder()
