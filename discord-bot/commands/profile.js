@@ -121,6 +121,11 @@ module.exports = {
             ratingList = ratingList.filter(v => !Number.isNaN(v));
             ratingAvg = _.mean(ratingList);
 
+            // If this is undefined, we have a legacy profile that needs to be setup properly and they need to work with me
+            if (mostStarred == undefined) {
+                return interaction.editReply('You have a legacy Waveform profile. Please message Jeff to get a proper one setup!');
+            }
+
             FontLibrary.use("main", ["./fonts/LEMONMILK-Light.otf"]);
             FontLibrary.use("main_med", ["./fonts/LEMONMILK-Medium.otf"]);
             FontLibrary.use("main_reg", ["./fonts/LEMONMILK-Regular.otf"]);

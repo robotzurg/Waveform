@@ -43,7 +43,7 @@ module.exports = {
         if (song_info == -1) {
             await interaction.reply('Waveform ran into an issue pulling up song data.');
             return;
-        } ;
+        }
 
         console.log(song_info);
 

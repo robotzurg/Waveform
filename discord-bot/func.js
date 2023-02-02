@@ -72,6 +72,7 @@ module.exports = {
         let rmxArtistArray = [];
         let passesChecks = true;
         let trackList = false;
+        let songArt = false;
         if (remixers != null) {
             rmxArtistArray = [remixers.split(' & ')];
             rmxArtistArray = rmxArtistArray.flat(1);
@@ -99,6 +100,7 @@ module.exports = {
                 origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
                 songArg = data.body.item.name;
                 songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
+                songArt = data.body.item.album.images[0].url;
                 await spotifyApi.getAlbum(data.body.item.album.id)
                 .then(async album_data => {
                     if (interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') {
@@ -161,15 +163,19 @@ module.exports = {
 
             if ((songArg.includes('Remix') && songArg.includes(' - ')) && !songArg.includes('Remix)') && !songArg.includes('Remix]')) {
                 songArg = songArg.split(' - ');
-                rmxArtist = songArg[1].slice(0, -6);
-                rmxArtist = rmxArtist.replace(' VIP', '');
-                if (rmxArtist.includes(' and ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' and ';
-                if (rmxArtist.includes(' x ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' x ';
-                origSongArg = songArg[0];
-                rmxArtistArray = rmxArtist.split(rmx_delimiter);
-                songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
-                origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
-                if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
+                if (songArg[1] != 'Remix') {
+                    rmxArtist = songArg[1].slice(0, -6);
+                    rmxArtist = rmxArtist.replace(' VIP', '');
+                    if (rmxArtist.includes(' and ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' and ';
+                    if (rmxArtist.includes(' x ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' x ';
+                    origSongArg = songArg[0];
+                    rmxArtistArray = rmxArtist.split(rmx_delimiter);
+                    songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
+                    origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
+                    if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
+                } else {
+                    songArg = songArg.join(' - ');
+                }
             }
 
             if (songArg.includes('feat.')) {
@@ -182,10 +188,10 @@ module.exports = {
             }
     
             if (songArg.includes('ft. ')) {
-                songArg = songArg.split(' (feat. ');
+                songArg = songArg.split(' (ft. ');
                 songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
                 songArg[1] = songArg[1].split(')')[0];
-                if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1].slice(0, -1));
+                if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1]);
                 origSongArg = `${songArg[0]}`;
                 songArg = `${songArg[0]}`;
             }
@@ -320,6 +326,7 @@ module.exports = {
             all_artists: artistArray, 
             remix_artists: rmxArtistArray, 
             vocal_artists: vocalistArray,
+            art: songArt,
         };
     },
 
@@ -358,12 +365,16 @@ module.exports = {
                                     resolve();
                                 }).catch(() => {
                                     channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
-                                    channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                        msgEmbed = EmbedBuilder.from(msg.embeds[0]);
-                                        msgEmbed.setThumbnail(new_image);
-                                        msg.edit({ content: null, embeds: [msgEmbed] });
-                                        resolve();
-                                    });
+                                    if (channelsearch != undefined) {
+                                        channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                                            msgEmbed = EmbedBuilder.from(msg.embeds[0]);
+                                            msgEmbed.setThumbnail(new_image);
+                                            msg.edit({ content: null, embeds: [msgEmbed] });
+                                            resolve();
+                                        }).catch(() => {
+                                            console.log('Message not found');
+                                        });
+                                    }
                                 }).catch((err) => {
                                     handle_error(interaction, err);
                                 });
@@ -690,20 +701,13 @@ module.exports = {
      * @param {String} name The name of the song or EP/LP to search on Spotify.
      * @param {Object} interaction The interaction of the discord message
      */
-    grab_spotify_art: async function(artistArray, name, interaction) {
+    grab_spotify_art: async function(artistArray, name) {
         const Spotify = require('node-spotify-api');
         const client_id = process.env.SPOTIFY_API_ID; // Your client id
         const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
-        // eslint-disable-next-line no-unused-vars
-        let is_album = false;
         let search = name;
-        if (interaction.commandName.includes('ep') || name.includes(' EP') || name.includes(' LP')) {
-            //is_album = true;
-            // TODO: Fix later
-        } else {
-            search = name.replace(' EP', '');
-            search = search.replace(' LP', '');
-        }
+        search = name.replace(' EP', '');
+        search = search.replace(' LP', '');
         const song = `${artistArray[0]} ${search}`;
         let result = false;
         

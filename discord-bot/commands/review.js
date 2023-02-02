@@ -96,6 +96,7 @@ module.exports = {
 	async execute(interaction) {
         try {
         await interaction.deferReply();
+
         // These variables are here so that we can start a review from anywhere else
         let int_channel = interaction.channel;
         let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
@@ -142,6 +143,7 @@ module.exports = {
         if (review == null) review = false;
         let tag = interaction.options.getString('tag');
         let songArt = interaction.options.getString('art');
+        //if (songArt == null) songArt = song_info.art;
         let user_who_sent = interaction.options.getUser('user_who_sent');
         let starred = false;
         let taggedUser = false;
@@ -219,7 +221,7 @@ module.exports = {
 
         // Grab song art if we don't directly specify one
         if (songArt == false || songArt == null || songArt == undefined) {
-            songArt = await grab_spotify_art(origArtistArray, songName, interaction);
+            songArt = await grab_spotify_art(origArtistArray, songName);
             if (db.reviewDB.has(artistArray[0])) {
                 if (db.reviewDB.get(artistArray[0])[songName] != undefined) {
                     if (db.reviewDB.get(artistArray[0])[songName].art != false && db.reviewDB.get(artistArray[0])[songName].art != undefined) {
@@ -317,7 +319,7 @@ module.exports = {
                         // Check if we have art for the edited song info in the database
                         if (songArt == undefined || songArt == false) {
                             // If we don't have art for the edited song info, search it on the spotify API.
-                            songArt = await grab_spotify_art(artistArray, songName, interaction);
+                            songArt = await grab_spotify_art(artistArray, songName);
                             if (songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: false });
                         } else {
                             if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0])[songName].art;
@@ -355,7 +357,7 @@ module.exports = {
                         // Check if we have art for the edited song info in the database
                         if (songArt == undefined || songArt == false) {
                             // If we don't have art for the edited song info, search it on the spotify API.
-                            songArt = await grab_spotify_art(artistArray, songName, interaction);
+                            songArt = await grab_spotify_art(artistArray, songName);
                             if (songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: false });
                         } else {
                             if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0])[songName].art;

@@ -76,7 +76,7 @@ module.exports = {
         if (song_info == -1) {
             await interaction.reply('Waveform ran into an issue pulling up song data.');
             return;
-        } ;
+        }
 
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
