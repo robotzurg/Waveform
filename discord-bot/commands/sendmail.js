@@ -1,7 +1,7 @@
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 const db = require('../db.js');
-const { spotify_api_setup } = require('../func.js');
+const { spotify_api_setup, parse_artist_song_data } = require('../func.js');
 const fetch = require('isomorphic-unfetch');
 const { getData } = require('spotify-url-info')(fetch);
 const _ = require('lodash');
@@ -47,16 +47,29 @@ module.exports = {
         let trackUris = []; 
         let trackDurs = []; // Track durations
         let name;
-        let artists;
+        let artists, prodArtists, displayName;
         let url;
         let songArt;
+        let mainId; // The main ID of the spotify link (the album URI or the main track URI)
 
         if (!trackLink.includes('spotify')) return interaction.editReply('The link you put in is not a valid spotify link!');
-        await getData(trackLink).then(data => {
+        await getData(trackLink).then(async data => {
+            mainId = data.id;
             url = trackLink;
             songArt = data.coverArt.sources[0].url;
             name = data.name;
             data.type == 'album' ? artists = [data.subtitle] : artists = data.artists.map(artist => artist.name);
+            let song_info = await parse_artist_song_data(interaction, artists.join(' & '), name);
+            if (song_info == -1) {
+                await interaction.editReply('Waveform ran into an issue pulling up song data.');
+                return;
+            }
+
+            artists = song_info.all_artists;
+            prodArtists = song_info.prod_artists;
+            name = song_info.song_name;
+            displayName = song_info.display_song_name;
+
             if (data.type == 'track' || data.type == 'single') {
                 trackUris.push(data.uri); // Used to add to playlist
             } else if (data.type == 'album') {
@@ -81,12 +94,12 @@ module.exports = {
         .then(() => {
             const mailEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
-            .setTitle(`${artists.join(' & ')} - ${name}`)
+            .setTitle(`${prodArtists.join(' & ')} - ${displayName}`)
             .setDescription(`This music mail was sent to you by <@${interaction.user.id}>!`)
             .setThumbnail(songArt);
 
             if (interaction.channel.id != db.user_stats.get(taggedUser.id, 'mailbox')) {
-                interaction.editReply(`Sent [**${artists.join(' & ')} - ${name}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
+                interaction.editReply(`Sent [**${prodArtists.join(' & ')} - ${displayName}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
                 let mail_channel = interaction.guild.channels.cache.get(db.user_stats.get(taggedUser.id, 'mailbox'));
                 mail_channel.send({ content: `You've got mail! 📬`, embeds: [mailEmbed] });
             } else {
@@ -95,9 +108,19 @@ module.exports = {
 
             // Put the song we just mailboxed into a mailbox list for the user, so it can be pulled up with /viewmail
             if (db.user_stats.get(taggedUser.id, 'mailbox_list') == undefined) {
-                db.user_stats.set(taggedUser.id, [[`**${artists.join(' & ')} - ${name}**`, `${interaction.user.id}`]], 'mailbox_list');
+                db.user_stats.set(taggedUser.id, [{ 
+                    display_name: `**${prodArtists.join(' & ')} - ${displayName}**`,
+                    user_who_sent: interaction.user.id,
+                    spotify_id: mainId, 
+                    track_uris: trackUris,
+                }], 'mailbox_list');
             } else {
-                db.user_stats.push(taggedUser.id, [`**${artists.join(' & ')} - ${name}**`, `${interaction.user.id}`], 'mailbox_list');
+                db.user_stats.push(taggedUser.id, [{ 
+                    display_name: `**${prodArtists.join(' & ')} - ${displayName}**`,
+                    user_who_sent: interaction.user.id,
+                    spotify_id: mainId, 
+                    track_uris: trackUris,
+                }], 'mailbox_list');
             }
         }).catch(() => {
             return interaction.editReply(`Waveform ran into an issue sending this mail. Make sure they have set music mailbox setup by using \`/setupmailbox\`!`);

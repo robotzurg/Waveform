@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { average, get_user_reviews, handle_error, create_ep_review, find_review_channel, parse_artist_song_data } = require('../func.js');
-const { EmbedBuilder, ActionRowBuilder, SelectMenuBuilder, SlashCommandBuilder, Embed } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, Embed } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -153,7 +153,7 @@ module.exports = {
 
             const row = new ActionRowBuilder()
                 .addComponents(
-                    new SelectMenuBuilder()
+                    new StringSelectMenuBuilder()
                         .setCustomId('select')
                         .setPlaceholder('See other reviews by clicking on me!')
                         .addOptions(select_options),

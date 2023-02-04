@@ -15,7 +15,7 @@ module.exports = {
         } else if (mail_list.length == 0) {
             return interaction.reply('You have nothing in your mailbox.');
         }
-        mail_list = mail_list.map(v => `• ${v[0]} sent by <@${v[1]}>\n`);
+        mail_list = mail_list.map(v => `• ${v.display_name} sent by <@${v.user_who_sent}>\n`);
 
         let paged_mail_list = _.chunk(mail_list, 10);
         let page_num = 0;
