@@ -109,18 +109,18 @@ module.exports = {
             // Put the song we just mailboxed into a mailbox list for the user, so it can be pulled up with /viewmail
             if (db.user_stats.get(taggedUser.id, 'mailbox_list') == undefined) {
                 db.user_stats.set(taggedUser.id, [{ 
-                    display_name: `**${prodArtists.join(' & ')} - ${displayName}**`,
+                    display_name: `${prodArtists.join(' & ')} - ${displayName}`,
                     user_who_sent: interaction.user.id,
                     spotify_id: mainId, 
                     track_uris: trackUris,
                 }], 'mailbox_list');
             } else {
-                db.user_stats.push(taggedUser.id, [{ 
-                    display_name: `**${prodArtists.join(' & ')} - ${displayName}**`,
+                db.user_stats.push(taggedUser.id, { 
+                    display_name: `${prodArtists.join(' & ')} - ${displayName}`,
                     user_who_sent: interaction.user.id,
                     spotify_id: mainId, 
                     track_uris: trackUris,
-                }], 'mailbox_list');
+                }, 'mailbox_list');
             }
         }).catch(() => {
             return interaction.editReply(`Waveform ran into an issue sending this mail. Make sure they have set music mailbox setup by using \`/setupmailbox\`!`);

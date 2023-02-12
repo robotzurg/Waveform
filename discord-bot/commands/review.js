@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { update_art, review_song, hall_of_fame_check, handle_error, find_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL } = require('../func.js');
+const { update_art, review_song, hall_of_fame_check, handle_error, find_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup } = require('../func.js');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle, Embed } = require('discord.js');
 require('dotenv').config();
 
@@ -93,17 +93,29 @@ module.exports = {
                     .setDescription('If you want the song name to have a (ft.) in it for artists, use this argument.')
                     .setAutocomplete(true))),
     help_desc: `TBD`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
         await interaction.deferReply();
 
         // These variables are here so that we can start a review from anywhere else
         let int_channel = interaction.channel;
         let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
+        let is_mailbox = false;
+        let spotifyApi = false;
+        let mailbox_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
+        let temp_mailbox_list;
 
         // Check if we are reviewing in the right chat, if not, boot out
         if (`<#${int_channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel') && !mailboxes.some(v => v.includes(int_channel.id))) {
             return await interaction.editReply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
+        }
+
+        // Check if we are in a spotify mailbox
+        if (mailboxes.some(v => v.includes(int_channel.id))) {
+            spotifyApi = await spotify_api_setup(interaction.user.id);
+            if (spotifyApi != false) { 
+                is_mailbox = true;
+            }
         }
 
         let vocalistArray = interaction.options.getString('vocalist');
@@ -143,8 +155,18 @@ module.exports = {
         if (review == null) review = false;
         let tag = interaction.options.getString('tag');
         let songArt = interaction.options.getString('art');
-        //if (songArt == null) songArt = song_info.art;
         let user_who_sent = interaction.options.getUser('user_who_sent');
+        let mailbox_data = false;
+        
+        // If we are in the mailbox and don't specify a user who sent, try to pull it from the mailbox list
+        if (user_who_sent == null && is_mailbox == true) {
+            temp_mailbox_list = mailbox_list.filter(v => v.display_name == `${origArtistArray.join(' & ')} - ${displaySongName}`);
+            if (temp_mailbox_list.length != 0) {
+                mailbox_data = temp_mailbox_list[0];
+                user_who_sent = client.users.cache.get(mailbox_data.user_who_sent);
+            }
+        }
+
         let starred = false;
         let taggedUser = false;
         let taggedMember = false;
@@ -583,7 +605,6 @@ module.exports = {
 
                     // Update user stats
                     db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
-                    
                     const msg = await interaction.fetchReply();
 
                     // Setup tags if necessary
@@ -615,6 +636,17 @@ module.exports = {
                     // Fix artwork on all reviews for this song
                     if (songArt != false && db.reviewDB.has(artistArray[0])) {
                         await update_art(interaction, artistArray[0], songName, songArt);
+                    }
+
+                    // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
+                    if (is_mailbox == true) {
+                        // Remove from spotify playlist
+                        let tracks = [{ uri: mailbox_data.track_uris[0] }];
+                        let playlistId = db.user_stats.get(interaction.user.id, 'mailbox_playlist_id');
+                        spotifyApi.removeTracksFromPlaylist(playlistId, tracks)
+                        .then(() => {}, function(err) {
+                            console.log('Something went wrong!', err);
+                        });
                     }
                 
                     // End the collector
