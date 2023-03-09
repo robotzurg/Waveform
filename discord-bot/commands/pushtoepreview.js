@@ -34,8 +34,7 @@ module.exports = {
             if (song_info == -1) {
                 await interaction.deleteReply();
                 return;
-            }  
-
+            } 
 
             let origArtistArray = song_info.prod_artists;
             let songName = song_info.song_name;

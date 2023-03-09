@@ -59,6 +59,7 @@ module.exports = {
                 db.user_stats.set(interaction.user.id, data.body.id, 'mailbox_playlist_id');
                 db.user_stats.set(interaction.user.id, channel.id, 'mailbox');
                 db.user_stats.set(interaction.user.id, [], 'mailbox_list');
+                db.user_stats.set(interaction.user.id, [], 'mailbox_history');
                 db.server_settings.push(interaction.guild.id, [interaction.user.id, channel.id], 'mailboxes');
                 await interaction.editReply(`Your mailbox has now been setup on Spotify, and \`/sendmail\` can now be used with it!\n` + 
                 `If you need to delete the playlist for whatever reason, make sure you run this command again to setup a new one!\n\n` + 
@@ -73,6 +74,7 @@ module.exports = {
             db.user_stats.set(interaction.user.id, false, 'mailbox_playlist_id');
             db.user_stats.set(interaction.user.id, channel.id, 'mailbox');
             db.user_stats.set(interaction.user.id, [], 'mailbox_list');
+            db.user_stats.set(interaction.user.id, [], 'mailbox_history');
             db.server_settings.push(interaction.guild.id, [interaction.user.id, channel.id], 'mailboxes');
             await interaction.editReply(`Your mailbox has now been setup on Waveform. Because this is not a spotify linked mailbox, it cannot be sent Spotify Links, but users can send you mail manually in your channel!`);
         }

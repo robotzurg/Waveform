@@ -52,7 +52,7 @@ module.exports = {
         let songArt;
         let mainId; // The main ID of the spotify link (the album URI or the main track URI)
 
-        if (!trackLink.includes('spotify')) return interaction.editReply('The link you put in is not a valid spotify link!');
+        if (!trackLink.includes('spotify')) return interaction.editReply('The link you put in is not a valid link!');
         await getData(trackLink).then(async data => {
             mainId = data.id;
             url = trackLink;
@@ -89,6 +89,10 @@ module.exports = {
             console.log(err);
         });
 
+        if (db.user_stats.get(interaction.user.id, 'mailbox_history').includes(mainId)) {
+            return interaction.editReply(`This user has already been sent this song through Waveform Mailbox!`);
+        }
+
         // Add tracks to the mailbox playlist
         await spotifyApi.addTracksToPlaylist(playlistId, trackUris)
         .then(() => {
@@ -121,6 +125,11 @@ module.exports = {
                     spotify_id: mainId, 
                     track_uris: trackUris,
                 }, 'mailbox_list');
+            }
+
+            // Add the spotify ID to mailbox history if we have one
+            if (mainId != false) {
+                db.user_stats.push(taggedUser.id, mainId, 'mailbox_history');
             }
         }).catch(() => {
             return interaction.editReply(`Waveform ran into an issue sending this mail. Make sure they have set music mailbox setup by using \`/setupmailbox\`!`);
