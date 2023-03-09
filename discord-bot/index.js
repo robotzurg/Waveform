@@ -254,6 +254,7 @@ client.on('guildMemberAdd', async (member) => {
                 },
                 review_ping: false, // If you want to get pinged for a review if you are tagged as a user who sent it, default to false
             },
+            "mailbox_history": [],
         });
     }
 

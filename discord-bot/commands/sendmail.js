@@ -19,7 +19,10 @@ module.exports = {
             option.setName('user')
                 .setDescription('User whose mailbox you would like to send a song to (MUST BE CONNECTED TO SPOTIFY)')
                 .setRequired(false)),
-    help_desc: `TBD`,
+    help_desc: `Send a song to a users Waveform Mailbox.\n` + 
+    `The songs are usually sent from Spotify (mainly), but you can also send YouTube, Apple Music, and SoundCloud links.\n` +
+    `Leaving the user argument (optional) blank will send a song to the users mailbox based on the chat you send the command in.\n` + 
+    `For example, if you send a song in a mailbox chat, it'll send it to that users mailbox.`,
 	async execute(interaction, client) {
         await interaction.deferReply();
         let taggedUser = interaction.options.getUser('user');
@@ -51,6 +54,8 @@ module.exports = {
         let url;
         let songArt;
         let mainId; // The main ID of the spotify link (the album URI or the main track URI)
+        let linkType;
+        let mailFilter = db.user_stats.get(taggedUser.id, 'config.mail_filter');
 
         if (!trackLink.includes('spotify')) return interaction.editReply('The link you put in is not a valid link!');
         await getData(trackLink).then(async data => {
@@ -61,7 +66,7 @@ module.exports = {
             data.type == 'album' ? artists = [data.subtitle] : artists = data.artists.map(artist => artist.name);
             let song_info = await parse_artist_song_data(interaction, artists.join(' & '), name);
             if (song_info == -1) {
-                await interaction.editReply('Waveform ran into an issue pulling up song data.');
+                await interaction.editReply('Waveform ran into an issue pulling up song data.\nError: `Failed to parse song data`');
                 return;
             }
 
@@ -72,6 +77,7 @@ module.exports = {
 
             if (data.type == 'track' || data.type == 'single') {
                 trackUris.push(data.uri); // Used to add to playlist
+                linkType = 'sp';
             } else if (data.type == 'album') {
                 for (let i = 0; i < data.trackList.length; i++) {
                     trackUris.push(data.trackList[i].uri);
@@ -80,8 +86,10 @@ module.exports = {
                 if (!name.includes(' EP') && !name.includes(' LP')) {
                     if (_.sum(trackDurs) >= 1.8e+6 || data.trackList.length >= 7) {
                         name += ' LP';
+                        linkType = 'sp_lp';
                     } else {
                         name += ' EP';
+                        linkType = 'sp_ep';
                     }
                 }
             }
@@ -89,8 +97,12 @@ module.exports = {
             console.log(err);
         });
 
+        if (mailFilter[linkType] == false) {
+            return interaction.editReply('This person has filtered out this type of mail, so this was not sent.');
+        }
+
         if (db.user_stats.get(interaction.user.id, 'mailbox_history').includes(mainId)) {
-            return interaction.editReply(`This user has already been sent this song through Waveform Mailbox!`);
+            return interaction.editReply(`This user has already been sent **${prodArtists.join(' & ')} - ${displayName}** through Waveform Mailbox!`);
         }
 
         // Add tracks to the mailbox playlist

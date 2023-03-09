@@ -97,13 +97,14 @@ module.exports = {
         try {
         await interaction.deferReply();
 
-        // These variables are here so that we can start a review from anywhere else
+        // Mailbox related variables
         let int_channel = interaction.channel;
         let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
         let is_mailbox = false;
         let spotifyApi = false;
         let mailbox_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
         let temp_mailbox_list;
+        let ping_for_review = false;
 
         // Check if we are reviewing in the right chat, if not, boot out
         if (`<#${int_channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel') && !mailboxes.some(v => v.includes(int_channel.id))) {
@@ -164,6 +165,7 @@ module.exports = {
             if (temp_mailbox_list.length != 0) {
                 mailbox_data = temp_mailbox_list[0];
                 user_who_sent = client.users.cache.get(mailbox_data.user_who_sent);
+                if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
             }
         }
 
@@ -440,7 +442,7 @@ module.exports = {
                 } break;
                 case 'star': {
                     // If we don't have a 10 rating, the button does nothing.
-                    if (rating < 8) return await i.update({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
+                    if (rating < 8 && rating != false && rating != null) return await i.update({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
 
                     if (starred == false) {
                         reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
@@ -568,7 +570,7 @@ module.exports = {
                         }
 
                         // Star reaction stuff for hall of fame
-                        if (rating >= 8 && starred == true) {
+                        if (starred == true) {
                             for (let x = 0; x < artistArray.length; x++) {
                                 db.reviewDB.set(artistArray[x], true, `${setterSongName}.${interaction.user.id}.starred`);
                             }
@@ -624,7 +626,7 @@ module.exports = {
                     }
 
                     // Star reaction stuff for hall of fame
-                    if (rating >= 8 && starred == true) {
+                    if (starred == true) {
                         for (let x = 0; x < artistArray.length; x++) {
                             db.reviewDB.set(artistArray[x], true, `${setterSongName}.${interaction.user.id}.starred`);
                         }
@@ -640,13 +642,24 @@ module.exports = {
 
                     // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
                     if (is_mailbox == true) {
-                        // Remove from spotify playlist
                         let tracks = [{ uri: mailbox_data.track_uris[0] }];
                         let playlistId = db.user_stats.get(interaction.user.id, 'mailbox_playlist_id');
+                        // Ping the user who sent the review, if they have the ping for review config setting
+                        if (ping_for_review) {
+                            interaction.channel.send(`<@${mailbox_data.user_who_sent}>`).then(ping_msg => {
+                                ping_msg.delete();
+                            });
+                        }
+
+                        // Remove from spotify playlist
                         spotifyApi.removeTracksFromPlaylist(playlistId, tracks)
                         .then(() => {}, function(err) {
                             console.log('Something went wrong!', err);
                         });
+
+                        // Remove from local playlist
+                        mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${displaySongName}`);
+                        db.user_stats.set(interaction.user.id, mailbox_list, `mailbox_list`);
                     }
                 
                     // End the collector
