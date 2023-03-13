@@ -5,7 +5,7 @@ const _ = require('lodash');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('viewmail')
-        .setDescription('View your local Waveform Mailbox list.')
+        .setDescription('View your Waveform Mailbox list.')
         .setDMPermission(false),
     help_desc: `View a list of every song you currently have in your mailbox that you have not reviewed yet.\n` + 
     `This command will only properly work with Spotify mailboxes. If you do not have a spotify Waveform mailbox, you can still use this, but it won't auto update.`,
@@ -16,7 +16,7 @@ module.exports = {
         } else if (mail_list.length == 0) {
             return interaction.reply('You have nothing in your mailbox.');
         }
-        mail_list = mail_list.map(v => `• \`${v.display_name}\` sent by <@${v.user_who_sent}>\n`);
+        mail_list = mail_list.map(v => `• [**${v.display_name}**](${v.spotify_url}) sent by <@${v.user_who_sent}>\n`);
 
         let paged_mail_list = _.chunk(mail_list, 10);
         let page_num = 0;

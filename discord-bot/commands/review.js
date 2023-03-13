@@ -399,11 +399,12 @@ module.exports = {
                 } break;
                 case 'rating': {
                     await i.deferUpdate();
-                    await i.editReply({ content: 'Type in the rating (DO NOT WRITE /10!)', components: [] });
+                    await i.editReply({ content: 'Type in the rating (DO NOT WRITE /10)', components: [] });
 
                     const ra_filter = m => m.author.id == interaction.user.id;
                     ra_collector = int_channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                     ra_collector.on('collect', async m => {
+                        if (rating == false) reviewEmbed.addFields({ name: 'Rating', value: `TBA` });
                         rating = parseFloat(m.content);
                         if (m.content.includes('/10')) rating = parseFloat(m.content.replace('/10', ''));
                         if (isNaN(rating)) {
@@ -480,11 +481,13 @@ module.exports = {
 
                     let msgEmbed;
                     let mainArtists;
-                    let ep_name;
+                    let ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name');
                     let collab;
                     let field_name;
                     let type = db.user_stats.get(interaction.user.id, 'current_ep_review.review_type'); // Type A is when embed length is under 2000 characters, type B is when its over 2000
-                    let ep_songs;
+                    let ep_songs = db.user_stats.get(interaction.user.id, 'current_ep_review.track_list');
+                    let next_song = db.user_stats.get(interaction.user.id, 'current_ep_review.next');
+                    if (ep_songs == false) ep_songs = [];
                     let ep_last_song_button = new ActionRowBuilder()
                     .addComponents( 
                         new ButtonBuilder()
@@ -492,6 +495,15 @@ module.exports = {
                         .setLabel('Finalize the EP/LP Review')
                         .setStyle(ButtonStyle.Success),
                     );
+
+                    // If the song we are reviewing is not the same as our next song up, then quit out
+                    if (next_song != songName && next_song != undefined) {
+                        return;
+                    } else {
+                        for (let ind = 0; ind < ep_songs.length; ind++) {
+                            if (ep_songs[ind] == next_song) next_song = ep_songs[ind + 1];
+                        }
+                    }
 
                     // Review the song
                     await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, ep_name, tag);
@@ -502,9 +514,6 @@ module.exports = {
                         msgEmbed = EmbedBuilder.from(msg.embeds[0]);
                         mainArtists = [msgEmbed.data.title.replace('🌟 ', '').trim().split(' - ')[0].split(' & ')];
                         mainArtists = mainArtists.flat(1);
-                        ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name');
-                        ep_songs = db.user_stats.get(interaction.user.id, 'current_ep_review.track_list');
-                        if (ep_songs == false) ep_songs = [];
 
                         for (let j = 0; j < artistArray.length; j++) {
                             db.reviewDB.set(artistArray[j], ep_name, `${setterSongName}.ep`);
@@ -558,6 +567,32 @@ module.exports = {
 
                             ep_final_collector.on('collect', async () => {
                                 db.user_stats.set(interaction.user.id, false, 'current_ep_review');
+                                // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
+                                if (is_mailbox == true) {
+                                    let tracks = [];
+                                    for (let track_uri of mailbox_data.track_uris) {
+                                        tracks.push({ uri: track_uri });
+                                    } 
+                                    
+                                    let playlistId = db.user_stats.get(interaction.user.id, 'mailbox_playlist_id');
+                                    // Ping the user who sent the review, if they have the ping for review config setting
+                                    if (ping_for_review) {
+                                        interaction.channel.send(`<@${mailbox_data.user_who_sent}>`).then(ping_msg => {
+                                            ping_msg.delete();
+                                        });
+                                    }
+
+                                    // Remove from spotify playlist
+                                    spotifyApi.removeTracksFromPlaylist(playlistId, tracks)
+                                    .then(() => {}, function(err) {
+                                        console.log('Something went wrong!', err);
+                                    });
+
+                                    // Remove from local playlist
+                                    mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${ep_name}`);
+                                    db.user_stats.set(interaction.user.id, mailbox_list, `mailbox_list`);
+                                }
+
                                 msg.edit({ components: [] });
                             });
 

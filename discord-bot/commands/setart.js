@@ -7,7 +7,7 @@ require('dotenv').config();
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('setsongart')
+        .setName('setart')
         .setDescription('Edit the art of a song/EP/LP.')
         .setDMPermission(false)
         .addStringOption(option => 

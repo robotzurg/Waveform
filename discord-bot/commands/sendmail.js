@@ -85,12 +85,16 @@ module.exports = {
                 }
                 if (!name.includes(' EP') && !name.includes(' LP')) {
                     if (_.sum(trackDurs) >= 1.8e+6 || data.trackList.length >= 7) {
-                        name += ' LP';
+                        displayName += ' LP';
                         linkType = 'sp_lp';
                     } else {
-                        name += ' EP';
+                        displayName += ' EP';
                         linkType = 'sp_ep';
                     }
+                } else if (name.includes(' EP')) {
+                    linkType = 'sp_ep';
+                } else if (name.includes(' LP')) {
+                    linkType = 'sp_lp';
                 }
             }
         }).catch((err) => {
@@ -129,6 +133,7 @@ module.exports = {
                     user_who_sent: interaction.user.id,
                     spotify_id: mainId, 
                     track_uris: trackUris,
+                    spotify_url: url,
                 }], 'mailbox_list');
             } else {
                 db.user_stats.push(taggedUser.id, { 
@@ -136,6 +141,7 @@ module.exports = {
                     user_who_sent: interaction.user.id,
                     spotify_id: mainId, 
                     track_uris: trackUris,
+                    spotify_url: url,
                 }, 'mailbox_list');
             }
 
