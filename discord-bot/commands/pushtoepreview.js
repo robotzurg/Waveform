@@ -102,8 +102,11 @@ module.exports = {
                 return;
             } else {
                 for (let ind = 0; ind < ep_songs.length; ind++) {
-                    if (ep_songs[ind] == next_song) next_song = ep_songs[ind + 1];
-                    db.user_stats.set(interaction.user.id, next_song, 'current_ep_review.next');
+                    if (ep_songs[ind] == next_song) {
+                        next_song = ep_songs[ind + 1];
+                        db.user_stats.set(interaction.user.id, next_song, 'current_ep_review.next');
+                        break;
+                    }
                 }
             }
 
@@ -180,6 +183,13 @@ module.exports = {
                         // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
                         if (is_mailbox == true) {
                             let tracks = [];
+
+                            temp_mailbox_list = mailbox_list.filter(v => v.display_name == `${origArtistArray.join(' & ')} - ${ep_name}`);
+                            if (temp_mailbox_list.length != 0) {
+                                mailbox_data = temp_mailbox_list[0];
+                                if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
+                            }
+                            
                             for (let track_uri of mailbox_data.track_uris) {
                                 tracks.push({ uri: track_uri });
                             } 

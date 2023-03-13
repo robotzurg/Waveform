@@ -11,7 +11,6 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand.setName('with_spotify')
             .setDescription('Review a song by utilizing your currently playing spotify song (requires login).')
-
             .addStringOption(option => 
                 option.setName('rating')
                     .setDescription('Rating for the song (1-10, decimals allowed.)')
@@ -574,11 +573,16 @@ module.exports = {
                                 // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
                                 if (is_mailbox == true) {
                                     let tracks = [];
-                                    if (mailbox_data) {
-                                        for (let track_uri of mailbox_data.track_uris) {
-                                            tracks.push({ uri: track_uri });
-                                        } 
+
+                                    temp_mailbox_list = mailbox_list.filter(v => v.display_name == `${origArtistArray.join(' & ')} - ${ep_name}`);
+                                    if (temp_mailbox_list.length != 0) {
+                                        mailbox_data = temp_mailbox_list[0];
+                                        if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
                                     }
+
+                                    for (let track_uri of mailbox_data.track_uris) {
+                                        tracks.push({ uri: track_uri });
+                                    } 
                                     
                                     let playlistId = db.user_stats.get(interaction.user.id, 'mailbox_playlist_id');
                                     // Ping the user who sent the review, if they have the ping for review config setting

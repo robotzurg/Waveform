@@ -64,10 +64,23 @@ module.exports = {
             songArt = data.coverArt.sources[0].url;
             name = data.name;
             if (data.type == 'album') {
-                artists = [data.subtitle];
+                // Use the tracklist to figure out who is a collab artist on an EP/LP for the entire EP/LP (and not just a one off)
+                artists = [];
+                for (let tracks of data.trackList) {
+                    artists.push(tracks.subtitle.split(', '));
+                    artists = artists.flat(1);
+                }
+
+                let occurences = artists.reduce((acc, e) => acc.set(e, (acc.get(e) || 0) + 1), new Map());
+                occurences = [...occurences.entries()];
+                artists = [];
+                for (let a of occurences) {
+                    if (a[1] == data.trackList.length) artists.push(a[0]);
+                }
             } else {
                 artists = data.artists.map(artist => artist.name);
             } 
+
             let song_info = await parse_artist_song_data(interaction, artists.join(' & '), name);
             if (song_info == -1) {
                 await interaction.editReply('Waveform ran into an issue pulling up song data.\nError: `Failed to parse song data`');
