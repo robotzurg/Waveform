@@ -501,7 +501,11 @@ module.exports = {
                         return;
                     } else {
                         for (let ind = 0; ind < ep_songs.length; ind++) {
-                            if (ep_songs[ind] == next_song) next_song = ep_songs[ind + 1];
+                            if (ep_songs[ind] == next_song) {
+                                next_song = ep_songs[ind + 1];
+                                db.user_stats.set(interaction.user.id, next_song, 'current_ep_review.next');
+                                break;
+                            }
                         }
                     }
 
@@ -570,9 +574,11 @@ module.exports = {
                                 // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
                                 if (is_mailbox == true) {
                                     let tracks = [];
-                                    for (let track_uri of mailbox_data.track_uris) {
-                                        tracks.push({ uri: track_uri });
-                                    } 
+                                    if (mailbox_data) {
+                                        for (let track_uri of mailbox_data.track_uris) {
+                                            tracks.push({ uri: track_uri });
+                                        } 
+                                    }
                                     
                                     let playlistId = db.user_stats.get(interaction.user.id, 'mailbox_playlist_id');
                                     // Ping the user who sent the review, if they have the ping for review config setting

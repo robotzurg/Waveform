@@ -82,10 +82,12 @@ module.exports = {
 
             let msgEmbed;
             let mainArtists;
-            let ep_name;
-            let ep_songs;
             let collab;
             let field_name;
+            let ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name');
+            let ep_songs = db.user_stats.get(interaction.user.id, 'current_ep_review.track_list');
+            if (ep_songs == false) ep_songs = [];
+            let next_song = db.user_stats.get(interaction.user.id, 'current_ep_review.next');
             let type = db.user_stats.get(interaction.user.id, 'current_ep_review.review_type'); // Type A is when embed length is under 2000 characters, type B is when its over 2000
             let ep_last_song_button = new ActionRowBuilder()
             .addComponents( 
@@ -95,6 +97,16 @@ module.exports = {
                 .setStyle(ButtonStyle.Success),
             );
 
+            // If the song we are reviewing is not the same as our next song up, then quit out
+            if (next_song != songName && next_song != undefined) {
+                return;
+            } else {
+                for (let ind = 0; ind < ep_songs.length; ind++) {
+                    if (ep_songs[ind] == next_song) next_song = ep_songs[ind + 1];
+                    db.user_stats.set(interaction.user.id, next_song, 'current_ep_review.next');
+                }
+            }
+
             if (type == false || type == undefined || type == null) { // If there's not an active EP/LP review
                 return interaction.reply('You don\'t currently have an active EP/LP review, this command is supposed to be used with an EP/LP review started with `/epreview`!');
             }
@@ -103,9 +115,6 @@ module.exports = {
                 msgEmbed = EmbedBuilder.from(msg.embeds[0]);
                 mainArtists = [msgEmbed.data.title.replace('🌟 ', '').trim().split(' - ')[0].split(' & ')];
                 mainArtists = mainArtists.flat(1);
-                ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name');
-                ep_songs = db.user_stats.get(interaction.user.id, 'current_ep_review.track_list');
-                if (ep_songs == false) ep_songs = [];
 
                 // If we are in the mailbox and don't specify a user who sent, try to pull it from the mailbox list
                 if (is_mailbox == true) {

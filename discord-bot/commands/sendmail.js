@@ -63,7 +63,11 @@ module.exports = {
             url = trackLink;
             songArt = data.coverArt.sources[0].url;
             name = data.name;
-            data.type == 'album' ? artists = [data.subtitle] : artists = data.artists.map(artist => artist.name);
+            if (data.type == 'album') {
+                artists = [data.subtitle];
+            } else {
+                artists = data.artists.map(artist => artist.name);
+            } 
             let song_info = await parse_artist_song_data(interaction, artists.join(' & '), name);
             if (song_info == -1) {
                 await interaction.editReply('Waveform ran into an issue pulling up song data.\nError: `Failed to parse song data`');
