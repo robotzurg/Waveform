@@ -1,5 +1,5 @@
 /* eslint-disable no-unreachable */
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, SelectMenuBuilder, ComponentType } = require('discord.js');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ComponentType } = require('discord.js');
 // const db = require('../db.js');
 
 module.exports = {
@@ -53,7 +53,7 @@ module.exports = {
 
         const commandSelectMenu_1 = new ActionRowBuilder()
             .addComponents(
-                new SelectMenuBuilder()
+                new StringSelectMenuBuilder()
                     .setCustomId('command_list')
                     .setPlaceholder('Commands 1-25')
                     .setOptions(commandSelectOptions[0]),
@@ -61,7 +61,7 @@ module.exports = {
 
         const commandSelectMenu_2 = new ActionRowBuilder()
             .addComponents(
-                new SelectMenuBuilder()
+                new StringSelectMenuBuilder()
                     .setCustomId('command_list_2')
                     .setPlaceholder(`Commands 26-${commandSelectOptions[1].length + 25}`)
                     .setOptions(commandSelectOptions[1]),

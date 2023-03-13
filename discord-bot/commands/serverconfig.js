@@ -42,7 +42,7 @@ module.exports = {
 
             const configEmbed = new EmbedBuilder()
             .setColor(`${interaction.member.displayHexColor}`)
-            .setTitle('🔧 Waveform Configuration Settings  🔧')
+            .setTitle('🔧 Waveform Server Configuration Settings  🔧')
             .addFields([
                 { name: 'Review Channel:', value: reviewChannel },
                 { name: 'Review Chat Filter:', value: `${reviewFilter}` },

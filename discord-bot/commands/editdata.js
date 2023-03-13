@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { parse_artist_song_data, get_user_reviews } = require("../func.js");
-const { EmbedBuilder, SlashCommandBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, SelectMenuBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -40,7 +40,7 @@ module.exports = {
         if (song_info == -1) {
             await interaction.reply('Waveform ran into an issue pulling up song data.');
             return;
-        } ;
+        }
 
         origArtistArray = song_info.prod_artists;
         songName = song_info.song_name;
@@ -159,7 +159,7 @@ module.exports = {
         }
         let artistRemoveSelect = new ActionRowBuilder()
         .addComponents(
-            new SelectMenuBuilder()
+            new StringSelectMenuBuilder()
                 .setCustomId('artists_remove_sel')
                 .setPlaceholder('Artists')
                 .addOptions(a_select_options),
@@ -176,7 +176,7 @@ module.exports = {
         }
         let vocalistRemoveSelect = new ActionRowBuilder()
         .addComponents(
-            new SelectMenuBuilder()
+            new StringSelectMenuBuilder()
                 .setCustomId('vocalists_remove_sel')
                 .setPlaceholder('Vocalists')
                 .addOptions(v_select_options),
@@ -193,7 +193,7 @@ module.exports = {
         }
         let tagRemoveSelect = new ActionRowBuilder()
         .addComponents(
-            new SelectMenuBuilder()
+            new StringSelectMenuBuilder()
                 .setCustomId('tags_remove_sel')
                 .setPlaceholder('Tags')
                 .addOptions(t_select_options),

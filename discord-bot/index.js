@@ -243,6 +243,18 @@ client.on('guildMemberAdd', async (member) => {
             "mailbox_playlist_id": false,
             "name": `${member.user.username}`,
             "recent_review": "N/A",
+            "config": {
+                mail_filter: { // Filter settings for what type of songs you want to be sent, all default to true
+                    sp: true, // Spotify
+                    sp_ep: true, // Spotify (EP)
+                    sp_lp: true, // Spotify (LP)
+                    sc: true, // SoundCloud
+                    yt: true, // YouTube and Youtube Music
+                    apple: true, // Apple Music
+                },
+                review_ping: false, // If you want to get pinged for a review if you are tagged as a user who sent it, default to false
+            },
+            "mailbox_history": [],
         });
     }
 

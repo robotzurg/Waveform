@@ -121,7 +121,8 @@ module.exports = {
                         }
 
                         if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
-                            db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList }, 'current_ep_review');  
+                            console.log(trackList);
+                            db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] }, 'current_ep_review');  
                         }
                     }
                 });
@@ -141,73 +142,6 @@ module.exports = {
                 return -1;
             }
 
-            let rmx_delimiter = ' & ';
-
-            if (songArg.includes(' Remix)') || songArg.includes(' Remix]')) {
-                songArg = songArg.replace('[', '(');
-                songArg = songArg.replace(']', ')');
-
-                temp = songArg.split(' Remix)')[0].split('(');
-                rmxArtist = temp[temp.length - 1];
-
-                // Input validation
-                rmxArtist = rmxArtist.replace(' VIP', '');
-                if (rmxArtist.includes(' and ')) rmx_delimiter = ' and ';
-                if (rmxArtist.includes(' x ')) rmx_delimiter = ' x ';
-                origSongArg = temp[0].trim();
-                rmxArtistArray = rmxArtist.split(rmx_delimiter);
-                songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
-                origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
-                if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
-            }
-
-            if ((songArg.includes('Remix') && songArg.includes(' - ')) && !songArg.includes('Remix)') && !songArg.includes('Remix]')) {
-                songArg = songArg.split(' - ');
-                if (songArg[1] != 'Remix') {
-                    rmxArtist = songArg[1].slice(0, -6);
-                    rmxArtist = rmxArtist.replace(' VIP', '');
-                    if (rmxArtist.includes(' and ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' and ';
-                    if (rmxArtist.includes(' x ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' x ';
-                    origSongArg = songArg[0];
-                    rmxArtistArray = rmxArtist.split(rmx_delimiter);
-                    songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
-                    origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
-                    if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
-                } else {
-                    songArg = songArg.join(' - ');
-                }
-            }
-
-            if (songArg.includes('feat.')) {
-                songArg = songArg.split(' (feat. ');
-                songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
-                songArg[1] = songArg[1].split(')')[0];
-                if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1]);
-                origSongArg = `${songArg[0]}`;
-                songArg = `${songArg[0]}`;
-            }
-    
-            if (songArg.includes('ft. ')) {
-                songArg = songArg.split(' (ft. ');
-                songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
-                songArg[1] = songArg[1].split(')')[0];
-                if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1]);
-                origSongArg = `${songArg[0]}`;
-                songArg = `${songArg[0]}`;
-            }
-    
-            if (songArg.includes('(with ')) {
-                songArg = songArg.split(' (with ');
-                songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
-                songArg[1] = songArg[1].split(')')[0];
-                origSongArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
-                songArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
-            }
-
-            if (origArtistArray.length == 0) {
-                passesChecks = false;
-            }
-
             if (passesChecks == false) {
                 //interaction.reply('This song cannot be parsed properly in the database, and as such cannot be reviewed or have data pulled up for it.');
                 return -1;
@@ -225,6 +159,75 @@ module.exports = {
             }
         }
 
+        // Fix song formatting
+        let rmx_delimiter = ' & ';
+        if (!Array.isArray(origArtistArray)) origArtistArray = origArtistArray.split(' & ');
+
+        if (songArg.includes(' Remix)') || songArg.includes(' Remix]')) {
+            songArg = songArg.replace('[', '(');
+            songArg = songArg.replace(']', ')');
+
+            temp = songArg.split(' Remix)')[0].split('(');
+            rmxArtist = temp[temp.length - 1];
+
+            // Input validation
+            rmxArtist = rmxArtist.replace(' VIP', '');
+            if (rmxArtist.includes(' and ')) rmx_delimiter = ' and ';
+            if (rmxArtist.includes(' x ')) rmx_delimiter = ' x ';
+            origSongArg = temp[0].trim();
+            rmxArtistArray = rmxArtist.split(rmx_delimiter);
+            songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
+            origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
+            if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
+        }
+
+        if ((songArg.includes('Remix') && songArg.includes(' - ')) && !songArg.includes('Remix)') && !songArg.includes('Remix]')) {
+            songArg = songArg.split(' - ');
+            if (songArg[1] != 'Remix') {
+                rmxArtist = songArg[1].slice(0, -6);
+                rmxArtist = rmxArtist.replace(' VIP', '');
+                if (rmxArtist.includes(' and ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' and ';
+                if (rmxArtist.includes(' x ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' x ';
+                origSongArg = songArg[0];
+                rmxArtistArray = rmxArtist.split(rmx_delimiter);
+                songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
+                origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
+                if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
+            } else {
+                songArg = songArg.join(' - ');
+            }
+        }
+
+        if (songArg.includes('feat.')) {
+            songArg = songArg.split(' (feat. ');
+            songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
+            songArg[1] = songArg[1].split(')')[0];
+            if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1]);
+            origSongArg = `${songArg[0]}`;
+            songArg = `${songArg[0]}`;
+        }
+
+        if (songArg.includes('ft. ')) {
+            songArg = songArg.split(' (ft. ');
+            songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
+            songArg[1] = songArg[1].split(')')[0];
+            if (rmxArtistArray.length == 0) vocalistArray.push(songArg[1]);
+            origSongArg = `${songArg[0]}`;
+            songArg = `${songArg[0]}`;
+        }
+
+        if (songArg.includes('(with ')) {
+            songArg = songArg.split(' (with ');
+            songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
+            songArg[1] = songArg[1].split(')')[0];
+            origSongArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
+            songArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
+        }
+
+        if (origArtistArray.length == 0) {
+            passesChecks = false;
+        }
+
         let artistArray;
         if (!Array.isArray(origArtistArray)) {
             artistArray = [origArtistArray.split(' & ')];
@@ -238,7 +241,7 @@ module.exports = {
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
             if (db.reviewDB.has(artistArray[0]) && db.reviewDB.get(artistArray[0][songArg] != undefined)) trackList = db.reviewDB.get(artistArray[0])[songArg].songs;
             if (!trackList) trackList = false;
-            db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList }, 'current_ep_review');  
+            db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: false }, 'current_ep_review');  
         }
         
         if (db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name') != undefined) {
@@ -257,7 +260,7 @@ module.exports = {
         songArg = songArg.replace('- VIP', 'VIP');
         songArg = songArg.replace('(VIP)', 'VIP');
      
-        if (interaction.commandName != 'nowplaying') {
+        if (interaction.commandName != 'nowplaying' && interaction.commandName != 'sendmail') {
             // Check if all the artists exist (don't check this if we're pulling data for /review or /epreview)
             if (interaction.commandName != 'review' && interaction.commandName != 'epreview') {
                 for (let i = 0; i < artistArray.length; i++) {
@@ -330,7 +333,7 @@ module.exports = {
         };
     },
 
-    // Updates the art for embed messages, NOT in the database. That's done in the !add review commands themselves.
+    // Updates the art for embed messages, NOT in the database. That's done in the /review commands themselves.
     update_art: function(interaction, first_artist, song_name, new_image) {
         const { get_user_reviews, handle_error } = require('./func.js');
 

@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
-const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data, isValidURL } = require('../func.js');
+const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup } = require('../func.js');
 require('dotenv').config();
 
 module.exports = {
@@ -80,7 +80,7 @@ module.exports = {
                     .setDescription('User who sent you this EP/LP in Mailbox. Ignore if not a mailbox review.')
                     .setRequired(false))),
     help_desc: `TBD`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
 
             let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
@@ -88,6 +88,19 @@ module.exports = {
             // Check if we are reviewing in the right chat, if not, boot out
             if (`<#${interaction.channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel') && !mailboxes.some(v => v.includes(interaction.channel.id))) {
                 return interaction.reply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
+            }
+
+            let is_mailbox = false;
+            let ping_for_review = false;
+            let temp_mailbox_list;
+            let mailbox_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
+            let spotifyApi;
+            // Check if we are in a spotify mailbox
+            if (mailboxes.some(v => v.includes(interaction.channel.id))) {
+                spotifyApi = await spotify_api_setup(interaction.user.id);
+                if (spotifyApi != false) { 
+                    is_mailbox = true;
+                }
             }
 
             let artists = interaction.options.getString('artist');
@@ -125,14 +138,14 @@ module.exports = {
                 }
             }
             
-            let user_sent_by = interaction.options.getUser('user_who_sent');
-            if (user_sent_by == null) user_sent_by = false;
+            let user_who_sent = interaction.options.getUser('user_who_sent');
+            if (user_who_sent == null) user_who_sent = false;
             let tag = interaction.options.getString('tag');
             let taggedMember = false;
             let taggedUser = false;
             let starred = false;
             let row2;
-
+            let mailbox_data = false;
 
             // Check to make sure "EP" or "LP" is in the ep/lp name
             if (!epName.includes(' EP') && !epName.includes(' LP')) {
@@ -140,9 +153,19 @@ module.exports = {
                 `For example: \`${epName} EP\` or \`${epName} LP\``);
             }
 
-            if (user_sent_by.id != null && user_sent_by.id != undefined && user_sent_by.id != false) {
-                taggedMember = await interaction.guild.members.fetch(user_sent_by.id);
-                taggedUser = user_sent_by;
+            // If we are in the mailbox and don't specify a user who sent, try to pull it from the mailbox list
+            if (user_who_sent == false && is_mailbox == true) {
+                temp_mailbox_list = mailbox_list.filter(v => v.display_name == `${origArtistArray.join(' & ')} - ${epName}`);
+                if (temp_mailbox_list.length != 0) {
+                    mailbox_data = temp_mailbox_list[0];
+                    user_who_sent = client.users.cache.get(mailbox_data.user_who_sent);
+                    if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
+                }
+            }
+
+            if (user_who_sent.id != null && user_who_sent.id != undefined && user_who_sent.id != false) {
+                taggedMember = await interaction.guild.members.fetch(user_who_sent.id);
+                taggedUser = user_who_sent;
             } else {
                 taggedUser = { id: false };
             }
@@ -294,7 +317,7 @@ module.exports = {
                             epEmbed.setThumbnail(art);
 
                             await i.editReply({ embeds: [epEmbed], components: [row, row2] });
-                            db.user_stats.set(interaction.user.id, { msg_id: msg.id, artist_array: artistArray, ep_name: epName, review_type: 'A' }, 'current_ep_review');      
+                            db.user_stats.set(interaction.user.id, artistArray, 'current_ep_review.artist_array');      
                             m.delete();
                         });
                         
@@ -328,7 +351,7 @@ module.exports = {
                             epEmbed.setThumbnail(art);
 
                             await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2] });
-                            db.user_stats.set(interaction.user.id, { msg_id: msg.id, artist_array: artistArray, ep_name: epName, review_type: 'A' }, 'current_ep_review');      
+                            db.user_stats.set(interaction.user.id, epName, 'current_ep_review.ep_name');      
                             m.delete();
                         });
                         
@@ -483,6 +506,32 @@ module.exports = {
 
                         db.user_stats.set(interaction.user.id, false, 'current_ep_review');
                         i.update({ embeds: [epEmbed], components: [] });
+
+                        // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
+                        if (is_mailbox == true) {
+                            let tracks = [];
+                            for (let track_uri of mailbox_data.track_uris) {
+                                tracks.push({ uri: track_uri });
+                            } 
+                            
+                            let playlistId = db.user_stats.get(interaction.user.id, 'mailbox_playlist_id');
+                            // Ping the user who sent the review, if they have the ping for review config setting
+                            if (ping_for_review) {
+                                interaction.channel.send(`<@${mailbox_data.user_who_sent}>`).then(ping_msg => {
+                                    ping_msg.delete();
+                                });
+                            }
+
+                            // Remove from spotify playlist
+                            spotifyApi.removeTracksFromPlaylist(playlistId, tracks)
+                            .then(() => {}, function(err) {
+                                console.log('Something went wrong!', err);
+                            });
+
+                            // Remove from local playlist
+                            mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${epName}`);
+                            db.user_stats.set(interaction.user.id, mailbox_list, `mailbox_list`);
+                        }
                     } break;
                     case 'begin': {
                         if (ra_collector != undefined) ra_collector.stop();
@@ -514,6 +563,7 @@ module.exports = {
                         }
 
                         await i.update({ embeds: [epEmbed], components: [] });
+
                         if (epSongs.length != 0) {
                             await i.followUp({ content: `Here is the order in which you should review the songs on this ${epType}:\n\n**${epSongs.join('\n')}**`, ephemeral: true });
                         }
