@@ -26,8 +26,8 @@ module.exports = {
                             value: 'mail_filter',
                         },
                         {
-                            label: 'Review Ping',
-                            description: 'Set whether you want to be pinged if someone reviews a song you sent to them.',
+                            label: 'Mailbox Review Ping',
+                            description: 'Set whether you want to be pinged if someone reviews a song you sent to them in mailbox.',
                             value: 'review_ping',
                         },
                     ),
@@ -67,7 +67,7 @@ module.exports = {
             v = v.join(': ');
             return v;
         }).join('\n')}\n`,
-        `**Review Ping:** \`${config_data.review_ping}\``];
+        `**Mailbox Review Ping:** \`${config_data.review_ping}\``];
 
         let mailFilterSel = new ActionRowBuilder()
             .addComponents(
@@ -121,7 +121,7 @@ module.exports = {
         .setDescription(config_desc.join('\n'));
         await interaction.reply({ content: null, embeds: [configEmbed], components: [configMenu] });
 
-        const collector = interaction.channel.createMessageComponentCollector();
+        const collector = interaction.channel.createMessageComponentCollector({ time: 60000 });
         await collector.on('collect', async sel => {
             if (sel.customId == 'config') {
 
@@ -129,7 +129,7 @@ module.exports = {
                     await sel.update({ content: 'Select the filter option you\'d like to change.', embeds: [], components: [mailFilterSel] });
                 } else if (sel.values[0] == 'review_ping') {
                     await db.user_stats.set(interaction.user.id, !(user_profile.config.review_ping), 'config.review_ping');
-                    config_desc[1] = `**Review Ping:** \`${db.user_stats.get(interaction.user.id, 'config.review_ping')}\``;
+                    config_desc[1] = `**Mailbox Review Ping:** \`${db.user_stats.get(interaction.user.id, 'config.review_ping')}\``;
                     user_profile = db.user_stats.get(interaction.user.id);
                     configEmbed.setDescription(config_desc.join('\n'));
                     await sel.update({ content: null, embeds: [configEmbed], components: [configMenu] });
@@ -138,7 +138,7 @@ module.exports = {
             } else if (sel.customId == 'mail_filter_sel') {
                 user_profile.config.mail_filter[sel.values[0]] = !user_profile.config.mail_filter[sel.values[0]];
                 db.user_stats.set(interaction.user.id, user_profile.config.mail_filter, 'config.mail_filter');
-                config_desc[0] = `**Mail Filter:**\n${Object.entries(config_data.mail_filter).map(v => {
+                config_desc[0] = `**Mail Filter:**\n${Object.entries(user_profile.config.mail_filter).map(v => {
                     switch(v[0]) {
                         case 'apple': v[0] = 'Apple'; break;
                         case 'sc': v[0] = 'SoundCloud'; break;
@@ -147,7 +147,7 @@ module.exports = {
                         case 'sp_lp': v[0] = 'Spotify LPs'; break;
                         case 'yt': v[0] = 'YouTube'; break;
                     }
-        
+
                     if (v[1] == true) v[1] = '✅';
                     if (v[1] == false) v[1] = '❌';
                     v = v.join(': ');
@@ -156,6 +156,10 @@ module.exports = {
                 configEmbed.setDescription(config_desc.join('\n'));
                 await sel.update({ content: null, embeds: [configEmbed], components: [configMenu] });
             }
+        });
+
+        await collector.on('end', async () => {
+            interaction.editReply({ content: null, embeds: [configEmbed], components: [] });
         });
     },
 };
