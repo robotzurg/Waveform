@@ -98,14 +98,16 @@ module.exports = {
             );
 
             // If the song we are reviewing is not the same as our next song up, then quit out
-            if (next_song != songName && next_song != undefined) {
-                return;
-            } else {
-                for (let ind = 0; ind < ep_songs.length; ind++) {
-                    if (ep_songs[ind] == next_song) {
-                        next_song = ep_songs[ind + 1];
-                        db.user_stats.set(interaction.user.id, next_song, 'current_ep_review.next');
-                        break;
+            if (spotifyApi) {
+                if (next_song != songName && next_song != undefined) {
+                    return;
+                } else {
+                    for (let ind = 0; ind < ep_songs.length; ind++) {
+                        if (ep_songs[ind] == next_song) {
+                            next_song = ep_songs[ind + 1];
+                            db.user_stats.set(interaction.user.id, next_song, 'current_ep_review.next');
+                            break;
+                        }
                     }
                 }
             }

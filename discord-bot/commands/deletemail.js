@@ -44,9 +44,13 @@ module.exports = {
         let temp_mailbox_list = mailbox_list.filter(v => v.display_name == `${origArtistArray.join(' & ')} - ${displaySongName}`);
 
         if (temp_mailbox_list.length == 0) {
-            interaction.reply(`**${origArtistArray.join(' & ')} - ${displaySongName} is not in your mailbox.`);
+            interaction.reply(`**${origArtistArray.join(' & ')} - ${displaySongName}** is not in your mailbox.`);
         } else {
-            let tracks = [{ uri: temp_mailbox_list[0].track_uris[0] }];
+            let tracks = [];
+            for (let track_uri of temp_mailbox_list[0].track_uris) {
+                tracks.push({ uri: track_uri });
+            } 
+
             let playlistId = db.user_stats.get(interaction.user.id, 'mailbox_playlist_id');
 
             // Remove from spotify playlist
