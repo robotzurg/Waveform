@@ -14,8 +14,8 @@ module.exports = {
                 .setRequired(false))
 
         .addStringOption(option => 
-            option.setName('song_name')
-                .setDescription('The name of the song.')
+            option.setName('name')
+                .setDescription('The name of the song/EP/LP.')
                 .setAutocomplete(true)
                 .setRequired(false))
             
@@ -27,7 +27,7 @@ module.exports = {
     help_desc: `TBD`,
 	async execute(interaction) {
         let artists = interaction.options.getString('artist');
-        let song = interaction.options.getString('song_name');
+        let song = interaction.options.getString('name');
         let remixers = interaction.options.getString('remixers');
         let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
         if (song_info == -1) {
