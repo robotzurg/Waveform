@@ -22,12 +22,9 @@ module.exports = {
             option.setName('tag_image')
                 .setDescription('An image you want to add to the tag. (MUST BE A VALID IMAGE LINK)')
                 .setRequired(false)),
-    help_desc: `Allows you to edit an existing song tag to change it's name or image attached to it.\n\n` + 
-    `Not currently functional due to bugs.`,
+    help_desc: `Allows you to edit an existing song tag to change it's name or image attached to it.`,
 	async execute(interaction) {
         try {
-
-        if (interaction.user.id != '122568101995872256') return interaction.reply('This command is under construction.');
 
         let tag = interaction.options.getString('tag');
         let newTagName = interaction.options.getString('tag_name');

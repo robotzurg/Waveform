@@ -188,6 +188,13 @@ module.exports = {
                 rmxArtist = rmxArtist.replace(' VIP', '');
                 if (rmxArtist.includes(' and ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' and ';
                 if (rmxArtist.includes(' x ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' x ';
+
+                // Deal with features being in the song name before the remix lol
+                if (songArg[0].includes('feat.') || songArg[0].includes('ft.')) {
+                    songArg[0] = songArg[0].replace('feat.', 'ft.');
+                    songArg[0] = songArg[0].split(` (ft.`)[0];
+                }
+
                 origSongArg = songArg[0];
                 rmxArtistArray = rmxArtist.split(rmx_delimiter);
                 songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
@@ -443,7 +450,6 @@ module.exports = {
                 //Inject the newsongobject into the artistobject and then put it in the database
                 Object.assign(artistObj, newsongObj);
                 db.reviewDB.set(artistArray[i], artistObj);
-                
 
             } else if (db.reviewDB.get(artistArray[i])[songName][interaction.user.id] && review_object.name != undefined) { // Check if you are already in the system, and replace the review if you are.
 
@@ -463,7 +469,7 @@ module.exports = {
                 
                 if (tag != null && songObj.tags != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `${setterSongName}.tags`);
-                } else {
+                } else if (tag != null) {
                     db.reviewDB.set(artistArray[i], [tag], `${setterSongName}.tags`);
                 }
             } else if (review_object.name != undefined) { // Otherwise if you have no review but the song and artist objects exist
@@ -572,7 +578,7 @@ module.exports = {
         }
     },
 
-    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred, tag) {
+    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred) {
 
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterEpName = ep_name.includes('.') ? `["${ep_name}"]` : ep_name;
@@ -595,7 +601,6 @@ module.exports = {
                     art: art,
                     collab: artistArray.filter(word => artistArray[i] != word),
                     songs: [],
-                    tags: (tag == null ? [] : [tag]),
                 },
             }; 
 
@@ -626,12 +631,6 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], db_song_obj, `${setterEpName}"]`);
                 if (art != undefined && art != false && art != null && !art.includes('avatar')) {
                     db.reviewDB.set(artistArray[i], art, `${setterEpName}.art`);
-                }
-                
-                if (tag != null && db.reviewDB.get(artistArray[i])[ep_name].tags != undefined) {
-                    db.reviewDB.push(artistArray[i], tag, `${setterEpName}.tags`);
-                } else if (tag != null) {
-                    db.reviewDB.set(artistArray[i], [tag], `${setterEpName}.tags`);
                 }
             }
         }

@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
-const { handle_error } = require("../func.js");
+const { handle_error, get_user_reviews, average } = require("../func.js");
 const _ = require('lodash');
 
 module.exports = {
@@ -22,8 +22,27 @@ module.exports = {
         let songList = db.tags.get(tag, 'song_list');
         let tagArt = db.tags.get(tag, 'image');
         if (songList.length == 0) return interaction.reply(`There are no songs with the tag \`${tag}\`.`);
+        let displayList = [];
+        for (let song of songList) {
+            let songData = db.reviewDB.get(song.remix_artists.length != 0 ? song.artists[0] : song.remix_artists[0], `${song.name}`);
+            let userArray = get_user_reviews(songData);
+            let starCount = 0, avgRating = [];
+            for (let userReview of userArray) {
+                console.log(userReview);
+                if (userReview.starred == true) starCount += 1;
+                if (userReview.rating != false) avgRating.push(userReview.rating);
+            }
+            if (avgRating.length != 0) {
+                avgRating = average(avgRating);
+            } else {
+                avgRating = `N/A`;
+            }
 
-        let pagedSongList = _.chunk(songList, 10);
+            let displayName = `${song.remix_artists.length != 0 ? song.remix_artists.join(' & ') : song.artists.join(' & ')} - ${song.name}`;
+            displayList.push(`**${displayName}** \`${starCount} ⭐\`\nAvg Rating: \`${avgRating}\``);
+        }
+
+        let pagedSongList = _.chunk(displayList, 10);
         let page_num = 0;
         const row = new ActionRowBuilder()
         .addComponents(
@@ -40,7 +59,7 @@ module.exports = {
         for (let i = 0; i < pagedSongList.length; i++) {
 
             for (let j = 0; j < pagedSongList[i].length; j++) {
-                pagedSongList[i][j] = `• ` + `[${pagedSongList[i][j]}](https://www.google.com)`;
+                pagedSongList[i][j] = `• ` + `${pagedSongList[i][j]}`;
             }
 
             pagedSongList[i] = pagedSongList[i].join('\n');

@@ -22,15 +22,15 @@ module.exports = {
                     .setDescription('Your review of the song')
                     .setRequired(false))
 
-            /*.addStringOption(option => 
+            .addStringOption(option => 
                 option.setName('tag')
                     .setDescription('Put a tag you want to set the song to here!')
                     .setAutocomplete(true)
-                    .setRequired(false))*/
+                    .setRequired(false))
 
             .addUserOption(option => 
                 option.setName('user_who_sent')
-                    .setDescription('User who sent you this song in Mailbox. Ignore if not a mailbox review.')
+                    .setDescription('Manually specify who sent you a song through mailbox.')
                     .setRequired(false))
 
             .addStringOption(option => 
@@ -513,6 +513,23 @@ module.exports = {
                     // Review the song
                     await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, ep_name, tag);
 
+                    // Deal with tags
+                    if (tag != null) {
+                        if (db.tags.has(tag)) {
+                            db.tags.push(tag, {
+                                artists: artistArray,
+                                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
+                                name: songName,
+                            }, 'song_list');
+                        } else {
+                            db.tags.set(tag, [{
+                                artists: artistArray,
+                                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
+                                name: songName,
+                            }], 'song_list');
+                        }
+                    }
+
                     // Edit the EP embed
                     await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
 
@@ -659,10 +676,17 @@ module.exports = {
                     // Setup tags if necessary
                     if (tag != null) {
                         if (db.tags.has(tag)) {
-                            db.tags.push(tag, `${origArtistArray.join(' & ')} - ${displaySongName}`, 'song_list');
+                            db.tags.push(tag, {
+                                artists: artistArray,
+                                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
+                                name: songName,
+                            }, 'song_list');
                         } else {
-                            db.tags.set(tag, [`${origArtistArray.join(' & ')} - ${displaySongName}`], 'song_list');
-                            db.tags.set(tag, false, 'image');
+                            db.tags.set(tag, [{
+                                artists: artistArray,
+                                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
+                                name: songName,
+                            }], 'song_list');
                         }
                     }
 
