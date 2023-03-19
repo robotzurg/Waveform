@@ -45,9 +45,6 @@ module.exports = {
                 ep_art = interaction.user.avatarURL({ extension: "png", dynamic: false });
             }
 
-            let tags = epObj.tags;
-            if (tags == undefined || tags == false || tags == null) tags = [];
-
             let rankNumArray = [];
             let epRankArray = [];
             let songRankArray = [];
@@ -121,8 +118,6 @@ module.exports = {
                         epEmbed.setDescription(`This ${epType} has no songs in the database and has not been reviewed overall.`);
                     }
                 }
-
-                if (tags.length != 0) epEmbed.setFooter({ text: `Tags: ${tags.join(', ')}` });
 
             // Button/Select Menu setup
             let select_options = [];

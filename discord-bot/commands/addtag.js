@@ -25,7 +25,7 @@ module.exports = {
                 .setRequired(false))
 
         .addStringOption(option => 
-            option.setName('name')
+            option.setName('song_name')
                 .setDescription('The name of the song.')
                 .setAutocomplete(true)
                 .setRequired(false))
@@ -41,7 +41,7 @@ module.exports = {
 	async execute(interaction) {
         try {
 
-            if (interaction.user.id != '122568101995872256') return interaction.reply('This command is under construction.');
+        if (interaction.user.id != '122568101995872256') return interaction.reply('This command is under construction.');
 
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('name');

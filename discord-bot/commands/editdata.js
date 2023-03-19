@@ -5,11 +5,11 @@ const { EmbedBuilder, SlashCommandBuilder, ButtonBuilder, ActionRowBuilder, Butt
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('editdata')
-		.setDescription('Edit metadata of a song or an EP/LP.')
+		.setDescription('Edit metadata of music or tags in the database.')
         .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand.setName('song')
-            .setDescription('Edit the various data of a song or remix (Remixes not supported yet).')
+            .setDescription('Edit the various data of a regular single')
             .addStringOption(option => 
                 option.setName('artist')
                     .setDescription('The name of the artist(s).')
@@ -17,14 +17,56 @@ module.exports = {
                     .setRequired(false))
             .addStringOption(option => 
                 option.setName('song_name')
-                    .setDescription('The old name of the song/EP/LP.')
+                    .setDescription('The name of the song.')
+                    .setAutocomplete(true)
+                    .setRequired(false)))
+        .addSubcommand(subcommand =>
+            subcommand.setName('remix')
+            .setDescription('Edit the various data of a remix')
+            .addStringOption(option => 
+                option.setName('artist')
+                    .setDescription('The name of the artist(s) who made the original song.')
+                    .setAutocomplete(true)
+                    .setRequired(false))
+            .addStringOption(option => 
+                option.setName('song_name')
+                    .setDescription('The name of the remixed song.')
                     .setAutocomplete(true)
                     .setRequired(false))
             .addStringOption(option => 
                 option.setName('remixers')
-                    .setDescription('The name of remixers on the original song, for remixes.')
+                    .setDescription('The name of remixers of the song.')
+                    .setRequired(false)))
+        .addSubcommand(subcommand =>
+            subcommand.setName('ep_lp')
+            .setDescription('Edit the metadata of an EP/LP in the database.')
+            .addStringOption(option => 
+                option.setName('artist')
+                    .setDescription('The name of the artist(s).')
+                    .setAutocomplete(true)
+                    .setRequired(false))
+            .addStringOption(option => 
+                option.setName('ep_name')
+                    .setDescription('The name of the EP/LP.')
+                    .setAutocomplete(true)
+                    .setRequired(false)))
+        .addSubcommand(subcommand =>
+            subcommand.setName('artist')
+            .setDescription('Edit the metadata of an artist.')
+            .addStringOption(option => 
+                option.setName('artist')
+                    .setDescription('The name of the artist.')
+                    .setAutocomplete(true)
+                    .setRequired(false)))
+        .addSubcommand(subcommand =>
+            subcommand.setName('tag')
+            .setDescription('Edit the metadata of a tag.')
+            .addStringOption(option => 
+                option.setName('tag')
+                    .setDescription('The name of the tag.')
+                    .setAutocomplete(true)
                     .setRequired(false))),
-    help_desc: `Allows you to edit the metadata of a song, or an EP/LP in the database, depending on which subcommand you use.\n` + 
+    help_desc: `Allows you to edit the metadata of a song, or an EP/LP, or an artist in the database, depending on which subcommand you use.\n` + 
     `Editable data includes collaborators, vocalists, remixers, song name, tags, and remixers.\n\n` +
     `Leaving the artist and song name arguments blank will pull from currently playing song on Spotify, if you are logged in to Waveform with Spotify.\n\n` +
     `Not currently functional due to being unfinished.`,

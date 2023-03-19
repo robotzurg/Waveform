@@ -83,7 +83,7 @@ module.exports = {
                 let rating;
                 let ratingDisplay;
                 let starred = false;
-                rating = songObj[userArray[i]].rating;
+                rating = songObj[userArray[i]].ratin;
                 if (songObj[userArray[i]].starred == true) {
                     starCount++;
                     starred = true;
@@ -122,8 +122,6 @@ module.exports = {
             for (let i = 0; i < userArray.length; i++) {
                 userArray[i] = `${numReacts[i + 1]} `.concat(userArray[i]);
             }
-            
-            console.log(userArray);
 
             songEmbed.addFields([{ name: 'Reviews:', value: userArray.join('\n') }]);
         } else {
