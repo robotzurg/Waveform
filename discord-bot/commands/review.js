@@ -582,27 +582,29 @@ module.exports = {
                                         if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
                                     }
 
-                                    for (let track_uri of mailbox_data.track_uris) {
-                                        tracks.push({ uri: track_uri });
-                                    } 
-                                    
-                                    let playlistId = db.user_stats.get(interaction.user.id, 'mailbox_playlist_id');
-                                    // Ping the user who sent the review, if they have the ping for review config setting
-                                    if (ping_for_review) {
-                                        interaction.channel.send(`<@${mailbox_data.user_who_sent}>`).then(ping_msg => {
-                                            ping_msg.delete();
+                                    if (mailbox_data != undefined && mailbox_data != false) {
+                                        for (let track_uri of mailbox_data.track_uris) {
+                                            tracks.push({ uri: track_uri });
+                                        } 
+                                        
+                                        let playlistId = db.user_stats.get(interaction.user.id, 'mailbox_playlist_id');
+                                        // Ping the user who sent the review, if they have the ping for review config setting
+                                        if (ping_for_review) {
+                                            interaction.channel.send(`<@${mailbox_data.user_who_sent}>`).then(ping_msg => {
+                                                ping_msg.delete();
+                                            });
+                                        }
+
+                                        // Remove from spotify playlist
+                                        spotifyApi.removeTracksFromPlaylist(playlistId, tracks)
+                                        .then(() => {}, function(err) {
+                                            console.log('Something went wrong!', err);
                                         });
+
+                                        // Remove from local playlist
+                                        mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${ep_name}`);
+                                        db.user_stats.set(interaction.user.id, mailbox_list, `mailbox_list`);
                                     }
-
-                                    // Remove from spotify playlist
-                                    spotifyApi.removeTracksFromPlaylist(playlistId, tracks)
-                                    .then(() => {}, function(err) {
-                                        console.log('Something went wrong!', err);
-                                    });
-
-                                    // Remove from local playlist
-                                    mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${ep_name}`);
-                                    db.user_stats.set(interaction.user.id, mailbox_list, `mailbox_list`);
                                 }
 
                                 msg.edit({ components: [] });
@@ -688,7 +690,7 @@ module.exports = {
                     }
 
                     // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
-                    if (is_mailbox == true) {
+                    if (is_mailbox == true && mailbox_data != undefined && mailbox_data != false) {
                         let tracks = [{ uri: mailbox_data.track_uris[0] }];
                         let playlistId = db.user_stats.get(interaction.user.id, 'mailbox_playlist_id');
                         // Ping the user who sent the review, if they have the ping for review config setting
