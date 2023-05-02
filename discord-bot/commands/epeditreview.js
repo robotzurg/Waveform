@@ -46,8 +46,8 @@ module.exports = {
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('ep_name');
             let song_info = await parse_artist_song_data(interaction, artists, ep);
-            if (song_info == -1) {
-                await interaction.reply('Waveform ran into an issue pulling up song data.');
+            if (song_info.error != undefined) {
+                await interaction.reply(song_info.error);
                 return;
             }
 
@@ -57,7 +57,9 @@ module.exports = {
             let setterEpName = epName.includes('.') ? `["${epName}"]` : epName;
             let epType = epName.includes(' LP') ? `LP` : `EP`;
             let epRating = interaction.options.getString('ep_rating');
-            if (epRating.includes('/10')) epRating = epRating.replace('/10', '');
+            if (epRating != null) {
+                if (epRating.includes('/10')) epRating = epRating.replace('/10', '');
+            }
             let epReview = interaction.options.getString('ep_review');
             let oldEpRating;
             let oldEpReview;
@@ -96,11 +98,20 @@ module.exports = {
                 if (channelsearch != undefined) {
                     await channelsearch.messages.fetch(epReviewObj.msg_id).then(msg => {
                         let msgEmbed = EmbedBuilder.from(msg.embeds[0]);
-                        if (epRating != null) {
+                        if (epRating != null && epReviewObj.no_songs == false) {
+                            // Change title
                             msgEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${epRating}/10)`);
+                        } else if (epRating != null && epReviewObj.no_songs == true) {
+                            // Change field /10 rating value
+                            if (msgEmbed.data.fields != undefined) {
+                                msgEmbed.data.fields[0].value = `**${epRating}/10**`;
+                            } else {
+                                msgEmbed.addFields({ name: `Rating:`, value: `**${epRating}/10**` });
+                            }
                         }
+
                         if (epReview != null) {
-                            msgEmbed.setDescription(`*${epReview}*`);
+                            msgEmbed.setDescription(epReviewObj.no_songs == false ? `*${epReview}*` : `${epReview}`);
                         }
                         msg.edit({ embeds: [msgEmbed] });
                     });

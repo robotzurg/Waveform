@@ -22,15 +22,15 @@ module.exports = {
                     .setDescription('Your review of the song')
                     .setRequired(false))
 
-            /*.addStringOption(option => 
+            .addStringOption(option => 
                 option.setName('tag')
                     .setDescription('Put a tag you want to set the song to here!')
                     .setAutocomplete(true)
-                    .setRequired(false))*/
+                    .setRequired(false))
 
             .addUserOption(option => 
                 option.setName('user_who_sent')
-                    .setDescription('User who sent you this song in Mailbox. Ignore if not a mailbox review.')
+                    .setDescription('Manually specify who sent you a song through mailbox.')
                     .setRequired(false))
 
             .addStringOption(option => 
@@ -134,10 +134,10 @@ module.exports = {
         }
 
         let song_info = await parse_artist_song_data(interaction, artists, song, rmxArtistArray, vocalistArray);
-        if (song_info == -1) {
-            await interaction.editReply('Waveform ran into an issue pulling up song data.');
+        if (song_info.error != undefined) {
+            await interaction.reply(song_info.error);
             return;
-        } 
+        }
 
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
@@ -513,6 +513,23 @@ module.exports = {
                     // Review the song
                     await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, ep_name, tag);
 
+                    // Deal with tags
+                    if (tag != null) {
+                        if (db.tags.has(tag)) {
+                            db.tags.push(tag, {
+                                artists: artistArray,
+                                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
+                                name: songName,
+                            }, 'song_list');
+                        } else {
+                            db.tags.set(tag, [{
+                                artists: artistArray,
+                                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
+                                name: songName,
+                            }], 'song_list');
+                        }
+                    }
+
                     // Edit the EP embed
                     await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
 
@@ -661,10 +678,17 @@ module.exports = {
                     // Setup tags if necessary
                     if (tag != null) {
                         if (db.tags.has(tag)) {
-                            db.tags.push(tag, `${origArtistArray.join(' & ')} - ${displaySongName}`, 'song_list');
+                            db.tags.push(tag, {
+                                artists: artistArray,
+                                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
+                                name: songName,
+                            }, 'song_list');
                         } else {
-                            db.tags.set(tag, [`${origArtistArray.join(' & ')} - ${displaySongName}`], 'song_list');
-                            db.tags.set(tag, false, 'image');
+                            db.tags.set(tag, [{
+                                artists: artistArray,
+                                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
+                                name: songName,
+                            }], 'song_list');
                         }
                     }
 
@@ -681,12 +705,12 @@ module.exports = {
                         }
 
                         db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
-                        await hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
+                        hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                     }
 
                     // Fix artwork on all reviews for this song
                     if (songArt != false && db.reviewDB.has(artistArray[0])) {
-                        await update_art(interaction, artistArray[0], songName, songArt);
+                        update_art(interaction, artistArray[0], songName, songArt);
                     }
 
                     // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist

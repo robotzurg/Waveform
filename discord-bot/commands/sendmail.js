@@ -84,8 +84,8 @@ module.exports = {
                 } 
 
                 let song_info = await parse_artist_song_data(interaction, artists.join(' & '), name);
-                if (song_info == -1) {
-                    await interaction.editReply('Waveform ran into an issue pulling up song data.\nError: `Failed to parse song data`');
+                if (song_info.error != undefined) {
+                    await interaction.reply(song_info.error);
                     return;
                 }
 
@@ -123,7 +123,7 @@ module.exports = {
             linkType = 'apple';
         } else if (trackLink.includes('soundcloud.com')) {
             linkType = 'sc';
-        } else if (trackLink.includes('youtube.com')) {
+        } else if (trackLink.includes('youtube.com') || trackLink.includes('youtu.be')) {
             linkType = 'yt';
         } else {
             return interaction.editReply('This link is not a valid mailbox link.\nValid mailbox links: ```\nSpotify\nSoundCloud\nApple Music\nYouTube```');

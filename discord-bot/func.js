@@ -58,8 +58,7 @@ module.exports = {
         const { spotify_api_setup } = require('./func.js');
 
         if ((artists == null && song != null) || (artists != null && song == null)) {
-            //interaction.reply('If you are searching for a review manually, you must put in both the artists (in the artist argument) and the song name (in the song_name argument).');
-            return -1;
+            return { error: 'If you are searching for a review manually, you must put in both the artists (in the artist argument) and the song name (in the song_name argument).' };
         }
 
         let rmxArtist = false;
@@ -90,8 +89,7 @@ module.exports = {
             let isPodcast = false;
         
             if (spotifyApi == false) {
-                //interaction.reply('You must use `/login` to use Spotify related features!');
-                return -1;
+                return { error: 'You must use `/login` to use Spotify related features!' };
             }
 
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
@@ -133,24 +131,19 @@ module.exports = {
 
             // Check if a podcast is being played, as we don't support that.
             if (isPodcast == true) {
-                //interaction.reply('Podcasts are not supported with `/np`.');
-                return -1;
+                return { error: 'Podcasts are not supported with `/np`.' };
             }
 
             if (passesChecks == 'notplaying') {
-                //interaction.reply('You are not currently playing a song on Spotify.');
-                return -1;
+                return { error: 'You are not currently playing a song on Spotify.' };
             }
 
             if (passesChecks == false) {
-                //interaction.reply('This song cannot be parsed properly in the database, and as such cannot be reviewed or have data pulled up for it.');
-                return -1;
+                return { error: 'This song cannot be parsed properly in the database, and as such cannot be reviewed or have data pulled up for it.' };
             } else if (passesChecks == 'ep') {
-                //interaction.reply('This track cannot be added to EP/LP reviews, therefore is invalid to be used in relation with EP/LP commands.');
-                return -1;
+                return { error: 'This track cannot be added to EP/LP reviews, therefore is invalid to be used in relation with EP/LP commands.' };
             } else if (passesChecks == 'length') {
-                //interaction.reply('This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.');
-                return -1;
+                return { error: 'This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.' };
             }
             
         } else {
@@ -188,6 +181,13 @@ module.exports = {
                 rmxArtist = rmxArtist.replace(' VIP', '');
                 if (rmxArtist.includes(' and ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' and ';
                 if (rmxArtist.includes(' x ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' x ';
+
+                // Deal with features being in the song name before the remix lol
+                if (songArg[0].includes('feat.') || songArg[0].includes('ft.')) {
+                    songArg[0] = songArg[0].replace('feat.', 'ft.');
+                    songArg[0] = songArg[0].split(` (ft.`)[0];
+                }
+
                 origSongArg = songArg[0];
                 rmxArtistArray = rmxArtist.split(rmx_delimiter);
                 songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
@@ -265,15 +265,13 @@ module.exports = {
             if (interaction.commandName != 'review' && interaction.commandName != 'epreview') {
                 for (let i = 0; i < artistArray.length; i++) {
                     if (!db.reviewDB.has(artistArray[i])) {
-                       // interaction.reply(`The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.`);
-                        return -1;
+                        return { error: `The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.` };
                     }
                 }
 
                 for (let i = 0; i < rmxArtistArray.length; i++) {
                     if (!db.reviewDB.has(rmxArtistArray[i])) {
-                        //interaction.reply(`The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.`);
-                        return -1;
+                        return { error: `The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.` };
                     }
                 }
             }
@@ -443,7 +441,6 @@ module.exports = {
                 //Inject the newsongobject into the artistobject and then put it in the database
                 Object.assign(artistObj, newsongObj);
                 db.reviewDB.set(artistArray[i], artistObj);
-                
 
             } else if (db.reviewDB.get(artistArray[i])[songName][interaction.user.id] && review_object.name != undefined) { // Check if you are already in the system, and replace the review if you are.
 
@@ -463,7 +460,7 @@ module.exports = {
                 
                 if (tag != null && songObj.tags != undefined) {
                     db.reviewDB.push(artistArray[i], tag, `${setterSongName}.tags`);
-                } else {
+                } else if (tag != null) {
                     db.reviewDB.set(artistArray[i], [tag], `${setterSongName}.tags`);
                 }
             } else if (review_object.name != undefined) { // Otherwise if you have no review but the song and artist objects exist
@@ -572,7 +569,7 @@ module.exports = {
         }
     },
 
-    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred, tag) {
+    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred) {
 
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterEpName = ep_name.includes('.') ? `["${ep_name}"]` : ep_name;
@@ -595,7 +592,6 @@ module.exports = {
                     art: art,
                     collab: artistArray.filter(word => artistArray[i] != word),
                     songs: [],
-                    tags: (tag == null ? [] : [tag]),
                 },
             }; 
 
@@ -617,21 +613,16 @@ module.exports = {
                 Object.assign(db_artist_obj, epObject);
                 db.reviewDB.set(artistArray[i], db_artist_obj);
             } else {
+                console.log(db.reviewDB.get(artistArray[i])[ep_name]);
                 const db_song_obj = db.reviewDB.get(artistArray[i])[ep_name];
                 let new_user_obj = {
                     [`${interaction.user.id}`]: reviewObject,
                 };
 
                 Object.assign(db_song_obj, new_user_obj);
-                db.reviewDB.set(artistArray[i], db_song_obj, `${setterEpName}"]`);
+                db.reviewDB.set(artistArray[i], db_song_obj, `${setterEpName}`);
                 if (art != undefined && art != false && art != null && !art.includes('avatar')) {
                     db.reviewDB.set(artistArray[i], art, `${setterEpName}.art`);
-                }
-                
-                if (tag != null && db.reviewDB.get(artistArray[i])[ep_name].tags != undefined) {
-                    db.reviewDB.push(artistArray[i], tag, `${setterEpName}.tags`);
-                } else if (tag != null) {
-                    db.reviewDB.set(artistArray[i], [tag], `${setterEpName}.tags`);
                 }
             }
         }

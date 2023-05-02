@@ -25,8 +25,8 @@ module.exports = {
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('ep_name');
             let song_info = await parse_artist_song_data(interaction, artists, ep);
-            if (song_info == -1) {
-                await interaction.reply('Waveform ran into an issue pulling up song data.');
+            if (song_info.error != undefined) {
+                await interaction.reply(song_info.error);
                 return;
             }
 
@@ -45,20 +45,17 @@ module.exports = {
                 ep_art = interaction.user.avatarURL({ extension: "png", dynamic: false });
             }
 
-            let tags = epObj.tags;
-            if (tags == undefined || tags == false || tags == null) tags = [];
-
             let rankNumArray = [];
             let epRankArray = [];
             let songRankArray = [];
             let rating;
-            let epSongArray = epObj.songs;
+            let epSongArray = epObj.songs == undefined ? [] : epObj.songs;
 
             await create_ep_review(interaction, client, origArtistArray, epSongArray, epName, ep_art);
 
             const epEmbed = new EmbedBuilder()
                 .setColor(`${interaction.member.displayHexColor}`)
-                .setTitle(`${origArtistArray} - ${epName} tracks`)
+                .setTitle(`${origArtistArray} - ${epName}`)
                 .setThumbnail(ep_art);
 
                 let reviewNum = Object.keys(db.reviewDB.get(artistArray[0])[epName]);
@@ -121,8 +118,6 @@ module.exports = {
                         epEmbed.setDescription(`This ${epType} has no songs in the database and has not been reviewed overall.`);
                     }
                 }
-
-                if (tags.length != 0) epEmbed.setFooter({ text: `Tags: ${tags.join(', ')}` });
 
             // Button/Select Menu setup
             let select_options = [];

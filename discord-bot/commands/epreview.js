@@ -22,12 +22,6 @@ module.exports = {
                     .setDescription('Overall Review of the EP/LP. Can be added later.')
                     .setRequired(false))
     
-            /*.addStringOption(option => 
-                option.setName('tag')
-                    .setDescription('Put a tag you want to set the song to here!')
-                    .setAutocomplete(true)
-                    .setRequired(false))*/
-    
             .addStringOption(option => 
                 option.setName('art')
                     .setDescription('Art for the EP/LP. (Leave blank for automatic spotify searching.)')
@@ -63,12 +57,6 @@ module.exports = {
                 option.setName('overall_review')
                     .setDescription('Overall Review of the EP/LP. Can be added later.')
                     .setRequired(false))
-    
-            /*.addStringOption(option => 
-                option.setName('tag')
-                    .setDescription('Put a tag you want to set the song to here!')
-                    .setAutocomplete(true)
-                    .setRequired(false))*/
     
             .addStringOption(option => 
                 option.setName('art')
@@ -106,8 +94,8 @@ module.exports = {
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('ep_name');
             let song_info = await parse_artist_song_data(interaction, artists, ep);
-            if (song_info == -1) {
-                await interaction.reply('Waveform ran into an issue pulling up song data.');
+            if (song_info.error != undefined) {
+                await interaction.reply(song_info.error);
                 return;
             }
 
@@ -140,7 +128,6 @@ module.exports = {
             
             let user_who_sent = interaction.options.getUser('user_who_sent');
             if (user_who_sent == null) user_who_sent = false;
-            let tag = interaction.options.getString('tag');
             let taggedMember = false;
             let taggedUser = false;
             let starred = false;
@@ -371,9 +358,6 @@ module.exports = {
                             overallRating = parseFloat(overallRating);
                             if (isNaN(overallRating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
                             epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overallRating}/10)`);
-                            for (let j = 0; j < artistArray.length; j++) {
-                                db.reviewDB.set(artistArray[j], overallRating, `${setterEpName}.${interaction.user.id}.rating`);
-                            }
 
                             row2 = new ActionRowBuilder()
                             .addComponents(
@@ -383,7 +367,7 @@ module.exports = {
                                     .setStyle(ButtonStyle.Success),
                                 new ButtonBuilder()
                                     .setCustomId('done')
-                                    .setLabel('Send to Database')
+                                    .setLabel('Send to Database with No Song Reviews')
                                     .setStyle(ButtonStyle.Success),
                                 new ButtonBuilder()
                                     .setCustomId('delete')
@@ -413,9 +397,6 @@ module.exports = {
                             }
 
                             epEmbed.setDescription(`*${overallReview}*`);
-                            for (let j = 0; j < artistArray.length; j++) {
-                                db.reviewDB.set(artistArray[j], overallReview, `${setterEpName}.${interaction.user.id}.review`);
-                            }
 
                             row2 = new ActionRowBuilder()
                             .addComponents(
@@ -484,7 +465,7 @@ module.exports = {
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
-                        review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, tag);
+                        review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred);
 
                         // Set message ids
                         for (let j = 0; j < artistArray.length; j++) {
@@ -540,21 +521,11 @@ module.exports = {
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
-                        review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, tag);
+                        review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred);
 
                         let epSongs = await (db.user_stats.get(interaction.user.id, 'current_ep_review.track_list') != false 
                         ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(artistArray[0])[epName].songs);
                         if (epSongs == false || epSongs == undefined) epSongs = [];
-
-                        // Setup tags if necessary
-                        if (tag != null) {
-                            if (db.tags.has(tag)) {
-                                db.tags.push(tag, `${artistArray.join(' & ')} - ${epName}`, 'song_list');
-                            } else {
-                                db.tags.set(tag, [`${artistArray.join(' & ')} - ${epName}`], 'song_list');
-                                db.tags.set(tag, false, 'image');
-                            }
-                        }
 
                         // Set message ids
                         for (let j = 0; j < artistArray.length; j++) {

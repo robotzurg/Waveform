@@ -5,7 +5,7 @@ const db = require('../db.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('addtag')
-        .setDescription('Add a tag to a song or EP/LP.')
+        .setDescription('Add a tag to a song.')
         .setDMPermission(false)
         .addStringOption(option => 
             option.setName('tag')
@@ -14,14 +14,19 @@ module.exports = {
                 .setRequired(true))
 
         .addStringOption(option => 
+            option.setName('tag_image')
+                .setDescription('An image link for the tag.')
+                .setRequired(false))
+
+        .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
                 .setAutocomplete(true)
                 .setRequired(false))
 
         .addStringOption(option => 
-            option.setName('name')
-                .setDescription('The name of the song/EP/LP.')
+            option.setName('song_name')
+                .setDescription('The name of the song.')
                 .setAutocomplete(true)
                 .setRequired(false))
             
@@ -29,11 +34,6 @@ module.exports = {
             option.setName('remixers')
                 .setDescription('Remix artists on the song, if any.')
                 .setAutocomplete(true)
-                .setRequired(false))
-
-        .addStringOption(option => 
-            option.setName('tag_image')
-                .setDescription('An image link for the tag.')
                 .setRequired(false)),
     help_desc: `Creates (or replaces) a song tag and adds it to the specified song.\n\n` + 
     `Leaving the artist and song name arguments blank will pull from currently playing song on Spotify, if you are logged in to Waveform with Spotify.\n\n` + 
@@ -41,14 +41,14 @@ module.exports = {
 	async execute(interaction) {
         try {
 
-            if (interaction.user.id != '122568101995872256') return interaction.reply('This command is under construction.');
+        if (interaction.user.id != '122568101995872256') return interaction.reply('This command is under construction.');
 
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('name');
         let remixers = interaction.options.getString('remixers');
         let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
-        if (song_info == -1) {
-            await interaction.reply('Waveform ran into an issue pulling up song data.');
+        if (song_info.error != undefined) {
+            await interaction.reply(song_info.error);
             return;
         }
 
@@ -72,18 +72,22 @@ module.exports = {
         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
 
         if (db.tags.has(tag)) {
-            db.tags.push(tag, tagSongEntry, 'song_list');
+            db.tags.push(tag, {
+                artists: artistArray,
+                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
+                name: songName,
+            }, 'song_list');
         } else {
-            db.tags.set(tag, [tagSongEntry], 'song_list');
+            db.tags.set(tag, [{
+                artists: artistArray,
+                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
+                name: songName,
+            }], 'song_list');
         }
         db.tags.set(tag, tagArt, 'image');
 
         for (let i = 0; i < artistArray.length; i++) {
-            if (db.reviewDB.get(artistArray[i])[songName].tags != undefined) {
-                db.reviewDB.push(artistArray[i], tag, `${setterSongName}.tags`);
-            } else {
-                db.reviewDB.set(artistArray[i], [tag], `${setterSongName}.tags`);
-            }
+            db.reviewDB.push(artistArray[i], tag, `${setterSongName}.tags`);
         }
 
         interaction.reply(`Added the tag \`${tag}\` to **${tagSongEntry}**`);
