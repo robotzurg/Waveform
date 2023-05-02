@@ -58,8 +58,7 @@ module.exports = {
         const { spotify_api_setup } = require('./func.js');
 
         if ((artists == null && song != null) || (artists != null && song == null)) {
-            //interaction.reply('If you are searching for a review manually, you must put in both the artists (in the artist argument) and the song name (in the song_name argument).');
-            return -1;
+            return { error: 'If you are searching for a review manually, you must put in both the artists (in the artist argument) and the song name (in the song_name argument).' };
         }
 
         let rmxArtist = false;
@@ -90,8 +89,7 @@ module.exports = {
             let isPodcast = false;
         
             if (spotifyApi == false) {
-                //interaction.reply('You must use `/login` to use Spotify related features!');
-                return -1;
+                return { error: 'You must use `/login` to use Spotify related features!' };
             }
 
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
@@ -133,24 +131,19 @@ module.exports = {
 
             // Check if a podcast is being played, as we don't support that.
             if (isPodcast == true) {
-                //interaction.reply('Podcasts are not supported with `/np`.');
-                return -1;
+                return { error: 'Podcasts are not supported with `/np`.' };
             }
 
             if (passesChecks == 'notplaying') {
-                //interaction.reply('You are not currently playing a song on Spotify.');
-                return -1;
+                return { error: 'You are not currently playing a song on Spotify.' };
             }
 
             if (passesChecks == false) {
-                //interaction.reply('This song cannot be parsed properly in the database, and as such cannot be reviewed or have data pulled up for it.');
-                return -1;
+                return { error: 'This song cannot be parsed properly in the database, and as such cannot be reviewed or have data pulled up for it.' };
             } else if (passesChecks == 'ep') {
-                //interaction.reply('This track cannot be added to EP/LP reviews, therefore is invalid to be used in relation with EP/LP commands.');
-                return -1;
+                return { error: 'This track cannot be added to EP/LP reviews, therefore is invalid to be used in relation with EP/LP commands.' };
             } else if (passesChecks == 'length') {
-                //interaction.reply('This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.');
-                return -1;
+                return { error: 'This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.' };
             }
             
         } else {
@@ -272,15 +265,13 @@ module.exports = {
             if (interaction.commandName != 'review' && interaction.commandName != 'epreview') {
                 for (let i = 0; i < artistArray.length; i++) {
                     if (!db.reviewDB.has(artistArray[i])) {
-                       // interaction.reply(`The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.`);
-                        return -1;
+                        return { error: `The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.` };
                     }
                 }
 
                 for (let i = 0; i < rmxArtistArray.length; i++) {
                     if (!db.reviewDB.has(rmxArtistArray[i])) {
-                        //interaction.reply(`The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.`);
-                        return -1;
+                        return { error: `The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.` };
                     }
                 }
             }
@@ -622,13 +613,14 @@ module.exports = {
                 Object.assign(db_artist_obj, epObject);
                 db.reviewDB.set(artistArray[i], db_artist_obj);
             } else {
+                console.log(db.reviewDB.get(artistArray[i])[ep_name]);
                 const db_song_obj = db.reviewDB.get(artistArray[i])[ep_name];
                 let new_user_obj = {
                     [`${interaction.user.id}`]: reviewObject,
                 };
 
                 Object.assign(db_song_obj, new_user_obj);
-                db.reviewDB.set(artistArray[i], db_song_obj, `${setterEpName}"]`);
+                db.reviewDB.set(artistArray[i], db_song_obj, `${setterEpName}`);
                 if (art != undefined && art != false && art != null && !art.includes('avatar')) {
                     db.reviewDB.set(artistArray[i], art, `${setterEpName}.art`);
                 }

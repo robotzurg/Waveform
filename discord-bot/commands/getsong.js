@@ -33,8 +33,8 @@ module.exports = {
         let song = interaction.options.getString('song_name');
         let remixers = interaction.options.getString('remixers');
         let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
-        if (song_info == -1) {
-            await interaction.reply('Waveform ran into an issue pulling up song data.');
+        if (song_info.error != undefined) {
+            await interaction.reply(song_info.error);
             return;
         }
 
@@ -52,6 +52,13 @@ module.exports = {
         songObj = db.reviewDB.get(artistArray[0])[songName];
         if (songObj == undefined) { return interaction.reply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
         `\nUse \`/getArtist\` to get a full list of this artist's songs.`); }
+
+        // See if we have any VIPs
+        let artistSongs = Object.keys(db.reviewDB.get(artistArray[0]));
+        let songVIP = false;
+        for (let s of artistSongs) {
+            if (s.includes('VIP') && s.includes(songName)) songVIP = s;
+        }
 
         songEP = songObj.ep;
         remixArray = songObj.remixers;
@@ -83,7 +90,7 @@ module.exports = {
                 let rating;
                 let ratingDisplay;
                 let starred = false;
-                rating = songObj[userArray[i]].ratin;
+                rating = songObj[userArray[i]].rating;
                 if (songObj[userArray[i]].starred == true) {
                     starCount++;
                     starred = true;
@@ -129,6 +136,7 @@ module.exports = {
         }
 
         if (remixes.length != 0) songEmbed.addFields([{ name: 'Remixes:', value: remixes.join('\n') }]);
+        if (songVIP != false) songEmbed.addFields([{ name: 'VIP:', value: `\`${songVIP}\`` }]);
 
         if (songArt == false) {
             songEmbed.setThumbnail(interaction.user.avatarURL({ extension: "png" }));
@@ -150,8 +158,7 @@ module.exports = {
 
         for (let i = 0; i < userIDList.length; i++) {
             taggedMemberSel = await interaction.guild.members.fetch(userIDList[i])
-            // eslint-disable-next-line no-unused-vars
-            .catch(x => taggedMemberSel = 'Invalid Member (They have left the server)');
+            .catch(() => taggedMemberSel = 'Invalid Member (They have left the server)');
             if (taggedMemberSel != 'Invalid Member (They have left the server)') {
                 taggedUserSel = taggedMemberSel.user;
             }

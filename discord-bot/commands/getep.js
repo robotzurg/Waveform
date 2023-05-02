@@ -25,8 +25,8 @@ module.exports = {
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('ep_name');
             let song_info = await parse_artist_song_data(interaction, artists, ep);
-            if (song_info == -1) {
-                await interaction.reply('Waveform ran into an issue pulling up song data.');
+            if (song_info.error != undefined) {
+                await interaction.reply(song_info.error);
                 return;
             }
 
@@ -49,13 +49,13 @@ module.exports = {
             let epRankArray = [];
             let songRankArray = [];
             let rating;
-            let epSongArray = epObj.songs;
+            let epSongArray = epObj.songs == undefined ? [] : epObj.songs;
 
             await create_ep_review(interaction, client, origArtistArray, epSongArray, epName, ep_art);
 
             const epEmbed = new EmbedBuilder()
                 .setColor(`${interaction.member.displayHexColor}`)
-                .setTitle(`${origArtistArray} - ${epName} tracks`)
+                .setTitle(`${origArtistArray} - ${epName}`)
                 .setThumbnail(ep_art);
 
                 let reviewNum = Object.keys(db.reviewDB.get(artistArray[0])[epName]);

@@ -134,10 +134,10 @@ module.exports = {
         }
 
         let song_info = await parse_artist_song_data(interaction, artists, song, rmxArtistArray, vocalistArray);
-        if (song_info == -1) {
-            await interaction.editReply('Waveform ran into an issue pulling up song data.');
+        if (song_info.error != undefined) {
+            await interaction.reply(song_info.error);
             return;
-        } 
+        }
 
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
@@ -703,12 +703,12 @@ module.exports = {
                         }
 
                         db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
-                        await hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
+                        hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                     }
 
                     // Fix artwork on all reviews for this song
                     if (songArt != false && db.reviewDB.has(artistArray[0])) {
-                        await update_art(interaction, artistArray[0], songName, songArt);
+                        update_art(interaction, artistArray[0], songName, songArt);
                     }
 
                     // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
