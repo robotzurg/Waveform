@@ -22,11 +22,11 @@ module.exports = {
                     .setDescription('Your review of the song')
                     .setRequired(false))
 
-            .addStringOption(option => 
-                option.setName('tag')
-                    .setDescription('Put a tag you want to set the song to here!')
-                    .setAutocomplete(true)
-                    .setRequired(false))
+            // .addStringOption(option => 
+            //     option.setName('tag')
+            //         .setDescription('Put a tag you want to set the song to here!')
+            //         .setAutocomplete(true)
+            //         .setRequired(false))
 
             .addUserOption(option => 
                 option.setName('user_who_sent')
