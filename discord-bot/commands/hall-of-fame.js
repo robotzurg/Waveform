@@ -1,4 +1,4 @@
-const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle, MessageCollector } = require('discord.js');
+const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle } = require('discord.js');
 const db = require('../db.js');
 const { get_user_reviews } = require('../func.js');
 const _ = require('lodash');
@@ -111,30 +111,7 @@ module.exports = {
             return b.star_count - a.star_count;
         });
 
-        if (listView == true) {
-            row = new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('left')
-                    .setStyle(ButtonStyle.Primary)
-                    .setEmoji('⬅️'),
-                new ButtonBuilder()
-                    .setCustomId('right')
-                    .setStyle(ButtonStyle.Primary)
-                    .setEmoji('➡️'),
-            );
-
-            hofList = hofList.map(v => `-  \`${v.star_count}⭐\` **[${v.name}](https://www.google.com)**`);
-            pagedHofList = _.chunk(hofList, 10);
-
-            hofCommandEmbed = new EmbedBuilder()
-                .setColor(`#ffff00`)
-                .setTitle(`Hall of Fame for ${interaction.guild.name}`)
-                .setDescription(pagedHofList[0].join('\n'))
-                .setFooter({ text: `Page 1 / ${pagedHofList.length}` });
-        } else {
-            // If list view is false
-            row = new ActionRowBuilder()
+        row = new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId('left')
@@ -150,6 +127,17 @@ module.exports = {
                     .setEmoji('➡️'),
             );
 
+        if (listView == true) {
+            hofList = hofList.map(v => `-  \`${v.star_count}⭐\` **[${v.name}](https://www.google.com)**`);
+            pagedHofList = _.chunk(hofList, 10);
+
+            hofCommandEmbed = new EmbedBuilder()
+                .setColor(`#ffff00`)
+                .setTitle(`Hall of Fame for ${interaction.guild.name}`)
+                .setThumbnail(interaction.guild.iconURL())
+                .setDescription(pagedHofList[0].join('\n'))
+                .setFooter({ text: `Page 1 / ${pagedHofList.length}` });
+        } else {
             hofCommandEmbed = new EmbedBuilder()
                 .setColor(`#ffff00`)
                 .setTitle(hofList[0].name)
@@ -183,7 +171,8 @@ module.exports = {
                             .setColor(`#ffff00`)
                             .setTitle(`Hall of Fame for ${interaction.guild.name}`)
                             .setDescription(pagedHofList[page_num].join('\n'))
-                            .setFooter({ text: `Page 1 / ${pagedHofList.length}` });
+                            .setThumbnail(interaction.guild.iconURL())
+                            .setFooter({ text: `Page ${page_num + 1} / ${pagedHofList.length}` });
                     } else {
                         hofCommandEmbed = new EmbedBuilder()
                             .setColor(`#ffff00`)
@@ -207,7 +196,8 @@ module.exports = {
                         .setColor(`#ffff00`)
                         .setTitle(`Hall of Fame for ${interaction.guild.name}`)
                         .setDescription(pagedHofList[page_num].join('\n'))
-                        .setFooter({ text: `Page 1 / ${pagedHofList.length}` });
+                        .setThumbnail(interaction.guild.iconURL())
+                        .setFooter({ text: `Page ${page_num + 1} / ${pagedHofList.length}` });
                 } else {
                     hofCommandEmbed = new EmbedBuilder()
                         .setColor(`#ffff00`)
