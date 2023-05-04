@@ -179,13 +179,6 @@ client.on('interactionCreate', async interaction => {
                     artist_remixers = artist_remixers.map(v => v = { name: v, value: v });
                     interaction.respond(artist_remixers);
                 }
-            } else if (focused[0].name == 'tag') {
-                let tag_list = db.tags.keyArray();
-                tag_list = tag_list.reverse();
-                tag_list = tag_list.filter(letter_filter);
-                if (tag_list.length > 25) tag_list = tag_list.slice(tag_list.length - 25, tag_list.length);
-                tag_list = tag_list.map(v => v = { name: v, value: v });
-                interaction.respond(tag_list);
             }
         } catch (err) {
             console.error(err);

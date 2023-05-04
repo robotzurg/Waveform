@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { parse_artist_song_data, hall_of_fame_check, handle_error, find_review_channel } = require('../func.js');
+const { parse_artist_song_data, handle_error, find_review_channel } = require('../func.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -38,12 +38,9 @@ module.exports = {
         }
         
         let origArtistArray = song_info.prod_artists;
-        let origSongName = song_info.song_name;
         let songName = song_info.song_name;
         let artistArray = song_info.all_artists;
-        let rmxArtistArray = song_info.remix_artists;
         let vocalistArray = song_info.vocal_artists;
-        let songArt;
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
 
@@ -58,12 +55,6 @@ module.exports = {
 
         let star_check = songReviewObj.starred;
         if (star_check == undefined) star_check = false;
-
-        if (songObj.art != false) {
-            songArt = songObj.art;
-        } else {
-            songArt = interaction.user.avatarURL({ extension: "png" });
-        }
 
         for (let i = 0; i < artistArray.length; i++) {
             if (star_check == true) {
@@ -82,14 +73,6 @@ module.exports = {
             db.user_stats.remove(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
             interaction.reply(`Unstarred **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }**.`);
         }
-        
-        // Hall of Fame stuff
-        // Create display song name variable
-        let displaySongName = (`${origSongName}` + 
-        `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` +
-        `${(rmxArtistArray.length != 0) ? ` (${rmxArtistArray.join(' & ')} Remix)` : ``}`);
-   
-        await hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt, true);
 
         let msgtoEdit = songReviewObj.msg_id;
 

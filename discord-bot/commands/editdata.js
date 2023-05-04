@@ -5,7 +5,7 @@ const { EmbedBuilder, SlashCommandBuilder, ButtonBuilder, ActionRowBuilder, Butt
 module.exports = {
 	data: new SlashCommandBuilder()
 		.setName('editdata')
-		.setDescription('Edit metadata of music or tags in the database.')
+		.setDescription('Edit metadata of music or artists in the database.')
         .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand.setName('song')
@@ -57,17 +57,9 @@ module.exports = {
                 option.setName('artist')
                     .setDescription('The name of the artist.')
                     .setAutocomplete(true)
-                    .setRequired(false)))
-        .addSubcommand(subcommand =>
-            subcommand.setName('tag')
-            .setDescription('Edit the metadata of a tag.')
-            .addStringOption(option => 
-                option.setName('tag')
-                    .setDescription('The name of the tag.')
-                    .setAutocomplete(true)
                     .setRequired(false))),
     help_desc: `Allows you to edit the metadata of a song, or an EP/LP, or an artist in the database, depending on which subcommand you use.\n` + 
-    `Editable data includes collaborators, vocalists, remixers, song name, tags, and remixers.\n\n` +
+    `Editable data includes collaborators, vocalists, remixers, song name, and remixers.\n\n` +
     `Leaving the artist and song name arguments blank will pull from currently playing song on Spotify, if you are logged in to Waveform with Spotify.\n\n` +
     `Not currently functional due to being unfinished.`,
 	async execute(interaction) {
@@ -99,10 +91,6 @@ module.exports = {
         let songArt = songObj.art != undefined ? songObj.art : false;
         let songType = songName.includes('Remix') ? 'Remix' : 'Single';
         let remixers = songObj.remixers;
-        let tagsArray = songObj.tags != undefined ? songObj.tags : [];
-        if (tagsArray.includes(null)) {
-            tagsArray = [];
-        }
         let epFrom = songObj.ep;
         let userArray = get_user_reviews(songObj);
 
@@ -135,9 +123,6 @@ module.exports = {
                 new ButtonBuilder()
                     .setCustomId('song_name').setLabel('Song Name')
                     .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
-                new ButtonBuilder()
-                    .setCustomId('tags').setLabel('Tags')
-                    .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
             ),
         ];
 
@@ -169,7 +154,6 @@ module.exports = {
             { name: 'Remixers:', value: `${remixers.length != 0 ? remixers.join('\n') : `N/A`}`, inline: true },
             { name: 'Song Name:', value: `${songName}`, inline: true },
             { name: 'Song Type:', value: `${songType}`, inline: true },
-            { name: 'Tags:', value: `${tagsArray.length != 0 ? `${tagsArray.join('\n')}` : `N/A`}`, inline: true },
         );
 
         if (userArray.length != 0) {
@@ -225,23 +209,6 @@ module.exports = {
         );
         let vocalist_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
 
-        let t_select_options = [];
-        for (let j = 0; j < tagsArray.length; j++) {
-            v_select_options.push({
-                label: `${tagsArray[j]}`,
-                description: `Select this to remove ${tagsArray[j]} as a tag on the song.`,
-                value: `${tagsArray[j]}`,
-            });
-        }
-        let tagRemoveSelect = new ActionRowBuilder()
-        .addComponents(
-            new StringSelectMenuBuilder()
-                .setCustomId('tags_remove_sel')
-                .setPlaceholder('Tags')
-                .addOptions(t_select_options),
-        );
-        let tag_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
-
         menu_collector.on('collect', async i => {
             if (i.customId == 'confirm') {
                 mode = 'main';
@@ -250,7 +217,6 @@ module.exports = {
                 adjustButtons.components[1].setDisabled(false);
                 await artist_r_collector.stop();
                 await vocalist_r_collector.stop();
-                await tag_r_collector.stop();
                 await msg_collector.stop();
                 i.update({ content: ' ', embeds: [editEmbed], components: [editButtons[0], editButtons[1]] });
             }
@@ -473,81 +439,6 @@ module.exports = {
                         msg.delete();
                     }
                 });
-            } else if (i.customId == 'tags' || ((i.customId == 'add' || i.customId == 'remove') && mode == 'tags')) {
-                mode = 'tags';
-                adjustButtons.components[1].setDisabled(tagsArray.length == 0);
-                tag_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
-                msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
-                if (i.customId == 'tags') {
-                    await i.update({ 
-                        content: `**Would you like to add or remove tags from ${origArtistArray.join(' & ')} - ${displaySongName}?**`,
-                        embeds: [], 
-                        components: [adjustButtons],
-                    });
-                } else {
-                    if (i.customId == 'add') { // If we are adding data
-                        mode = 'tags_add';
-                        await i.update({ 
-                            content: `**Type in the name of the tags you would like to add one by one. When you are finished, press confirm.**\n` +
-                            `__**Tags:**__\n\`\`\`\n${tagsArray.length != 0 ? tagsArray.join('\n') : ' '}\`\`\``,
-                            embeds: [], 
-                            components: [confirmButton],
-                        });
-
-                        msg_collector.on('collect', async msg => {
-                            if (mode == 'tags_add') {
-                                if (!tagsArray.includes(msg.content)) {
-                                    tagsArray.push(msg.content);
-
-                                    // Update select menu options
-                                    t_select_options.push({
-                                        label: `${msg.content}`,
-                                        description: `Select this to remove ${msg.content} as a tag on the song.`,
-                                        value: `${msg.content}`,
-                                    });
-                                    tagRemoveSelect.components[0].setOptions(t_select_options);
-
-                                    // Update the embed
-                                    editEmbed.data.fields[5].value = tagsArray.join('\n');
-                                    await i.editReply({ 
-                                        content: `**Type in the name of the Tags you would like to add, one by one. When you are finished, press confirm.**\n` +
-                                        `__**Tags:**__\n\`\`\`\n${tagsArray.length != 0 ? tagsArray.join('\n') : ' '}\`\`\``,
-                                    });
-                                }
-                                await msg.delete();
-                            }
-                        });
-                    } else if (i.customId == 'remove') { // If we are removing data
-                        mode = 'tags_remove';
-                        await i.update({ 
-                            content: `**Select tags that you would like to remove, one by one in the select menu. When you are finished, press confirm.**`,
-                            embeds: [], 
-                            components: [tagRemoveSelect, confirmButton],
-                        });
-
-                        tag_r_collector.on('collect', async sel => {
-                            if (sel.customId == 'tags_remove_sel') {
-                                tagsArray = tagsArray.filter(v => v != sel.values[0]);
-
-                                editEmbed.data.fields[5].value = tagsArray.length != 0 ? tagsArray.join('\n') : 'N/A';
-                                t_select_options = t_select_options.filter(v => v.label != sel.values[0]);
-                                tagRemoveSelect.components[0].setOptions(t_select_options);
-                                if (tagsArray.length == 0) {
-                                    sel.update({
-                                        content: `**No tags left to remove, click confirm to return back to the main menu.**`,
-                                        components: [confirmButton],
-                                    });
-                                } else {
-                                    sel.update({
-                                        content: `**Select tags that you would like to remove, one by one in the select menu. When you are finished, press confirm.**\n` +
-                                        `Successfully removed **${sel.values[0]}**.`,
-                                        components: [tagRemoveSelect, confirmButton],
-                                    });
-                                }
-                            }
-                        });
-                    }
-                }
             }
         });
 

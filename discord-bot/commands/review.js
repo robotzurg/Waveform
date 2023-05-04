@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { update_art, review_song, hall_of_fame_check, handle_error, find_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup } = require('../func.js');
+const { update_art, review_song, handle_error, find_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup } = require('../func.js');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle, Embed } = require('discord.js');
 require('dotenv').config();
 
@@ -21,12 +21,6 @@ module.exports = {
                 option.setName('review')
                     .setDescription('Your review of the song')
                     .setRequired(false))
-
-            // .addStringOption(option => 
-            //     option.setName('tag')
-            //         .setDescription('Put a tag you want to set the song to here!')
-            //         .setAutocomplete(true)
-            //         .setRequired(false))
 
             .addUserOption(option => 
                 option.setName('user_who_sent')
@@ -70,12 +64,6 @@ module.exports = {
                     .setDescription('Put remixers here, if you reviewing a remix of the original song. (NOT IN ARTISTS ARGUMENT)')
                     .setAutocomplete(true)
                     .setRequired(false))
-
-            /*.addStringOption(option => 
-                option.setName('tag')
-                    .setDescription('Put a tag you want to set the song to here!')
-                    .setAutocomplete(true)
-                    .setRequired(false))*/
 
             .addUserOption(option => 
                 option.setName('user_who_sent')
@@ -153,7 +141,6 @@ module.exports = {
         if (rating == null) rating = false;
         let review = interaction.options.getString('review');
         if (review == null) review = false;
-        let tag = interaction.options.getString('tag');
         let songArt = interaction.options.getString('art');
         let user_who_sent = interaction.options.getUser('user_who_sent');
         let mailbox_data = false;
@@ -511,24 +498,7 @@ module.exports = {
                     }
 
                     // Review the song
-                    await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, ep_name, tag);
-
-                    // Deal with tags
-                    if (tag != null) {
-                        if (db.tags.has(tag)) {
-                            db.tags.push(tag, {
-                                artists: artistArray,
-                                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
-                                name: songName,
-                            }, 'song_list');
-                        } else {
-                            db.tags.set(tag, [{
-                                artists: artistArray,
-                                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
-                                name: songName,
-                            }], 'song_list');
-                        }
-                    }
+                    await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, ep_name);
 
                     // Edit the EP embed
                     await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
@@ -642,7 +612,6 @@ module.exports = {
                             }
 
                             db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
-                            hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                         }
                     }).catch((err) => {
                         handle_error(interaction, err);
@@ -669,28 +638,11 @@ module.exports = {
                     await i.update({ content: null, embeds: [reviewEmbed], components: [] });
 
                     // Review the song
-                    await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, false, tag);
+                    await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt, taggedUser.id, false);
 
                     // Update user stats
                     db.user_stats.set(interaction.user.id, `${artistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
                     const msg = await interaction.fetchReply();
-
-                    // Setup tags if necessary
-                    if (tag != null) {
-                        if (db.tags.has(tag)) {
-                            db.tags.push(tag, {
-                                artists: artistArray,
-                                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
-                                name: songName,
-                            }, 'song_list');
-                        } else {
-                            db.tags.set(tag, [{
-                                artists: artistArray,
-                                remix_artists: rmxArtistArray, // For if this song is a remix, these will be the main artists on the track.
-                                name: songName,
-                            }], 'song_list');
-                        }
-                    }
 
                     // Setting the message id and url for the message we just sent
                     for (let ii = 0; ii < artistArray.length; ii++) {
@@ -705,7 +657,6 @@ module.exports = {
                         }
 
                         db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
-                        hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                     }
 
                     // Fix artwork on all reviews for this song

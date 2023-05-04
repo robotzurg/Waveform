@@ -386,7 +386,7 @@ module.exports = {
             }
     },
 
-    review_song: function(interaction, artistArray, origArtistArray, song, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt = false, user_who_sent, ep_name, tag) {
+    review_song: function(interaction, artistArray, origArtistArray, song, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt = false, user_who_sent, ep_name) {
 
         if (user_who_sent == undefined || user_who_sent == null) {
             user_who_sent = false;
@@ -420,10 +420,8 @@ module.exports = {
                     art: songArt,
                     collab: (rmxArtistArray.length == 0) ? artistArray.filter(word => !rmxArtistArray.includes(word) && artistArray[i] != word) : origArtistArray, 
                     vocals: vocalistArray,
-                    hof_id: false,
                     ep: ep_name,
                     review_num: 1,
-                    tags: (tag == null ? [] : [tag]),
                 },
             };
 
@@ -457,12 +455,7 @@ module.exports = {
                 if (vocalistArray.length != 0 && vocalistArray != songObj.vocals) {
                     db.reviewDB.set(artistArray[i], vocalistArray, `${setterSongName}.vocals`);
                 }
-                
-                if (tag != null && songObj.tags != undefined) {
-                    db.reviewDB.push(artistArray[i], tag, `${setterSongName}.tags`);
-                } else if (tag != null) {
-                    db.reviewDB.set(artistArray[i], [tag], `${setterSongName}.tags`);
-                }
+
             } else if (review_object.name != undefined) { // Otherwise if you have no review but the song and artist objects exist
 
                 const songObj = db.reviewDB.get(artistArray[i])[songName];
@@ -481,11 +474,6 @@ module.exports = {
                     db.reviewDB.set(artistArray[i], vocalistArray, `${setterSongName}.vocals`);
                 }
 
-                if (tag != null && songObj.tags != undefined) {
-                    db.reviewDB.push(artistArray[i], tag, `${setterSongName}.tags`);
-                } else if (tag != null) {
-                    db.reviewDB.set(artistArray[i], [tag], `${setterSongName}.tags`);
-                }
             }
 
         }
@@ -503,10 +491,8 @@ module.exports = {
                         art: false,
                         collab: origArtistArray.filter(word => origArtistArray[i] != word), // Filter out the specific artist in question
                         vocals: vocalistArray,
-                        hof_id: false,
                         ep: ep_name,
                         review_num: 0,
-                        tags: [],
                     },
                 };
 
@@ -539,10 +525,8 @@ module.exports = {
                         art: false,
                         collab: origArtistArray, // Filter out the specific artist in question
                         vocals: vocalistArray,
-                        hof_id: false,
                         ep: ep_name,
                         review_num: 0,
-                        tags: [],
                     },
                 };
 
@@ -625,63 +609,6 @@ module.exports = {
                     db.reviewDB.set(artistArray[i], art, `${setterEpName}.art`);
                 }
             }
-        }
-    },
-
-    hall_of_fame_check: function(interaction, artistArray, origArtistArray, songName, displaySongName, songArt, check_to_remove) {
-        
-        const { get_user_reviews, handle_error } = require('./func.js');
-
-        const songObj = db.reviewDB.get(artistArray[0])[songName];
-        // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
-        let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
-        let star_array = [];
-        let star_count = 0;
-        let userArray = get_user_reviews(songObj);
-
-        for (let i = 0; i < userArray.length; i++) {
-            let star_check;
-            star_check = songObj[userArray[i]].starred;
-
-            if (star_check == true) {
-                star_count++;
-                star_array.push(`:star2: <@${userArray[i]}>`);
-            }
-        }
-
-        // Add to the hall of fame channel!
-        if (star_count >= db.server_settings.get(interaction.guild.id, 'star_cutoff')) {
-            const hofChannel = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel').slice(0, -1).slice(2));
-            const hofEmbed = new EmbedBuilder()
-            .setColor(`#FFFF00`)
-            .setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`)
-            .setDescription(`:star2: **This song currently has ${star_count} stars!** :star2:`)
-            .addFields([{ name: 'Starred Reviews:', value: star_array.join('\n') }])
-            .setImage(songArt);
-            hofEmbed.setFooter({ text: `Use /getsong to get more details about this song!` });
-
-            if (!db.hall_of_fame.has(songName)) {
-                hofChannel.send({ embeds: [hofEmbed] }).then(hof_msg => {
-                    db.hall_of_fame.set(songName, hof_msg.id);
-                    for (let i = 0; i < artistArray.length; i++) {
-                        db.reviewDB.set(artistArray[i], hof_msg.id, `${setterSongName}.hof_id`);
-                    }
-                }).catch((err) => {
-                    handle_error(interaction, err);
-                });
-            } else {
-                hofChannel.messages.fetch(`${db.hall_of_fame.get(songName)}`).then(hof_msg => {
-                    hof_msg.edit({ embeds: [hofEmbed] });
-                }).catch((err) => {
-                    handle_error(interaction, err);
-                });
-            }
-        } else if (check_to_remove == true && songObj.hof_id != false && songObj.hof_id != undefined) {
-            const hofChannel = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel').slice(0, -1).slice(2));
-            hofChannel.messages.fetch(`${db.hall_of_fame.get(songName)}`).then(msg => {
-                msg.delete();
-                db.hall_of_fame.delete(songName);
-            }).catch(() => {});
         }
     },
 
@@ -831,7 +758,6 @@ module.exports = {
                         art: ep_art,
                         collab: origArtistArray.filter(word => origArtistArray[i] != word),
                         songs: songArray,
-                        tags: [],
                     },
                 };
             } else {
