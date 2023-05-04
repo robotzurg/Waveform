@@ -76,7 +76,7 @@ module.exports = {
         interaction.reply({ content: null, embeds: [helpEmbed], components: [help_buttons] });
 
         const help_collector = interaction.channel.createMessageComponentCollector({ componentType: ComponentType.Button });
-        const cmd_collector = interaction.channel.createMessageComponentCollector({ componentType: ComponentType.SelectMenu });
+        const cmd_collector = interaction.channel.createMessageComponentCollector({ componentType: ComponentType.StringSelect });
 
         help_collector.on('collect', i => {
             let sel = i.customId;
