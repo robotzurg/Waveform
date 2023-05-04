@@ -65,9 +65,6 @@ module.exports = {
         if (remixArray == undefined) {
             remixArray = [];
         }
-        let tags = songObj.tags;
-        if (tags == undefined || tags.includes(null)) tags = [];
-        tags = [tags].flat(1);
 
         if (remixArray.length != 0) {
             for (let i = 0; i < remixArray.length; i++) {
@@ -146,9 +143,6 @@ module.exports = {
 
         if (songEP != false) {
             songEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0])[songEP].art });
-            if (tags.length != 0) songEmbed.addFields([{ name: 'Tags:', value: `\`${tags.join(', ')}\`` }]);
-        } else if (tags.length != 0) {
-            songEmbed.setFooter({ text: `Tags: ${tags.join(', ')}` });
         }
 
         // Button/Select Menu setup

@@ -26,7 +26,6 @@ module.exports = {
 
         if (!db.server_settings.has(interaction.guild.id)) {
             db.server_settings.set(interaction.guild.id, {
-                "hall_of_fame_channel": `<#${interaction.channel.id}>`,
                 "review_channel": `<#${interaction.channel.id}>`,
                 "review_filter": false,
                 "star_cutoff": 3,
@@ -36,7 +35,6 @@ module.exports = {
 
         if (config == null && value == null) {
             const reviewChannel = db.server_settings.get(interaction.guild.id, 'review_channel');
-            const hofChannel = db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel');
             const reviewFilter = db.server_settings.get(interaction.guild.id, 'review_filter');
             const starCutoff = db.server_settings.get(interaction.guild.id, 'star_cutoff');
 
@@ -46,7 +44,6 @@ module.exports = {
             .addFields([
                 { name: 'Review Channel:', value: reviewChannel },
                 { name: 'Review Chat Filter:', value: `${reviewFilter}` },
-                { name: 'Hall of Fame Channel:', value: hofChannel },
                 { name: 'Star Cutoff for Hall of Fame:', value: `\`${starCutoff} ⭐\`` },
             ])
             .setFooter({ text: `Config for ${interaction.guild.name}`, iconURL: interaction.guild.iconURL() });
@@ -58,12 +55,6 @@ module.exports = {
                 if (!value.includes('#')) return interaction.reply('This config must be a channel.');
                 db.server_settings.set(interaction.guild.id, value, 'review_channel');
                 return interaction.reply(`Successfully changed the review channel to ${value}.`);
-
-            } else if (config == 'HFC') {
-
-                if (!value.includes('#')) return interaction.reply('This config must be a channel.');
-                db.server_settings.set(interaction.guild.id, value, 'hall_of_fame_channel');
-                return interaction.reply(`Successfully changed the hall of fame channel to ${value}.`);
 
             } else if (config == 'RCF') {
 

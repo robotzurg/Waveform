@@ -130,31 +130,6 @@ module.exports = {
                     }
                 });
             }
-
-            if (db.hall_of_fame.has(songName)) {
-               msgstoEdit = [db.hall_of_fame.get(songName)];
-
-                if (msgstoEdit.length > 0) { 
-                    let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'hall_of_fame_channel').slice(0, -1).slice(2));
-
-                    forAsync(msgstoEdit, function(item) {
-                        return new Promise(function(resolve) {
-                            let msgtoEdit = item;
-                            let msgEmbed;
-
-                            channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                msgEmbed = EmbedBuilder.from(msg.embeds[0]);
-                                msgEmbed.image.url = songArt;
-                                msg.edit({ embeds: [msgEmbed] });
-                                resolve();
-                            }).catch(err => {
-                                handle_error(interaction, err);
-                            });
-                        });
-                    });
-                }
-
-            }
         }
 
         let displayEmbed = new EmbedBuilder()

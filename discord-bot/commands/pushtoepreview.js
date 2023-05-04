@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { parse_artist_song_data, handle_error, hall_of_fame_check, find_review_channel, spotify_api_setup } = require('../func.js');
+const { parse_artist_song_data, handle_error, find_review_channel, spotify_api_setup } = require('../func.js');
 const { ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle, Embed, EmbedBuilder } = require('discord.js');
 
 module.exports = {
@@ -233,7 +233,6 @@ module.exports = {
                     }
 
                     db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
-                    hall_of_fame_check(interaction, artistArray, origArtistArray, songName, displaySongName, songArt);
                 }
             }).catch((err) => {
                 handle_error(interaction, err);
