@@ -92,6 +92,9 @@ module.exports = {
             }
         }
 
+        // Reverse the list so its in reverse chronological order
+        hofList.reverse();
+
         let page_num = 0;
         const row = new ActionRowBuilder()
         .addComponents(
