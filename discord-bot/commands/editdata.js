@@ -38,7 +38,7 @@ module.exports = {
                     .setDescription('The name of remixers of the song.')
                     .setRequired(false)))
         .addSubcommand(subcommand =>
-            subcommand.setName('ep_lp')
+            subcommand.setName('ep-lp')
             .setDescription('Edit the metadata of an EP/LP in the database.')
             .addStringOption(option => 
                 option.setName('artist')
@@ -69,6 +69,7 @@ module.exports = {
         let origArtistArray = interaction.options.getString('artist');
         let songName = interaction.options.getString('song_name');
         let rmxArtistArray = interaction.options.getString('remixers');
+        let subCommand = interaction.options.getSubcommand();
 
         let song_info = await parse_artist_song_data(interaction, origArtistArray, songName, rmxArtistArray);
         if (song_info.error != undefined) {
@@ -77,20 +78,24 @@ module.exports = {
         }
 
         origArtistArray = song_info.prod_artists;
+        let oldOrigArtistArray = origArtistArray;
         songName = song_info.song_name;
+        let oldSongName = songName;
         let artistArray = song_info.all_artists;
         rmxArtistArray = song_info.remix_artists;
         let vocalistArray = song_info.vocal_artists;
         let displaySongName = song_info.display_song_name;
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         // eslint-disable-next-line no-unused-vars
+        let setterOldSongName = songName.includes('.') ? `["${songName}"]` : songName;
         let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
         
         let songObj = db.reviewDB.get(artistArray[0])[songName];
-        if (songObj == undefined) return interaction.reply(`The song ${origArtistArray.join(' & ')} - ${displaySongName} is not in the database.`);
+        if (songObj == undefined) return interaction.reply(`The song \`${origArtistArray.join(' & ')} - ${displaySongName}\` is not in the database.`);
         let songArt = songObj.art != undefined ? songObj.art : false;
         let songType = songName.includes('Remix') ? 'Remix' : 'Single';
         let remixers = songObj.remixers;
+        let oldRemixers = remixers;
         let epFrom = songObj.ep;
         let userArray = get_user_reviews(songObj);
 
@@ -104,8 +109,25 @@ module.exports = {
             }
         }
 
-        // Setup buttons
-        const editButtons = [
+        let databaseButtons = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('finish').setLabel('Finish Editing')
+                .setStyle(ButtonStyle.Success).setEmoji('✅'),
+            new ButtonBuilder()
+                .setCustomId('undo').setLabel('Undo Changes')
+                .setStyle(ButtonStyle.Danger),
+        );
+
+        let deleteButton = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('delete').setLabel('Delete From Database')
+                .setStyle(ButtonStyle.Success).setEmoji('✅'),
+        );
+
+        // Setup button rows
+        let songEditButtons = [
             new ActionRowBuilder()
             .addComponents(
                 new ButtonBuilder()
@@ -116,21 +138,31 @@ module.exports = {
                     .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
                 new ButtonBuilder()
                     .setCustomId('remixers').setLabel('Remixers')
-                    .setStyle(ButtonStyle.Secondary).setEmoji('📝').setDisabled(true),
-            ),
-            new ActionRowBuilder()
-            .addComponents(
+                    .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
                 new ButtonBuilder()
                     .setCustomId('song_name').setLabel('Song Name')
                     .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
             ),
+            databaseButtons,
+            deleteButton,
         ];
+        let editButtons = songEditButtons;
 
         let confirmButton = new ActionRowBuilder()
         .addComponents(
             new ButtonBuilder()
                 .setCustomId('confirm').setLabel('Confirm')
                 .setStyle(ButtonStyle.Success),
+        );
+
+        let warningButtons = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('yes').setLabel('Yes')
+                .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+                .setCustomId('no').setLabel('No')
+                .setStyle(ButtonStyle.Danger),
         );
 
         let adjustButtons = new ActionRowBuilder()
@@ -209,6 +241,23 @@ module.exports = {
         );
         let vocalist_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
 
+        let r_select_options = [];
+        for (let i = 0; i < remixers.length; i++) {
+            r_select_options.push({
+                label: `${remixers[i]}`,
+                description: `Remove ${remixers[i]} as a remixer.`,
+                value: `${remixers[i]}`,
+            });
+        }
+        let remixerRemoveSelect = new ActionRowBuilder()
+        .addComponents(
+            new StringSelectMenuBuilder()
+                .setCustomId('remixers_remove_sel')
+                .setPlaceholder('Remixers')
+                .addOptions(r_select_options),
+        );
+        let remixer_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
+
         menu_collector.on('collect', async i => {
             if (i.customId == 'confirm') {
                 mode = 'main';
@@ -217,7 +266,8 @@ module.exports = {
                 adjustButtons.components[1].setDisabled(false);
                 await artist_r_collector.stop();
                 await vocalist_r_collector.stop();
-                await msg_collector.stop();
+                await remixer_r_collector.stop();
+                if (msg_collector != undefined) await msg_collector.stop();
                 i.update({ content: ' ', embeds: [editEmbed], components: [editButtons[0], editButtons[1]] });
             }
 
@@ -262,14 +312,6 @@ module.exports = {
                                     editEmbed.data.fields[1].value = vocalistArray.length != 0 ? vocalistArray.join('\n') : `N/A`;
                                     editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
 
-                                    // Edit the database
-                                    songObj = db.reviewDB.get(origArtistArray[0], `${setterSongName}`);
-                                    db.reviewDB.set(msg.content, songObj, `${setterSongName}`);
-
-                                    for (let j = 0; j < origArtistArray.length; j++) {
-                                        db.reviewDB.set(origArtistArray[j], origArtistArray.filter(v => v != origArtistArray[j]), `${setterSongName}.collab`);
-                                    }
-
                                     // Update message
                                     await i.editReply({ 
                                         content: `**Type in the name of the artists you would like to add, one by one. When you are finished, press confirm.**\n` +
@@ -306,15 +348,6 @@ module.exports = {
                                 if (origArtistArray.length == 1) {
                                     artistRemoveSelect.components[0].setDisabled(true);
                                     artistRemoveSelect.components[0].setPlaceholder(`1 artist left: ${origArtistArray[0]}`);
-                                }
-
-                                // Edit the database
-                                let artistObj = db.reviewDB.get(sel.values[0]);
-                                delete artistObj[`${songName}`];
-                                db.reviewDB.set(sel.values[0], artistObj);
-
-                                for (let j = 0; j < origArtistArray.length; j++) {
-                                    db.reviewDB.set(origArtistArray[j], origArtistArray.filter(v => v != origArtistArray[j]), `${setterSongName}.collab`);
                                 }
 
                                 sel.update({
@@ -413,7 +446,38 @@ module.exports = {
                     }
                 }
             } else if (i.customId == 'remixers' || ((i.customId == 'add' || i.customId == 'remove') && mode == 'remixers')) {
-                // TODO: Add support for this later
+                remixer_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
+                mode = 'remixers_remove';
+                await i.update({ 
+                    content: `**Select remixers whose remixes you would like to remove, one by one in the select menu. When you are finished, press confirm.**\n` +
+                    `**NOTE: This will delete ALL reviews of that remix at once. Make sure you want to do this!**`,
+                    embeds: [], 
+                    components: [remixerRemoveSelect, confirmButton],
+                });
+
+                remove_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
+                remove_collector.on('collect', async sel => {
+                    if (sel.customId == 'remixers_remove_sel') {
+                        remixers = remixers.filter(v => v != sel.values[0]);
+
+                        editEmbed.data.fields[2].value = remixers.length != 0 ? remixers.join('\n') : 'N/A';
+                        r_select_options = r_select_options.filter(v => v.label != sel.values[0]);
+                        remixerRemoveSelect.components[0].setOptions(r_select_options);
+                        if (remixers.length == 0) {
+                            sel.update({
+                                content: `**No remixers left to remove, click confirm to return back to the main menu.**`,
+                                components: [confirmButton],
+                            });
+                        } else {
+                            sel.update({
+                                content: `**Select remixers that you would like to remove, one by one in the select menu. When you are finished, press confirm.**\n` +
+                                `**NOTE: This will delete ALL reviews of that remix at once. Make sure you want to do this!**\n` +
+                                `Successfully removed **${sel.values[0]}**'s remix of this song.`,
+                                components: [remixerRemoveSelect, confirmButton],
+                            });
+                        }
+                    }
+                });
             } else if (i.customId == 'song_name') {
                 mode = 'song_name';
                 msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
@@ -424,10 +488,11 @@ module.exports = {
                     components: [confirmButton],
                 });
 
-                msg_collector = message.createMessageCollector({ filter: msg_filter, time: 720000 });
+                msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
                 msg_collector.on('collect', async msg => {
                     if (mode == 'song_name') {
                         songName = msg.content;
+                        setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
                         displaySongName = (`${songName}` + 
                         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
                         editEmbed.data.fields[3].value = songName;
@@ -439,6 +504,68 @@ module.exports = {
                         msg.delete();
                     }
                 });
+            } else if (i.customId == 'finish') {
+                let deleteArray, deleteRemixerArray;
+                // Edit the database
+                switch (subCommand) {
+                    case 'song':
+                        deleteArray = oldOrigArtistArray.filter(v => !origArtistArray.includes(v));
+                        deleteRemixerArray = oldRemixers.filter(v => !remixers.includes(v));
+                        
+                        // Delete all data from any artists removed
+                        for (let delArtist of deleteArray) {
+                            db.reviewDB.delete(delArtist, `${setterOldSongName}`);
+                        }
+                        // Do the same for remix artists
+                        // TODO: Make this work with collab remix artists
+                        for (let delRmxArtist of deleteRemixerArray) {
+                            db.reviewDB.delete(delRmxArtist, `${setterOldSongName} (${delRmxArtist} Remix)`);
+                        }
+
+                        // Update all artists data
+                        for (let artist of origArtistArray) {
+                            let oldSongObj = db.reviewDB.get(artist, `${setterOldSongName}`);
+                            db.reviewDB.delete(artist, `${setterOldSongName}`);
+                            // Start editing oldSongObj with new data
+                            oldSongObj.collab = origArtistArray.filter(v => v != artist);
+                            oldSongObj.vocals = vocalistArray;
+                            oldSongObj.remixers = remixers;
+                            delete oldSongObj.tags;
+                            // Set the new song object with all the newly edited data into the database for that artist
+                            db.reviewDB.set(artist, oldSongObj, `${setterSongName}`);
+                        }
+                        // Update remixer data as well
+                        // TODO: Make this work with collab remix artists
+                        for (let rmxArtist of remixers) {
+                            setterOldSongName = songName.includes('.') ? `["${oldSongName}  (${rmxArtist} Remix)"]` : `${oldSongName} (${rmxArtist} Remix)`;
+                            setterSongName = songName.includes('.') ? `["${songName} (${rmxArtist} Remix)"]` : `${songName} (${rmxArtist} Remix)`;
+
+                            // Start editing data
+                            let oldSongObj = db.reviewDB.get(rmxArtist, `${setterOldSongName}`);
+                            db.reviewDB.delete(rmxArtist, `${setterOldSongName}`);
+                            // Start editing oldSongObj with new data
+                            oldSongObj.collab = origArtistArray;
+                            oldSongObj.vocals = vocalistArray;
+                            delete oldSongObj.tags;
+                            // Set the new song object with all the newly edited data into the database for that artist
+                            db.reviewDB.set(rmxArtist, oldSongObj, `${setterSongName}`);
+                        }
+                    break;
+                    case 'remix':
+                        // TODO: Add support for editing remixes
+                    break;
+                    case 'artist':
+                        // TODO: Add support for editing artist data
+                    break;
+                    case 'ep-lp':
+                        // TODO: Add support for editing ep/lp data
+                    break;
+                }
+                i.update({ components: [] });
+                interaction.followUp({ content: `Successfully added all changes to the database.`, ephemeral: true });
+            } else if (i.customId == 'undo') {
+                await interaction.followUp({ content: 'Undid all changes.', ephemeral: true });
+                await interaction.deleteReply();
             }
         });
 

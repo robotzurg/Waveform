@@ -608,8 +608,6 @@ module.exports = {
                             for (let x = 0; x < artistArray.length; x++) {
                                 db.reviewDB.set(artistArray[x], true, `${setterSongName}.${interaction.user.id}.starred`);
                             }
-
-                            db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
                         }
                     }).catch((err) => {
                         handle_error(interaction, err);
@@ -653,8 +651,6 @@ module.exports = {
                         for (let x = 0; x < artistArray.length; x++) {
                             db.reviewDB.set(artistArray[x], true, `${setterSongName}.${interaction.user.id}.starred`);
                         }
-
-                        db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
                     }
 
                     // Fix artwork on all reviews for this song

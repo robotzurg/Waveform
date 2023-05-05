@@ -46,7 +46,6 @@ module.exports = {
             let origArtistArray = song_info.prod_artists;
             let songName = song_info.song_name;
             let artistArray = song_info.all_artists;
-            let vocalistArray = song_info.vocal_artists;
             let displaySongName = song_info.display_song_name;
             // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
             let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
@@ -231,8 +230,6 @@ module.exports = {
                     for (let x = 0; x < artistArray.length; x++) {
                         db.reviewDB.set(artistArray[x], true, `${setterSongName}.${interaction.user.id}.starred`);
                     }
-
-                    db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
                 }
             }).catch((err) => {
                 handle_error(interaction, err);

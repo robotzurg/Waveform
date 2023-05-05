@@ -73,7 +73,6 @@ module.exports = {
             if (songReviewObj.name == undefined) break;
 
             if (songReviewObj.starred == true) {
-                db.user_stats.remove(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
                 db.reviewDB.set(artistArray[i], false, `${setterSongName}.${interaction.user.id}.starred`);   
             }
 
