@@ -4,7 +4,7 @@ const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('setprofile')
+		.setName('editprofile')
 		.setDescription('Edit your Waveform profile.')
         .setDMPermission(false)
         .addSubcommand((subcommand) =>

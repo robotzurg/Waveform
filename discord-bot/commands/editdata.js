@@ -566,6 +566,22 @@ module.exports = {
             } else if (i.customId == 'undo') {
                 await interaction.followUp({ content: 'Undid all changes.', ephemeral: true });
                 await interaction.deleteReply();
+            } else if (i.customId == 'delete') {
+                switch (subCommand) {
+                    case 'single':
+                        
+                    break;
+                    case 'remix':
+                        // TODO: Add support for deleting remixes
+                    break;
+                    case 'artist':
+                        // TODO: Add support for deleting artists
+                    break;
+                    case 'ep-lp':
+                        // TODO: Add support for deleting EPs/LPs
+                        // Will delete EP/LP data, but not each song within it.
+                    break;
+                }
             }
         });
 

@@ -620,7 +620,6 @@ module.exports = {
      * Searches the spotify API to grab a song or EP/LP art and returns an image link to the song art, or false if it can't find one.
      * @param {Array} artistArray The artist array of the song or EP/LP to search on Spotify.
      * @param {String} name The name of the song or EP/LP to search on Spotify.
-     * @param {Object} interaction The interaction of the discord message
      */
     grab_spotify_art: async function(artistArray, name) {
         const Spotify = require('node-spotify-api');
@@ -655,6 +654,36 @@ module.exports = {
         });
 
         return await result;
+    },
+
+    /**
+     * Searches the spotify API to grab artist images for each artist in an array, and returns an array of image links in the same order.
+     * @param {Array} artistArray The artist array to find images for on Spotify.
+     * @return {Array} An array of image links, in the same order as artistArray.
+     */
+    grab_spotify_artist_art: async function(artistArray) {
+        const Spotify = require('node-spotify-api');
+        const client_id = process.env.SPOTIFY_API_ID; // Your client id
+        const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
+        let imageArray = [];
+
+        // Check if our artistArray is somehow 0, and if so just return an empty list.
+        if (artistArray.length == 0) return [];
+
+        const spotify = new Spotify({
+            id: client_id,
+            secret: client_secret,
+        });
+
+        for (let artist of artistArray) {
+            await spotify.search({ type: "artist", query: artist }).then(function(data) {  
+                let results = data.artists.items[0].images;
+                if (results.length == 0) imageArray.push(false);
+                else imageArray.push(results[0].url);
+            });
+        }
+
+        return imageArray;
     },
 
     handle_error: function(interaction, err) {

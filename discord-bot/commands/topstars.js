@@ -4,7 +4,7 @@ const { handle_error, get_user_reviews } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('topstarred')
+        .setName('topstars')
         .setDescription('Get a list of the top starred artists in the server.')
         .setDMPermission(false),
     help_desc: `TBD`,
