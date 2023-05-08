@@ -67,56 +67,54 @@ module.exports = {
 
             for (let i = 0; i < artistArray.length; i++) {
                 let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
-                db.reviewDB.delete(artistArray[i], 'Image');
+                songArray = songArray.filter(v => v != 'pfp_image');
 
-                // for (let j = 0; j < songArray.length; j++) {
-                //     let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];
-                //     let userArray;
-                //     if (songObj != null && songObj != undefined) {
-                //         userArray = get_user_reviews(songObj);
-                //         userArray = userArray.filter(v => v == taggedUser.id);
-                //     } else {
-                //         userArray = [];
-                //     }
-                //     if (userArray.length != 0) {
-                //         artistCount.push(artistArray[i]);
-                //         if (songObj[userArray[0]].starred == true) {
-                //             starArtistList.push(artistArray[i]);
-                //         } 
-                //     }
-                //     if (songSkip.includes(`${artistArray[i]} - ${songArray[j]}`)) continue;
+                for (let j = 0; j < songArray.length; j++) {
+                    let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];
+                    let userArray;
+                    if (songObj != null && songObj != undefined) {
+                        userArray = get_user_reviews(songObj);
+                        userArray = userArray.filter(v => v == taggedUser.id);
+                    } else {
+                        userArray = [];
+                    }
+                    if (userArray.length != 0) {
+                        artistCount.push(artistArray[i]);
+                        if (songObj[userArray[0]].starred == true) {
+                            starArtistList.push(artistArray[i]);
+                        } 
+                    }
+                    if (songSkip.includes(`${artistArray[i]} - ${songArray[j]}`)) continue;
 
-                //     let otherArtists = [artistArray[i], songObj.collab].flat(1);
+                    let otherArtists = [artistArray[i], songObj.collab].flat(1);
 
-                //     let allArtists = otherArtists.map(v => {
-                //         if (v == undefined) {
-                //             return [];
-                //         }
-                //         return v;
-                //     });
-                //     allArtists = allArtists.flat(1);
+                    let allArtists = otherArtists.map(v => {
+                        if (v == undefined) {
+                            return [];
+                        }
+                        return v;
+                    });
+                    allArtists = allArtists.flat(1);
 
-                //     for (let k = 0; k < userArray.length; k++) {
-                //         let userData = songObj[userArray[k]];
-                //         reviewCount += 1;
-                //         ratingList.push(parseFloat(userData.rating));
-                //         if (songArray[j].includes(' EP')) epReviewCount += 1;
-                //         if (songArray[j].includes(' LP')) lpReviewCount += 1;
-                //         if (userData.starred == true) starCount += 1;
+                    for (let k = 0; k < userArray.length; k++) {
+                        let userData = songObj[userArray[k]];
+                        reviewCount += 1;
+                        ratingList.push(parseFloat(userData.rating));
+                        if (songArray[j].includes(' EP')) epReviewCount += 1;
+                        if (songArray[j].includes(' LP')) lpReviewCount += 1;
+                        if (userData.starred == true) starCount += 1;
 
-                //         if (parseFloat(userData.rating) == 10) tenCount += 1;
-                //         if (parseFloat(userData.rating) == 0) zeroCount += 1;
-                //     }
+                        if (parseFloat(userData.rating) == 10) tenCount += 1;
+                        if (parseFloat(userData.rating) == 0) zeroCount += 1;
+                    }
 
-                //     for (let v = 0; v < allArtists.length; v++) {
-                //         if (!songSkip.includes(`${allArtists[v]} - ${songArray[j]}`)) {
-                //             songSkip.push(`${allArtists[v]} - ${songArray[j]}`);
-                //         }
-                //     }
-                // }
+                    for (let v = 0; v < allArtists.length; v++) {
+                        if (!songSkip.includes(`${allArtists[v]} - ${songArray[j]}`)) {
+                            songSkip.push(`${allArtists[v]} - ${songArray[j]}`);
+                        }
+                    }
+                }
             }
-
-            return interaction.editReply('Done');
 
             mostArtist = find_most_duplicate(artistCount);
             mostStarred = find_most_duplicate(starArtistList);
