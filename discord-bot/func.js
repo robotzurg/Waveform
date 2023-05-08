@@ -119,6 +119,25 @@ module.exports = {
                 .then(async album_data => {
                     if (interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') {
                         trackList = album_data.body.tracks.items.map(t => t.name);
+                        for (let i = 0; i < trackList.length; i++) {
+                            if (songArg.includes('feat.')) {
+                                songArg = songArg.split(' (feat. ');
+                                songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
+                                trackList[i] = songArg[0];
+                            }
+                    
+                            if (songArg.includes('ft. ')) {
+                                songArg = songArg.split(' (ft. ');
+                                songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
+                                trackList[i] = songArg[0];
+                            }
+                    
+                            if (songArg.includes('(with ')) {
+                                songArg = songArg.split(' (with ');
+                                songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
+                                trackList[i] = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
+                            }
+                        }
                         
                         if (songArg.includes('Remix')) {
                             passesChecks = 'ep';
