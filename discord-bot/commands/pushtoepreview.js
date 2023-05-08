@@ -47,7 +47,7 @@ module.exports = {
             let final_song = false;
             // Check if we are in a spotify mailbox
             spotifyApi = await spotify_api_setup(interaction.user.id);
-            if (artists == null && song == null) spotifyApi = false;
+            if (artists != null || song != null) spotifyApi = false;
             if (mailboxes.some(v => v.includes(interaction.channel.id)) && spotifyApi != false) {
                 is_mailbox = true;
             }
