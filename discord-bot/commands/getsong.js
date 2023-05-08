@@ -1,7 +1,7 @@
 const db = require("../db.js");
 const { average, get_user_reviews, parse_artist_song_data, sort, handle_error, find_review_channel } = require('../func.js');
-const numReacts = ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣', '🔟', '**11**', '**12**', '**13**', '**14**', '**15**', '**16**', '**17**', '**18**', '**19**', '**20**'];
-const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const _ = require('lodash');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -26,7 +26,7 @@ module.exports = {
                 .setAutocomplete(true)
                 .setRequired(false)),
     help_desc: `TBD`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
 
         let artists = interaction.options.getString('artist');
@@ -118,52 +118,59 @@ module.exports = {
             songEmbed.setDescription(`*The average rating of this song is N/A*`);
         }
 
-        if (userArray != 0) { // Sort it by highest to lowest rating
-            
-            userArray = sort(userArray);
-            userIDList = sort(userIDList);
-
-            for (let i = 0; i < userArray.length; i++) {
-                userArray[i] = `${numReacts[i + 1]} `.concat(userArray[i]);
-            }
-
-            songEmbed.addFields([{ name: 'Reviews:', value: userArray.join('\n') }]);
-        } else {
-            songEmbed.addFields([{ name: 'Reviews:', value: 'No reviews :(' }]);
-        }
-
-        if (remixes.length != 0) songEmbed.addFields([{ name: 'Remixes:', value: remixes.join('\n') }]);
-        if (songVIP != false) songEmbed.addFields([{ name: 'VIP:', value: `\`${songVIP}\`` }]);
-
         if (songArt == false) {
             songEmbed.setThumbnail(interaction.user.avatarURL({ extension: "png" }));
         } else {
             songEmbed.setThumbnail(songArt);
         }
 
-        if (songEP != false) {
-            songEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0])[songEP].art });
+        // Button/Select Menu setup
+        const btn_row = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('left')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('⬅️'),
+            new ButtonBuilder()
+                .setCustomId('right')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('➡️'),
+        );
+
+        if (userArray.length != 0) { // Sort it by highest to lowest rating
+            userArray = sort(userArray);
+            userIDList = sort(userIDList);
+
+            for (let i = 0; i < userArray.length; i++) {
+                userArray[i] = `**${i + 1}.** `.concat(userArray[i]);
+            }
+        } else {
+            songEmbed.addFields([{ name: 'Reviews:', value: 'No reviews :(' }]);
         }
 
-        // Button/Select Menu setup
+        let taggedMemberSel, taggedUserSel, selDisplayName;
+        let paged_user_list = _.chunk(userArray, 10);
+        let paged_user_id_list = _.chunk(userIDList, 10);
+        let page_num = 0;
         let select_options = [];
-        let taggedMemberSel;
-        let taggedUserSel;
 
-        for (let i = 0; i < userIDList.length; i++) {
-            taggedMemberSel = await interaction.guild.members.fetch(userIDList[i])
-            .catch(() => taggedMemberSel = 'Invalid Member (They have left the server)');
-            if (taggedMemberSel != 'Invalid Member (They have left the server)') {
-                taggedUserSel = taggedMemberSel.user;
+        for (let userID of paged_user_id_list[0]) {
+            taggedMemberSel = await interaction.guild.members.fetch(userID).catch(() => {
+                taggedMemberSel = undefined;
+            });
+
+            if (taggedMemberSel == undefined) {
+                taggedUserSel = await client.users.fetch(userID);
+                selDisplayName = taggedUserSel.username;
+            } else {
+                selDisplayName = taggedMemberSel.displayName;
             }
 
-            if (taggedMemberSel != 'Invalid Member (They have left the server)') {
-                select_options.push({
-                    label: `${taggedMemberSel.displayName}`,
-                    description: `${taggedMemberSel.displayName}'s review of the song.`,
-                    value: `${taggedUserSel.id}`,
-                });
-            }
+            select_options.push({
+                label: `${selDisplayName}`,
+                description: `${selDisplayName}'s review of the song.`,
+                value: `${userID}`,
+            });
         }
 
         select_options.push({
@@ -172,16 +179,25 @@ module.exports = {
             value: `back`,
         });
 
-        const row = new ActionRowBuilder()
-            .addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId('select')
-                    .setPlaceholder('See other reviews by clicking on me!')
-                    .addOptions(select_options),
-            );
+        // Setup select row for first set of 10
+        let sel_row = new ActionRowBuilder()
+        .addComponents(
+            new StringSelectMenuBuilder()
+                .setCustomId('select')
+                .setPlaceholder('See other reviews by clicking on me!')
+                .addOptions(select_options),
+        );
 
-        interaction.reply({ embeds: [songEmbed], components: [row] });
-
+        if (userArray.length != 0) songEmbed.addFields([{ name: 'Reviews:', value: paged_user_list[0].join('\n') }]);
+        if (remixes.length != 0) songEmbed.addFields([{ name: 'Remixes:', value: remixes.join('\n') }]);
+        if (songVIP != false) songEmbed.addFields([{ name: 'VIP:', value: `\`${songVIP}\`` }]);
+        if (songEP != false) {
+            songEmbed.setFooter({ text: `from ${songEP}${paged_user_list > 1 ? ` • Page ${page_num + 1} / ${paged_user_list.length}` : ``}`, iconURL: db.reviewDB.get(artistArray[0])[songEP].art });
+        } else if (paged_user_list > 1) {
+            songEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_user_list.length}` });
+        }
+        
+        interaction.reply({ embeds: [songEmbed], components: paged_user_list.length > 1 ? [sel_row, btn_row] : [sel_row] });
         let message = await interaction.fetchReply();
 
         const collector = message.createMessageComponentCollector({ time: 360000 });
@@ -189,11 +205,21 @@ module.exports = {
             if (i.customId == 'select') { // Select Menu
 
                 if (i.values[0] == 'back') { // Back Selection
-                    return await i.update({ content: ` `, embeds: [songEmbed], components: [row] });
+                    return await i.update({ content: null, embeds: [songEmbed], components: paged_user_list.length > 1 ? [sel_row, btn_row] : [sel_row] });
                 }
-                
-                const taggedMember = await interaction.guild.members.fetch(i.values[0]);
-                const taggedUser = taggedMember.user;
+            
+                let taggedUser, taggedMember, displayName;
+                taggedMember = await interaction.guild.members.fetch(i.values[0]).catch(() => {
+                    taggedMember = undefined;
+                });
+                taggedUser = await client.users.fetch(i.values[0]);
+
+                if (taggedMember == undefined) {
+                    displayName = taggedUser.username;
+                } else {
+                    displayName = taggedMember.displayName;
+                }
+
                 let starred = songObj[i.values[0]].starred;
                 let review = songObj[i.values[0]].review;
                 let rating = songObj[i.values[0]].rating;
@@ -210,12 +236,14 @@ module.exports = {
                     }
                 }
 
-                if (sentby != false) {
+                if (sentby != false && taggedMember != undefined) {
                     sentby = await interaction.guild.members.cache.get(sentby);              
                 }
 
-                const reviewEmbed = new EmbedBuilder()
-                .setColor(`${taggedMember.displayHexColor}`);
+                const reviewEmbed = new EmbedBuilder();
+                if (taggedMember != undefined) {
+                    reviewEmbed.setColor(`${taggedMember.displayHexColor}`);
+                }
     
                 if (starred == false) {
                     reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
@@ -223,7 +251,7 @@ module.exports = {
                     reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${displaySongName} :star2:`);
                 }
     
-                reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ extension: "png" })}` });
+                reviewEmbed.setAuthor({ name: `${displayName}'s review`, iconURL: `${taggedUser.avatarURL({ extension: "png" })}` });
     
                 if (rating !== false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rating}/10**`, inline: true }]);
                 if (review != false) reviewEmbed.setDescription(review);
@@ -247,12 +275,53 @@ module.exports = {
                 }
 
                 if (url == undefined || url == false) {
-                    await i.update({ embeds: [reviewEmbed], components: [row] });
+                    await i.update({ content: null, embeds: [reviewEmbed], components: paged_user_list.length > 1 ? [sel_row, btn_row] : [sel_row] });
                 } else {
-                    await i.update({ content: `[View Review Message](${url})`, embeds: [reviewEmbed], components: [row] });
+                    await i.update({ content: `[View Review Message](${url})`, embeds: [reviewEmbed], components: paged_user_list.length > 1 ? [sel_row, btn_row] : [sel_row] });
                 }
 
-            } 
+            } else {
+                (i.customId == 'left') ? page_num -= 1 : page_num += 1;
+                page_num = _.clamp(page_num, 0, paged_user_list.length - 1);
+
+                // Update select menu
+                select_options = [];
+                for (let userID of paged_user_id_list[page_num]) {
+                    taggedMemberSel = await interaction.guild.members.fetch(userID).catch(() => {
+                        taggedMemberSel = undefined;
+                    });
+        
+                    if (taggedMemberSel == undefined) {
+                        taggedUserSel = await client.users.fetch(userID);
+                        selDisplayName = taggedUserSel.username;
+                    } else {
+                        selDisplayName = taggedMemberSel.displayName;
+                    }
+        
+                    select_options.push({
+                        label: `${selDisplayName}`,
+                        description: `${selDisplayName}'s review of the song.`,
+                        value: `${userID}`,
+                    });
+                }
+                select_options.push({
+                    label: `Back`,
+                    description: `Go back to the main song data menu.`,
+                    value: `back`,
+                });
+
+                sel_row = new ActionRowBuilder()
+                .addComponents(
+                    new StringSelectMenuBuilder()
+                        .setCustomId('select')
+                        .setPlaceholder('See other reviews by clicking on me!')
+                        .addOptions(select_options),
+                );
+                
+                songEmbed.data.fields[0].value = paged_user_list[page_num].join('\n');
+
+                i.update({ embeds: [songEmbed], components: [sel_row, btn_row] });
+            }
         });
 
         collector.on('end', async () => {

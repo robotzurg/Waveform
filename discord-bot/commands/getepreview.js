@@ -56,7 +56,6 @@ module.exports = {
             let vocalistsEmbed;
             let rreview;
             let rscore;
-            let rsentby = false;
             let rstarred;
 
             let epObj = db.reviewDB.get(artistArray[0])[epName];
@@ -108,7 +107,7 @@ module.exports = {
                 epEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
             }
 
-            epEmbed.setAuthor({ name: rsentby != false && rsentby != undefined && ep_songs.length != 0 ? `${taggedMember.displayName}'s mailbox ${epType} review` : `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
+            epEmbed.setAuthor({ name: `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
 
             epEmbed.setThumbnail(ep_art);
             if (ep_sent_by != false && ep_sent_by != undefined) {
@@ -136,7 +135,6 @@ module.exports = {
                     rreview = songReviewObj.review;
                     if (rreview.length > 1000) rreview = '*Review hidden to save space*';
                     rscore = songReviewObj.rating;
-                    rsentby = songReviewObj.sentby;
                     rstarred = songReviewObj.starred;
     
                     // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
