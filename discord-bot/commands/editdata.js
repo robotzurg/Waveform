@@ -68,6 +68,8 @@ module.exports = {
         let rmxArtistArray = interaction.options.getString('remixers');
         let subCommand = interaction.options.getSubcommand();
 
+        if (subCommand == 'artist' || subCommand == 'ep-lp' || subCommand == 'remix') return interaction.reply('This subcommands aren\'t ready yet.');
+
         let song_info = await parse_artist_song_data(interaction, origArtistArray, songName, rmxArtistArray);
         if (song_info.error != undefined) {
             await interaction.reply(song_info.error);
