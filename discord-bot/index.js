@@ -96,7 +96,7 @@ client.on('interactionCreate', async interaction => {
                 
                 artist_names = artist_names.map(v => v = { name: v, value: v });
 
-                if (artist_names.length == 1 && interaction.commandName != 'getartist') {
+                if (artist_names.length == 1 && interaction.commandName != 'getartist' && !interaction.commandName.includes('ep')) {
                     artist_collab = Object.keys(db.reviewDB.get(artist_names[0].name));
                     artist_collab = artist_collab.filter(v => v != 'pfp_image');
                     if (artist_collab != undefined) {
@@ -117,6 +117,7 @@ client.on('interactionCreate', async interaction => {
                         artist_collab = artist_collab.map(v => v = { name: `${artist_names[0].name} & ${v}`, value: `${artist_names[0].name} & ${v}` });
                         artist_names.push(artist_collab);
                         artist_names = artist_names.flat(1);
+                        if (artist_names.length > 25) artist_names = artist_names.slice(artist_names.length - 25, artist_names.length).reverse();
                     }
                 }
                 interaction.respond(artist_names);

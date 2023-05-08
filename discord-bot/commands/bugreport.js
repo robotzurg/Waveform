@@ -32,7 +32,7 @@ module.exports = {
 
         const typeInput = new TextInputBuilder()
             .setCustomId('type')
-            .setLabel("Was this a manual command or a spotify command?")
+            .setLabel("Was this a manual or spotify command?")
             .setPlaceholder('Manual/Spotify')
             .setStyle(TextInputStyle.Short);
 

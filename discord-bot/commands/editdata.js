@@ -119,27 +119,90 @@ module.exports = {
         );
 
         // Setup button rows
-        let songEditButtons = [
-            new ActionRowBuilder()
-            .addComponents(
-                new ButtonBuilder()
-                    .setCustomId('artists').setLabel('Artists')
-                    .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
-                new ButtonBuilder()
-                    .setCustomId('vocalists').setLabel('Vocalists')
-                    .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
-                new ButtonBuilder()
-                    .setCustomId('remixers').setLabel('Remixers')
-                    .setStyle(ButtonStyle.Secondary).setEmoji('📝').setDisabled(remixers.length == 0),
-                new ButtonBuilder()
-                    .setCustomId('song_name').setLabel('Song Name')
-                    .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
-                new ButtonBuilder()
-                    .setCustomId('delete').setLabel('Delete')
-                    .setStyle(ButtonStyle.Secondary).setEmoji('🗑️'),
-            ),
-            databaseButtons,
-        ];
+        let songEditButtons = [];
+
+        switch (subCommand) {
+            case 'song':
+                songEditButtons = [
+                new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('artists').setLabel('Artists')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
+                    new ButtonBuilder()
+                        .setCustomId('vocalists').setLabel('Vocalists')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
+                    new ButtonBuilder()
+                        .setCustomId('remixers').setLabel('Remixers')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('📝').setDisabled(remixers.length == 0),
+                    new ButtonBuilder()
+                        .setCustomId('song_name').setLabel('Song Name')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
+                    new ButtonBuilder()
+                        .setCustomId('delete').setLabel('Delete')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('🗑️'),
+                ),
+                databaseButtons,
+            ];
+            break;
+
+            case 'remix': 
+                songEditButtons = [
+                new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('remixers').setLabel('Remixers')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
+                    new ButtonBuilder()
+                        .setCustomId('delete').setLabel('Delete')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('🗑️'),
+                ),
+                databaseButtons,
+            ];
+            break;
+
+            case 'ep-lp': 
+                songEditButtons = [
+                new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('ep_artists').setLabel('Artists')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
+                    new ButtonBuilder()
+                        .setCustomId('ep_name').setLabel('Name')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
+                    new ButtonBuilder()
+                        .setCustomId('ep_songs').setLabel('Songs')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
+                    new ButtonBuilder()
+                        .setCustomId('delete').setLabel('Delete')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('🗑️'),
+                ),
+                databaseButtons,
+            ];
+            break;
+
+            case 'artist': 
+                songEditButtons = [
+                new ActionRowBuilder()
+                .addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('artist_name').setLabel('Name')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
+                    new ButtonBuilder()
+                        .setCustomId('artist_songs').setLabel('Songs')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
+                    new ButtonBuilder()
+                        .setCustomId('artist_eps').setLabel('EPs/LPs')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
+                    new ButtonBuilder()
+                        .setCustomId('delete').setLabel('Delete')
+                        .setStyle(ButtonStyle.Secondary).setEmoji('🗑️'),
+                ),
+                databaseButtons,
+            ];
+            break;
+        }
         let editButtons = songEditButtons;
 
         let confirmButton = new ActionRowBuilder()
@@ -608,7 +671,7 @@ module.exports = {
         });
 
         menu_collector.on('end', async () => {
-            interaction.editReply({ embeds: [editEmbed], components: [] });
+            interaction.editReply({ components: [] });
         });
 	},
 };
