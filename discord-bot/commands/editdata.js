@@ -671,7 +671,7 @@ module.exports = {
         });
 
         menu_collector.on('end', async () => {
-            interaction.editReply({ embeds: [editEmbed], components: [] });
+            interaction.editReply({ components: [] });
         });
 	},
 };

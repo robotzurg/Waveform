@@ -100,6 +100,7 @@ module.exports = {
 
         // Check if we are in a spotify mailbox
         spotifyApi = await spotify_api_setup(interaction.user.id);
+        if (interaction.options.getSubcommand() == 'manually') spotifyApi = false;
         if (mailboxes.some(v => v.includes(int_channel.id)) && spotifyApi != false) {
             is_mailbox = true;
         }

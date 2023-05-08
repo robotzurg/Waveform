@@ -71,15 +71,22 @@ module.exports = {
                                 yourStar = '⭐'; //Added to the end of your rating tab
                             }
                         }
-                        rankNumArray.push(parseFloat(rating));
+
+                        if (rating != false) rankNumArray.push(parseFloat(rating));
                         userArray[i] = [rating, `${userArray[i]} \`${rating}\``];
                     }
                 }
 
                 if (rankNumArray.length != 0) { 
-                    npEmbed.setDescription(`Reviews: \`${userArray.length} reviews\`` + 
+                    npEmbed.setDescription(`Reviews: ${userArray.length == 0 ? `\`${userArray.length} reviews\`` : ``}` + 
                     `\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}` + 
                     `\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}` + 
+                    `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
+                    `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
+                    `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
+                } else if (userArray.length != 0) {
+                    npEmbed.setDescription(`Reviews: ${userArray.length == 0 ? `\`${userArray.length} reviews\`` : ``}` +  
+                    `${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}` + 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                     `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);

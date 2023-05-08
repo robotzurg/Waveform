@@ -37,6 +37,21 @@ module.exports = {
             let artists = interaction.options.getString('artist');
             let song = interaction.options.getString('song_name');
             let remixers = interaction.options.getString('remixers');
+
+            let is_mailbox = false;
+            let temp_mailbox_list;
+            let mailbox_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
+            let spotifyApi;
+            let mailbox_data;
+            let ping_for_review = false;
+            let final_song = false;
+            // Check if we are in a spotify mailbox
+            spotifyApi = await spotify_api_setup(interaction.user.id);
+            if (artists == null && song == null) spotifyApi = false;
+            if (mailboxes.some(v => v.includes(interaction.channel.id)) && spotifyApi != false) {
+                is_mailbox = true;
+            }
+
             let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
             if (song_info.error != undefined) {
                 await interaction.deleteReply();
@@ -53,19 +68,6 @@ module.exports = {
             if (db.reviewDB.get(artistArray[0])[songName][interaction.user.id] == undefined) {
                 return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${displaySongName}\`.`);
             } 
-
-            let is_mailbox = false;
-            let temp_mailbox_list;
-            let mailbox_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
-            let spotifyApi;
-            let mailbox_data;
-            let ping_for_review = false;
-            let final_song = false;
-            // Check if we are in a spotify mailbox
-            spotifyApi = await spotify_api_setup(interaction.user.id);
-            if (mailboxes.some(v => v.includes(interaction.channel.id)) && spotifyApi != false) {
-                is_mailbox = true;
-            }
 
             let songObj = db.reviewDB.get(artistArray[0])[songName];
             let songReviewObj = songObj[interaction.user.id];
