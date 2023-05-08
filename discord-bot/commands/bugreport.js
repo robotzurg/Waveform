@@ -17,38 +17,48 @@ module.exports = {
 			.setTitle('Report a bug with Waveform');
 
 		// Create the text input components
-		const commandInput = new TextInputBuilder()
-			.setCustomId('cmd')
-			.setLabel("What command caused this bug?")
+        const commandInput = new TextInputBuilder()
+            .setCustomId('cmd')
+            .setLabel("What command caused this bug?")
             .setPlaceholder('Command name + extra arguments used.')
+            .setStyle(TextInputStyle.Short);
+
+		const quickDescInput = new TextInputBuilder()
+			.setCustomId('quick')
+			.setLabel("Give a brief description of the bug.")
+            .setPlaceholder('You can give more details later.')
 			.setStyle(TextInputStyle.Short);
+
+
+        const typeInput = new TextInputBuilder()
+            .setCustomId('type')
+            .setLabel("Was this a manual command or a spotify command?")
+            .setPlaceholder('Manual/Spotify')
+            .setStyle(TextInputStyle.Short);
 
         const songInput = new TextInputBuilder()
 			.setCustomId('song')
-			.setLabel("What song caused the bug?")
+			.setLabel("What song/EP/LP caused the bug, if any?")
             .setPlaceholder('Please put the full song name in here!')
-			.setStyle(TextInputStyle.Short);
-
-        const typeInput = new TextInputBuilder()
-			.setCustomId('type')
-			.setLabel("How did you get the song data?")
-            .setPlaceholder('Manual or Spotify.')
+            .setRequired(false)
 			.setStyle(TextInputStyle.Short);
 
 		const descInput = new TextInputBuilder()
 			.setCustomId('desc')
 			.setLabel("Write any extra details that might help me.")
-			.setStyle(TextInputStyle.Paragraph);
+			.setStyle(TextInputStyle.Paragraph)
+            .setRequired(false);
 
 		// An action row only holds one text input,
 		// so you need one action row per text input.
 		const firstRow = new ActionRowBuilder().addComponents(commandInput);
-		const secondRow = new ActionRowBuilder().addComponents(songInput);
+		const secondRow = new ActionRowBuilder().addComponents(quickDescInput);
 		const thirdRow = new ActionRowBuilder().addComponents(typeInput);
-		const fourthRow = new ActionRowBuilder().addComponents(descInput);
+		const fourthRow = new ActionRowBuilder().addComponents(songInput);
+		const fifthRow = new ActionRowBuilder().addComponents(descInput);
 
 		// Add inputs to the modal
-		modal.addComponents(firstRow, secondRow, thirdRow, fourthRow);
+		modal.addComponents(firstRow, secondRow, thirdRow, fourthRow, fifthRow);
         await interaction.showModal(modal);
 
         const submitted = await interaction.awaitModalSubmit({
@@ -64,6 +74,9 @@ module.exports = {
             let song = submitted.fields.getTextInputValue('song');
             let review_type = submitted.fields.getTextInputValue('type');
             let desc = submitted.fields.getTextInputValue('desc');
+            let quick_desc = submitted.fields.getTextInputValue('quick');
+            if (desc == null) desc = 'N/A';
+            if (song == null) song = 'N/A';
 
             await submitted.reply('Successfully submitted a bug report!');
             
@@ -75,7 +88,7 @@ module.exports = {
             .setDescription(`**Cmd:** \`${cmd}\`\n` + 
             `**Song:** \`${song}\`\n` + 
             `**Type:** \`${review_type}\`\n\n`)
-            .addFields({ name: 'Description', value: desc });
+            .addFields({ name: 'Overview:', value: quick_desc }, { name: 'Extra Details:', value: desc });
         
             bugChannel.send({ content: `**New Bug Report!**`, embeds: [bugEmbed] });
         }

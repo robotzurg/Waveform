@@ -39,7 +39,7 @@ module.exports = {
         
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
-        let artistArray = song_info.all_artists;
+        let artistArray = song_info.db_artists;
         let vocalistArray = song_info.vocal_artists;
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
@@ -67,10 +67,8 @@ module.exports = {
         }
 
         if (star_check == false) {
-            db.user_stats.push(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }`, 'star_list');
             interaction.reply(`Star added to **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }**!`);
         } else {
-            db.user_stats.remove(interaction.user.id, `${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }`, 'star_list');
             interaction.reply(`Unstarred **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }**.`);
         }
 

@@ -98,7 +98,7 @@ client.on('interactionCreate', async interaction => {
 
                 if (artist_names.length == 1 && interaction.commandName != 'getartist') {
                     artist_collab = Object.keys(db.reviewDB.get(artist_names[0].name));
-                    artist_collab = artist_collab.filter(v => v != 'Image');
+                    artist_collab = artist_collab.filter(v => v != 'pfp_image');
                     if (artist_collab != undefined) {
                         for (let i = 0; i < artist_collab.length; i++) {
                             if (artist_collab[i].includes('Remix')) {
@@ -129,7 +129,7 @@ client.on('interactionCreate', async interaction => {
 
                 artist_songs = Object.keys(artist_songs);
                 let collab_artist_songs = [];
-                artist_songs = artist_songs.filter(v => v != 'Image');
+                artist_songs = artist_songs.filter(v => v != 'pfp_image');
                 artist_songs = artist_songs.reverse();
                 if (focused[0].name != 'old_name' && focused[0].name != 'name') {
                     if (focused[0].name != 'ep_name') {

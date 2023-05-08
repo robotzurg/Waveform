@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
-const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup } = require('../func.js');
+const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art } = require('../func.js');
 require('dotenv').config();
 
 module.exports = {
@@ -101,7 +101,7 @@ module.exports = {
 
             let origArtistArray = song_info.prod_artists;
             let epName = song_info.song_name;
-            let artistArray = song_info.all_artists;
+            let artistArray = song_info.db_artists;
             // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
             let setterEpName = epName.includes('.') ? `["${epName}"]` : epName;
             let epType = epName.includes(' LP') ? `LP` : `EP`;
@@ -170,6 +170,9 @@ module.exports = {
             } else {
                 if (!isValidURL(art)) return interaction.reply(`This ${epType} art URL is invalid.`);
             }
+
+            // Also grab artist images, to set if there is not already an image set.
+            let artistImgs = await grab_spotify_artist_art(artistArray);
 
             // Setup buttons
             const row = new ActionRowBuilder()
@@ -285,6 +288,9 @@ module.exports = {
                             } else {
                                 artistArray = m.content.split(' & ');
                             }
+
+                            // Re-grab artist images with new artists
+                            artistImgs = await grab_spotify_artist_art(artistArray);
                             
                             if (starred == false) {
                                 epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
@@ -467,10 +473,16 @@ module.exports = {
 
                         review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred);
 
-                        // Set message ids
+                        // Set message ids and setup artist images
                         for (let j = 0; j < artistArray.length; j++) {
                             db.reviewDB.set(artistArray[j], msg.id, `${setterEpName}.${interaction.user.id}.msg_id`);
                             db.reviewDB.set(artistArray[j], msg.url, `${setterEpName}.${interaction.user.id}.url`);
+
+                             // Deal with artist images
+                             let cur_img = db.reviewDB.get(artistArray[j], 'pfp_image');
+                             if (cur_img == undefined || cur_img == false) {
+                                 db.reviewDB.set(artistArray[j], artistImgs[j], `pfp_image`); 
+                             }
                         }
 
                         for (let j = 0; j < artistArray.length; j++) {
@@ -527,10 +539,16 @@ module.exports = {
                         ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(artistArray[0])[epName].songs);
                         if (epSongs == false || epSongs == undefined) epSongs = [];
 
-                        // Set message ids
+                        // Set message ids and set artist images
                         for (let j = 0; j < artistArray.length; j++) {
                             db.reviewDB.set(artistArray[j], msg.id, `${setterEpName}.${interaction.user.id}.msg_id`);
                             db.reviewDB.set(artistArray[j], msg.url, `${setterEpName}.${interaction.user.id}.url`);
+
+                            // Deal with artist images
+                            let cur_img = db.reviewDB.get(artistArray[j], 'pfp_image');
+                            if (cur_img == undefined || cur_img == false) {
+                                db.reviewDB.set(artistArray[j], artistImgs[j], `pfp_image`); 
+                            }
                         }
 
                         await i.update({ embeds: [epEmbed], components: [] });

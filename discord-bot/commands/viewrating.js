@@ -5,8 +5,8 @@ const _ = require('lodash');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('getratingnum')
-        .setDescription('Get a list of all songs rated with a specific rating.')
+        .setName('viewrating')
+        .setDescription('View a list of all songs rated with a specific rating.')
         .setDMPermission(false)
         .addStringOption(option => 
             option.setName('rating')
@@ -44,7 +44,7 @@ module.exports = {
 
         for (let i = 0; i < artistArray.length; i++) {
             let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
-            songArray = songArray.filter(v => v != 'Image');
+            songArray = songArray.filter(v => v != 'pfp_image');
 
             for (let j = 0; j < songArray.length; j++) {
                 let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];

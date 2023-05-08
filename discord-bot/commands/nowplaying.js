@@ -35,7 +35,7 @@ module.exports = {
 
             origArtistArray = song_info.prod_artists;
             songName = song_info.song_name;
-            artistArray = song_info.all_artists;
+            artistArray = song_info.db_artists;
             songDisplayName = song_info.display_song_name;
         });
 

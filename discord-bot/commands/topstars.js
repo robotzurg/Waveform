@@ -4,7 +4,7 @@ const { handle_error, get_user_reviews } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('topstarred')
+        .setName('topstars')
         .setDescription('Get a list of the top starred artists in the server.')
         .setDMPermission(false),
     help_desc: `TBD`,
@@ -19,7 +19,7 @@ module.exports = {
         for (let i = 0; i < artistArray.length; i++) {
             let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
             let starCount = 0;
-            songArray = songArray.filter(v => v != 'Image');
+            songArray = songArray.filter(v => v != 'pfp_image');
 
             for (let j = 0; j < songArray.length; j++) {
                 let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];

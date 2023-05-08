@@ -54,6 +54,22 @@ module.exports = {
         return userArray;
     },
 
+    /**
+     * Takes in a song object and gives back the number of starred reviews the song has.
+     * @param {Object} songObj The song object from the database.
+     * @returns An integer of the number of stars on this song.
+     */
+    get_star_num: function(songObj) {
+        const { get_user_reviews } = require('./func.js');
+        if (songObj == undefined && songObj == null) return [];
+        let userArray = get_user_reviews(songObj);
+        let starCount = 0;
+        for (let user of userArray) {
+            if (songObj[user].starred) starCount += 1;
+        }
+        return starCount;
+    },
+
     parse_artist_song_data: async function(interaction, artists = null, song = null, remixers = null, vocalists = null) {
         const { spotify_api_setup } = require('./func.js');
 
@@ -119,7 +135,6 @@ module.exports = {
                         }
 
                         if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
-                            console.log(trackList);
                             db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] }, 'current_ep_review');  
                         }
                     }
@@ -314,17 +329,21 @@ module.exports = {
 
         origArtistArray = origArtistArray.filter(v => !vocalistArray.includes(v));
         origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
-        if (rmxArtistArray.length != 0) artistArray = rmxArtistArray; // Main artist becomes the remix artists
+        let allArtistArray = artistArray;
+        if (rmxArtistArray.length != 0) {
+            artistArray = rmxArtistArray; // Database artists become the remix artists
+            allArtistArray = [origArtistArray, rmxArtistArray].flat(1);
+        }
 
         let displaySongName = (`${songArg}` + 
         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
-
         return { 
             prod_artists: origArtistArray, 
             song_name: songArg, // Song name with remixers in the name
             main_song_name: origSongArg, // Song Name without remixers in the name
             display_song_name: displaySongName, // Song name with remixers and features in the name
-            all_artists: artistArray, 
+            db_artists: artistArray, 
+            all_artists: allArtistArray,
             remix_artists: rmxArtistArray, 
             vocal_artists: vocalistArray,
             art: songArt,
@@ -386,7 +405,7 @@ module.exports = {
             }
     },
 
-    review_song: function(interaction, artistArray, origArtistArray, song, origSongName, review, rating, rmxArtistArray, vocalistArray, songArt = false, user_who_sent, ep_name) {
+    review_song: function(interaction, artistArray, origArtistArray, song, origSongName, review, rating, starred, rmxArtistArray, vocalistArray, songArt, user_who_sent, ep_name = false) {
 
         if (user_who_sent == undefined || user_who_sent == null) {
             user_who_sent = false;
@@ -407,7 +426,7 @@ module.exports = {
                 msg_id: false,
                 review: review,
                 rating: rating,
-                starred: false,
+                starred: starred,
                 sentby: user_who_sent,
             };
 
@@ -597,7 +616,6 @@ module.exports = {
                 Object.assign(db_artist_obj, epObject);
                 db.reviewDB.set(artistArray[i], db_artist_obj);
             } else {
-                console.log(db.reviewDB.get(artistArray[i])[ep_name]);
                 const db_song_obj = db.reviewDB.get(artistArray[i])[ep_name];
                 let new_user_obj = {
                     [`${interaction.user.id}`]: reviewObject,
@@ -620,7 +638,6 @@ module.exports = {
      * Searches the spotify API to grab a song or EP/LP art and returns an image link to the song art, or false if it can't find one.
      * @param {Array} artistArray The artist array of the song or EP/LP to search on Spotify.
      * @param {String} name The name of the song or EP/LP to search on Spotify.
-     * @param {Object} interaction The interaction of the discord message
      */
     grab_spotify_art: async function(artistArray, name) {
         const Spotify = require('node-spotify-api');
@@ -655,6 +672,36 @@ module.exports = {
         });
 
         return await result;
+    },
+
+    /**
+     * Searches the spotify API to grab artist images for each artist in an array, and returns an array of image links in the same order.
+     * @param {Array} artistArray The artist array to find images for on Spotify.
+     * @return {Array} An array of image links, in the same order as artistArray.
+     */
+    grab_spotify_artist_art: async function(artistArray) {
+        const Spotify = require('node-spotify-api');
+        const client_id = process.env.SPOTIFY_API_ID; // Your client id
+        const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
+        let imageArray = [];
+
+        // Check if our artistArray is somehow 0, and if so just return an empty list.
+        if (artistArray.length == 0) return [];
+
+        const spotify = new Spotify({
+            id: client_id,
+            secret: client_secret,
+        });
+
+        for (let artist of artistArray) {
+            await spotify.search({ type: "artist", query: artist }).then(function(data) {  
+                let results = data.artists.items[0].images;
+                if (results.length == 0) imageArray.push(false);
+                else imageArray.push(results[0].url);
+            });
+        }
+
+        return imageArray;
     },
 
     handle_error: function(interaction, err) {
