@@ -31,7 +31,7 @@ module.exports = {
 
         for (let i = 0; i < artistArray.length; i++) {
             let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
-            songArray = songArray.filter(v => v != 'Image');
+            songArray = songArray.filter(v => v != 'pfp_image');
 
             for (let j = 0; j < songArray.length; j++) {
                 // Reset all song stats for the hof back to normal state

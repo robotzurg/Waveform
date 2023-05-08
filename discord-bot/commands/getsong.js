@@ -40,7 +40,7 @@ module.exports = {
 
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
-        let artistArray = song_info.all_artists;
+        let artistArray = song_info.db_artists;
         let displaySongName = song_info.display_song_name;
 
         let songObj;
@@ -57,7 +57,7 @@ module.exports = {
         let artistSongs = Object.keys(db.reviewDB.get(artistArray[0]));
         let songVIP = false;
         for (let s of artistSongs) {
-            if (s.includes('VIP') && s.includes(songName)) songVIP = s;
+            if (s.includes('VIP') && s.includes(songName) && s != songName) songVIP = s;
         }
 
         songEP = songObj.ep;

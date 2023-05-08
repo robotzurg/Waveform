@@ -89,7 +89,7 @@ module.exports = {
                     return;
                 }
 
-                artists = song_info.all_artists;
+                artists = song_info.db_artists;
                 prodArtists = song_info.prod_artists;
                 name = song_info.song_name;
                 displayName = song_info.display_song_name;

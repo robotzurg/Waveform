@@ -58,13 +58,10 @@ module.exports = {
                     .setDescription('The name of the artist.')
                     .setAutocomplete(true)
                     .setRequired(false))),
-    help_desc: `Allows you to edit the metadata of a song, or an EP/LP, or an artist in the database, depending on which subcommand you use.\n` + 
-    `Editable data includes collaborators, vocalists, remixers, song name, and remixers.\n\n` +
+    help_desc: `Allows you to edit the metadata of a song, or an EP/LP, or an artist in the database, depending on which subcommand you use.\n` +
     `Leaving the artist and song name arguments blank will pull from currently playing song on Spotify, if you are logged in to Waveform with Spotify.\n\n` +
-    `Not currently functional due to being unfinished.`,
+    `Currently only the \`song\` subcommand is usable.`,
 	async execute(interaction) {
-
-        if (interaction.user.id != '122568101995872256') return interaction.reply('This command is under construction.');
 
         let origArtistArray = interaction.options.getString('artist');
         let songName = interaction.options.getString('song_name');
@@ -81,7 +78,7 @@ module.exports = {
         let oldOrigArtistArray = origArtistArray;
         songName = song_info.song_name;
         let oldSongName = songName;
-        let artistArray = song_info.all_artists;
+        let artistArray = song_info.db_artists;
         rmxArtistArray = song_info.remix_artists;
         let vocalistArray = song_info.vocal_artists;
         let displaySongName = song_info.display_song_name;
@@ -119,13 +116,6 @@ module.exports = {
                 .setStyle(ButtonStyle.Danger),
         );
 
-        let deleteButton = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('delete').setLabel('Delete From Database')
-                .setStyle(ButtonStyle.Success).setEmoji('✅'),
-        );
-
         // Setup button rows
         let songEditButtons = [
             new ActionRowBuilder()
@@ -138,13 +128,15 @@ module.exports = {
                     .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
                 new ButtonBuilder()
                     .setCustomId('remixers').setLabel('Remixers')
-                    .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
+                    .setStyle(ButtonStyle.Secondary).setEmoji('📝').setDisabled(remixers.length == 0),
                 new ButtonBuilder()
                     .setCustomId('song_name').setLabel('Song Name')
                     .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
+                new ButtonBuilder()
+                    .setCustomId('delete').setLabel('Delete')
+                    .setStyle(ButtonStyle.Secondary).setEmoji('🗑️'),
             ),
             databaseButtons,
-            deleteButton,
         ];
         let editButtons = songEditButtons;
 
@@ -188,16 +180,14 @@ module.exports = {
             { name: 'Song Type:', value: `${songType}`, inline: true },
         );
 
-        if (userArray.length != 0) {
-            editEmbed.addFields([{ name: 'Reviewers:', value: userArray.join('\n'), inline: true }]);
-        }
-
         if (epFrom != false) {
             let epType = epFrom.includes(' EP') ? 'EP' : 'LP';
             editEmbed.addFields([{ name: `From ${epType}:`, value: `${epFrom}`, inline: true }]);
+        } else {
+            editEmbed.addFields([{ name: `From EP/LP:`, value: `N/A`, inline: true }]);
         }
 
-        interaction.reply({ embeds: [editEmbed], components: [editButtons[0], editButtons[1]] });
+        interaction.reply({ embeds: [editEmbed], components: editButtons });
         let mode = 'main';
         let message = await interaction.fetchReply();
         const int_filter = i => i.user.id == interaction.user.id;
@@ -268,7 +258,7 @@ module.exports = {
                 await vocalist_r_collector.stop();
                 await remixer_r_collector.stop();
                 if (msg_collector != undefined) await msg_collector.stop();
-                i.update({ content: ' ', embeds: [editEmbed], components: [editButtons[0], editButtons[1]] });
+                i.update({ content: ' ', embeds: [editEmbed], components: editButtons });
             }
 
             if (i.customId == 'artists' || ((i.customId == 'add' || i.customId == 'remove') && mode == 'artists')) {
@@ -483,6 +473,8 @@ module.exports = {
                 msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
                 await i.update({ 
                     content: `**Type in the new name of the song. When you are finished, press confirm.**\n` +
+                    `**NOTE: If you change the name of a song to same name as a song the artist already has, all reviews from the conflicted song will move to this song.**\n` +
+                    `reviews attached to the conflicted song.\n` +
                     `Song Name: \`${songName}\``,
                     embeds: [], 
                     components: [confirmButton],
@@ -499,6 +491,7 @@ module.exports = {
                         editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
                         await i.editReply({ 
                             content: `**Type in the new name of the song. When you are finished, press confirm.**\n` +
+                            `**NOTE: If you change the name of a song to same name as a song the artist already has, all reviews from the conflicted song will move to this song.**\n` +
                             `Song Name: \`${songName}\``,
                         });
                         msg.delete();
@@ -511,7 +504,7 @@ module.exports = {
                     case 'song':
                         deleteArray = oldOrigArtistArray.filter(v => !origArtistArray.includes(v));
                         deleteRemixerArray = oldRemixers.filter(v => !remixers.includes(v));
-                        
+
                         // Delete all data from any artists removed
                         for (let delArtist of deleteArray) {
                             db.reviewDB.delete(delArtist, `${setterOldSongName}`);
@@ -524,6 +517,11 @@ module.exports = {
 
                         // Update all artists data
                         for (let artist of origArtistArray) {
+                            // Check if we need to merge 2 songs together
+                            let mergeSong = false;
+                            let artistSongs = Object.keys(db.reviewDB.get(artist));
+                            if (artistSongs.includes(songName)) mergeSong = true;
+
                             let oldSongObj = db.reviewDB.get(artist, `${setterOldSongName}`);
                             db.reviewDB.delete(artist, `${setterOldSongName}`);
                             // Start editing oldSongObj with new data
@@ -531,6 +529,21 @@ module.exports = {
                             oldSongObj.vocals = vocalistArray;
                             oldSongObj.remixers = remixers;
                             delete oldSongObj.tags;
+
+                            // Deal with merge conflict, if necessary
+                            if (mergeSong == true) {
+                                let mergeSongObj = db.reviewDB.get(artist, `${setterSongName}`);
+                                let mergeSongUsers = get_user_reviews(mergeSongObj);
+                                let oldSongUsers = get_user_reviews(oldSongObj);
+                                // We're basically going to take the song we're editing (oldSong) and the conflict song (mergeSong)
+                                // and put any reviews from mergeSong into oldSong (unless the user has reviewed both versions)
+                                for (let user of mergeSongUsers) {
+                                    if (!oldSongUsers.includes(user)) { // If we have a conflict in reviews
+                                        oldSongObj.user = mergeSongObj.user;
+                                    } 
+                                }
+                            }
+
                             // Set the new song object with all the newly edited data into the database for that artist
                             db.reviewDB.set(artist, oldSongObj, `${setterSongName}`);
                         }
@@ -564,12 +577,17 @@ module.exports = {
                 i.update({ components: [] });
                 interaction.followUp({ content: `Successfully added all changes to the database.`, ephemeral: true });
             } else if (i.customId == 'undo') {
-                await interaction.followUp({ content: 'Undid all changes.', ephemeral: true });
-                await interaction.deleteReply();
+                await i.update({ content: 'Undid all changes.', components: [], embeds: [] });
             } else if (i.customId == 'delete') {
+                mode = 'delete';
+                await i.update({ content: `Are you sure you would like to delete this ${subCommand} from the database? This action CANNOT be reversed.`, components: [warningButtons], embeds: [] });
+            } else if (i.customId == 'yes') { // Yes to deleting music
                 switch (subCommand) {
-                    case 'single':
-                        
+                    case 'song':
+                        for (let delArtist of origArtistArray) {
+                            db.reviewDB.delete(delArtist, `${setterOldSongName}`);
+                        }
+                        await i.update({ content: `Deleted **${origArtistArray.join(' & ')} - ${displaySongName}** from the database entirely.`, components: [], embeds: [] });
                     break;
                     case 'remix':
                         // TODO: Add support for deleting remixes
@@ -582,6 +600,8 @@ module.exports = {
                         // Will delete EP/LP data, but not each song within it.
                     break;
                 }
+            } else if (i.customId == 'no') { // Basically just a "revert back to basic view" button
+                await i.update({ content: null, embeds: [editEmbed], components: editButtons });
             }
         });
 

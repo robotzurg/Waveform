@@ -32,7 +32,7 @@ module.exports = {
 
             let origArtistArray = song_info.prod_artists;
             let epName = song_info.song_name;
-            let artistArray = song_info.all_artists;
+            let artistArray = song_info.db_artists;
             let epType = epName.includes(' LP') ? `LP` : `EP`;
 
             let epObj = db.reviewDB.get(artistArray[0])[epName];

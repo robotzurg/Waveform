@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const forAsync = require('for-async');
-const { get_user_reviews, parse_artist_song_data, handle_error, find_review_channel, grab_spotify_art } = require("../func.js");
+const { get_user_reviews, parse_artist_song_data, handle_error, find_review_channel, grab_spotify_art, grab_spotify_artist_art, spotify_api_setup } = require("../func.js");
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 
@@ -25,7 +25,7 @@ module.exports = {
                     .setRequired(false))
 
             .addStringOption(option => 
-                option.setName('art')
+                option.setName('image')
                     .setDescription('Override Spotify auto-art placement with your own image link.')
                     .setRequired(false))
 
@@ -45,45 +45,48 @@ module.exports = {
                 .setRequired(false))
 
             .addStringOption(option => 
-                option.setName('art')
-                    .setDescription('Override Spotify auto-art placement with your own image link.')
+                option.setName('image')
+                    .setDescription('Override Spotify auto-image placement with your own image link.')
                     .setRequired(false))),
     help_desc: `TBD`,
 	async execute(interaction) {
         try {
 
-        let artists = interaction.options.getString('artist');
+        let artist = interaction.options.getString('artist');
         let song = interaction.options.getString('name');
         let remixers = interaction.options.getString('remixers');
-        let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
-        if (song_info.error != undefined) {
-            await interaction.reply(song_info.error);
-            return;
-        }
-
-        let origArtistArray = song_info.prod_artists;
-        let songName = song_info.song_name;
-        let artistArray = song_info.all_artists;
-        let vocalistArray = song_info.vocal_artists;
+        let art = interaction.options.getString('image');
         let subCommand = interaction.options.getSubcommand();
-        // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
-        let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
-        let songArt = interaction.options.getString('art');
+        let displayEmbed;
 
         if (subCommand == 'music') {
-            if (db.reviewDB.get(artistArray[0])[songName] != undefined) {
+            let song_info = await parse_artist_song_data(interaction, artist, song, remixers);
+            if (song_info.error != undefined) {
+                await interaction.reply(song_info.error);
+                return;
+            }
+
+            let origArtistArray = song_info.prod_artists;
+            let songName = song_info.song_name;
+            let artistArray = song_info.db_artists;
+            let vocalistArray = song_info.vocal_artists;
+
+            // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
+            let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;    
+
+            if (db.reviewDB.get(artistArray[0])[songName] == undefined) {
                 return interaction.reply('This song does not exist in the database, you can only use this command with songs that exist in the database!');
             }
             
-            if (songArt == null) {
+            if (art == null) {
                 // Grab spotify art
-                songArt = grab_spotify_art(origArtistArray, songName);
+                art = await grab_spotify_art(origArtistArray, songName);
             }
 
-            if (songArt == false) return interaction.reply('You aren\'t playing a spotify song, or your discord spotify status isn\'t working!\nThis also could appear if you attempted to search spotify for a song art, and nothing was found!');
+            if (art == false) return interaction.reply('You aren\'t playing a spotify song, or your discord spotify status isn\'t working!\nThis also could appear if you attempted to search spotify for a song art, and nothing was found!');
 
             for (let i = 0; i < artistArray.length; i++) {
-                db.reviewDB.set(artistArray[i], songArt, `${setterSongName}.art`);
+                db.reviewDB.set(artistArray[i], art, `${setterSongName}.art`);
             }
 
             // Fix artwork on all reviews for this song
@@ -112,7 +115,7 @@ module.exports = {
                                 let msgEmbed;
                                 channelsearch.messages.fetch(msgtoEdit).then(msg => {
                                     msgEmbed = EmbedBuilder.from(msg.embeds[0]);
-                                    msgEmbed.setThumbnail(songArt);
+                                    msgEmbed.setThumbnail(art);
                                     msg.edit({ content: null, embeds: [msgEmbed] });
                                     resolve();
                                 });
@@ -122,13 +125,52 @@ module.exports = {
                 }
             }
 
-            let displayEmbed = new EmbedBuilder()
+            displayEmbed = new EmbedBuilder()
                 .setColor(`${interaction.member.displayHexColor}`)
                 .setDescription(`Art for **${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}** has been changed to the new art below.`)
-                .setImage(songArt);
-        }
+                .setImage(art);
+        } else {
+            let spotifyCheck;
+            let isPodcast;
+            
+            // Spotify Check
+            if (artist == null) {
+                const spotifyApi = await spotify_api_setup(interaction.user.id);
+                if (spotifyApi == false) return interaction.reply(`This subcommand requires you to use \`/login\` `);
 
-        
+                await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+                    if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
+                    artist = data.body.item.artists.map(a => a.name.replace(' & ', ' \\& '))[0];
+                    spotifyCheck = true;
+                });
+
+                // Check if a podcast is being played, as we don't support that.
+                if (isPodcast == true) {
+                    return interaction.reply('Podcasts are not supported with `/np`.');
+                }
+            }
+
+            // Input validation
+            if (spotifyCheck == false) {
+                return interaction.reply('Spotify playback not detected, please type in the artist name manually or play a song!');
+            } else if (db.reviewDB.get(artist) == undefined) {
+                return interaction.reply('This artist does not exist in the database.');
+            }
+            
+            if (art == null) {
+                // Grab spotify artist art
+                art = await grab_spotify_artist_art([artist]);
+                art = art[0];
+            }
+
+            if (art == false) return interaction.reply('You aren\'t playing a spotify song, or your discord spotify status isn\'t working!\nThis also could appear if you attempted to search spotify for a song art, and nothing was found!');
+            db.reviewDB.set(artist, art, `pfp_image`);
+
+            displayEmbed = new EmbedBuilder()
+                .setColor(`${interaction.member.displayHexColor}`)
+                .setDescription(`The display image for **${artist}** has been changed to the new image below.`)
+                .setImage(art);
+        }
 
 		return interaction.reply({ embeds: [displayEmbed] });
 

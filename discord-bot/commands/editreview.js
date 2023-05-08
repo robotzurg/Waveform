@@ -80,7 +80,7 @@ module.exports = {
 
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
-        let artistArray = song_info.all_artists;
+        let artistArray = song_info.db_artists;
         let displaySongName = song_info.display_song_name;
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;

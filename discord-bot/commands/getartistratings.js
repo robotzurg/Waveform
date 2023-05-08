@@ -66,7 +66,7 @@ module.exports = {
         let reviewedArray = [];
         let userArray = [];
         let avg = 0;
-        songArray = songArray.filter(item => item !== 'Image');
+        songArray = songArray.filter(item => item !== 'pfp_image');
         songArray = songArray.map(item => item.replace('\\', '\\\\'));
 
         for (let i = 0; i < songArray.length; i++) {

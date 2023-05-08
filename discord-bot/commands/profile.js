@@ -67,7 +67,7 @@ module.exports = {
 
             for (let i = 0; i < artistArray.length; i++) {
                 let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
-                songArray = songArray.filter(v => v != 'Image');
+                db.reviewDB.delete(artistArray[i], 'Image');
 
                 for (let j = 0; j < songArray.length; j++) {
                     let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];

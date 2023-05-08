@@ -52,7 +52,7 @@ module.exports = {
             }
 
             let epName = song_info.song_name;
-            let artistArray = song_info.all_artists;
+            let artistArray = song_info.db_artists;
             // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
             let setterEpName = epName.includes('.') ? `["${epName}"]` : epName;
             let epType = epName.includes(' LP') ? `LP` : `EP`;

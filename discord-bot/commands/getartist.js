@@ -43,9 +43,9 @@ module.exports = {
 
             const artistObj = db.reviewDB.get(artist);
             if (artistObj == undefined) return interaction.reply(`\`${artist}\` not found in the database.`);
-            const artistImage = artistObj.Image;
+            let artistImage = artistObj.pfp_image;
             let songArray = Object.keys(artistObj);
-            songArray = songArray.filter(item => item !== 'Image');
+            songArray = songArray.filter(item => item !== 'pfp_image');
             let epKeyArray = songArray.filter(item => item.includes(' LP') || item.includes(' EP'));
             songArray = songArray.filter(item => !item.includes(' LP') && !item.includes(' EP'));
 
@@ -129,8 +129,8 @@ module.exports = {
                     for (let ii = 0; ii < epSongs.length; ii++) {
                         starNum = 0;
                         const songObj = artistObj[epSongs[ii]];
-                        reviewNum = parseInt(artistObj[epSongs[ii]].review_num);
                         let reviews = get_user_reviews(songObj);
+                        reviewNum = reviews.length;
                         
                         for (let x = 0; x < reviews.length; x++) {
                             let rating = songObj[reviews[x]].rating;
@@ -200,9 +200,10 @@ module.exports = {
                     }
 
                     if (songArray[i].includes('Remix')) {
-                        remixArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• ${collabArray.join(' & ')} - ${songArray[i]} ${songDetails}`]);
+                        remixArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• ${songArray[i]} ${songDetails}`]);
                         // Escape character the stars so that they don't italicize the texts
                         remixArray[remixArray.length - 1][1] = remixArray[remixArray.length - 1][1].replace('*', '\\*');
+
                     } else { // Singles
                         singleArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• ${songArray[i]}` + 
                         `${(collabArray.length != 0) ? ` (with ${collabArray.join(' & ')})` : ``}` + 
