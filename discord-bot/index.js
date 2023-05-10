@@ -10,7 +10,7 @@ const { Routes, InteractionType } = require('discord-api-types/v9');
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions, 
-    GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildPresences, GatewayIntentBits.MessageContent], partials: [Partials.Channel, Partials.Message, Partials.Reaction] });
+    GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildPresences, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages], partials: [Partials.Channel, Partials.Message, Partials.Reaction] });
 client.commands = new Discord.Collection();
 client.cooldowns = new Discord.Collection();
 const registerCommands = [];
@@ -195,23 +195,6 @@ client.on('interactionCreate', async interaction => {
     if (!client.cooldowns.has(interaction.commandName)) {
         client.cooldowns.set(interaction.commandName, 0);
     }
-
-    const now = Date.now();
-	client.timestamps = client.cooldowns.get(interaction.commandName);
-    const cooldownAmount = (command.cooldown || 0) * 1000;
-
-    if (client.cooldowns.has(interaction.commandName) && client.cooldowns.get(interaction.commandName) != 0) {
-        const expirationTime = client.cooldowns.get(interaction.commandName) + cooldownAmount;
-
-        if (now < expirationTime) {
-            const timeLeft = (expirationTime - now) / 1000;
-            return interaction.reply(`Due to system limitations, you must wait ${timeLeft.toFixed(0)} more second(s) before the next use of \`/${interaction.commandName}\`.`);
-        }
-
-    }
-
-	client.cooldowns.set(interaction.commandName, now);
-	setTimeout(() => client.cooldowns.delete(interaction.commandName), cooldownAmount); 
 
     try {
         await command.execute(interaction, client);

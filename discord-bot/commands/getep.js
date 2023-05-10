@@ -141,6 +141,7 @@ module.exports = {
             let paged_user_id_list = _.chunk(userIDList, 10);
             let page_num = 0;
             let select_options = [];
+            if (paged_user_id_list.length == 0) paged_user_id_list = [[]];
 
             for (let userID of paged_user_id_list[0]) {
                 taggedMemberSel = await interaction.guild.members.fetch(userID).catch(() => {

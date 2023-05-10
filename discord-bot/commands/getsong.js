@@ -153,6 +153,9 @@ module.exports = {
         let paged_user_id_list = _.chunk(userIDList, 10);
         let page_num = 0;
         let select_options = [];
+        let sel_row;
+        // This fixes the for loop right under this if there is no reviews for the song.
+        if (paged_user_id_list.length == 0) paged_user_id_list = [[]];
 
         for (let userID of paged_user_id_list[0]) {
             taggedMemberSel = await interaction.guild.members.fetch(userID).catch(() => {
@@ -180,13 +183,14 @@ module.exports = {
         });
 
         // Setup select row for first set of 10
-        let sel_row = new ActionRowBuilder()
+        sel_row = new ActionRowBuilder()
         .addComponents(
             new StringSelectMenuBuilder()
                 .setCustomId('select')
                 .setPlaceholder('See other reviews by clicking on me!')
                 .addOptions(select_options),
         );
+        
 
         if (userArray.length != 0) songEmbed.addFields([{ name: 'Reviews:', value: paged_user_list[0].join('\n') }]);
         if (remixes.length != 0) songEmbed.addFields([{ name: 'Remixes:', value: remixes.join('\n') }]);
