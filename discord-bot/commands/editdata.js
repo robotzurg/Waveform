@@ -36,6 +36,7 @@ module.exports = {
             .addStringOption(option => 
                 option.setName('remixers')
                     .setDescription('The name of remixers of the song.')
+                    .setAutocomplete(true)
                     .setRequired(false)))
         .addSubcommand(subcommand =>
             subcommand.setName('ep-lp')
@@ -68,7 +69,7 @@ module.exports = {
         let rmxArtistArray = interaction.options.getString('remixers');
         let subCommand = interaction.options.getSubcommand();
 
-        if (subCommand == 'artist' || subCommand == 'ep-lp' || subCommand == 'remix') return interaction.reply('This subcommands aren\'t ready yet.');
+        if (subCommand == 'artist' || subCommand == 'ep-lp') return interaction.reply('This subcommands aren\'t ready yet.');
 
         let song_info = await parse_artist_song_data(interaction, origArtistArray, songName, rmxArtistArray);
         if (song_info.error != undefined) {
@@ -82,15 +83,20 @@ module.exports = {
         let oldSongName = songName;
         let artistArray = song_info.db_artists;
         rmxArtistArray = song_info.remix_artists;
+        let oldRmxArtistArray = rmxArtistArray.slice(0);
+        let noRemixSongName = songName.replace(` (${rmxArtistArray.join(' & ')} Remix)`, ``);
         let vocalistArray = song_info.vocal_artists;
         let displaySongName = song_info.display_song_name;
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         // eslint-disable-next-line no-unused-vars
         let setterOldSongName = songName.includes('.') ? `["${songName}"]` : songName;
         let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
+        let setterNoRemixSongName = noRemixSongName.includes('.') ? `["${noRemixSongName}"]` : noRemixSongName;
         
         let songObj = db.reviewDB.get(artistArray[0])[songName];
         if (songObj == undefined) return interaction.reply(`The song \`${origArtistArray.join(' & ')} - ${displaySongName}\` is not in the database.`);
+        // Make sure we're using the right subcommand
+        if (songName.includes('Remix') && subCommand == 'song') subCommand = 'remix'; 
         let songArt = songObj.art != undefined ? songObj.art : false;
         let songType = songName.includes('Remix') ? 'Remix' : 'Single';
         let remixers = songObj.remixers;
@@ -120,6 +126,8 @@ module.exports = {
 
         // Setup button rows
         let songEditButtons = [];
+        let editEmbed = new EmbedBuilder()
+            .setColor(`${interaction.member.displayHexColor}`);
 
         switch (subCommand) {
             case 'song':
@@ -144,6 +152,18 @@ module.exports = {
                 ),
                 databaseButtons,
             ];
+
+            // Setup embed
+            editEmbed.setThumbnail(songArt);
+            editEmbed.setDescription('`Song Information:`');
+            editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+            editEmbed.addFields(
+                { name: 'Artists:', value: `${origArtistArray.join('\n')}\n${rmxArtistArray.join('\n')}`, inline: true },
+                { name: 'Vocalists:', value: `${vocalistArray.length != 0 ? vocalistArray.join('\n') : `N/A`}`, inline: true },
+                { name: 'Remixers:', value: `${remixers.length != 0 ? remixers.join('\n') : `N/A`}`, inline: true },
+                { name: 'Song Name:', value: `${songName}`, inline: true },
+                { name: 'Song Type:', value: `${songType}`, inline: true },
+            );
             break;
 
             case 'remix': 
@@ -151,7 +171,7 @@ module.exports = {
                 new ActionRowBuilder()
                 .addComponents(
                     new ButtonBuilder()
-                        .setCustomId('remixers').setLabel('Remixers')
+                        .setCustomId('artists').setLabel('Remix Artists')
                         .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
                     new ButtonBuilder()
                         .setCustomId('delete').setLabel('Delete')
@@ -159,6 +179,15 @@ module.exports = {
                 ),
                 databaseButtons,
             ];
+
+            // Setup embed
+            editEmbed.setThumbnail(songArt);
+            editEmbed.setDescription('`Song Information:`');
+            editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+            editEmbed.addFields(
+                { name: 'Original Artists:', value: `${origArtistArray.join('\n')}`, inline: true },
+                { name: 'Remix Artists:', value: `${rmxArtistArray.join('\n')}`, inline: true },
+            );
             break;
 
             case 'ep-lp': 
@@ -232,23 +261,10 @@ module.exports = {
                 .setStyle(ButtonStyle.Danger),
         );
 
-        const editEmbed = new EmbedBuilder()
-        .setColor(`${interaction.member.displayHexColor}`)
-        .setThumbnail(songArt)
-        .setDescription('`Song Information:`')
-        .setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`)
-        .addFields(
-            { name: 'Artists:', value: `${origArtistArray.join('\n')}\n${rmxArtistArray.join('\n')}`, inline: true },
-            { name: 'Vocalists:', value: `${vocalistArray.length != 0 ? vocalistArray.join('\n') : `N/A`}`, inline: true },
-            { name: 'Remixers:', value: `${remixers.length != 0 ? remixers.join('\n') : `N/A`}`, inline: true },
-            { name: 'Song Name:', value: `${songName}`, inline: true },
-            { name: 'Song Type:', value: `${songType}`, inline: true },
-        );
-
-        if (epFrom != false) {
+        if (epFrom != false && subCommand != 'ep-lp' && subCommand != 'artist') {
             let epType = epFrom.includes(' EP') ? 'EP' : 'LP';
             editEmbed.addFields([{ name: `From ${epType}:`, value: `${epFrom}`, inline: true }]);
-        } else {
+        } else if (subCommand != 'remix') {
             editEmbed.addFields([{ name: `From EP/LP:`, value: `N/A`, inline: true }]);
         }
 
@@ -263,11 +279,11 @@ module.exports = {
 
         // Setup for remove select menus
         let a_select_options = [];
-        for (let i = 0; i < origArtistArray.length; i++) {
+        for (let artist of (subCommand == 'song' ? origArtistArray : subCommand == 'remix' ? rmxArtistArray : origArtistArray)) {
             a_select_options.push({
-                label: `${origArtistArray[i]}`,
-                description: `Select this to remove ${origArtistArray[i]} as an artist.`,
-                value: `${origArtistArray[i]}`,
+                label: `${artist}`,
+                description: `Select this to remove ${artist} as ${subCommand == 'song' ? 'an artist' : subCommand == 'remix' ? 'a remix artist' : 'an EP/LP artist'}.`,
+                value: `${artist}`,
             });
         }
         let artistRemoveSelect = new ActionRowBuilder()
@@ -333,7 +349,7 @@ module.exports = {
                 msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
                 if (i.customId == 'artists') {
                     await i.update({ 
-                        content: `**Would you like to add or remove artists from ${origArtistArray.join(' & ')} - ${displaySongName}?**`,
+                        content: `**Would you like to add or remove ${subCommand == 'remix' ? 'remix artists' : 'artists'} from ${origArtistArray.join(' & ')} - ${displaySongName}?**`,
                         embeds: [], 
                         components: [adjustButtons],
                     });
@@ -341,8 +357,8 @@ module.exports = {
                     if (i.customId == 'add') { // If we are adding data
                         mode = 'artists_add';
                         await i.update({ 
-                            content: `**Type in the name of the artists you would like to add, one by one. When you are finished, press confirm.**\n` +
-                            `__**Artists:**__\n\`\`\`\n${origArtistArray.length != 0 ? origArtistArray.join('\n') : ' '}\`\`\``,
+                            content: `**Type in the name of the ${subCommand == 'remix' ? 'remix artists' : 'artists'} you would like to add, one by one. When you are finished, press confirm.**\n` +
+                            `__**Artists:**__\n\`\`\`\n${subCommand == 'remix' ? rmxArtistArray.join('\n') : origArtistArray.join('\n')}\`\`\``,
                             embeds: [], 
                             components: [confirmButton],
                         });
@@ -350,27 +366,35 @@ module.exports = {
                         await msg_collector.on('collect', async msg => {
                             if (mode == 'artists_add') {
                                 if (!origArtistArray.includes(msg.content)) {
-                                    origArtistArray.push(msg.content);
-                                    // Remove the artist from the original vocalist array if they're in the artist array, to prevent duplicates
-                                    if (vocalistArray.includes(msg.content)) vocalistArray = origArtistArray.filter(v => v != msg.content);
-                                    
+                                    if (subCommand == 'song') {
+                                        origArtistArray.push(msg.content);
+                                        // Remove the artist from the original vocalist array if they're in the artist array, to prevent duplicates
+                                        if (vocalistArray.includes(msg.content)) vocalistArray = origArtistArray.filter(v => v != msg.content);
+                                        // Edit the embed
+                                        editEmbed.data.fields[0].value = origArtistArray.join('\n');
+                                        editEmbed.data.fields[1].value = vocalistArray.length != 0 ? vocalistArray.join('\n') : `N/A`;
+                                        editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+                                    } else if (subCommand == 'remix') {
+                                        rmxArtistArray.push(msg.content);
+                                        editEmbed.data.fields[1].value = rmxArtistArray.join('\n');
+                                        displaySongName = `${noRemixSongName} (${rmxArtistArray.join(' & ')} Remix)`;
+                                        songName = `${noRemixSongName} (${rmxArtistArray.join(' & ')} Remix)`;
+                                        setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
+                                        editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+                                    }
+
                                     // Update select menu options
                                     a_select_options.push({
                                         label: `${msg.content}`,
-                                        description: `Select this to remove ${msg.content} as an artist.`,
+                                        description: `Select this to remove ${msg.content} as ${subCommand == 'song' ? 'an artist' : subCommand == 'remix' ? 'a remix artist' : 'an EP/LP artist'}.`,
                                         value: `${msg.content}`,
                                     });
                                     artistRemoveSelect.components[0].setOptions(a_select_options);
 
-                                    // Edit the embed
-                                    editEmbed.data.fields[0].value = origArtistArray.join('\n');
-                                    editEmbed.data.fields[1].value = vocalistArray.length != 0 ? vocalistArray.join('\n') : `N/A`;
-                                    editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
-
                                     // Update message
                                     await i.editReply({ 
-                                        content: `**Type in the name of the artists you would like to add, one by one. When you are finished, press confirm.**\n` +
-                                        `__**Artists:**__\n\`\`\`\n${origArtistArray.length != 0 ? origArtistArray.join('\n') : ' '}\`\`\``,
+                                        content: `**Type in the name of the ${subCommand == 'remix' ? 'remix artists' : 'artists'} you would like to add, one by one. When you are finished, press confirm.**\n` +
+                                        `__**Artists:**__\n\`\`\`\n${subCommand == 'remix' ? rmxArtistArray.join('\n') : origArtistArray.join('\n')}\`\`\``,
                                     });
                                 }
                                 await msg.delete();
@@ -384,7 +408,7 @@ module.exports = {
                         }
 
                         await i.update({ 
-                            content: `**Select artists that you would like to remove, one by one in the select menu. When you are finished, press confirm.**`,
+                            content: `**Select ${subCommand == 'remix' ? 'remix artists' : 'artists'} that you would like to remove, one by one in the select menu. When you are finished, press confirm.**`,
                             embeds: [], 
                             components: [artistRemoveSelect, confirmButton],
                         });
@@ -406,7 +430,7 @@ module.exports = {
                                 }
 
                                 sel.update({
-                                    content: `**Select artists that you would like to remove, one by one in the select menu. When you are finished, press confirm.**\n` +
+                                    content: `**Select ${subCommand == 'remix' ? 'remix artists' : 'artists'} that you would like to remove, one by one in the select menu. When you are finished, press confirm.**\n` +
                                     `Successfully removed **${sel.values[0]}**.`,
                                     components: [artistRemoveSelect, confirmButton],
                                 });
@@ -563,7 +587,7 @@ module.exports = {
                     }
                 });
             } else if (i.customId == 'finish') {
-                let deleteArray, deleteRemixerArray;
+                let deleteArray, deleteRemixerArray, newSongObj;
                 // Edit the database
                 switch (subCommand) {
                     case 'song':
@@ -594,6 +618,7 @@ module.exports = {
                             oldSongObj.vocals = vocalistArray;
                             oldSongObj.remixers = remixers;
                             delete oldSongObj.tags;
+                            
 
                             // Deal with merge conflict, if necessary
                             if (mergeSong == true) {
@@ -630,7 +655,59 @@ module.exports = {
                         }
                     break;
                     case 'remix':
-                        // TODO: Add support for editing remixes
+                        deleteArray = oldRmxArtistArray.filter(v => !rmxArtistArray.includes(v));
+
+                        // Delete all data from any artists removed
+                        for (let delArtist of deleteArray) {
+                            db.reviewDB.delete(delArtist, `${setterOldSongName}`);
+                        }
+
+                        // Update all artists data
+                        for (let artist of rmxArtistArray) {
+                            // Check if we need to merge 2 songs together
+                            let mergeSong = false;
+                            let artistSongs = Object.keys(db.reviewDB.get(artist));
+                            if (artistSongs.includes(songName)) mergeSong = true;
+
+                            let oldSongObj = db.reviewDB.get(artist, `${setterOldSongName}`);
+                            if (oldSongObj != undefined) {
+                                newSongObj = oldSongObj;
+                                db.reviewDB.delete(artist, `${setterOldSongName}`);
+                            } else {
+                                oldSongObj = newSongObj;
+                            }
+
+                            // Start editing oldSongObj with new data
+                            oldSongObj.remix_collab = rmxArtistArray.filter(v => v != artist);
+                            delete oldSongObj.tags;
+
+                            // Deal with merge conflict, if necessary
+                            if (mergeSong == true) {
+                                let mergeSongObj = db.reviewDB.get(artist, `${setterSongName}`);
+                                let mergeSongUsers = get_user_reviews(mergeSongObj);
+                                let oldSongUsers = get_user_reviews(oldSongObj);
+                                // We're basically going to take the song we're editing (oldSong) and the conflict song (mergeSong)
+                                // and put any reviews from mergeSong into oldSong (unless the user has reviewed both versions)
+                                for (let user of mergeSongUsers) {
+                                    if (!oldSongUsers.includes(user)) { // If we have a conflict in reviews
+                                        oldSongObj.user = mergeSongObj.user;
+                                    } 
+                                }
+                            }
+
+                            // Set the new song object with all the newly edited data into the database for that artist
+                            db.reviewDB.set(artist, oldSongObj, `${setterSongName}`);
+                        }
+
+                        // Update the original artists to have newly up to date remixer lists
+                        for (let artist of origArtistArray) {
+                            let remixerArray = db.reviewDB.get(artist, `${setterNoRemixSongName}.remixers`);
+                            remixerArray = remixerArray.filter(v => v != oldRmxArtistArray.join(' & '));
+                            console.log(oldRmxArtistArray.join(' & '), remixerArray);
+                            remixerArray.push(rmxArtistArray.join(' & '));
+                            db.reviewDB.set(artist, remixerArray, `${setterNoRemixSongName}.remixers`);
+                        }
+
                     break;
                     case 'artist':
                         // TODO: Add support for editing artist data
@@ -655,14 +732,25 @@ module.exports = {
                         await i.update({ content: `Deleted **${origArtistArray.join(' & ')} - ${displaySongName}** from the database entirely.`, components: [], embeds: [] });
                     break;
                     case 'remix':
-                        // TODO: Add support for deleting remixes
-                    break;
-                    case 'artist':
-                        // TODO: Add support for deleting artists
+                        // Delete the data from the remix artists
+                        for (let delArtist of rmxArtistArray) {
+                            db.reviewDB.delete(delArtist, `${setterOldSongName}`);
+                            // Remove the remix artists from the remix artist listing
+                            for (let artist of origArtistArray) {
+                                let remixerArray = db.reviewDB.get(artist, `${setterNoRemixSongName}.remixers`);
+                                remixerArray = remixerArray.filter(v => v != delArtist);
+                                db.reviewDB.set(artist, remixerArray, `${setterNoRemixSongName}.remixers`);
+                            }
+                        }
+
+                        await i.update({ content: `Deleted **${origArtistArray.join(' & ')} - ${displaySongName}** from the database entirely.`, components: [], embeds: [] });
                     break;
                     case 'ep-lp':
                         // TODO: Add support for deleting EPs/LPs
                         // Will delete EP/LP data, but not each song within it.
+                    break;
+                    case 'artist':
+                        // TODO: Add support for deleting artists
                     break;
                 }
             } else if (i.customId == 'no') { // Basically just a "revert back to basic view" button

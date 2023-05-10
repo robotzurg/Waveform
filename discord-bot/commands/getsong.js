@@ -153,40 +153,43 @@ module.exports = {
         let paged_user_id_list = _.chunk(userIDList, 10);
         let page_num = 0;
         let select_options = [];
+        let sel_row;
 
-        for (let userID of paged_user_id_list[0]) {
-            taggedMemberSel = await interaction.guild.members.fetch(userID).catch(() => {
-                taggedMemberSel = undefined;
-            });
+        if (paged_user_list.length != 0) {
+            for (let userID of paged_user_id_list[0]) {
+                taggedMemberSel = await interaction.guild.members.fetch(userID).catch(() => {
+                    taggedMemberSel = undefined;
+                });
 
-            if (taggedMemberSel == undefined) {
-                taggedUserSel = await client.users.fetch(userID);
-                selDisplayName = taggedUserSel.username;
-            } else {
-                selDisplayName = taggedMemberSel.displayName;
+                if (taggedMemberSel == undefined) {
+                    taggedUserSel = await client.users.fetch(userID);
+                    selDisplayName = taggedUserSel.username;
+                } else {
+                    selDisplayName = taggedMemberSel.displayName;
+                }
+
+                select_options.push({
+                    label: `${selDisplayName}`,
+                    description: `${selDisplayName}'s review of the song.`,
+                    value: `${userID}`,
+                });
             }
 
             select_options.push({
-                label: `${selDisplayName}`,
-                description: `${selDisplayName}'s review of the song.`,
-                value: `${userID}`,
+                label: `Back`,
+                description: `Go back to the main song data menu.`,
+                value: `back`,
             });
+
+            // Setup select row for first set of 10
+            sel_row = new ActionRowBuilder()
+            .addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId('select')
+                    .setPlaceholder('See other reviews by clicking on me!')
+                    .addOptions(select_options),
+            );
         }
-
-        select_options.push({
-            label: `Back`,
-            description: `Go back to the main song data menu.`,
-            value: `back`,
-        });
-
-        // Setup select row for first set of 10
-        let sel_row = new ActionRowBuilder()
-        .addComponents(
-            new StringSelectMenuBuilder()
-                .setCustomId('select')
-                .setPlaceholder('See other reviews by clicking on me!')
-                .addOptions(select_options),
-        );
 
         if (userArray.length != 0) songEmbed.addFields([{ name: 'Reviews:', value: paged_user_list[0].join('\n') }]);
         if (remixes.length != 0) songEmbed.addFields([{ name: 'Remixes:', value: remixes.join('\n') }]);
