@@ -416,11 +416,21 @@ module.exports = {
                         remove_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
                         remove_collector.on('collect', async sel => {
                             if (sel.customId == 'artists_remove_sel') {
-                                origArtistArray = origArtistArray.filter(v => v != sel.values[0]);
-                                displaySongName = (`${songName}` + 
-                                `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
+                                if (subCommand == 'song') {
+                                    origArtistArray = origArtistArray.filter(v => v != sel.values[0]);
+                                    displaySongName = (`${songName}` + 
+                                    `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
 
-                                editEmbed.data.fields[0].value = origArtistArray.join('\n');
+                                    editEmbed.data.fields[0].value = origArtistArray.join('\n');
+                                } else if (subCommand == 'remix') {
+                                    rmxArtistArray = rmxArtistArray.filter(v => v != sel.values[0]);
+                                    editEmbed.data.fields[1].value = rmxArtistArray.join('\n');
+                                    displaySongName = `${noRemixSongName} (${rmxArtistArray.join(' & ')} Remix)`;
+                                    songName = `${noRemixSongName} (${rmxArtistArray.join(' & ')} Remix)`;
+                                    setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
+                                    editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+                                }
+
                                 editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
                                 a_select_options = a_select_options.filter(v => v.label != sel.values[0]);
                                 artistRemoveSelect.components[0].setOptions(a_select_options);
@@ -619,7 +629,6 @@ module.exports = {
                             oldSongObj.remixers = remixers;
                             delete oldSongObj.tags;
                             
-
                             // Deal with merge conflict, if necessary
                             if (mergeSong == true) {
                                 let mergeSongObj = db.reviewDB.get(artist, `${setterSongName}`);
@@ -703,7 +712,6 @@ module.exports = {
                         for (let artist of origArtistArray) {
                             let remixerArray = db.reviewDB.get(artist, `${setterNoRemixSongName}.remixers`);
                             remixerArray = remixerArray.filter(v => v != oldRmxArtistArray.join(' & '));
-                            console.log(oldRmxArtistArray.join(' & '), remixerArray);
                             remixerArray.push(rmxArtistArray.join(' & '));
                             db.reviewDB.set(artist, remixerArray, `${setterNoRemixSongName}.remixers`);
                         }
