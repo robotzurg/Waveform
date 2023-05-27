@@ -69,7 +69,7 @@ module.exports = {
         let rmxArtistArray = interaction.options.getString('remixers');
         let subCommand = interaction.options.getSubcommand();
 
-        if (subCommand == 'artist' || subCommand == 'ep-lp') return interaction.reply('This subcommands aren\'t ready yet.');
+        if (subCommand == 'ep-lp') return interaction.reply('This subcommand isn\'t ready yet.');
 
         let song_info = await parse_artist_song_data(interaction, origArtistArray, songName, rmxArtistArray);
         if (song_info.error != undefined) {
@@ -94,7 +94,12 @@ module.exports = {
         let setterNoRemixSongName = noRemixSongName.includes('.') ? `["${noRemixSongName}"]` : noRemixSongName;
         
         let songObj = db.reviewDB.get(artistArray[0])[songName];
-        if (songObj == undefined) return interaction.reply(`The song \`${origArtistArray.join(' & ')} - ${displaySongName}\` is not in the database.`);
+        if (subCommand != 'artist' && songObj == undefined) {
+            return interaction.reply(`The song \`${origArtistArray.join(' & ')} - ${displaySongName}\` is not in the database.`);
+        } else if (subCommand == 'artist' && !db.reviewDB.has(origArtistArray[0])) {
+            return interaction.reply(`The artist ${origArtistArray[0]} is not in the database.`);
+        }
+
         // Make sure we're using the right subcommand
         if (songName.includes('Remix') && subCommand == 'song') subCommand = 'remix'; 
         let songArt = songObj.art != undefined ? songObj.art : false;
@@ -103,6 +108,37 @@ module.exports = {
         let oldRemixers = remixers;
         let epFrom = songObj.ep;
         let userArray = get_user_reviews(songObj);
+
+        // Artist subcommand variables
+        let artistPfp = db.reviewDB.get(origArtistArray[0], `pfp_image`);
+        let artistMusic = Object.keys(db.reviewDB.get(origArtistArray[0]));
+        artistMusic = artistMusic.filter(v => v !== 'pfp_image');
+        let artistSingles = [];
+        let artistRemixes = [];
+        let artistEPs = [];
+        // These variables are useful for editing data later in the finish case
+        let extraArtistMusicData = [];
+
+        // Separate out the artists discography into 3 separate arrays
+        for (let music of artistMusic) {
+            if (music.includes(' EP') || music.includes(' LP')) {
+                artistEPs.push(music);
+            } else if (music.includes('Remix')) {
+                artistRemixes.push(music);
+            } else {
+                artistSingles.push(music);
+            }
+            
+            let setterMusicName = music.includes('.') ? `["${music}"]` : music;
+            let musicObj = db.reviewDB.get(origArtistArray[0], `${setterMusicName}`);
+            extraArtistMusicData.push({
+                name: music,
+                setter_name: setterMusicName,
+                collab: musicObj.collab,
+                remix_collab: musicObj.remix_collab,
+                remixers: musicObj.remixers,
+            });
+        }
 
         for (let i = 0; i < userArray.length; i++) {
             if (userArray[i] != 'EP') {
@@ -208,7 +244,7 @@ module.exports = {
                         .setStyle(ButtonStyle.Secondary).setEmoji('🗑️'),
                 ),
                 databaseButtons,
-            ];
+                ];
             break;
 
             case 'artist': 
@@ -223,13 +259,25 @@ module.exports = {
                         .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
                     new ButtonBuilder()
                         .setCustomId('artist_eps').setLabel('EPs/LPs')
-                        .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
+                        .setStyle(ButtonStyle.Secondary).setEmoji('📝').setDisabled(artistEPs.length == 0), // If we have no EPs/LPs, disable this button
                     new ButtonBuilder()
                         .setCustomId('delete').setLabel('Delete')
                         .setStyle(ButtonStyle.Secondary).setEmoji('🗑️'),
                 ),
                 databaseButtons,
-            ];
+                ];
+
+                // Setup embed
+                if (artistPfp != false && artistPfp != undefined) {
+                    editEmbed.setThumbnail(artistPfp);
+                }
+                editEmbed.setDescription('`Artist Information:`');
+                editEmbed.setTitle(`${origArtistArray[0]}`);
+                editEmbed.addFields(
+                    { name: 'Num of Singles:', value: `${artistSingles.length}` },
+                    { name: 'Num of Remixes:', value: `${artistRemixes.length}` },
+                    { name: 'Num of EPs/LPs:', value: `${artistEPs.length}` },
+                );
             break;
         }
         let editButtons = songEditButtons;
@@ -264,7 +312,7 @@ module.exports = {
         if (epFrom != false && subCommand != 'ep-lp' && subCommand != 'artist') {
             let epType = epFrom.includes(' EP') ? 'EP' : 'LP';
             editEmbed.addFields([{ name: `From ${epType}:`, value: `${epFrom}`, inline: true }]);
-        } else if (subCommand != 'remix') {
+        } else if (subCommand != 'remix' && subCommand != 'ep-lp' && subCommand != 'artist') {
             editEmbed.addFields([{ name: `From EP/LP:`, value: `N/A`, inline: true }]);
         }
 
@@ -278,6 +326,7 @@ module.exports = {
         let msg_filter = m => m.author.id == interaction.user.id;
 
         // Setup for remove select menus
+        // #region SELECT MENUS FOR SONG/REMIX SUBCOMMAND
         let a_select_options = [];
         for (let artist of (subCommand == 'song' ? origArtistArray : subCommand == 'remix' ? rmxArtistArray : origArtistArray)) {
             a_select_options.push({
@@ -328,6 +377,59 @@ module.exports = {
                 .addOptions(r_select_options),
         );
         let remixer_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
+        //#endregion
+
+        // SELECT MENUS FOR ARTIST SUBCOMMAND
+        let a_single_select_options = [];
+        let a_remix_select_options = [];
+        let a_ep_select_options = [];
+
+        for (let song of artistSingles) {
+            a_single_select_options.push({
+                label: `${song}`,
+                description: `Select this to remove ${song} from this artists discography.`,
+                value: `${song}`,
+            });
+        }
+        let artistSingleRemoveSelect = new ActionRowBuilder()
+        .addComponents(
+            new StringSelectMenuBuilder()
+                .setCustomId('artist_single_remove_sel')
+                .setPlaceholder(`Singles from ${origArtistArray[0]}`)
+                .addOptions(a_single_select_options),
+        );
+
+        for (let remix of artistRemixes) {
+            a_remix_select_options.push({
+                label: `${remix}`,
+                description: `Select this to remove ${remix} from this artists discography.`,
+                value: `${remix}`,
+            });
+        }
+        let artistRemixRemoveSelect = new ActionRowBuilder()
+        .addComponents(
+            new StringSelectMenuBuilder()
+                .setCustomId('artist_remix_remove_sel')
+                .setPlaceholder(`Remixes from ${origArtistArray[0]}`)
+                .addOptions(a_remix_select_options),
+        );
+
+        for (let ep of artistEPs) {
+            a_ep_select_options.push({
+                label: `${ep}`,
+                description: `Select this to remove ${ep} from this artists discography.`,
+                value: `${ep}`,
+            });
+        }
+        let artistEPRemoveSelect = new ActionRowBuilder()
+        .addComponents(
+            new StringSelectMenuBuilder()
+                .setCustomId('artist_ep_remove_sel')
+                .setPlaceholder(`EPs/LPs from ${origArtistArray[0]}`)
+                .addOptions(a_ep_select_options),
+        );
+
+        let artist_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
 
         menu_collector.on('collect', async i => {
             if (i.customId == 'confirm') {
@@ -338,6 +440,7 @@ module.exports = {
                 await artist_r_collector.stop();
                 await vocalist_r_collector.stop();
                 await remixer_r_collector.stop();
+                await artist_collector.stop();
                 if (msg_collector != undefined) await msg_collector.stop();
                 i.update({ content: ' ', embeds: [editEmbed], components: editButtons });
             }
@@ -596,9 +699,15 @@ module.exports = {
                         msg.delete();
                     }
                 });
+            } else if (i.customId == 'artist_name') {
+                // TODO: Add this
+            } else if (i.customId == 'artist_songs') {
+                // TODO: Add this
+            } else if (i.customId == 'artist_eps') {
+                // TODO: Add this
             } else if (i.customId == 'finish') {
                 let deleteArray, deleteRemixerArray, newSongObj;
-                // Edit the database
+                // Edit the database differently for each subcommand
                 switch (subCommand) {
                     case 'song':
                         deleteArray = oldOrigArtistArray.filter(v => !origArtistArray.includes(v));
@@ -638,7 +747,7 @@ module.exports = {
                                 // and put any reviews from mergeSong into oldSong (unless the user has reviewed both versions)
                                 for (let user of mergeSongUsers) {
                                     if (!oldSongUsers.includes(user)) { // If we have a conflict in reviews
-                                        oldSongObj.user = mergeSongObj.user;
+                                        oldSongObj[user] = mergeSongObj[user];
                                     } 
                                 }
                             }
@@ -699,7 +808,7 @@ module.exports = {
                                 // and put any reviews from mergeSong into oldSong (unless the user has reviewed both versions)
                                 for (let user of mergeSongUsers) {
                                     if (!oldSongUsers.includes(user)) { // If we have a conflict in reviews
-                                        oldSongObj.user = mergeSongObj.user;
+                                        oldSongObj[user] = mergeSongObj[user];
                                     } 
                                 }
                             }
@@ -718,7 +827,8 @@ module.exports = {
 
                     break;
                     case 'artist':
-                        // TODO: Add support for editing artist data
+                        // TODO: Add support for removing songs from an artists database.
+
                     break;
                     case 'ep-lp':
                         // TODO: Add support for editing ep/lp data
