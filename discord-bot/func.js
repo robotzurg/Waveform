@@ -108,6 +108,7 @@ module.exports = {
         let passesChecks = true;
         let trackList = false;
         let songArt = false;
+        let localReturnObj = {};
         if (remixers != null) {
             rmxArtistArray = [remixers.split(' & ')];
             rmxArtistArray = rmxArtistArray.flat(1);
@@ -129,6 +130,21 @@ module.exports = {
             }
 
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+                if (data.body.item.is_local == true) { 
+                    passesChecks = 'local'; 
+                    localReturnObj = {
+                        prod_artists: data.body.item.artists[0].name.split(' & '), 
+                        song_name: data.body.item.name, // Song name with remixers in the name
+                        main_song_name: data.body.item.name, // Song Name without remixers in the name
+                        display_song_name: data.body.item.name, // Song name with remixers and features in the name
+                        db_artists: data.body.item.artists[0].name.split(' & '), 
+                        all_artists: data.body.item.artists[0].name.split(' & '),
+                        remix_artists: [], 
+                        vocal_artists: [],
+                        art: false,
+                    };
+                    return; 
+                } 
                 if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
                 if (data.body.item == undefined) { passesChecks = 'notplaying'; return; }
                 origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
@@ -180,9 +196,6 @@ module.exports = {
                 });
             });
 
-            // Fix capitals
-            songArg = songArg.replace('(With', '(with');
-
             // Check if a podcast is being played, as we don't support that.
             if (isPodcast == true) {
                 return { error: 'Podcasts are not supported with `/np`.' };
@@ -192,6 +205,10 @@ module.exports = {
                 return { error: 'You are not currently playing a song on Spotify.' };
             }
 
+            if (passesChecks == 'local') {
+                return localReturnObj;
+            }
+
             if (passesChecks == false) {
                 return { error: 'This song cannot be parsed properly in the database, and as such cannot be reviewed or have data pulled up for it.' };
             } else if (passesChecks == 'ep') {
@@ -199,6 +216,8 @@ module.exports = {
             } else if (passesChecks == 'length') {
                 return { error: 'This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.' };
             }
+
+            songArg = songArg.replace('(With', '(with');
             
         } else {
             if (remixers != null) {
