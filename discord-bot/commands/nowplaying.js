@@ -22,8 +22,13 @@ module.exports = {
 
         await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
             if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
-            spotifyUrl = data.body.item.external_urls.spotify;
-            songArt = data.body.item.album.images[0].url;
+            if (data.body.item.is_local == false) {
+                spotifyUrl = data.body.item.external_urls.spotify;
+                songArt = data.body.item.album.images[0].url;
+            } else {
+                spotifyUrl = 'N/A';
+                songArt = false;
+            }
             songLength = data.body.item.duration_ms;
             songCurMs = data.body.progress_ms;
             musicProgressBar = progressbar.splitBar(songLength / 1000, songCurMs / 1000, 12)[0];
@@ -45,6 +50,8 @@ module.exports = {
         } else if (validSong == false) {
             return interaction.editReply(`This song has an invalid song layout, and cannot be parsed by Waveform, therefore cannot be pulled up.`);
         }
+
+        if (songArt == false) songArt = interaction.member.avatarURL({ extension: 'png' });
 
         const npEmbed = new EmbedBuilder()
         .setColor(`${interaction.member.displayHexColor}`)
@@ -83,16 +90,16 @@ module.exports = {
                     `\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}` + 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-                    `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
+                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 } else if (userArray.length != 0) {
                     npEmbed.setDescription(`Reviews: ${userArray.length != 0 ? `\`${userArray.length} reviews\`` : ``}` +  
                     `${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}` + 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-                    `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
+                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 } else {
                     npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-                    `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
+                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 }
 
                 if (songObj.ep != undefined && songObj.ep != false) {
@@ -106,11 +113,11 @@ module.exports = {
                 }
             } else {
                 npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-                `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
+                `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
             }
         } else {
             npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-            `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
+            `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
         }
         
         interaction.editReply({ embeds: [npEmbed] });
