@@ -73,6 +73,26 @@ module.exports = {
     parse_artist_song_data: async function(interaction, artists = null, song = null, remixers = null, vocalists = null) {
         const { spotify_api_setup } = require('./func.js');
 
+        // If we are in the /editdata artist command and put in a manual name entry, run this a little differently
+        let editDataSubCommand = 'N/A';
+
+        if (interaction.commandName == 'editdata') {
+            editDataSubCommand = interaction.options.getSubcommand();
+            if (editDataSubCommand == 'artist' && artists != null) {
+                return { 
+                    prod_artists: [artists], 
+                    song_name: 'N/A', // Song name with remixers in the name
+                    main_song_name: 'N/A', // Song Name without remixers in the name
+                    display_song_name: 'N/A', // Song name with remixers and features in the name
+                    db_artists: [artists], 
+                    all_artists: [artists],
+                    remix_artists: [], 
+                    vocal_artists: [],
+                    art: 'N/A',
+                };
+            }
+        }
+
         if ((artists == null && song != null) || (artists != null && song == null)) {
             return { error: 'If you are searching for a review manually, you must put in both the artists (in the artist argument) and the song name (in the song_name argument).' };
         }
@@ -117,7 +137,7 @@ module.exports = {
                 songArt = data.body.item.album.images[0].url;
                 await spotifyApi.getAlbum(data.body.item.album.id)
                 .then(async album_data => {
-                    if (interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') {
+                    if ((interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') || (editDataSubCommand == 'ep-lp')) {
                         trackList = album_data.body.tracks.items.map(t => t.name);
                         for (let i = 0; i < trackList.length; i++) {
                             if (songArg.includes('feat.')) {
@@ -921,5 +941,9 @@ module.exports = {
     isValidURL: function(string) {
         let res = string.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
         return (res !== null);
+    },
+
+    convertToSetterName: function(string) {
+        return string.includes('.') ? `["${string}"]` : string;
     },
 };
