@@ -38,6 +38,8 @@ module.exports = {
             return;
         }
 
+        console.log(song_info.spotify_uri);
+
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
         let artistArray = song_info.db_artists;

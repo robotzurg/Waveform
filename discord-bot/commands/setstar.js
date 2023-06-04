@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { parse_artist_song_data, handle_error, find_review_channel } = require('../func.js');
+const { parse_artist_song_data, handle_error, find_review_channel, spotify_api_setup } = require('../func.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -41,6 +41,9 @@ module.exports = {
         let songName = song_info.song_name;
         let artistArray = song_info.db_artists;
         let vocalistArray = song_info.vocal_artists;
+        let spotifyUri = song_info.spotify_uri;
+        let spotifyApi = await spotify_api_setup(interaction.user.id);
+        let starPlaylistId = db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist');
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
 
@@ -55,6 +58,10 @@ module.exports = {
 
         let star_check = songReviewObj.starred;
         if (star_check == undefined) star_check = false;
+        console.log(spotifyUri);
+
+        if (spotifyUri == false) spotifyUri = db.reviewDB.get(artistArray[0], `${setterSongName}.spotify_uri`);
+        if (spotifyUri == undefined) spotifyUri = false;
 
         for (let i = 0; i < artistArray.length; i++) {
             if (star_check == true) {
@@ -68,8 +75,24 @@ module.exports = {
 
         if (star_check == false) {
             interaction.reply(`Star added to **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }**!`);
+        
+            if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && spotifyUri != false) {
+                // Remove from spotify playlist
+                await spotifyApi.addTracksToPlaylist(starPlaylistId, [spotifyUri])
+                .then(() => {}, function(err) {
+                    console.log('Something went wrong!', err);
+                });
+            }    
         } else {
             interaction.reply(`Unstarred **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }**.`);
+
+            if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && spotifyUri != false) {
+                // Remove from spotify playlist
+                await spotifyApi.removeTracksFromPlaylist(starPlaylistId, [{ uri: spotifyUri }])
+                .then(() => {}, function(err) {
+                    console.log('Something went wrong!', err);
+                });
+            }
         }
 
         let msgtoEdit = songReviewObj.msg_id;
@@ -103,6 +126,7 @@ module.exports = {
             if (db.reviewDB.get(artistArray[0])[ep_from][interaction.user.id] != undefined) {
                 let epMsgToEdit = db.reviewDB.get(artistArray[0])[ep_from][interaction.user.id].msg_id;
                 let channelsearch = await find_review_channel(interaction, interaction.user.id, epMsgToEdit);
+                if (channelsearch == undefined) return;
 
                 channelsearch.messages.fetch(`${epMsgToEdit}`).then(msg => {
                     let msgEmbed = EmbedBuilder.from(msg.embeds[0]);

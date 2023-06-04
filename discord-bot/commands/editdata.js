@@ -1,9 +1,7 @@
 // TODO:
-// 1. EP/LP artist editing crashes when removing more than 1 artist
-// 2. EP/LP tracklist editing (has to be made from scratch unfortunately, but it's the only one!)
-// 3. EP/LP deleting from database
-// 4. EP/LP confirm to database editing
-// 5. Collab remix artist support at some point
+// 1. Setup adding/removing EP/LP songs
+// 2. EP/LP confirm database editing
+// 3. Collab remix artist support at some point
 
 const db = require("../db.js");
 const { parse_artist_song_data, get_user_reviews, convertToSetterName } = require("../func.js");
@@ -17,7 +15,7 @@ module.exports = {
         .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand.setName('song')
-            .setDescription('Edit the various data of a regular single')
+            .setDescription('Edit the metadata of a regular single')
             .addStringOption(option => 
                 option.setName('artist')
                     .setDescription('The name of the artist(s).')
@@ -30,7 +28,7 @@ module.exports = {
                     .setRequired(false)))
         .addSubcommand(subcommand =>
             subcommand.setName('remix')
-            .setDescription('Edit the various data of a remix')
+            .setDescription('Edit the metadata of a remix')
             .addStringOption(option => 
                 option.setName('artist')
                     .setDescription('The name of the artist(s) who made the original song.')
@@ -77,8 +75,6 @@ module.exports = {
         let rmxArtistArray = interaction.options.getString('remixers');
         let subCommand = interaction.options.getSubcommand();
 
-        if (subCommand == 'ep-lp') return interaction.reply('This subcommand is not ready yet.');
-
         let song_info = await parse_artist_song_data(interaction, origArtistArray, songName, rmxArtistArray);
         if (song_info.error != undefined) {
             await interaction.reply(song_info.error);
@@ -119,7 +115,6 @@ module.exports = {
         let remixers = songObj.remixers;
         let oldRemixers = remixers;
         let epFrom = songObj.ep;
-        let userArray = get_user_reviews(songObj);
 
         // Artist subcommand variables
         let artistPfp = db.reviewDB.get(origArtistArray[0], `pfp_image`);
@@ -132,6 +127,10 @@ module.exports = {
         // These variables are useful for editing data later in the finish case
         let extraArtistMusicData = [];
         let ogArtistName = origArtistArray[0];
+
+        // EP/LP subcommand variables
+        let epSongs = db.reviewDB.get(origArtistArray[0], `${setterSongName}.songs`);
+        if (epSongs == undefined || epSongs == false) epSongs = [];
 
         // Separate out the artists discography into 3 separate arrays
         for (let music of artistMusic) {
@@ -155,16 +154,6 @@ module.exports = {
                 no_remix_name: music.replace(` (${origArtistArray[0]} Remix)`, ``),
                 ep_songs: musicObj.songs == undefined ? [] : musicObj.songs,
             });
-        }
-
-        for (let i = 0; i < userArray.length; i++) {
-            if (userArray[i] != 'EP') {
-                if (songObj[userArray[i]].starred == true) {
-                    userArray[i] = `:star2: <@${userArray[i]}>`;
-                } else {
-                    userArray[i] = `<@${userArray[i]}>`;
-                }
-            }
         }
 
         let databaseButtons = new ActionRowBuilder()
@@ -252,9 +241,6 @@ module.exports = {
                         .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
                     new ButtonBuilder()
                         .setCustomId('music_name').setLabel('Name')
-                        .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
-                    new ButtonBuilder()
-                        .setCustomId('ep_songs').setLabel('Songs')
                         .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
                     new ButtonBuilder()
                         .setCustomId('delete').setLabel('Delete')
@@ -811,7 +797,7 @@ module.exports = {
                     }
                 });
             } else if (i.customId == 'finish') {
-                let deleteArray, deleteRemixerArray, newSongObj, epSongs = [], setterEpSong;
+                let deleteArray, deleteRemixerArray, newSongObj, setterEpSong;
                 // Edit the database differently for each subcommand
                 switch (subCommand) {
                     case 'song':
@@ -1013,8 +999,47 @@ module.exports = {
 
                     break;
                     case 'ep-lp':
-                        // TODO: Add support for editing ep/lp data
-                    break;
+                        deleteArray = oldOrigArtistArray.filter(v => !origArtistArray.includes(v));
+
+                        // Delete all data from any artists removed
+                        for (let delArtist of deleteArray) {
+                            db.reviewDB.delete(delArtist, `${setterOldSongName}`);
+                            for (let delSong of epSongs) {
+                                let setterDelSong = convertToSetterName(delSong);
+                                db.reviewDB.set(delArtist, false, `${setterDelSong}.ep`);
+                            }
+                        }
+
+                        // Update all artists data
+                        for (let artist of origArtistArray) {
+                            // Check if we need to merge 2 EPs/LPs together
+                            let mergeEP = false;
+                            let artistSongs = Object.keys(db.reviewDB.get(artist));
+                            if (artistSongs.includes(songName)) mergeEP = true;
+
+                            let oldEPObj = db.reviewDB.get(artist, `${setterOldSongName}`);
+                            db.reviewDB.delete(artist, `${setterOldSongName}`);
+                            // Start editing oldSongObj with new data
+                            oldEPObj.collab = origArtistArray.filter(v => v != artist);
+                            delete oldEPObj.tags;
+
+                            // Deal with merge conflict, if necessary
+                            if (mergeEP == true) {
+                                let mergeEPObj = db.reviewDB.get(artist, `${setterSongName}`);
+                                let mergeEPUsers = get_user_reviews(mergeEPObj);
+                                let oldSongUsers = get_user_reviews(oldEPObj);
+                                // We're basically going to take the EP/LP we're editing (oldSong) and the conflict EP/LP (mergeEP)
+                                // and put any reviews from mergeEP into oldSong (unless the user has reviewed both versions)
+                                for (let user of mergeEPUsers) {
+                                    if (!oldSongUsers.includes(user)) { // If we have a conflict in reviews
+                                        oldEPObj[user] = mergeEPObj[user];
+                                    } 
+                                }
+                            }
+
+                            // Set the new song object with all the newly edited data into the database for that artist
+                            db.reviewDB.set(artist, oldEPObj, `${setterSongName}`);
+                        }
                 }
                 i.update({ components: [] });
                 interaction.followUp({ content: `Successfully added all changes to the database.`, ephemeral: true });
@@ -1047,7 +1072,15 @@ module.exports = {
                         await i.update({ content: `Deleted **${origArtistArray.join(' & ')} - ${displaySongName}** from the database entirely.`, components: [], embeds: [] });
                     break;
                     case 'ep-lp':
-                        
+                        for (let delArtist of origArtistArray) {
+                            db.reviewDB.delete(delArtist, `${setterOldSongName}`);
+                            for (let delSong of epSongs) {
+                                let setterDelSong = convertToSetterName(delSong);
+                                db.reviewDB.set(delArtist, false, `${setterDelSong}.ep`);
+                            }
+                        }
+                       
+                        await i.update({ content: `Deleted **${origArtistArray.join(' & ')} - ${oldSongName}** from the database entirely.`, components: [], embeds: [] });
                     break;
                     case 'artist':
                         for (let j = 0; j < artistMusic.length; j++) {

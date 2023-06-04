@@ -230,6 +230,7 @@ client.on('guildMemberAdd', async (member) => {
                     apple: true, // Apple Music
                 },
                 review_ping: false, // If you want to get pinged for a review if you are tagged as a user who sent it, default to false
+                star_spotify_playlist: false,
             },
             "mailbox_history": [],
         });

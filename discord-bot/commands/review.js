@@ -134,6 +134,7 @@ module.exports = {
         let allArtistArray = song_info.all_artists; // This is used for grabbing the artist images of every artist involved.
         let displaySongName = song_info.display_song_name;
         let origSongName = song_info.main_song_name;
+        let spotifyUri = song_info.spotify_uri;
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
 
@@ -520,7 +521,7 @@ module.exports = {
                     }
 
                     // Review the song
-                    await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, starred, rmxArtistArray, vocalistArray, songArt, taggedUser.id, ep_name);
+                    await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, starred, rmxArtistArray, vocalistArray, songArt, taggedUser.id, spotifyUri, ep_name);
 
                     // Edit the EP embed
                     await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
@@ -714,7 +715,7 @@ module.exports = {
                     await i.update({ content: null, embeds: [reviewEmbed], components: [] });
 
                     // Review the song
-                    await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, starred, rmxArtistArray, vocalistArray, songArt, taggedUser.id);
+                    await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, starred, rmxArtistArray, vocalistArray, songArt, taggedUser.id, spotifyUri);
 
                     // Update user stats
                     db.user_stats.set(interaction.user.id, `${origArtistArray.join(' & ')} - ${displaySongName}`, 'recent_review');

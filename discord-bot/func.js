@@ -51,6 +51,7 @@ module.exports = {
         userArray = userArray.filter(e => e !== 'review_num');
         userArray = userArray.filter(e => e !== 'remix_collab');
         userArray = userArray.filter(e => e !== 'tags');
+        userArray = userArray.filter(e => e !== 'spotify_uri');
         return userArray;
     },
 
@@ -109,6 +110,7 @@ module.exports = {
         let trackList = false;
         let songArt = false;
         let localReturnObj = {};
+        let songUri = false;
         if (remixers != null) {
             rmxArtistArray = [remixers.split(' & ')];
             rmxArtistArray = rmxArtistArray.flat(1);
@@ -142,6 +144,7 @@ module.exports = {
                         remix_artists: [], 
                         vocal_artists: [],
                         art: false,
+                        spotify_uri: false,
                     };
                     return; 
                 } 
@@ -151,6 +154,7 @@ module.exports = {
                 songArg = data.body.item.name;
                 songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
                 songArt = data.body.item.album.images[0].url;
+                songUri = data.body.item.uri;
                 await spotifyApi.getAlbum(data.body.item.album.id)
                 .then(async album_data => {
                     if ((interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') || (editDataSubCommand == 'ep-lp')) {
@@ -174,7 +178,7 @@ module.exports = {
                                 trackList[i] = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
                             }
                         }
-                        
+
                         if (songArg.includes('Remix')) {
                             passesChecks = 'ep';
                         } else if (trackList.length <= 1) {
@@ -183,11 +187,15 @@ module.exports = {
 
                         origArtistArray = album_data.body.artists.map(artist => artist.name);
                         songArg = album_data.body.name;
+                        songUri = album_data.body.uri;
                         if (album_data.body.album_type == 'single' && !songArg.includes(' EP')) {
                             songArg = `${songArg} EP`;
                         } else if (album_data.body.album_type == 'album' && !songArg.includes(' LP')) {
                             songArg = `${songArg} LP`;
                         }
+
+                        if (songArg.includes(' - EP')) songArg = songArg.replace(' - EP', ' EP');
+                        if (songArg.includes(' - LP')) songArg = songArg.replace(' - LP', ' LP');
 
                         if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
                             db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] }, 'current_ep_review');  
@@ -395,6 +403,7 @@ module.exports = {
 
         let displaySongName = (`${songArg}` + 
         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
+
         return { 
             prod_artists: origArtistArray, 
             song_name: songArg, // Song name with remixers in the name
@@ -405,6 +414,7 @@ module.exports = {
             remix_artists: rmxArtistArray, 
             vocal_artists: vocalistArray,
             art: songArt,
+            spotify_uri: songUri,
         };
     },
 
@@ -463,7 +473,7 @@ module.exports = {
             }
     },
 
-    review_song: function(interaction, artistArray, origArtistArray, song, origSongName, review, rating, starred, rmxArtistArray, vocalistArray, songArt, user_who_sent, ep_name = false) {
+    review_song: function(interaction, artistArray, origArtistArray, song, origSongName, review, rating, starred, rmxArtistArray, vocalistArray, songArt, user_who_sent, spotifyUri, ep_name = false) {
 
         if (user_who_sent == undefined || user_who_sent == null) {
             user_who_sent = false;
@@ -499,6 +509,7 @@ module.exports = {
                     vocals: vocalistArray,
                     ep: ep_name,
                     review_num: 1,
+                    spotify_uri: spotifyUri,
                 },
             };
 
@@ -529,6 +540,7 @@ module.exports = {
                 Object.assign(songObj, newuserObj);
                 db.reviewDB.set(artistArray[i], songObj, `${setterSongName}`);
                 db.reviewDB.set(artistArray[i], songArt, `${setterSongName}.art`);
+                if (spotifyUri != false) db.reviewDB.set(artistArray[i], spotifyUri, `${setterSongName}.art`);
                 if (vocalistArray.length != 0 && vocalistArray != songObj.vocals) {
                     db.reviewDB.set(artistArray[i], vocalistArray, `${setterSongName}.vocals`);
                 }
@@ -546,6 +558,7 @@ module.exports = {
                 Object.assign(songObj, newuserObj);
                 db.reviewDB.set(artistArray[i], songObj, `${setterSongName}`);
                 db.reviewDB.set(artistArray[i], songArt, `${setterSongName}.art`);
+                if (spotifyUri != false) db.reviewDB.set(artistArray[i], spotifyUri, `${setterSongName}.art`);
                 db.reviewDB.math(artistArray[i], '+', 1, `${setterSongName}.review_num`);
                 if (vocalistArray.length != 0 && vocalistArray != songObj.vocals) {
                     db.reviewDB.set(artistArray[i], vocalistArray, `${setterSongName}.vocals`);
@@ -630,7 +643,7 @@ module.exports = {
         }
     },
 
-    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred) {
+    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred, spotifyUri) {
 
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterEpName = ep_name.includes('.') ? `["${ep_name}"]` : ep_name;
@@ -653,6 +666,7 @@ module.exports = {
                     art: art,
                     collab: artistArray.filter(word => artistArray[i] != word),
                     songs: [],
+                    spotify_uri: spotifyUri,
                 },
             }; 
 
@@ -684,6 +698,7 @@ module.exports = {
                 if (art != undefined && art != false && art != null && !art.includes('avatar')) {
                     db.reviewDB.set(artistArray[i], art, `${setterEpName}.art`);
                 }
+                if (spotifyUri != false) db.reviewDB.set(artistArray[i], spotifyUri, `${setterEpName}.spotify_uri`);
             }
         }
     },
