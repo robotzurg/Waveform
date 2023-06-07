@@ -90,6 +90,7 @@ module.exports = {
                     remix_artists: [], 
                     vocal_artists: [],
                     art: 'N/A',
+                    spotify_uri: false,
                 };
             }
         }
@@ -376,6 +377,10 @@ module.exports = {
                             vocalistArray = db.reviewDB.get(artistArray[0])[songArg].vocals;
                         }
                     }
+
+                    if (db.reviewDB.get(artistArray[0])[songArg].spotify_uri && songUri == false && rmxArtistArray.length != 0) {
+                        songUri = db.reviewDB.get(artistArray[0])[songArg].spotify_uri;
+                    }
                 }
             }
 
@@ -387,6 +392,10 @@ module.exports = {
                                 rmxArtistArray.push(db.reviewDB.get(rmxArtistArray[0])[songArg].rmx_collab);
                                 rmxArtistArray = rmxArtistArray.flat(1);
                             }
+                        }
+
+                        if (db.reviewDB.get(rmxArtistArray[0])[songArg].spotify_uri && songUri == false) {
+                            songUri = db.reviewDB.get(rmxArtistArray[0])[songArg].spotify_uri;
                         }
                     }
                 }
@@ -403,6 +412,35 @@ module.exports = {
 
         let displaySongName = (`${songArg}` + 
         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
+
+        // Grab a spotify song uri through spotify search if we don't already have one.
+        if (songUri == false) {
+            const Spotify = require('node-spotify-api');
+            const client_id = process.env.SPOTIFY_API_ID; // Your client id
+            const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
+
+            const spotify = new Spotify({
+                id: client_id,
+                secret: client_secret,
+            });
+
+            await spotify.search({ type: "track", query: `${origArtistArray[0]} ${songArg}` }).then(function(song_data) {  
+                let results = song_data.tracks.items;
+                let pushed = false;
+
+                for (let result of results) {
+                    if (result.album.artists.map(v => v.name.toLowerCase()).includes(origArtistArray[0].toLowerCase()) && result.name.toLowerCase() == `${songArg.toLowerCase()}`) {
+                        songUri = result.uri;
+                        pushed = true;
+                        break;
+                    }
+                }
+
+                if (pushed == false) {
+                    songUri = results[0].uri;
+                }
+            });
+        }
 
         return { 
             prod_artists: origArtistArray, 
