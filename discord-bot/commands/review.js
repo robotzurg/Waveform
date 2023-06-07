@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { update_art, review_song, handle_error, find_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art } = require('../func.js');
+const { update_art, review_song, handle_error, find_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art, get_user_reviews } = require('../func.js');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle, Embed } = require('discord.js');
 require('dotenv').config();
 
@@ -523,6 +523,32 @@ module.exports = {
                     // Review the song
                     await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, starred, rmxArtistArray, vocalistArray, songArt, taggedUser.id, spotifyUri, ep_name);
 
+                    // Check to see if this song was added to hall of fame
+                    let userReviews = get_user_reviews(db.reviewDB.get(artistArray[0], `${setterSongName}`));
+                    let starCount = 0;
+                    for (let userRev of userReviews) {
+                        let userRevObj = db.reviewDB.get(origArtistArray[0], `${setterSongName}.${userRev}`);
+                        if (userRevObj.starred == true) starCount += 1;
+                    }
+
+                    if (starCount >= db.server_settings.get(interaction.guild.id, 'star_cutoff')) {
+                        await interaction.channel.send({ content: `🏆 **${origArtistArray.join(' & ')} - ${displaySongName}** has been added to the Hall of Fame for this server!` });
+                    }
+
+                    // Add or remove this song from the users star spotify playlist, if they have one
+                    let starPlaylistId = db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist');
+                    if (starred == true) {
+                        if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && spotifyUri != false) {
+                            // Add to spotify playlist
+                            await spotifyApi.addTracksToPlaylist(starPlaylistId, [spotifyUri]).then(() => {}, function(err) { console.log('Something went wrong!', err); });
+                        }
+                    } else {
+                        if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && spotifyUri != false) {
+                            // Remove from spotify playlist
+                            await spotifyApi.removeTracksFromPlaylist(starPlaylistId, [{ uri: spotifyUri }]).then(() => {}, function(err) { console.log('Something went wrong!', err); });
+                        }
+                    }
+
                     // Edit the EP embed
                     await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
 
@@ -720,6 +746,32 @@ module.exports = {
                     // Update user stats
                     db.user_stats.set(interaction.user.id, `${origArtistArray.join(' & ')} - ${displaySongName}`, 'recent_review');
                     const msg = await interaction.fetchReply();
+
+                    // Check to see if this song was added to hall of fame
+                    let userReviews = get_user_reviews(db.reviewDB.get(artistArray[0], `${setterSongName}`));
+                    let starCount = 0;
+                    for (let userRev of userReviews) {
+                        let userRevObj = db.reviewDB.get(origArtistArray[0], `${setterSongName}.${userRev}`);
+                        if (userRevObj.starred == true) starCount += 1;
+                    }
+
+                    if (starCount >= db.server_settings.get(interaction.guild.id, 'star_cutoff')) {
+                        await interaction.channel.send({ content: `🏆 **${origArtistArray.join(' & ')} - ${displaySongName}** has been added to the Hall of Fame for this server!` });
+                    }
+
+                    // Add or remove this song from the users star spotify playlist, if they have one
+                    let starPlaylistId = await db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist');
+                    if (starred == true) {
+                        if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && spotifyUri != false) {
+                            // Add to spotify playlist
+                            await spotifyApi.addTracksToPlaylist(starPlaylistId, [spotifyUri]).then(() => {}, function(err) { console.log('Something went wrong!', err); });
+                        }
+                    } else {
+                        if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && spotifyUri != false) {
+                            // Remove from spotify playlist
+                            await spotifyApi.removeTracksFromPlaylist(starPlaylistId, [{ uri: spotifyUri }]).then(() => {}, function(err) { console.log('Something went wrong!', err); });
+                        }
+                    }
 
                     // Setting the message id and url for the message we just sent, and setup artists images
                     for (let ii = 0; ii < artistArray.length; ii++) {
