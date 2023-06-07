@@ -192,9 +192,9 @@ module.exports = {
             if (interaction.channel.id != db.user_stats.get(taggedUser.id, 'mailbox')) {
                 interaction.editReply(`Sent a non-spotify [track](${trackLink}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
                 let mail_channel = interaction.guild.channels.cache.get(db.user_stats.get(taggedUser.id, 'mailbox'));
-                mail_channel.send({ content: `**You've got mail!** 📬\nSent by **${taggedMember.displayName}**\n${trackLink}` });
+                mail_channel.send({ content: `**You've got mail!** 📬\nSent by **${interaction.member.displayName}**\n${trackLink}` });
             } else {
-                interaction.editReply({ content: `**You've got mail!** 📬\nSent by **${taggedMember.displayName}**\n${trackLink}` });
+                interaction.editReply({ content: `**You've got mail!** 📬\nSent by **${interaction.member.displayName}**\n${trackLink}` });
             }
         }
     },

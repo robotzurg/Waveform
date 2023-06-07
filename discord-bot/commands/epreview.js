@@ -105,6 +105,7 @@ module.exports = {
             // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
             let setterEpName = epName.includes('.') ? `["${epName}"]` : epName;
             let epType = epName.includes(' LP') ? `LP` : `EP`;
+            let spotifyUri = song_info.spotify_uri;
 
             let art = interaction.options.getString('art');
             if (art == null) art = song_info.art;
@@ -471,7 +472,7 @@ module.exports = {
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
-                        review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred);
+                        review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, spotifyUri);
 
                         // Set message ids and setup artist images
                         for (let j = 0; j < artistArray.length; j++) {
@@ -533,7 +534,7 @@ module.exports = {
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
-                        review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred);
+                        review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, spotifyUri);
 
                         let epSongs = await (db.user_stats.get(interaction.user.id, 'current_ep_review.track_list') != false 
                         ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(artistArray[0])[epName].songs);
