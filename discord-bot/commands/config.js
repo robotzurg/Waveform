@@ -192,14 +192,12 @@ module.exports = {
                                                 if (result.album.artists.map(v => v.name.toLowerCase()).includes(artistArray[i].toLowerCase()) && result.name.toLowerCase() == `${songArray[j].toLowerCase()}`) {
                                                     starIDList.push(result.uri);
                                                     pushed = true;
-                                                    console.log(result.uri);
                                                     break;
                                                 }
                                             }
 
                                             if (pushed == false) {
                                                 starIDList.push(results[0].uri);
-                                                console.log(results[0].uri);
                                             }
                                             
                                         });

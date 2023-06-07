@@ -1005,7 +1005,6 @@ module.exports = {
                                     // If epSongs has anything in it, that means this is an EP/LP that we are removing and we need to remove all references to the EP
                                     for (let epSong of epSongs) {
                                         setterEpSong = convertToSetterName(epSong);
-                                        console.log(collab, setterEpSong, db.reviewDB.get(collab, `${setterEpSong}`));
                                         if (db.reviewDB.get(collab, `${setterEpSong}`) != undefined) {
                                             db.reviewDB.set(collab, false, `${setterEpSong}.ep`);
                                         }
@@ -1039,7 +1038,7 @@ module.exports = {
                             db.reviewDB.delete(delArtist, `${setterOldSongName}`);
                             for (let delSong of epSongs) {
                                 let setterDelSong = convertToSetterName(delSong);
-                                db.reviewDB.set(delArtist, false, `${setterDelSong}.ep`);
+                                await db.reviewDB.delete(delArtist, `${setterDelSong}`);
                             }
                         }
 
@@ -1089,6 +1088,7 @@ module.exports = {
                                 if (db.reviewDB.get(newArtist, `${setterEpSong}`) == undefined) {
                                     let objectToAdd = epSongObjects[j];
                                     objectToAdd.collab = objectToAdd.collab.filter(v => v != newArtist);
+                                    objectToAdd.collab = objectToAdd.collab.filter(v => !deleteArray.includes(v));
                                     objectToAdd.collab.push(origArtistArray.filter(v => v != newArtist));
                                     objectToAdd.collab = objectToAdd.collab.flat();
 
@@ -1099,12 +1099,27 @@ module.exports = {
                         }
 
                         // Update the collaborators for each song
+                        oldOrigArtistArray = oldOrigArtistArray.filter(v => !deleteArray.includes(v));
                         for (let oldArtist of oldOrigArtistArray) {
                             for (let j = 0; j < epSongs.length; j++) {
                                 setterEpSong = convertToSetterName(epSongs[j]);
                                 let objectToAdd = epSongObjects[j];
+                                objectToAdd.collab = objectToAdd.collab.filter(v => !deleteArray.includes(v));
+
+                                // Update individual collaborators
+                                for (let collabArtist of objectToAdd.collab) {
+                                    let collabSongObj = db.reviewDB.get(collabArtist, `${setterEpSong}`);
+                                    collabSongObj.collab = collabSongObj.collab.filter(v => !deleteArray.includes(v));
+                                    collabSongObj.collab.push(newArtistArray);
+                                    collabSongObj.collab = collabSongObj.collab.flat();
+                                    collabSongObj.collab = collabSongObj.collab.filter(v => v != collabArtist);
+
+                                    db.reviewDB.set(collabArtist, collabSongObj, `${setterEpSong}`);
+                                }
+
                                 objectToAdd.collab.push(newArtistArray);
-                                objectToAdd.collab = objectToAdd.collab.flat().filter(v => v != oldArtist);
+                                objectToAdd.collab = objectToAdd.collab.flat();
+                                objectToAdd.collab = objectToAdd.collab.filter(v => v != oldArtist);
 
                                 db.reviewDB.set(oldArtist, objectToAdd, `${setterEpSong}`);
                             }

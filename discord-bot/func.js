@@ -889,6 +889,7 @@ module.exports = {
                 epUserArray = epUserArray.filter(e => e !== 'collab');
                 epUserArray = epUserArray.filter(e => e !== 'review_num');
                 epUserArray = epUserArray.filter(e => e !== 'tags');
+                epUserArray = epUserArray.filter(e => e !== 'spotify_uri');
 
                 all_reviewed_users = all_reviewed_users.filter(val => !epUserArray.includes(val));
             }

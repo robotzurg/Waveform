@@ -58,7 +58,6 @@ module.exports = {
 
         let star_check = songReviewObj.starred;
         if (star_check == undefined) star_check = false;
-        console.log(spotifyUri);
 
         if (spotifyUri == false) spotifyUri = db.reviewDB.get(artistArray[0], `${setterSongName}.spotify_uri`);
         if (spotifyUri == undefined) spotifyUri = false;

@@ -31,8 +31,6 @@ module.exports = {
                 return;
             }
 
-            console.log(song_info.spotify_uri);
-
             let origArtistArray = song_info.prod_artists;
             let epName = song_info.song_name;
             let artistArray = song_info.db_artists;
@@ -67,6 +65,7 @@ module.exports = {
             reviewNum = reviewNum.filter(e => e !== 'collab');
             reviewNum = reviewNum.filter(e => e !== 'review_num');
             reviewNum = reviewNum.filter(e => e !== 'tags');
+            reviewNum = reviewNum.filter(e => e !== 'spotify_uri');
             let userArray = reviewNum.slice(0);
             let userIDList = userArray.slice(0);
             let epnum = 0;
