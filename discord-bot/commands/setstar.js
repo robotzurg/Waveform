@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { parse_artist_song_data, handle_error, find_review_channel, spotify_api_setup } = require('../func.js');
+const { parse_artist_song_data, handle_error, find_review_channel, spotify_api_setup, get_user_reviews } = require('../func.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -81,7 +81,7 @@ module.exports = {
                 .then(() => {}, function(err) {
                     console.log('Something went wrong!', err);
                 });
-            }    
+            }
         } else {
             interaction.reply(`Unstarred **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }**.`);
 
@@ -94,6 +94,18 @@ module.exports = {
             }
         }
 
+        // Check if the song was added to hall of fame
+        let userReviews = get_user_reviews(db.reviewDB.get(artistArray[0], `${setterSongName}`));
+        let starCount = 0;
+        for (let userRev of userReviews) {
+            let userRevObj = db.reviewDB.get(origArtistArray[0], `${setterSongName}.${userRev}`);
+            if (userRevObj.starred == true) starCount += 1;
+        }
+
+        if (starCount >= db.server_settings.get(interaction.guild.id, 'star_cutoff')) {
+            await interaction.channel.send({ content: `🏆 **${origArtistArray.join(' & ')} - ${songName}** has been added to the Hall of Fame for this server!` });
+        }
+
         let msgtoEdit = songReviewObj.msg_id;
 
         if (msgtoEdit != false && msgtoEdit != undefined) {
@@ -101,15 +113,17 @@ module.exports = {
             if (channelsearch != undefined) {
                 await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                     let msgEmbed = EmbedBuilder.from(msg.embeds[0]);
+                    msgEmbed.data.title = msgEmbed.data.title.replace(':star2:', '🌟');
                     let msgEmbedTitle = msgEmbed.data.title;
                     if (star_check == false) {
-                        if (!msgEmbedTitle.includes(':star2:')) {
-                            msgEmbed.setTitle(`:star2: ${msgEmbedTitle} :star2:`);
+                        if (!msgEmbedTitle.includes('🌟')) {
+                            msgEmbed.setTitle(`🌟 ${msgEmbedTitle} 🌟`);
                         }
                     } else {
-                        if (msgEmbedTitle.includes(':star2:')) {
-                            while (msgEmbed.data.title.includes(':star2:')) {
-                                msgEmbed.setTitle(msgEmbed.data.title.replace(':star2:', ''));
+                        if (msgEmbedTitle.includes('🌟')) {
+                            while (msgEmbed.data.title.includes('🌟')) {
+                                msgEmbed.data.title = msgEmbed.data.title.replace('🌟', '');
+                                msgEmbed.setTitle(msgEmbed.data.title);
                             }
                         }
                     }

@@ -62,7 +62,7 @@ module.exports = {
             return v;
         }).join('\n')}\n`,
         `**Mailbox Review Ping:** \`${config_data.review_ping}\``,
-        `**Star Spotify Playlist:** \`${config_data.star_spotify_playlist.playlist_id != false ? 'Setup!' : 'Not Setup.'}\``];
+        `**Star Spotify Playlist:** \`${config_data.star_spotify_playlist != false ? 'Setup!' : 'Not Setup.'}\``];
 
         let mailFilterSel = new ActionRowBuilder()
             .addComponents(
@@ -199,7 +199,6 @@ module.exports = {
                                             if (pushed == false) {
                                                 starIDList.push(results[0].uri);
                                             }
-                                            
                                         });
                                     }
                                 }
@@ -218,6 +217,8 @@ module.exports = {
                         await spotifyApi.addTracksToPlaylist(db.user_stats.get(interaction.user.id, `config.star_spotify_playlist`), list); 
                     }
                      
+                    config_desc[2] = `**Star Spotify Playlist:** \`Setup!\``;
+                    configEmbed.setDescription(config_desc.join('\n'));
                     await interaction.editReply({ content: `Playlist has been created and starred songs have been added to it.`, embeds: [configEmbed], components: [configMenu] });                
                 }
 

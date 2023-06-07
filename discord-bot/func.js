@@ -540,7 +540,7 @@ module.exports = {
                 Object.assign(songObj, newuserObj);
                 db.reviewDB.set(artistArray[i], songObj, `${setterSongName}`);
                 db.reviewDB.set(artistArray[i], songArt, `${setterSongName}.art`);
-                if (spotifyUri != false) db.reviewDB.set(artistArray[i], spotifyUri, `${setterSongName}.art`);
+                if (spotifyUri != false) db.reviewDB.set(artistArray[i], spotifyUri, `${setterSongName}.spotify_uri`);
                 if (vocalistArray.length != 0 && vocalistArray != songObj.vocals) {
                     db.reviewDB.set(artistArray[i], vocalistArray, `${setterSongName}.vocals`);
                 }
@@ -558,7 +558,7 @@ module.exports = {
                 Object.assign(songObj, newuserObj);
                 db.reviewDB.set(artistArray[i], songObj, `${setterSongName}`);
                 db.reviewDB.set(artistArray[i], songArt, `${setterSongName}.art`);
-                if (spotifyUri != false) db.reviewDB.set(artistArray[i], spotifyUri, `${setterSongName}.art`);
+                if (spotifyUri != false) db.reviewDB.set(artistArray[i], spotifyUri, `${setterSongName}.spotify_uri`);
                 db.reviewDB.math(artistArray[i], '+', 1, `${setterSongName}.review_num`);
                 if (vocalistArray.length != 0 && vocalistArray != songObj.vocals) {
                     db.reviewDB.set(artistArray[i], vocalistArray, `${setterSongName}.vocals`);
