@@ -58,10 +58,8 @@ module.exports = {
 
         let star_check = songReviewObj.starred;
         if (star_check == undefined) star_check = false;
-
-        if (spotifyUri == false) spotifyUri = db.reviewDB.get(artistArray[0], `${setterSongName}.spotify_uri`);
         if (spotifyUri == undefined) spotifyUri = false;
-
+        
         for (let i = 0; i < artistArray.length; i++) {
             if (star_check == true) {
                 await db.reviewDB.set(artistArray[i], false, `${setterSongName}.${interaction.user.id}.starred`);
@@ -69,6 +67,13 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], true, `${setterSongName}.${interaction.user.id}.starred`);
             } else {
                 handle_error(interaction, `Error in starring process`);
+            }
+
+            // Replace spotify URI in the database (if spotify command, always replace, if manual, only replace if nothing is there)
+            if (artists == null && song == null) {
+                db.reviewDB.set(artistArray[i], spotifyUri, `${setterSongName}.spotify_uri`);
+            } else if (songObj.spotify_uri == false || songObj.spotify_uri == undefined) {
+                db.reviewDB.set(artistArray[i], spotifyUri, `${setterSongName}.spotify_uri`);
             }
         }
 

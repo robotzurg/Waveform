@@ -146,7 +146,7 @@ module.exports = {
 
                     let starIDList = [];
 
-                    await sel.update({ content: `Setting up your star spotify playlist...`, embeds: [], components: [] });
+                    await sel.update({ content: `Setting up your star spotify playlist... (This usually takes up to 2-3 minutes, so please be patient!)`, embeds: [], components: [] });
                     await spotifyApi.createPlaylist('Waveform Stars', { 'description': 'This is an auto updated playlist of your Waveform stars, to give you an easier idea of what songs you have starred!', 'public': true })
                     .then(async data => {
                         db.user_stats.set(interaction.user.id, data.body.id, `config.star_spotify_playlist`);
