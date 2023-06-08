@@ -95,6 +95,8 @@ module.exports = {
             }
         }
 
+        console.log(artists, song);
+
         if ((artists == null && song != null) || (artists != null && song == null)) {
             return { error: 'If you are searching for a review manually, you must put in both the artists (in the artist argument) and the song name (in the song_name argument).' };
         }
