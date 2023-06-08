@@ -172,6 +172,7 @@ module.exports = {
                 for (let i = 0; i < songArray.length; i++) {
                     starNum = 0;
                     const songObj = db.reviewDB.get(artist, `${songArray[i]}`);
+                    console.log(songArray[i]);
                     reviewNum = parseInt(songObj.review_num);
                     let reviews = get_user_reviews(songObj);
                     
@@ -189,6 +190,7 @@ module.exports = {
                     let songDetails;
                     let remixerKeys = songObj.remixers;
                     let collabArray = songObj.collab; // This also doubles as remixer original artists
+                    if (collabArray == undefined) collabArray = [];
                     let vocalistArray = songObj.vocals;
                     collabArray = collabArray.filter(v => !vocalistArray.includes(v));
 
