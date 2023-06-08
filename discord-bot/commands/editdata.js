@@ -22,7 +22,7 @@ module.exports = {
                     .setAutocomplete(true)
                     .setRequired(false))
             .addStringOption(option => 
-                option.setName('song_name')
+                option.setName('music_name')
                     .setDescription('The name of the song.')
                     .setAutocomplete(true)
                     .setRequired(false)))
@@ -35,7 +35,7 @@ module.exports = {
                     .setAutocomplete(true)
                     .setRequired(false))
             .addStringOption(option => 
-                option.setName('song_name')
+                option.setName('music_name')
                     .setDescription('The name of the remixed song.')
                     .setAutocomplete(true)
                     .setRequired(false))
@@ -740,19 +740,14 @@ module.exports = {
                 msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
                 msg_collector.on('collect', async msg => {
                     if (mode == 'artist_name') {
-                        if (!db.reviewDB.has(msg.content)) {
-                            origArtistArray[0] = msg.content;
-                            editEmbed.setTitle(`${origArtistArray[0]}`);
-                            await i.editReply({ 
-                                content: `**Type in the new name of the artist. When you are finished, press confirm.**\n` +
-                                `NOTE: You cannot change the name of the artist to an existing artist in the database.\n` +
-                                `Artist Name: \`${origArtistArray[0]}\``,
-                            });
-                            msg.delete();
-                        } else {
-                            await i.editReply({ content: `The artist ${msg.content} already exists in the database. Please try a different name.` });
-                            msg.delete();
-                        }
+                        origArtistArray[0] = msg.content;
+                        editEmbed.setTitle(`${origArtistArray[0]}`);
+                        await i.editReply({ 
+                            content: `**Type in the new name of the artist. When you are finished, press confirm.**\n` +
+                            `NOTE: You cannot change the name of the artist to an existing artist in the database.\n` +
+                            `Artist Name: \`${origArtistArray[0]}\``,
+                        });
+                        msg.delete();
                     }
                 });
             } else if (i.customId == 'artist_songs') {
@@ -1017,15 +1012,28 @@ module.exports = {
 
                                 for (let epSong of epSongs) {
                                     setterEpSong = convertToSetterName(epSong);
-                                    db.reviewDB.set(origArtistArray[0], false, `${setterEpSong}.ep`);
+                                    db.reviewDB.set(ogArtistName, false, `${setterEpSong}.ep`);
                                 }
 
-                                db.reviewDB.delete(origArtistArray[0], `${extraArtistMusicData[j].setter_name}`);
+                                db.reviewDB.delete(ogArtistName, `${extraArtistMusicData[j].setter_name}`);
                             }
                         }
 
                         if (ogArtistName != origArtistArray[0]) {
-                            await db.reviewDB.set(origArtistArray[0], db.reviewDB.get(ogArtistName));
+                            if (!db.reviewDB.has(origArtistArray[0])) {
+                                await db.reviewDB.set(origArtistArray[0], db.reviewDB.get(ogArtistName));
+                            } else {
+                                // Merge 2 artists together
+                                let mergeArtistObj = db.reviewDB.get(origArtistArray[0]);
+                                let targetArtistObj = db.reviewDB.get(ogArtistName);
+
+                                for (let song of Object.keys(mergeArtistObj).filter(v => v !== 'pfp_image')) {
+                                    targetArtistObj[song] = mergeArtistObj[song];
+                                }
+
+                                db.reviewDB.set(origArtistArray[0], targetArtistObj);
+                            }
+
                             await db.reviewDB.delete(ogArtistName);
                         }
 

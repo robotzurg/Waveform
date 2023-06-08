@@ -46,6 +46,7 @@ module.exports = {
             let artistImage = artistObj.pfp_image;
             let songArray = Object.keys(artistObj);
             songArray = songArray.filter(item => item !== 'pfp_image');
+            songArray = songArray.filter(item => item !== 'Image');
             let epKeyArray = songArray.filter(item => item.includes(' LP') || item.includes(' EP'));
             songArray = songArray.filter(item => !item.includes(' LP') && !item.includes(' EP'));
 
