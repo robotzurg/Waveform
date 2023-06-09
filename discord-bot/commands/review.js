@@ -538,12 +538,12 @@ module.exports = {
                     // Add or remove this song from the users star spotify playlist, if they have one
                     let starPlaylistId = db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist');
                     if (starred == true) {
-                        if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && spotifyUri != false) {
+                        if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != undefined && spotifyUri != false) {
                             // Add to spotify playlist
                             await spotifyApi.addTracksToPlaylist(starPlaylistId, [spotifyUri]).then(() => {}, function(err) { console.log('Something went wrong!', err); });
                         }
                     } else {
-                        if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && spotifyUri != false) {
+                        if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != undefined && spotifyUri != false) {
                             // Remove from spotify playlist
                             await spotifyApi.removeTracksFromPlaylist(starPlaylistId, [{ uri: spotifyUri }]).then(() => {}, function(err) { console.log('Something went wrong!', err); });
                         }
@@ -762,12 +762,12 @@ module.exports = {
                     // Add or remove this song from the users star spotify playlist, if they have one
                     let starPlaylistId = await db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist');
                     if (starred == true) {
-                        if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && spotifyUri != false) {
+                        if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != undefined && spotifyUri != false) {
                             // Add to spotify playlist
                             await spotifyApi.addTracksToPlaylist(starPlaylistId, [spotifyUri]).then(() => {}, function(err) { console.log('Something went wrong!', err); });
                         }
                     } else {
-                        if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && spotifyUri != false) {
+                        if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != undefined && spotifyUri != false) {
                             // Remove from spotify playlist
                             await spotifyApi.removeTracksFromPlaylist(starPlaylistId, [{ uri: spotifyUri }]).then(() => {}, function(err) { console.log('Something went wrong!', err); });
                         }
