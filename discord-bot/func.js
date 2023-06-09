@@ -135,6 +135,9 @@ module.exports = {
             }
 
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+                if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
+                if (data.body.item == undefined) { passesChecks = 'notplaying'; return; }
+                
                 if (data.body.item.is_local == true) { 
                     passesChecks = 'local'; 
                     localReturnObj = {
@@ -151,8 +154,6 @@ module.exports = {
                     };
                     return; 
                 } 
-                if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
-                if (data.body.item == undefined) { passesChecks = 'notplaying'; return; }
                 origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
                 songArg = data.body.item.name;
                 songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
