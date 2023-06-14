@@ -527,7 +527,7 @@ module.exports = {
                     let userReviews = get_user_reviews(db.reviewDB.get(artistArray[0], `${setterSongName}`));
                     let starCount = 0;
                     for (let userRev of userReviews) {
-                        let userRevObj = db.reviewDB.get(origArtistArray[0], `${setterSongName}.${userRev}`);
+                        let userRevObj = db.reviewDB.get(artistArray[0], `${setterSongName}.${userRev}`);
                         if (userRevObj.starred == true) starCount += 1;
                     }
 
@@ -751,7 +751,7 @@ module.exports = {
                     let userReviews = get_user_reviews(db.reviewDB.get(artistArray[0], `${setterSongName}`));
                     let starCount = 0;
                     for (let userRev of userReviews) {
-                        let userRevObj = db.reviewDB.get(origArtistArray[0], `${setterSongName}.${userRev}`);
+                        let userRevObj = db.reviewDB.get(artistArray[0], `${setterSongName}.${userRev}`);
                         if (userRevObj.starred == true) starCount += 1;
                     }
 

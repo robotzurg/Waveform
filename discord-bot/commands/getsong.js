@@ -68,10 +68,26 @@ module.exports = {
 
         if (remixArray.length != 0) {
             for (let i = 0; i < remixArray.length; i++) {
+                if (remixArray[i].includes('\\&')) {
+                    remixArray[i] = remixArray[i].split(' & ');
+                    remixArray[i] = remixArray[i].map(v => v.replace('\\&', '&'));
+                    remixArray[i] = remixArray[i].join(' x ');
+                }
                 remixes.push(`\`${remixArray[i]} Remix\``);
             }
         }
         if (songEP == undefined || songEP == false) songEP = false;
+        let songEPObj = db.reviewDB.get(artistArray[0], `${songEP}`);
+        let songEPArt = false;
+        if (songEPObj == undefined) {
+            if (songName.includes(' Remix)')) {
+                songEPObj = db.reviewDB.get(songObj.collab[0], `${songEP}`);
+                if (songEPObj == undefined) songEPObj = { art: false };
+                songEPArt = songEPObj.art;
+            } else {
+                songEPObj = { art: false };
+            }
+        }
         
         let userArray = get_user_reviews(songObj);
         let userIDList = userArray.slice(0); //.slice(0) is there to create a COPY, not a REFERENCE.
@@ -196,7 +212,7 @@ module.exports = {
         if (remixes.length != 0) songEmbed.addFields([{ name: 'Remixes:', value: remixes.join('\n') }]);
         if (songVIP != false) songEmbed.addFields([{ name: 'VIP:', value: `\`${songVIP}\`` }]);
         if (songEP != false) {
-            songEmbed.setFooter({ text: `from ${songEP}${paged_user_list > 1 ? ` • Page ${page_num + 1} / ${paged_user_list.length}` : ``}`, iconURL: db.reviewDB.get(artistArray[0])[songEP].art });
+            songEmbed.setFooter({ text: `from ${songEP}${paged_user_list > 1 ? ` • Page ${page_num + 1} / ${paged_user_list.length}` : ``}`, iconURL: songEPArt });
         } else if (paged_user_list > 1) {
             songEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_user_list.length}` });
         }
@@ -232,7 +248,6 @@ module.exports = {
                 
                 // If we don't have a single review link, we can check for an EP/LP review link
                 if (url == false && (songEP != false && songEP != undefined)) {
-                    let songEPObj = db.reviewDB.get(artistArray[0])[songEP];
                     if (songEPObj[`${interaction.user.id}`] != undefined) {
                         if (songEPObj[`${interaction.user.id}`].url != false) {
                             url = songEPObj[`${interaction.user.id}`].url;

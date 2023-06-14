@@ -67,6 +67,7 @@ module.exports = {
             if (songReviewObj == undefined) return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${songName}\`. *Note that for EP reviews, you need to use \`/getReviewEP\`.*`);
 
             let epfrom = songObj.ep;
+            if (db.reviewDB.get(artistArray[0], epfrom) == undefined) epfrom = false; 
             let songArt = songObj.art;
 
             rreview = songReviewObj.review;

@@ -126,10 +126,12 @@ module.exports = {
 
             if (ep_songs.length != 0) {
                 for (let i = 0; i < ep_songs.length; i++) {
+                    let songArtist = artistArray[0];
+                    if (ep_songs[i].includes(' Remix)')) songArtist = ep_songs[i].split(' Remix)')[0].split('(').splice(1);
                     let songName = ep_songs[i];
                     artistsEmbed = [];
                     vocalistsEmbed = [];
-                    let songObj = db.reviewDB.get(artistArray[0])[songName];
+                    let songObj = db.reviewDB.get(songArtist)[songName];
                     let songReviewObj = songObj[taggedUser.id];
     
                     rreview = songReviewObj.review;
@@ -138,7 +140,7 @@ module.exports = {
                     rstarred = songReviewObj.starred;
     
                     // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
-                    if (songObj.collab != undefined) {
+                    if (songObj.collab != undefined && !ep_songs[i].includes(' Remix)')) {
                         if (songObj.collab.length != 0) {
                             artistsEmbed = [];
                             artistsEmbed.push(songObj.collab);
@@ -147,7 +149,7 @@ module.exports = {
                         }
                     }
             
-                    if (songObj.vocals != undefined) {
+                    if (songObj.vocals != undefined && !ep_songs[i].includes(' Remix)')) {
                         if (songObj.vocals.length != 0) {
                             vocalistsEmbed = [];
                             vocalistsEmbed.push(songObj.vocals);

@@ -2,6 +2,7 @@
 const { EmbedBuilder } = require('discord.js');
 const db = require("./db.js");
 const forAsync = require('for-async');
+const _ = require('lodash');
 
 // TODO: ADD FUNCTION HEADERS/DEFS FOR ALL OF THESE!!!
 
@@ -72,7 +73,7 @@ module.exports = {
     },
 
     parse_artist_song_data: async function(interaction, artists = null, song = null, remixers = null, vocalists = null) {
-        const { spotify_api_setup } = require('./func.js');
+        const { spotify_api_setup, getProperRemixers } = require('./func.js');
 
         // If we are in the /editdata artist command and put in a manual name entry, run this a little differently
         let editDataSubCommand = 'N/A';
@@ -106,12 +107,14 @@ module.exports = {
         let origArtistArray = artists;
         let origSongArg = song; // Used to have the non remix name of a song, for reviews
         let songArg = song;
+        let displaySongArg = false;
         let rmxArtistArray = [];
         let passesChecks = true;
         let trackList = false;
         let songArt = false;
         let localReturnObj = {};
         let songUri = false;
+        let rmx_delimiter = ' & ';
         if (remixers != null) {
             rmxArtistArray = [remixers.split(' & ')];
             rmxArtistArray = rmxArtistArray.flat(1);
@@ -155,6 +158,7 @@ module.exports = {
                 origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
                 songArg = data.body.item.name;
                 songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
+                songArg = songArg.replace('remix', 'Remix'); // Just in case there is lower case remix
                 songArt = data.body.item.album.images[0].url;
                 songUri = data.body.item.uri;
                 await spotifyApi.getAlbum(data.body.item.album.id)
@@ -162,6 +166,7 @@ module.exports = {
                     if ((interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') || (editDataSubCommand == 'ep-lp')) {
                         trackList = album_data.body.tracks.items.map(t => t.name);
                         for (let i = 0; i < trackList.length; i++) {
+                            songArg = trackList[i];
                             if (songArg.includes('feat.')) {
                                 songArg = songArg.split(' (feat. ');
                                 songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
@@ -179,11 +184,46 @@ module.exports = {
                                 songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
                                 trackList[i] = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
                             }
+
+                            if (songArg.includes(' Remix)') || songArg.includes(' Remix]')) {
+                                rmxArtist = [];
+                                songArg = songArg.replace('[', '(');
+                                songArg = songArg.replace(']', ')');
+                                temp = songArg.split(' Remix)')[0].split('(');
+                                rmxArtist = temp[temp.length - 1];
+                    
+                                // Input validation
+                                rmxArtist = rmxArtist.replace(' VIP', '');
+                                if (rmxArtist.includes(' and ')) rmx_delimiter = ' and ';
+                                if (rmxArtist.includes(' x ')) rmx_delimiter = ' x ';
+                                songArg = `${temp[0].trim()} (${rmxArtist} Remix)`;
+                                trackList[i] = songArg;
+                            }
+                    
+                            if ((songArg.includes('Remix') && songArg.includes(' - ')) && !songArg.includes('Remix)') && !songArg.includes('Remix]')) {
+                                rmxArtist = [];
+                                songArg = songArg.split(' - ');
+                                if (songArg[1] != 'Remix') {
+                                    rmxArtist = songArg[1].slice(0, -6);
+                                    rmxArtist = rmxArtist.replace(' VIP', '');
+                                    if (rmxArtist.includes(' and ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' and ';
+                                    if (rmxArtist.includes(' x ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' x ';
+                    
+                                    // Deal with features being in the song name before the remix lol
+                                    if (songArg[0].includes('feat.') || songArg[0].includes('ft.')) {
+                                        songArg[0] = songArg[0].replace('feat.', 'ft.');
+                                        songArg[0] = songArg[0].split(` (ft.`)[0];
+                                    }
+                    
+                                    songArg = `${songArg[0]} (${rmxArtist} Remix)`;
+                                    trackList[i] = songArg;
+                                } else {
+                                    songArg = songArg.join(' - ');
+                                }
+                            }
                         }
 
-                        if (songArg.includes('Remix')) {
-                            passesChecks = 'ep';
-                        } else if (trackList.length <= 1) {
+                        if (trackList.length <= 1) {
                             passesChecks = 'length';
                         }
 
@@ -236,50 +276,7 @@ module.exports = {
         }
 
         // Fix song formatting
-        let rmx_delimiter = ' & ';
         if (!Array.isArray(origArtistArray)) origArtistArray = origArtistArray.split(' & ');
-
-        if (songArg.includes(' Remix)') || songArg.includes(' Remix]')) {
-            songArg = songArg.replace('[', '(');
-            songArg = songArg.replace(']', ')');
-
-            temp = songArg.split(' Remix)')[0].split('(');
-            rmxArtist = temp[temp.length - 1];
-
-            // Input validation
-            rmxArtist = rmxArtist.replace(' VIP', '');
-            if (rmxArtist.includes(' and ')) rmx_delimiter = ' and ';
-            if (rmxArtist.includes(' x ')) rmx_delimiter = ' x ';
-            origSongArg = temp[0].trim();
-            rmxArtistArray = rmxArtist.split(rmx_delimiter);
-            songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
-            origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
-            if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
-        }
-
-        if ((songArg.includes('Remix') && songArg.includes(' - ')) && !songArg.includes('Remix)') && !songArg.includes('Remix]')) {
-            songArg = songArg.split(' - ');
-            if (songArg[1] != 'Remix') {
-                rmxArtist = songArg[1].slice(0, -6);
-                rmxArtist = rmxArtist.replace(' VIP', '');
-                if (rmxArtist.includes(' and ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' and ';
-                if (rmxArtist.includes(' x ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' x ';
-
-                // Deal with features being in the song name before the remix lol
-                if (songArg[0].includes('feat.') || songArg[0].includes('ft.')) {
-                    songArg[0] = songArg[0].replace('feat.', 'ft.');
-                    songArg[0] = songArg[0].split(` (ft.`)[0];
-                }
-
-                origSongArg = songArg[0];
-                rmxArtistArray = rmxArtist.split(rmx_delimiter);
-                songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
-                origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
-                if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
-            } else {
-                songArg = songArg.join(' - ');
-            }
-        }
 
         if (songArg.includes('feat.')) {
             songArg = songArg.split(' (feat. ');
@@ -307,6 +304,67 @@ module.exports = {
             songArg = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
         }
 
+        if (songArg.includes(' Remix)') || songArg.includes(' Remix]')) {
+            songArg = songArg.replace('[', '(');
+            songArg = songArg.replace(']', ')');
+
+            temp = songArg.split(' Remix)')[0].split('(');
+            rmxArtist = temp[temp.length - 1];
+
+            // Input validation
+            rmxArtist = rmxArtist.replace(' VIP', '');
+            if (rmxArtist.includes(' and ')) rmx_delimiter = ' and ';
+            if (rmxArtist.includes(' x ')) rmx_delimiter = ' x ';
+            origSongArg = temp[0].trim();
+            rmxArtistArray = rmxArtist.split(rmx_delimiter);
+            for (let i = 0; i < rmxArtistArray.length; i++) {
+                if (!origArtistArray.includes(rmxArtistArray[i])) {
+                    for (let j = 0; j < origArtistArray.length; j++) {
+                        if (origArtistArray[j].toUpperCase() === rmxArtistArray[i].toUpperCase()) {
+                            rmxArtistArray[i] = origArtistArray[j];
+                        }
+                    }
+                }
+            }
+            
+            origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
+            songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
+            if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
+        }
+
+        if ((songArg.includes('Remix') && songArg.includes(' - ')) && !songArg.includes('Remix)') && !songArg.includes('Remix]')) {
+            songArg = songArg.split(' - ');
+            if (songArg[1] != 'Remix') {
+                rmxArtist = songArg[1].slice(0, -6);
+                rmxArtist = rmxArtist.replace(' VIP', '');
+                if (rmxArtist.includes(' and ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' and ';
+                if (rmxArtist.includes(' x ') && !rmxArtist.includes(' & ')) rmx_delimiter = ' x ';
+
+                // Deal with features being in the song name before the remix lol
+                if (songArg[0].includes('feat.') || songArg[0].includes('ft.')) {
+                    songArg[0] = songArg[0].replace('feat.', 'ft.');
+                    songArg[0] = songArg[0].split(` (ft.`)[0];
+                }
+
+                origSongArg = songArg[0];
+                rmxArtistArray = rmxArtist.split(rmx_delimiter);
+                for (let i = 0; i < rmxArtistArray.length; i++) {
+                    if (!origArtistArray.includes(rmxArtistArray[i])) {
+                        for (let j = 0; j < origArtistArray.length; j++) {
+                            if (origArtistArray[j].toUpperCase() === rmxArtistArray[i].toUpperCase()) {
+                                rmxArtistArray[i] = origArtistArray[j];
+                            }
+                        }
+                    }
+                }
+                origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
+                songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
+                if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
+            } else {
+                songArg = songArg.join(' - ');
+            }
+        }
+
         if (origArtistArray.length == 0) {
             passesChecks = false;
         }
@@ -320,6 +378,22 @@ module.exports = {
 
         artistArray = artistArray.flat(1);
         origArtistArray = artistArray.slice(0);
+
+        // Fix the remix artist array if needed
+        if (rmxArtistArray.length != 0) {
+            temp = getProperRemixers(origArtistArray, rmxArtistArray);
+            if (!_.isEqual(temp, rmxArtistArray)) {
+                rmxArtistArray = temp;
+                displaySongArg = `${origSongArg} (${rmxArtistArray.join(' x ')} Remix)`;
+            } else {
+                for (let r of rmxArtistArray) {
+                    if (r.includes('\\&')) {
+                        displaySongArg = `${origSongArg} (${rmxArtistArray.join(' x ')} Remix)`;
+                        break;
+                    }
+                }
+            }
+        }
 
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
             if (db.reviewDB.has(artistArray[0]) && db.reviewDB.get(artistArray[0][songArg] != undefined)) trackList = db.reviewDB.get(artistArray[0])[songArg].songs;
@@ -411,7 +485,8 @@ module.exports = {
             allArtistArray = [origArtistArray, rmxArtistArray].flat(1);
         }
 
-        let displaySongName = (`${songArg}` + 
+        if (displaySongArg == false) displaySongArg = songArg;
+        let displaySongName = (`${displaySongArg}` + 
         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
 
         // Grab a spotify song uri through spotify search if we don't already have one.
@@ -858,10 +933,11 @@ module.exports = {
 
         for (let i = 0; i < songArray.length; i++) {
             let songArtistArray = origArtistArray.slice(0);
+            if (songArray[i].includes(' Remix)')) songArtistArray = songArray[i].split(' Remix)')[0].split('(').splice(1);
             let songCollabArray = [];
             let songVocalistArray = [];
             let userArray;
-            let songObj = db.reviewDB.get(origArtistArray[0])[songArray[i]];
+            let songObj = db.reviewDB.get(songArtistArray[0])[songArray[i]];
             // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
             let setterSongName = songArray[i].includes('.') ? `["${songArray[i]}"]` : songArray[i];
 
@@ -881,7 +957,7 @@ module.exports = {
                 }
             }
 
-            if (songObj.collab != undefined) {
+            if (songObj.collab != undefined && !songArray[i].includes(' Remix)')) {
                 if (songObj.collab.length != 0) {
                     songCollabArray.push(songObj.collab);
                     songCollabArray = songCollabArray.flat(1);
@@ -891,7 +967,7 @@ module.exports = {
                 }
             }
 
-            if (songObj.vocals != undefined) {
+            if (songObj.vocals != undefined && !songArray[i].includes(' Remix)')) {
                 if (songObj.vocals.length != 0) {
                     songVocalistArray.push(songObj.vocals);
                     songVocalistArray = songVocalistArray.flat(1);
@@ -1019,5 +1095,34 @@ module.exports = {
 
     convertToSetterName: function(string) {
         return string.includes('.') ? `["${string}"]` : string;
+    },
+
+    /**
+     * Takes a full artist array and remix artist array and fixes the remix artist array
+     * Used in situations where you have something like [Camo, Krooked, Mefjus] instead of [Camo \& Krooked, Mefjus].
+     * @param {Array} artistArray The full original artist array with all artists (including remixers) in it
+     * @param {Array} rmxArtistArray The array of remixers that needs to be fixed
+     */
+    getProperRemixers: function(artistArray, rmxArtistArray) {
+        let newRmxArtistArray = [];
+        for (let i = 0; i < rmxArtistArray.length; i++) {
+            if (i != rmxArtistArray.length - 1) {
+                if (artistArray.includes(`${rmxArtistArray[i]} \\& ${rmxArtistArray[i + 1]}`)) {
+                    newRmxArtistArray.push(`${rmxArtistArray[i]} \\& ${rmxArtistArray[i + 1]}`);
+                    i++;
+                } else {
+                    newRmxArtistArray.push(rmxArtistArray[i]);
+                }
+            } else {
+                if (artistArray.includes(`${rmxArtistArray[i]} \\& ${rmxArtistArray[0]}`)) {
+                    newRmxArtistArray.push(`${rmxArtistArray[i]} \\& ${rmxArtistArray[0]}`);
+                    i++;
+                } else {
+                    newRmxArtistArray.push(rmxArtistArray[i]);
+                }
+            }
+        }
+
+        return newRmxArtistArray;
     },
 };
