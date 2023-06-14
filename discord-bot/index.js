@@ -121,7 +121,7 @@ client.on('interactionCreate', async interaction => {
                     }
                 }
                 interaction.respond(artist_names);
-            } else if (focused[0].name == 'name' || focused[0].name == 'song_name' || focused[0].name == 'ep_name') {
+            } else if (focused[0].name == 'name' || focused[0].name == 'song_name' || focused[0].name == 'music_name' || focused[0].name == 'ep_name') {
                 let artist_songs = db.reviewDB.get(val_artist.split(' & ')[0]);
                 if (artist_songs == undefined) {
                     interaction.respond([]); 

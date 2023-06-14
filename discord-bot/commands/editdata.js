@@ -80,6 +80,8 @@ module.exports = {
             return;
         }
 
+        console.log(song_info);
+
         origArtistArray = song_info.prod_artists;
         let oldOrigArtistArray = origArtistArray.slice(0);
         songName = song_info.song_name;
@@ -94,7 +96,7 @@ module.exports = {
         // eslint-disable-next-line no-unused-vars
         let setterOldSongName = convertToSetterName(oldSongName);
         let setterSongName = convertToSetterName(songName); // songName.includes('.') ? `["${songName}"]` : songName;
-        let setterNoRemixSongName = convertToSetterName(songName);
+        let setterNoRemixSongName = convertToSetterName(noRemixSongName);
         let epType = songName.includes(' EP') ? 'EP' : 'LP';
         let dataType = subCommand == 'song' ? 'song' : epType; // Used for the song name changing command, to display something as changing a "song" or "EP/LP"
 
@@ -827,9 +829,14 @@ module.exports = {
                             db.reviewDB.delete(delArtist, `${setterOldSongName}`);
                         }
                         // Do the same for remix artists
-                        // TODO: Make this work with collab remix artists
                         for (let delRmxArtist of deleteRemixerArray) {
-                            db.reviewDB.delete(delRmxArtist, `${setterOldSongName} (${delRmxArtist} Remix)`);
+                            if ((delRmxArtist.includes('&') && !delRmxArtist.includes('\\&')) || (delRmxArtist.includes(' & '))) {
+                                for (let delCollabRmxArtist of delRmxArtist.split(' & ')) {
+                                    db.reviewDB.delete(delCollabRmxArtist, `${setterOldSongName} (${delRmxArtist} Remix)`);
+                                }
+                            } else {
+                                db.reviewDB.delete(delRmxArtist, `${setterOldSongName} (${delRmxArtist} Remix)`);
+                            }
                         }
 
                         // Update all artists data
@@ -871,20 +878,34 @@ module.exports = {
                             db.reviewDB.set(artist, oldSongObj, `${setterSongName}`);
                         }
                         // Update remixer data as well
-                        // TODO: Make this work with collab remix artists
+                        // TODO(Test this): Make this work with collab remix artists
                         for (let rmxArtist of remixers) {
                             setterOldSongName = songName.includes('.') ? `["${oldSongName}  (${rmxArtist} Remix)"]` : `${oldSongName} (${rmxArtist} Remix)`;
                             setterSongName = songName.includes('.') ? `["${songName} (${rmxArtist} Remix)"]` : `${songName} (${rmxArtist} Remix)`;
 
-                            // Start editing data
-                            let oldSongObj = db.reviewDB.get(rmxArtist, `${setterOldSongName}`);
-                            db.reviewDB.delete(rmxArtist, `${setterOldSongName}`);
-                            // Start editing oldSongObj with new data
-                            oldSongObj.collab = origArtistArray;
-                            oldSongObj.vocals = vocalistArray;
-                            delete oldSongObj.tags;
-                            // Set the new song object with all the newly edited data into the database for that artist
-                            db.reviewDB.set(rmxArtist, oldSongObj, `${setterSongName}`);
+                            if (rmxArtist.includes('&') && !rmxArtist.includes('\\&') || (rmxArtist.includes(' & '))) {
+                                for (let collabRmxArtist of rmxArtist.split(' & ')) {
+                                    // Start editing data
+                                    let oldSongObj = db.reviewDB.get(collabRmxArtist, `${setterOldSongName}`);
+                                    db.reviewDB.delete(collabRmxArtist, `${setterOldSongName}`);
+                                    // Start editing oldSongObj with new data
+                                    oldSongObj.collab = origArtistArray;
+                                    oldSongObj.vocals = vocalistArray;
+                                    delete oldSongObj.tags;
+                                    // Set the new song object with all the newly edited data into the database for that artist
+                                    db.reviewDB.set(collabRmxArtist, oldSongObj, `${setterSongName}`);
+                                }
+                            } else {
+                                // Start editing data
+                                let oldSongObj = db.reviewDB.get(rmxArtist, `${setterOldSongName}`);
+                                db.reviewDB.delete(rmxArtist, `${setterOldSongName}`);
+                                // Start editing oldSongObj with new data
+                                oldSongObj.collab = origArtistArray;
+                                oldSongObj.vocals = vocalistArray;
+                                delete oldSongObj.tags;
+                                // Set the new song object with all the newly edited data into the database for that artist
+                                db.reviewDB.set(rmxArtist, oldSongObj, `${setterSongName}`);
+                            }     
                         }
                     break;
                     case 'remix':
@@ -983,11 +1004,18 @@ module.exports = {
 
 
                                 // Update remixer data as well
-                                // TODO: Make this work with collab remix artists
+                                // TODO(This this): Make this work with collab remix artists
                                 for (let rmxArtist of extraArtistMusicData[j].remixers) {
-                                    // Set the new song object with all the newly edited data into the database for that artist
-                                    db.reviewDB.set(rmxArtist, db.reviewDB.get(rmxArtist, `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).collab`).filter(v => v !== ogArtistName).push(origArtistArray[0]), `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).collab`);
-                                    db.reviewDB.set(rmxArtist, db.reviewDB.get(rmxArtist, `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).vocals`).filter(v => v !== ogArtistName), `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).vocals`);
+                                    if (rmxArtist.includes('&') && !rmxArtist.includes('\\&') || (rmxArtist.includes(' & '))) {
+                                        for (let collabRmxArtist of rmxArtist.split(' & ')) {
+                                            db.reviewDB.set(rmxArtist, db.reviewDB.get(collabRmxArtist, `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).collab`).filter(v => v !== ogArtistName).push(origArtistArray[0]), `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).collab`);
+                                            db.reviewDB.set(rmxArtist, db.reviewDB.get(collabRmxArtist, `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).vocals`).filter(v => v !== ogArtistName), `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).vocals`);
+                                        }
+                                    } else {
+                                        // Set the new song object with all the newly edited data into the database for that artist
+                                        db.reviewDB.set(rmxArtist, db.reviewDB.get(rmxArtist, `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).collab`).filter(v => v !== ogArtistName).push(origArtistArray[0]), `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).collab`);
+                                        db.reviewDB.set(rmxArtist, db.reviewDB.get(rmxArtist, `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).vocals`).filter(v => v !== ogArtistName), `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).vocals`);
+                                    }     
                                 }
                             }
 
@@ -1007,7 +1035,13 @@ module.exports = {
                                 }
                                 
                                 for (let remixer of extraArtistMusicData[j].remixers) {
-                                    db.reviewDB.delete(remixer, `${extraArtistMusicData[j].name} (${remixer} Remix)`);
+                                    if (remixer.includes('&') && !remixer.includes('\\&') || (remixer.includes(' & '))) {
+                                        for (let delCollabRmxArtist of remixer.split(' & ')) {
+                                            db.reviewDB.delete(delCollabRmxArtist, `${extraArtistMusicData[j].name} (${remixer} Remix)`);
+                                        }
+                                    } else {
+                                        db.reviewDB.delete(remixer, `${extraArtistMusicData[j].name} (${remixer} Remix)`);
+                                    }
                                 }
 
                                 for (let epSong of epSongs) {
@@ -1150,15 +1184,22 @@ module.exports = {
                         await i.update({ content: `Deleted **${origArtistArray.join(' & ')} - ${displaySongName}** from the database entirely.`, components: [], embeds: [] });
                     break;
                     case 'remix':
-                        // Delete the data from the remix artists
                         for (let delArtist of rmxArtistArray) {
-                            db.reviewDB.delete(delArtist, `${setterOldSongName}`);
-                            // Remove the remix artists from the remix artist listing
-                            for (let artist of origArtistArray) {
-                                let remixerArray = db.reviewDB.get(artist, `${setterNoRemixSongName}.remixers`);
-                                remixerArray = remixerArray.filter(v => v != delArtist);
-                                db.reviewDB.set(artist, remixerArray, `${setterNoRemixSongName}.remixers`);
+                            if (delArtist.includes('&') && !delArtist.includes('\\&') || (delArtist.includes(' & '))) {
+                                for (let delCollabRmxArtist of delArtist.split(' & ')) {
+                                    db.reviewDB.delete(delCollabRmxArtist, `${setterOldSongName}`);
+                                }
+                            } else {
+                                db.reviewDB.delete(delArtist, `${setterOldSongName}`);
                             }
+                        }
+
+                        // Remove the remix artists from the remix artist listing
+                        for (let artist of origArtistArray) {
+                            let remixerArray = db.reviewDB.get(artist, `${setterNoRemixSongName}.remixers`);
+                            console.log(remixerArray, setterNoRemixSongName);
+                            remixerArray = remixerArray.filter(v => v != rmxArtistArray.join(' & '));
+                            db.reviewDB.set(artist, remixerArray, `${setterNoRemixSongName}.remixers`);
                         }
 
                         await i.update({ content: `Deleted **${origArtistArray.join(' & ')} - ${displaySongName}** from the database entirely.`, components: [], embeds: [] });
@@ -1186,7 +1227,13 @@ module.exports = {
                             }
                             
                             for (let remixer of extraArtistMusicData[j].remixers) {
-                                db.reviewDB.delete(remixer, `${extraArtistMusicData[j].name} (${remixer} Remix)`);
+                                if (remixer.includes('&') && !remixer.includes('\\&') || (remixer.includes(' & '))) {
+                                    for (let delCollabRmxArtist of remixer.split(' & ')) {
+                                        db.reviewDB.delete(delCollabRmxArtist, `${extraArtistMusicData[j].name} (${remixer} Remix)`);
+                                    }
+                                } else {
+                                    db.reviewDB.delete(remixer, `${extraArtistMusicData[j].name} (${remixer} Remix)`);
+                                }
                             }
                         }
 

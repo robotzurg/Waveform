@@ -2,6 +2,7 @@
 const { EmbedBuilder } = require('discord.js');
 const db = require("./db.js");
 const forAsync = require('for-async');
+const _ = require('lodash');
 
 // TODO: ADD FUNCTION HEADERS/DEFS FOR ALL OF THESE!!!
 
@@ -72,7 +73,7 @@ module.exports = {
     },
 
     parse_artist_song_data: async function(interaction, artists = null, song = null, remixers = null, vocalists = null) {
-        const { spotify_api_setup } = require('./func.js');
+        const { spotify_api_setup, getProperRemixers } = require('./func.js');
 
         // If we are in the /editdata artist command and put in a manual name entry, run this a little differently
         let editDataSubCommand = 'N/A';
@@ -106,6 +107,7 @@ module.exports = {
         let origArtistArray = artists;
         let origSongArg = song; // Used to have the non remix name of a song, for reviews
         let songArg = song;
+        let displaySongArg = false;
         let rmxArtistArray = [];
         let passesChecks = true;
         let trackList = false;
@@ -377,6 +379,22 @@ module.exports = {
         artistArray = artistArray.flat(1);
         origArtistArray = artistArray.slice(0);
 
+        // Fix the remix artist array if needed
+        if (rmxArtistArray.length != 0) {
+            temp = getProperRemixers(origArtistArray, rmxArtistArray);
+            if (!_.isEqual(temp, rmxArtistArray)) {
+                rmxArtistArray = temp;
+                displaySongArg = `${origSongArg} (${rmxArtistArray.join(' x ')} Remix)`;
+            } else {
+                for (let r of rmxArtistArray) {
+                    if (r.includes('\\&')) {
+                        displaySongArg = `${origSongArg} (${rmxArtistArray.join(' x ')} Remix)`;
+                        break;
+                    }
+                }
+            }
+        }
+
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
             if (db.reviewDB.has(artistArray[0]) && db.reviewDB.get(artistArray[0][songArg] != undefined)) trackList = db.reviewDB.get(artistArray[0])[songArg].songs;
             if (!trackList) trackList = false;
@@ -467,7 +485,8 @@ module.exports = {
             allArtistArray = [origArtistArray, rmxArtistArray].flat(1);
         }
 
-        let displaySongName = (`${songArg}` + 
+        if (displaySongArg == false) displaySongArg = songArg;
+        let displaySongName = (`${displaySongArg}` + 
         `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
 
         // Grab a spotify song uri through spotify search if we don't already have one.
@@ -1076,5 +1095,34 @@ module.exports = {
 
     convertToSetterName: function(string) {
         return string.includes('.') ? `["${string}"]` : string;
+    },
+
+    /**
+     * Takes a full artist array and remix artist array and fixes the remix artist array
+     * Used in situations where you have something like [Camo, Krooked, Mefjus] instead of [Camo \& Krooked, Mefjus].
+     * @param {Array} artistArray The full original artist array with all artists (including remixers) in it
+     * @param {Array} rmxArtistArray The array of remixers that needs to be fixed
+     */
+    getProperRemixers: function(artistArray, rmxArtistArray) {
+        let newRmxArtistArray = [];
+        for (let i = 0; i < rmxArtistArray.length; i++) {
+            if (i != rmxArtistArray.length - 1) {
+                if (artistArray.includes(`${rmxArtistArray[i]} \\& ${rmxArtistArray[i + 1]}`)) {
+                    newRmxArtistArray.push(`${rmxArtistArray[i]} \\& ${rmxArtistArray[i + 1]}`);
+                    i++;
+                } else {
+                    newRmxArtistArray.push(rmxArtistArray[i]);
+                }
+            } else {
+                if (artistArray.includes(`${rmxArtistArray[i]} \\& ${rmxArtistArray[0]}`)) {
+                    newRmxArtistArray.push(`${rmxArtistArray[i]} \\& ${rmxArtistArray[0]}`);
+                    i++;
+                } else {
+                    newRmxArtistArray.push(rmxArtistArray[i]);
+                }
+            }
+        }
+
+        return newRmxArtistArray;
     },
 };

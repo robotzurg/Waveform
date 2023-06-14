@@ -68,6 +68,11 @@ module.exports = {
 
         if (remixArray.length != 0) {
             for (let i = 0; i < remixArray.length; i++) {
+                if (remixArray[i].includes('\\&')) {
+                    remixArray[i] = remixArray[i].split(' & ');
+                    remixArray[i] = remixArray[i].map(v => v.replace('\\&', '&'));
+                    remixArray[i] = remixArray[i].join(' x ');
+                }
                 remixes.push(`\`${remixArray[i]} Remix\``);
             }
         }
@@ -77,10 +82,10 @@ module.exports = {
         if (songEPObj == undefined) {
             if (songName.includes(' Remix)')) {
                 songEPObj = db.reviewDB.get(songObj.collab[0], `${songEP}`);
+                if (songEPObj == undefined) songEPObj = { art: false };
                 songEPArt = songEPObj.art;
-                if (songEPObj == undefined) songEPObj = {};
             } else {
-                songEPObj = {};
+                songEPObj = { art: false };
             }
         }
         
