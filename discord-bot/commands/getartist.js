@@ -129,7 +129,8 @@ module.exports = {
 
                     for (let ii = 0; ii < epSongs.length; ii++) {
                         starNum = 0;
-                        const songObj = artistObj[epSongs[ii]];
+                        let songObj = artistObj[epSongs[ii]];
+                        if (epSongs[ii].includes(' Remix)')) songObj = db.reviewDB.get(epSongs[ii].split(' Remix)')[0].split('(').splice(1)[0], epSongs[ii]);
                         let reviews = get_user_reviews(songObj);
                         reviewNum = reviews.length;
                         
@@ -147,12 +148,13 @@ module.exports = {
                         let songDetails;
                         let remixerKeys = songObj.remixers;
                         let collabArray = songObj.collab; // This also doubles as remixer original artists
+                        if (epSongs[ii].includes(' Remix)')) collabArray = [];
                         let vocalistArray = songObj.vocals;
                         collabArray = collabArray.filter(v => !vocalistArray.includes(v));
 
                         if (remixerKeys.length > 0) {
                             songDetails = [`\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
-                            `${starNum != 0 ? `\`${starNum} stars\`` : ''}`];
+                            `${starNum != 0 ? `\`${starNum} ⭐\`` : ''}`];
                             songDetails = songDetails.join(' ');
                         } else {
                             songDetails = `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\`${starNum != 0 ? ` \`${starNum} ⭐\`` : ''}`;
@@ -172,7 +174,6 @@ module.exports = {
                 for (let i = 0; i < songArray.length; i++) {
                     starNum = 0;
                     const songObj = db.reviewDB.get(artist, `${songArray[i]}`);
-                    console.log(songArray[i]);
                     reviewNum = parseInt(songObj.review_num);
                     let reviews = get_user_reviews(songObj);
                     
@@ -190,23 +191,23 @@ module.exports = {
                     let songDetails;
                     let remixerKeys = songObj.remixers;
                     let collabArray = songObj.collab; // This also doubles as remixer original artists
-                    if (collabArray == undefined) collabArray = [];
+                    let rmxOgArtistArray = [];
+                    if (songArray[i].includes(' Remix)')) rmxOgArtistArray = songObj.collab;
                     let vocalistArray = songObj.vocals;
                     collabArray = collabArray.filter(v => !vocalistArray.includes(v));
 
                     if (remixerKeys.length > 0) {
                         songDetails = [`\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
-                        `${starNum != 0 ? `\`${starNum} stars\`` : ''}`];
+                        `${starNum != 0 ? `\`${starNum} ⭐\`` : ''}`];
                         songDetails = songDetails.join(' ');
                     } else {
                         songDetails = `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\`${starNum != 0 ? ` \`${starNum} ⭐\`` : ''}`;
                     }
 
-                    if (songArray[i].includes('Remix')) {
-                        remixArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• ${songArray[i]} ${songDetails}`]);
+                    if (songArray[i].includes('Remix')) { // Remixes
+                        remixArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• ${rmxOgArtistArray.join(' & ')} - ${songArray[i]} ${songDetails}`]);
                         // Escape character the stars so that they don't italicize the texts
                         remixArray[remixArray.length - 1][1] = remixArray[remixArray.length - 1][1].replace('*', '\\*');
-
                     } else { // Singles
                         singleArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• ${songArray[i]}` + 
                         `${(collabArray.length != 0) ? ` (with ${collabArray.join(' & ')})` : ``}` + 

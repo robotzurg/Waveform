@@ -61,6 +61,7 @@ module.exports = {
 
         if (db.reviewDB.has(artistArray[0])) {
             let songObj = db.reviewDB.get(artistArray[0])[songName];
+
             if (songObj != undefined) {
                 let userArray = get_user_reviews(songObj);
                 const rankNumArray = [];
@@ -109,7 +110,14 @@ module.exports = {
                         } else {
                             npEmbed.setFooter({ text: `from ${songObj.ep}` });
                         }
-                    }
+                    } else if (songName.includes(' Remix)')) {
+                        let epSongArt = db.reviewDB.get(songObj.collab[0], `${songObj.ep}.art`);
+                        if (epSongArt != false) {
+                            npEmbed.setFooter({ text: `from ${songObj.ep}`, iconURL: epSongArt });
+                        } else {
+                            npEmbed.setFooter({ text: `from ${songObj.ep}` });
+                        }
+                    } 
                 }
             } else {
                 npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
