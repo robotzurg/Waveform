@@ -19,14 +19,19 @@ module.exports = {
                     .setPlaceholder('Change your main Waveform configs.')
                     .addOptions(
                         {
-                            label: 'Mail Filter',
-                            description: 'Change your receiving song mail filter.',
+                            label: 'Mailbox Filter',
+                            description: 'Change your Waveform Mailbox filter.',
                             value: 'mail_filter',
                         },
                         {
                             label: 'Mailbox Review Ping',
-                            description: 'Set whether you want to be pinged if someone reviews a song you sent to them in mailbox.',
+                            description: 'Set whether you want to be pinged when your sent song is reviewed in Waveform Mailbox.',
                             value: 'review_ping',
+                        },
+                        {
+                            label: 'Mailbox DM',
+                            description: 'Set whether you want to be DM\'d if someone sends you a song through Waveform Mailbox.',
+                            value: 'mailbox_dm',
                         },
                         {
                             label: 'Star Spotify Playlist',
@@ -43,8 +48,12 @@ module.exports = {
                 playlist_id: false,
                 playlist_list: [],
             };
-            db.user_stats.set(interaction.user.id, config_data, `config`);
         }
+        if (config_data.mailbox_dm == undefined) {
+            config_data.mailbox_dm = true;
+        }
+        
+        db.user_stats.set(interaction.user.id, config_data, `config`);
 
         let config_desc = [`**Mail Filter:**\n${Object.entries(config_data.mail_filter).map(v => {
             switch(v[0]) {
@@ -62,6 +71,7 @@ module.exports = {
             return v;
         }).join('\n')}\n`,
         `**Mailbox Review Ping:** \`${config_data.review_ping}\``,
+        `**Mailbox DM:** \`${config_data.mailbox_dm}\``,
         `**Star Spotify Playlist:** \`${config_data.star_spotify_playlist != false ? 'Setup!' : 'Not Setup.'}\``];
 
         let mailFilterSel = new ActionRowBuilder()
@@ -125,6 +135,12 @@ module.exports = {
                 } else if (sel.values[0] == 'review_ping') {
                     await db.user_stats.set(interaction.user.id, !(user_profile.config.review_ping), 'config.review_ping');
                     config_desc[1] = `**Mailbox Review Ping:** \`${db.user_stats.get(interaction.user.id, 'config.review_ping')}\``;
+                    user_profile = db.user_stats.get(interaction.user.id);
+                    configEmbed.setDescription(config_desc.join('\n'));
+                    await sel.update({ content: null, embeds: [configEmbed], components: [configMenu] });
+                } else if (sel.values[0] == 'mailbox_dm') {
+                    await db.user_stats.set(interaction.user.id, !(user_profile.config.mailbox_dm), 'config.mailbox_dm');
+                    config_desc[2] = `**Mailbox DM:** \`${db.user_stats.get(interaction.user.id, 'config.mailbox_dm')}\``;
                     user_profile = db.user_stats.get(interaction.user.id);
                     configEmbed.setDescription(config_desc.join('\n'));
                     await sel.update({ content: null, embeds: [configEmbed], components: [configMenu] });
@@ -217,7 +233,7 @@ module.exports = {
                         await spotifyApi.addTracksToPlaylist(db.user_stats.get(interaction.user.id, `config.star_spotify_playlist`), list); 
                     }
                      
-                    config_desc[2] = `**Star Spotify Playlist:** \`Setup!\``;
+                    config_desc[3] = `**Star Spotify Playlist:** \`Setup!\``;
                     configEmbed.setDescription(config_desc.join('\n'));
                     await interaction.editReply({ content: `Playlist has been created and starred songs have been added to it.`, embeds: [configEmbed], components: [configMenu] });                
                 }

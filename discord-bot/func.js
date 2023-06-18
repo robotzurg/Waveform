@@ -1,7 +1,6 @@
 /* eslint-disable no-useless-escape */
 const { EmbedBuilder } = require('discord.js');
 const db = require("./db.js");
-const forAsync = require('for-async');
 const _ = require('lodash');
 
 // TODO: ADD FUNCTION HEADERS/DEFS FOR ALL OF THESE!!!
@@ -533,7 +532,7 @@ module.exports = {
     },
 
     // Updates the art for embed messages, NOT in the database. That's done in the /review commands themselves.
-    update_art: function(interaction, client, first_artist, song_name, new_image) {
+    update_art: async function(interaction, client, first_artist, song_name, new_image) {
         const { get_user_reviews, handle_error, get_review_channel } = require('./func.js');
 
         const imageSongObj = db.reviewDB.get(first_artist)[song_name];
@@ -551,27 +550,24 @@ module.exports = {
                     msgstoEdit = msgstoEdit.filter(item => item !== false);
                     
                     if (msgstoEdit.length > 0) { 
-                        forAsync(msgstoEdit, async function(item) {
-                            return new Promise(function(resolve) {
-                                let msgtoEdit = item;
-                                let channelsearch = get_review_channel(client, msgtoEdit[0], msgtoEdit[1], msgtoEdit[2]);
-                                let msgEmbed;
-                                
-                                if (channelsearch != undefined) {
-                                    channelsearch.messages.fetch(`${msgtoEdit[2]}`).then(msg => {
-                                        msgEmbed = EmbedBuilder.from(msg.embeds[0]);
-                                        msgEmbed.setThumbnail(new_image);
-                                        msg.edit({ content: null, embeds: [msgEmbed] });
-                                        resolve();
-                                    }).catch((err) => {
-                                        handle_error(interaction, err);
-                                    });
-                                }
-                            });
-                        });
+                        for (const item of msgstoEdit) {
+                            let msgtoEdit = item;
+                            let channelsearch = await get_review_channel(client, msgtoEdit[0], msgtoEdit[1], msgtoEdit[2]);
+                            let msgEmbed;
+                            
+                            if (channelsearch != undefined) {
+                                await channelsearch.messages.fetch(`${msgtoEdit[2]}`).then(msg => {
+                                    msgEmbed = EmbedBuilder.from(msg.embeds[0]);
+                                    msgEmbed.setThumbnail(new_image);
+                                    msg.edit({ content: null, embeds: [msgEmbed] });
+                                }).catch((err) => {
+                                    handle_error(interaction, err);
+                                });
+                            }
                     }
                 }
             }
+        }
     },
 
     review_song: function(interaction, artistArray, origArtistArray, song, origSongName, review, rating, starred, rmxArtistArray, vocalistArray, songArt, user_who_sent, spotifyUri, ep_name = false) {

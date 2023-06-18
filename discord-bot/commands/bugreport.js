@@ -75,8 +75,8 @@ module.exports = {
             let review_type = submitted.fields.getTextInputValue('type');
             let desc = submitted.fields.getTextInputValue('desc');
             let quick_desc = submitted.fields.getTextInputValue('quick');
-            if (desc == null) desc = 'N/A';
-            if (song == null) song = 'N/A';
+            if (desc == '') desc = 'N/A';
+            if (song == '') song = 'N/A';
 
             await submitted.reply('Successfully submitted a bug report!');
             
