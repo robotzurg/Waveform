@@ -240,7 +240,7 @@ module.exports = {
                         if (songArg.includes(' - LP')) songArg = songArg.replace(' - LP', ' LP');
 
                         if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
-                            db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] }, 'current_ep_review');  
+                            db.user_stats.set(interaction.user.id, { msg_id: false, channel_id: false, guild_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] }, 'current_ep_review');  
                         }
                     }
                 });
@@ -398,7 +398,7 @@ module.exports = {
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
             if (db.reviewDB.has(artistArray[0]) && db.reviewDB.get(artistArray[0][songArg] != undefined)) trackList = db.reviewDB.get(artistArray[0])[songArg].songs;
             if (!trackList) trackList = false;
-            db.user_stats.set(interaction.user.id, { msg_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: false }, 'current_ep_review');  
+            db.user_stats.set(interaction.user.id, { msg_id: false, channel_id: false, guild_id: false, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: false }, 'current_ep_review');  
         }
         
         if (db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name') != undefined) {
@@ -533,20 +533,18 @@ module.exports = {
     },
 
     // Updates the art for embed messages, NOT in the database. That's done in the /review commands themselves.
-    update_art: function(interaction, first_artist, song_name, new_image) {
-        const { get_user_reviews, handle_error } = require('./func.js');
+    update_art: function(interaction, client, first_artist, song_name, new_image) {
+        const { get_user_reviews, handle_error, get_review_channel } = require('./func.js');
 
         const imageSongObj = db.reviewDB.get(first_artist)[song_name];
             if (imageSongObj != undefined) {
                 let msgstoEdit = [];
-                let userIDs = [];
-                let count = -1;
 
                 let userArray = get_user_reviews(imageSongObj);
                 if (userArray.length != 0) {
                     userArray.forEach(user => {
-                        msgstoEdit.push(db.reviewDB.get(first_artist)[song_name][user].msg_id);
-                        userIDs.push(user);
+                        let userData = db.reviewDB.get(first_artist)[song_name][user];
+                        msgstoEdit.push([userData.guild_id, userData.channel_id, userData.msg_id]);
                     });
 
                     msgstoEdit = msgstoEdit.filter(item => item !== undefined);
@@ -554,32 +552,21 @@ module.exports = {
                     
                     if (msgstoEdit.length > 0) { 
                         forAsync(msgstoEdit, async function(item) {
-                            count += 1;
                             return new Promise(function(resolve) {
-                                let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
                                 let msgtoEdit = item;
+                                let channelsearch = get_review_channel(client, msgtoEdit[0], msgtoEdit[1], msgtoEdit[2]);
                                 let msgEmbed;
-
-                                channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                    msgEmbed = EmbedBuilder.from(msg.embeds[0]);
-                                    msgEmbed.setThumbnail(new_image);
-                                    msg.edit({ content: null, embeds: [msgEmbed] });
-                                    resolve();
-                                }).catch(() => {
-                                    channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(userIDs[count], 'mailbox'));
-                                    if (channelsearch != undefined) {
-                                        channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
-                                            msgEmbed = EmbedBuilder.from(msg.embeds[0]);
-                                            msgEmbed.setThumbnail(new_image);
-                                            msg.edit({ content: null, embeds: [msgEmbed] });
-                                            resolve();
-                                        }).catch(() => {
-                                            console.log('Message not found');
-                                        });
-                                    }
-                                }).catch((err) => {
-                                    handle_error(interaction, err);
-                                });
+                                
+                                if (channelsearch != undefined) {
+                                    channelsearch.messages.fetch(`${msgtoEdit[2]}`).then(msg => {
+                                        msgEmbed = EmbedBuilder.from(msg.embeds[0]);
+                                        msgEmbed.setThumbnail(new_image);
+                                        msg.edit({ content: null, embeds: [msgEmbed] });
+                                        resolve();
+                                    }).catch((err) => {
+                                        handle_error(interaction, err);
+                                    });
+                                }
                             });
                         });
                     }
@@ -606,6 +593,8 @@ module.exports = {
                 url: false,
                 name: interaction.member.displayName, // For debug purposes
                 msg_id: false,
+                channel_id: false,
+                guild_id: false,
                 review: review,
                 rating: rating,
                 starred: starred,
@@ -770,6 +759,8 @@ module.exports = {
                     [interaction.user.id]: {
                         url: false,
                         msg_id: false,
+                        channel_id: false,
+                        guild_id: false,
                         starred: starred,
                         name: interaction.member.displayName,
                         rating: overall_rating,
@@ -787,6 +778,8 @@ module.exports = {
             let reviewObject = {
                 url: false,
                 msg_id: false,
+                channel_id: false,
+                guild_id: false,
                 starred: starred,
                 name: interaction.member.displayName,
                 rating: overall_rating,
@@ -1035,23 +1028,20 @@ module.exports = {
     },
 
     /**
-     * Finds and returns the channel object of a review message, for use in messing with it.
+     * Gets the channel object of a review message, for use in messing with it.
      * @param {Object} interaction The interaction of the slash command this function is used in.
      * @param {String} user_id The user ID of the reviewer. 
      * @param {String} msg_id The ID of the review message. 
      */
-    find_review_channel: async function(interaction, user_id, msg_id) {
-        let channelsearch = interaction.guild.channels.cache.get(db.server_settings.get(interaction.guild.id, 'review_channel').slice(0, -1).slice(2));
+    get_review_channel: async function(client, guild_id, channel_id, msg_id) {
+        let guild = await client.guilds.cache.get(guild_id);
+        if (guild == undefined) return undefined;
+        let channelsearch = await guild.channels.cache.get(channel_id);
+        if (channelsearch == undefined) return undefined;
+
         let target = undefined;
         await channelsearch.messages.fetch(msg_id).then(async () => {
             target = channelsearch;
-        }).catch(async () => {
-            channelsearch = interaction.guild.channels.cache.get(db.user_stats.get(user_id, 'mailbox'));
-            if (channelsearch != undefined) {
-                await channelsearch.messages.fetch(msg_id).then(async () => {
-                    target = channelsearch;
-                }).catch(() => {}); // Do nothing if we can't find it.
-            }
         });
 
         return target;

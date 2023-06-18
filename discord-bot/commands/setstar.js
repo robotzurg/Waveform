@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { parse_artist_song_data, handle_error, find_review_channel, spotify_api_setup, get_user_reviews } = require('../func.js');
+const { parse_artist_song_data, handle_error, get_review_channel, spotify_api_setup, get_user_reviews } = require('../func.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -25,7 +25,7 @@ module.exports = {
                 .setAutocomplete(true)
                 .setRequired(false)),
     help_desc: `TBD`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
 
         let artists = interaction.options.getString('artist');
@@ -114,7 +114,7 @@ module.exports = {
         let msgtoEdit = songReviewObj.msg_id;
 
         if (msgtoEdit != false && msgtoEdit != undefined) {
-            let channelsearch = await find_review_channel(interaction, interaction.user.id, msgtoEdit);
+            let channelsearch = await get_review_channel(client, songReviewObj.guild_id, songReviewObj.channel_id, songReviewObj.msg_id);
             if (channelsearch != undefined) {
                 await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
                     let msgEmbed = EmbedBuilder.from(msg.embeds[0]);
@@ -142,11 +142,13 @@ module.exports = {
         let ep_from = songObj.ep;
         if (ep_from != false && ep_from != undefined) {
             if (db.reviewDB.get(artistArray[0])[ep_from][interaction.user.id] != undefined) {
-                let epMsgToEdit = db.reviewDB.get(artistArray[0])[ep_from][interaction.user.id].msg_id;
-                let channelsearch = await find_review_channel(interaction, interaction.user.id, epMsgToEdit);
+                let epMsgID = db.reviewDB.get(artistArray[0])[ep_from][interaction.user.id].msg_id;
+                let epGuildID = db.reviewDB.get(artistArray[0])[ep_from][interaction.user.id].guild_id;
+                let epChannelID = db.reviewDB.get(artistArray[0])[ep_from][interaction.user.id].channel_id;
+                let channelsearch = await get_review_channel(client, epGuildID, epChannelID, epMsgID);
                 if (channelsearch == undefined) return;
 
-                channelsearch.messages.fetch(`${epMsgToEdit}`).then(msg => {
+                channelsearch.messages.fetch(`${epMsgID}`).then(msg => {
                     let msgEmbed = EmbedBuilder.from(msg.embeds[0]);
                     let msg_embed_fields = msgEmbed.data.fields;
                     let field_num = -1;

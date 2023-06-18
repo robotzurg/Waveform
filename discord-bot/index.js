@@ -50,6 +50,11 @@ const rest = new REST({ version: '9' }).setToken(token);
 			{ body: registerCommands },
 		);
 
+        await rest.put(
+			Routes.applicationGuildCommands(devClientId, "784994152189919264"),
+			{ body: registerCommands },
+		);
+
 		console.log('Successfully reloaded application (/) commands.');
 	} catch (error) {
 		console.error(error);
@@ -206,7 +211,6 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.on('guildMemberAdd', async (member) => {
-
     if (!db.user_stats.has(member.user.id)) {
         db.user_stats.set(member.user.id, {
             "access_token": "",
@@ -231,11 +235,19 @@ client.on('guildMemberAdd', async (member) => {
                 },
                 review_ping: false, // If you want to get pinged for a review if you are tagged as a user who sent it, default to false
                 star_spotify_playlist: false,
+                mailbox_dm: true,
             },
             "mailbox_history": [],
         });
     }
+});
 
+client.on('guildCreate', async (guild) => {
+    if (!db.server_settings.has(guild.id)) {
+        db.server_settings.set(guild.id, {
+            star_cutoff: 3,
+        });
+    }
 });
 
 

@@ -18,7 +18,6 @@ module.exports = {
         try {
             let spotifyCheck;
             let artist = interaction.options.getString('artist');
-            let isPodcast;
             
             // Spotify Check
             if (artist == null) {
@@ -30,11 +29,6 @@ module.exports = {
                     artist = data.body.item.artists.map(a => a.name.replace(' & ', ' \\& '))[0];
                     spotifyCheck = true;
                 });
-
-                // Check if a podcast is being played, as we don't support that.
-                if (isPodcast == true) {
-                    return interaction.reply('Podcasts are not supported with `/np`.');
-                }
             }
 
             if (spotifyCheck == false) {

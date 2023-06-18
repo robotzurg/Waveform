@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { average, get_user_reviews, parse_artist_song_data, sort, handle_error, find_review_channel } = require('../func.js');
+const { average, get_user_reviews, parse_artist_song_data, sort, handle_error, get_review_channel } = require('../func.js');
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const _ = require('lodash');
 
@@ -285,7 +285,7 @@ module.exports = {
 
                 let reviewMsgID = songObj[i.values[0]][`msg_id`];
                 if (reviewMsgID != false && reviewMsgID != undefined) {
-                    let channelsearch = await find_review_channel(interaction, i.values[0], reviewMsgID);
+                    let channelsearch = await get_review_channel(client, songObj[i.values[0]].guild_id, songObj[i.values[0]].channel_id, reviewMsgID);
                     if (channelsearch != undefined) {
                         await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
                             reviewEmbed.setTimestamp(msg.createdTimestamp);
