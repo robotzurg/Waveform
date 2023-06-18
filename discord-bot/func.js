@@ -1031,9 +1031,9 @@ module.exports = {
      */
     get_review_channel: async function(client, guild_id, channel_id, msg_id) {
         let guild = await client.guilds.cache.get(guild_id);
-        if (guild == undefined) return undefined;
+        if (guild == undefined) guild = await client.guilds.cache.get('680864893552951306');
         let channelsearch = await guild.channels.cache.get(channel_id);
-        if (channelsearch == undefined) return undefined;
+        if (channelsearch == undefined) channelsearch = await guild.channels.cache.get('680877758909382757');
 
         let target = undefined;
         await channelsearch.messages.fetch(msg_id).then(async () => {
