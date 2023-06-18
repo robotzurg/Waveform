@@ -50,11 +50,6 @@ const rest = new REST({ version: '9' }).setToken(token);
 			{ body: registerCommands },
 		);
 
-        await rest.put(
-			Routes.applicationGuildCommands(devClientId, "784994152189919264"),
-			{ body: registerCommands },
-		);
-
 		console.log('Successfully reloaded application (/) commands.');
 	} catch (error) {
 		console.error(error);
