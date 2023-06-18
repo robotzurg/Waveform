@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { EmbedBuilder, SlashCommandBuilder, Embed } = require('discord.js');
-const { handle_error, find_review_channel, parse_artist_song_data } = require('../func.js');
+const { handle_error, get_review_channel, parse_artist_song_data } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -24,7 +24,7 @@ module.exports = {
                 .setDescription('User who made the review. Defaults to yourself.')
                 .setRequired(false)),
     help_desc: `TBD`,
-	async execute(interaction) {
+	async execute(interaction, client) {
 
         try {
             let artists = interaction.options.getString('artist');
@@ -116,7 +116,7 @@ module.exports = {
 
             let reviewMsgID = epReviewObj.msg_id;
             if (reviewMsgID != false && reviewMsgID != undefined) {
-                let channelsearch = await find_review_channel(interaction, taggedUser.id, reviewMsgID);
+                let channelsearch = await get_review_channel(client, epReviewObj.guild_id, epReviewObj.channel_id, reviewMsgID);
                 if (channelsearch != undefined) {
                     await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
                         epEmbed.setTimestamp(msg.createdTimestamp);

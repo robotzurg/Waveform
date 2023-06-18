@@ -11,39 +11,23 @@ module.exports = {
         .setName('sendmail')
         .setDescription('Send a song/EP/LP to a users Waveform Mailbox.')
         .setDMPermission(false)
-        .addStringOption(option => 
-            option.setName('link')
-                .setDescription('Link to the song you would like to send to the mailbox.')
-                .setRequired(true))
         .addUserOption(option => 
             option.setName('user')
                 .setDescription('User whose mailbox you would like to send a song to.')
+                .setRequired(true))
+        .addStringOption(option => 
+            option.setName('link')
+                .setDescription('Link to the song you would like to send to the mailbox.')
                 .setRequired(false)),
     help_desc: `Send a song to a users Waveform Mailbox.\n` + 
     `The songs are usually sent from Spotify (mainly), but you can also send YouTube, Apple Music, and SoundCloud links.\n` +
-    `Leaving the user argument (optional) blank will send a song to the users mailbox based on the chat you send the command in.\n` + 
+    `Leaving the link argument blank will pull from your currently playing song on spotify.` + 
     `For example, if you send a song in a mailbox chat, it'll send it to that users mailbox.`,
-	async execute(interaction, client) {
+	async execute(interaction) {
         await interaction.deferReply();
         let taggedUser = interaction.options.getUser('user');
-        let taggedMember;
-        let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
-
-        // Check if we are reviewing in the right chat, if not, boot out
-        if (mailboxes.some(v => v.includes(interaction.channel.id))) {
-            taggedUser = client.users.cache.get(mailboxes.find(v => v[1] == interaction.channel.id)[0]);
-            taggedMember = await interaction.guild.members.fetch(taggedUser.id);
-        } else if (taggedUser != null) {
-            taggedMember = await interaction.guild.members.fetch(taggedUser.id);
-        } else if (taggedUser == null) {
-            return interaction.editReply(`You must either specify a user in the user argument to send this song to, or be in a mailbox chat!`);
-        }
-
+        let taggedMember = await interaction.guild.members.fetch(taggedUser.id);
         const spotifyApi = await spotify_api_setup(taggedUser.id);
-    
-        if (spotifyApi == false) {
-            return interaction.editReply('This user either does not have a mailbox setup, or has a non-spotify mailbox, thus cannot have mail sent this way.');
-        }
 
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
         let trackLink = interaction.options.getString('link');
@@ -56,10 +40,33 @@ module.exports = {
         let mainId; // The main ID of the spotify link (the album URI or the main track URI)
         let linkType;
         let mailFilter = db.user_stats.get(taggedUser.id, 'config.mail_filter');
+        let dmMailConfig = db.user_stats.get(taggedUser.id, 'config.mailbox_dm');
+        let spotifyCheck = false;
+
+        // Pull from spotify playback if trackLink is null
+        if (trackLink == null && spotifyApi != false) {
+            await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+                if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
+                trackLink = data.body.item.external_urls.spotify;
+                spotifyCheck = true;
+            });
+
+            // Check if a podcast is being played, as we don't support that.
+            if (spotifyCheck == false) {
+                return interaction.reply('Spotify playback not detected. Please start playing a song on spotify before using this command in this way!');
+            }
+        } else {
+            return interaction.reply(`You are not logged into spotify with Waveform, so you must specify a track link in the link argument or use \`/login\` to use this command in this way!`);
+        }
+
+       
 
         // Check if we are not in a spotify link, and if so, what kind of link we have
-
         if (trackLink.includes('spotify')) {
+            if (db.user_stats.get(taggedUser.id, 'spotify_playlist') == false || spotifyApi == false) {
+                return interaction.editReply('This user has not setup a spotify mailbox playlist, and thus cannot be sent spotify songs.');
+            }
+
             await getData(trackLink).then(async data => {
                 mainId = data.id;
                 url = trackLink;
@@ -135,7 +142,7 @@ module.exports = {
 
         if (linkType.includes('sp')) {
             if (db.user_stats.get(taggedUser.id, 'mailbox_history').includes(mainId)) {
-                return interaction.editReply(`This user has already been sent **${prodArtists.join(' & ')} - ${displayName}** through Waveform Mailbox!`);
+                return interaction.editReply(`\`${taggedMember.displayName}\` has already been sent **${prodArtists.join(' & ')} - ${displayName}** through Waveform Mailbox!`);
             }
 
             // Add tracks to the mailbox playlist
@@ -147,12 +154,9 @@ module.exports = {
                 .setDescription(`This music mail was sent to you by <@${interaction.user.id}>!`)
                 .setThumbnail(songArt);
 
-                if (interaction.channel.id != db.user_stats.get(taggedUser.id, 'mailbox')) {
-                    interaction.editReply(`Sent [**${prodArtists.join(' & ')} - ${displayName}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
-                    let mail_channel = interaction.guild.channels.cache.get(db.user_stats.get(taggedUser.id, 'mailbox'));
-                    mail_channel.send({ content: `You've got mail! 📬`, embeds: [mailEmbed] });
-                } else {
-                    interaction.editReply({ content: `You've got mail! 📬`, embeds: [mailEmbed] });
+                interaction.editReply(`Sent [**${prodArtists.join(' & ')} - ${displayName}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
+                if (dmMailConfig && taggedUser.id != interaction.user.id) { 
+                    taggedUser.send({ content: `**You've got mail!** 📬`, embeds: [mailEmbed] });
                 }
 
                 // Put the song we just mailboxed into a mailbox list for the user, so it can be pulled up with /viewmail
@@ -184,17 +188,14 @@ module.exports = {
         } else { // If we have a non-spotify link
 
             if (db.user_stats.get(taggedUser.id, 'mailbox_history').includes(trackLink)) {
-                return interaction.editReply(`This user has already been sent this song through Waveform Mailbox!`);
+                return interaction.editReply(`\`${taggedMember.displayName}\` has already been sent this song through Waveform Mailbox!`);
             }
 
             db.user_stats.push(taggedUser.id, trackLink, 'mailbox_history');
 
-            if (interaction.channel.id != db.user_stats.get(taggedUser.id, 'mailbox')) {
-                interaction.editReply(`Sent a non-spotify [track](${trackLink}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
-                let mail_channel = interaction.guild.channels.cache.get(db.user_stats.get(taggedUser.id, 'mailbox'));
-                mail_channel.send({ content: `**You've got mail!** 📬\nSent by **${interaction.member.displayName}**\n${trackLink}` });
-            } else {
-                interaction.editReply({ content: `**You've got mail!** 📬\nSent by **${interaction.member.displayName}**\n${trackLink}` });
+            interaction.editReply(`Sent a non-spotify [track](${trackLink}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
+            if (dmMailConfig && interaction.user.id != taggedUser.id) { 
+                taggedUser.send({ content: `**You've got mail!** 📬\nSent by **${interaction.member.displayName}**\n${trackLink}` });
             }
         }
     },

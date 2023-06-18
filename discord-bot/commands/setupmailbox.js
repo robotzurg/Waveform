@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { SlashCommandBuilder, ChannelType, PermissionsBitField } = require('discord.js');
+const { SlashCommandBuilder } = require('discord.js');
 const { handle_error, spotify_api_setup } = require("../func.js");
 
 module.exports = {
@@ -30,37 +30,14 @@ module.exports = {
         let playlist_desc = interaction.options.getString('playlist_desc');
         if (playlist_desc == null) playlist_desc = 'Your own personal Waveform Mailbox for people to send you music! Will be updated with music that people send you!';
 
-        let category = await interaction.guild.channels.cache.find((c) => c.name.toLowerCase() === "mailboxes" && c.type === ChannelType.GuildCategory);
-        if (!category) {
-            category = await interaction.guild.channels.create({
-                name: 'Mailboxes',
-                type: ChannelType.GuildCategory,
-            });
-        }
-
-        let channel = await interaction.guild.channels.cache.find((c) => c.name === interaction.user.username.replace(' ', '-').toLowerCase());
-        if (channel == undefined) {
-            channel = await interaction.guild.channels.create({
-            name: interaction.user.username.replace(' ', '-').toLowerCase(),
-            type: ChannelType.GuildText,
-            permissionOverwrites: [
-                { 
-                    id: interaction.user.id, 
-                    allow: [PermissionsBitField.Flags.ManageMessages],
-                },
-            ],
-          });
-          channel.setParent(category, { lockPermissions: false });
-        }
-
         if (spotifyCheck != false) { 
             await spotifyApi.createPlaylist(playlist_name, { 'description': playlist_desc, 'public': true })
             .then(async function(data) {
                 db.user_stats.set(interaction.user.id, data.body.id, 'mailbox_playlist_id');
-                db.user_stats.set(interaction.user.id, channel.id, 'mailbox');
                 db.user_stats.set(interaction.user.id, [], 'mailbox_list');
                 db.user_stats.set(interaction.user.id, [], 'mailbox_history');
-                db.server_settings.push(interaction.guild.id, [interaction.user.id, channel.id], 'mailboxes');
+                db.user_stats.set(interaction.user.id, true, 'spotify_mailbox'); 
+                db.user_stats.set(interaction.user.id, true, 'config.mailbox_dm');
                 await interaction.editReply(`Your mailbox has now been setup on Spotify, and \`/sendmail\` can now be used with it!\n` + 
                 `If you need to delete the playlist for whatever reason, make sure you run this command again to setup a new one!\n\n` + 
                 `You should also have a new channel created under your name in the "Mailboxes" category, this is where all of your mailbox happenings will be in!\n` + 
@@ -72,14 +49,12 @@ module.exports = {
             });
         } else {
             db.user_stats.set(interaction.user.id, false, 'mailbox_playlist_id');
-            db.user_stats.set(interaction.user.id, channel.id, 'mailbox');
             db.user_stats.set(interaction.user.id, [], 'mailbox_list');
             db.user_stats.set(interaction.user.id, [], 'mailbox_history');
-            db.server_settings.push(interaction.guild.id, [interaction.user.id, channel.id], 'mailboxes');
+            db.user_stats.set(interaction.user.id, false, 'spotify_mailbox'); 
+            db.user_stats.set(interaction.user.id, true, 'config.mailbox_dm');
             await interaction.editReply(`Your mailbox has now been setup on Waveform. Because this is not a spotify linked mailbox, it cannot be sent Spotify Links, but users can send you mail manually in your channel!`);
         }
-
-        
 
         } catch (err) {
             let error = err;

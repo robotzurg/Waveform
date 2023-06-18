@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const forAsync = require('for-async');
-const { get_user_reviews, parse_artist_song_data, handle_error, find_review_channel, grab_spotify_art, grab_spotify_artist_art, spotify_api_setup } = require("../func.js");
+const { get_user_reviews, parse_artist_song_data, handle_error, get_review_channel, grab_spotify_art, grab_spotify_artist_art, spotify_api_setup } = require("../func.js");
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 
@@ -49,7 +49,7 @@ module.exports = {
                     .setDescription('Override Spotify auto-image placement with your own image link.')
                     .setRequired(false))),
     help_desc: `TBD`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
 
         let artist = interaction.options.getString('artist');
@@ -92,28 +92,24 @@ module.exports = {
             // Fix artwork on all reviews for this song
             let songObj = db.reviewDB.get(artistArray[0])[songName];
             let msgstoEdit = [];
-            let userIDs = [];
-            let count = -1;
 
             if (songObj != undefined) {
                 
                 let userArray = get_user_reviews(songObj);
 
                 userArray.forEach(user => {
-                    msgstoEdit.push(songObj[user].msg_id);
-                    userIDs.push(user);
+                    msgstoEdit.push([songObj[user].guild_id, songObj[user].channel_id, songObj[user].msg_id]);
                 });
 
                 msgstoEdit = msgstoEdit.filter(item => item !== undefined);
                 msgstoEdit = msgstoEdit.filter(item => item !== false);
                 if (msgstoEdit.length > 0) { 
                     forAsync(msgstoEdit, async function(msgtoEdit) {
-                        count += 1;
-                        let channelsearch = await find_review_channel(interaction, userIDs[count], msgtoEdit);
+                        let channelsearch = await get_review_channel(client, msgtoEdit[0], msgtoEdit[1], msgtoEdit[2]);
                         if (channelsearch != undefined) {
                             return new Promise(function(resolve) {
                                 let msgEmbed;
-                                channelsearch.messages.fetch(msgtoEdit).then(msg => {
+                                channelsearch.messages.fetch(msgtoEdit[2]).then(msg => {
                                     msgEmbed = EmbedBuilder.from(msg.embeds[0]);
                                     msgEmbed.setThumbnail(art);
                                     msg.edit({ content: null, embeds: [msgEmbed] });

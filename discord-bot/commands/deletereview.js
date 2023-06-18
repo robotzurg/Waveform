@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { parse_artist_song_data, handle_error, find_review_channel } = require("../func.js");
+const { parse_artist_song_data, handle_error, get_review_channel } = require("../func.js");
 const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
@@ -27,7 +27,7 @@ module.exports = {
     help_desc: `Delete a review you have made from the review database.\n` + 
     `This only deletes YOUR review, not anyone else's review or the song/artist data itself.\n\n` + 
     `Leaving the artist and song name arguments blank will pull from currently playing song on Spotify, if you are logged in to Waveform with Spotify.\n\n`,
-    async execute(interaction) {
+    async execute(interaction, client) {
 
         try {
 
@@ -58,8 +58,10 @@ module.exports = {
 
         // Delete review message
         let reviewMsgID = db.reviewDB.get(artistArray[0])[songName][interaction.user.id].msg_id;
+        let reviewChannelID = db.reviewDB.get(artistArray[0])[songName][interaction.user.id].channel_id;
+        let reviewGuildID = db.reviewDB.get(artistArray[0])[songName][interaction.user.id].guild_id;
         if (reviewMsgID != false && reviewMsgID != undefined) {
-            let channelsearch = await find_review_channel(interaction, interaction.user.id, reviewMsgID);
+            let channelsearch = await get_review_channel(client, reviewGuildID, reviewChannelID, reviewMsgID);
             if (channelsearch != undefined) {
                 channelsearch.messages.fetch(reviewMsgID).then(async msg => {
                     await msg.delete();

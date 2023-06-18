@@ -1,6 +1,6 @@
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const db = require('../db.js');
-const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data } = require('../func.js');
+const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data, convertToSetterName } = require('../func.js');
 const ms_format = require('format-duration');
 const progressbar = require('string-progressbar');
 
@@ -14,11 +14,43 @@ module.exports = {
         try {
         await interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
-        let songArt, spotifyUrl, yourRating, origArtistArray, artistArray, songName, songDisplayName, isPlaying = true, isPodcast = false, validSong = true;
+        let songArt, spotifyUrl, yourRating, origArtistArray, /*artistArray,*/ songName, songDisplayName, isPlaying = true, isPodcast = false, validSong = true;
         let songLength, songCurMs, musicProgressBar = false; // Song length bar variables
         const spotifyApi = await spotify_api_setup(interaction.user.id);
         
         if (spotifyApi == false) return interaction.editReply(`This command requires you to use \`/login\` `);
+
+        // Temp
+        let artistArray = db.reviewDB.keyArray();
+        for (let i = 0; i < artistArray.length; i++) {
+            let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
+            songArray = songArray.filter(v => v != 'pfp_image');
+
+            for (let j = 0; j < songArray.length; j++) {
+                let setterSongName = convertToSetterName(songArray[j]);
+                let songObj = db.reviewDB.get(artistArray[i], `${setterSongName}`);
+                let userArray;
+                if (songObj != null && songObj != undefined) {
+                    userArray = get_user_reviews(songObj);
+                } else {
+                    userArray = [];
+                }
+
+                if (userArray.length != 0 && songObj.ep == false) {
+                    for (let user of userArray) {
+                        db.reviewDB.set(artistArray[i], `680864893552951306`, `${setterSongName}.${user}.guild_id`);
+                        db.reviewDB.set(artistArray[i], `680877758909382757`, `${setterSongName}.${user}.channel_id`);
+                    }
+                } else if (userArray.length != 0) {
+                    for (let user of userArray) {
+                        db.reviewDB.set(artistArray[i], false, `${setterSongName}.${user}.guild_id`);
+                        db.reviewDB.set(artistArray[i], false, `${setterSongName}.${user}.channel_id`);
+                    }
+                }
+            }
+        }
+
+        return;
 
         await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
             if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }

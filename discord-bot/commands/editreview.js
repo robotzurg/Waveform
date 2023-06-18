@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { parse_artist_song_data, handle_error, find_review_channel } = require("../func.js");
+const { parse_artist_song_data, handle_error, get_review_channel } = require("../func.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -66,7 +66,7 @@ module.exports = {
                     .setRequired(false))),
     help_desc: `Allows you to edit a review you have made for a song in the review database, and edits the review message in your review channel with the newly edited review.\n` +
     `Can be used for singles, remixes, or songs on an EP/LP review, but this CANNOT be used for EP/LP overall reviews or ratings. Use \`/epeditreview\` for that.`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
 
         let artists = interaction.options.getString('artist');
@@ -141,9 +141,11 @@ module.exports = {
         }
 
         let reviewMsgID = songReviewObj.msg_id;
+        let reviewChannelID = songReviewObj.channel_id;
+        let reviewGuildID = songReviewObj.guild_id;
 
         if (reviewMsgID != false) {
-            let channelsearch = await find_review_channel(interaction, interaction.user.id, reviewMsgID);
+            let channelsearch = await get_review_channel(client, reviewGuildID, reviewChannelID, reviewMsgID);
             if (channelsearch != undefined) {
                 channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
                     let msgEmbed = EmbedBuilder.from(msg.embeds[0]);
@@ -159,6 +161,8 @@ module.exports = {
 
         let primArtist = artistArray[0];
         let epMsgToEdit = false;
+        let epMsgGuild = false;
+        let epMsgChannel = false;
         let epObj = false;
 
         for (let i = 0; i < artistArray.length; i++) {
@@ -166,6 +170,8 @@ module.exports = {
             if (epObj == undefined || epObj == false) break;
             if (epObj[interaction.user.id] == undefined || epObj[interaction.user.id] == false) break;
             epMsgToEdit = epObj[interaction.user.id].msg_id;
+            epMsgChannel = epObj[interaction.user.id].channel_id;
+            epMsgGuild = epObj[interaction.user.id].guild_id;
             if (epMsgToEdit != false && epMsgToEdit != undefined && epMsgToEdit != null) {
                 primArtist = artistArray[i];
                 break;
@@ -175,7 +181,7 @@ module.exports = {
         if (epObj != false && epObj != undefined) {
             if (epMsgToEdit != undefined && epMsgToEdit != false) {
                 let displayArtists = origArtistArray.filter(v => v != primArtist);
-                let channelsearch = await find_review_channel(interaction, interaction.user.id, epMsgToEdit);
+                let channelsearch = await get_review_channel(client, epMsgGuild, epMsgChannel, epMsgToEdit);
                 if (channelsearch != undefined) {
                     channelsearch.messages.fetch(`${epMsgToEdit}`).then(msg => {
                         let msgEmbed = EmbedBuilder.from(msg.embeds[0]);

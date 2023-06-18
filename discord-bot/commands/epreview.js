@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
-const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art } = require('../func.js');
+const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art, update_art } = require('../func.js');
 require('dotenv').config();
 
 module.exports = {
@@ -70,27 +70,6 @@ module.exports = {
     help_desc: `TBD`,
 	async execute(interaction, client) {
         try {
-
-            let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
-
-            // Check if we are reviewing in the right chat, if not, boot out
-            if (`<#${interaction.channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel') && !mailboxes.some(v => v.includes(interaction.channel.id))) {
-                return interaction.reply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
-            }
-
-            let is_mailbox = false;
-            let ping_for_review = false;
-            let temp_mailbox_list;
-            let mailbox_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
-            let spotifyApi;
-            // Check if we are in a spotify mailbox
-            if (mailboxes.some(v => v.includes(interaction.channel.id))) {
-                spotifyApi = await spotify_api_setup(interaction.user.id);
-                if (spotifyApi != false) { 
-                    is_mailbox = true;
-                }
-            }
-
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('ep_name');
             let song_info = await parse_artist_song_data(interaction, artists, ep);
@@ -141,13 +120,31 @@ module.exports = {
                 `For example: \`${epName} EP\` or \`${epName} LP\``);
             }
 
+            let is_mailbox = false;
+            let ping_for_review = false;
+            let temp_mailbox_list;
+            let mailbox_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
+            let spotifyApi;
+            // Check if we are in a spotify mailbox
+            spotifyApi = await spotify_api_setup(interaction.user.id);
+            if (interaction.options.getSubcommand() == 'manually') spotifyApi = false;
+            if (mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:album:', '')) && spotifyApi != false) {
+                is_mailbox = true;
+            }
+
             // If we are in the mailbox and don't specify a user who sent, try to pull it from the mailbox list
-            if (user_who_sent == false && is_mailbox == true) {
-                temp_mailbox_list = mailbox_list.filter(v => v.display_name == `${origArtistArray.join(' & ')} - ${epName}`);
+            if (user_who_sent == null && is_mailbox == true) {
+                temp_mailbox_list = mailbox_list.filter(v => v.spotify_id == spotifyUri.replace('spotify:album:', ''));
                 if (temp_mailbox_list.length != 0) {
                     mailbox_data = temp_mailbox_list[0];
-                    user_who_sent = client.users.cache.get(mailbox_data.user_who_sent);
-                    if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
+                    await interaction.guild.members.fetch(mailbox_data.user_who_sent).then(() => {
+                        user_who_sent = client.users.cache.get(mailbox_data.user_who_sent);
+                        if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
+                    }).catch(() => {
+                        user_who_sent = null;
+                        ping_for_review = false;
+                        is_mailbox = false;
+                    });
                 }
             }
 
@@ -265,7 +262,9 @@ module.exports = {
             // Grab message id to put in user_stats and the ep object
             const msg = await interaction.fetchReply();
 
-            db.user_stats.set(interaction.user.id, msg.id, 'current_ep_review.msg_id');            
+            db.user_stats.set(interaction.user.id, msg.id, 'current_ep_review.msg_id');
+            db.user_stats.set(interaction.user.id, msg.channelId, 'current_ep_review.channel_id');
+            db.user_stats.set(interaction.user.id, msg.guildId, 'current_ep_review.guild_id');
 
             const filter = i => i.user.id == interaction.user.id;
             const collector = interaction.channel.createMessageComponentCollector({ filter, time: 10000000 });
@@ -477,13 +476,15 @@ module.exports = {
                         // Set message ids and setup artist images
                         for (let j = 0; j < artistArray.length; j++) {
                             db.reviewDB.set(artistArray[j], msg.id, `${setterEpName}.${interaction.user.id}.msg_id`);
+                            db.reviewDB.set(artistArray[j], interaction.channel.id, `${setterEpName}.${interaction.user.id}.channel_id`);
+                            db.reviewDB.set(artistArray[j], interaction.guild.id, `${setterEpName}.${interaction.user.id}.guild_id`);
                             db.reviewDB.set(artistArray[j], msg.url, `${setterEpName}.${interaction.user.id}.url`);
 
-                             // Deal with artist images
-                             let cur_img = db.reviewDB.get(artistArray[j], 'pfp_image');
-                             if (cur_img == undefined || cur_img == false) {
-                                 db.reviewDB.set(artistArray[j], artistImgs[j], `pfp_image`); 
-                             }
+                            // Deal with artist images
+                            let cur_img = db.reviewDB.get(artistArray[j], 'pfp_image');
+                            if (cur_img == undefined || cur_img == false) {
+                                db.reviewDB.set(artistArray[j], artistImgs[j], `pfp_image`); 
+                            }
                         }
 
                         for (let j = 0; j < artistArray.length; j++) {
@@ -496,6 +497,11 @@ module.exports = {
                             epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
                         } else {
                             epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} 🌟`);
+                        }
+
+                        // Fix artwork on all reviews for this song
+                        if (art != false && db.reviewDB.has(artistArray[0])) {
+                            update_art(interaction, client, artistArray[0], epName, art);
                         }
 
                         db.user_stats.set(interaction.user.id, false, 'current_ep_review');
@@ -540,9 +546,16 @@ module.exports = {
                         ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(artistArray[0])[epName].songs);
                         if (epSongs == false || epSongs == undefined) epSongs = [];
 
+                        // Fix artwork on all reviews for this song
+                        if (art != false && db.reviewDB.has(artistArray[0])) {
+                            update_art(interaction, client, artistArray[0], epName, art);
+                        }
+
                         // Set message ids and set artist images
                         for (let j = 0; j < artistArray.length; j++) {
                             db.reviewDB.set(artistArray[j], msg.id, `${setterEpName}.${interaction.user.id}.msg_id`);
+                            db.reviewDB.set(artistArray[j], msg.channelId, `${setterEpName}.${interaction.user.id}.channel_id`);
+                            db.reviewDB.set(artistArray[j], msg.guildId, `${setterEpName}.${interaction.user.id}.guild_id`);
                             db.reviewDB.set(artistArray[j], msg.url, `${setterEpName}.${interaction.user.id}.url`);
 
                             // Deal with artist images

@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { parse_artist_song_data, handle_error, find_review_channel, spotify_api_setup } = require('../func.js');
+const { parse_artist_song_data, handle_error, get_review_channel, spotify_api_setup } = require('../func.js');
 const { ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle, Embed, EmbedBuilder } = require('discord.js');
 
 module.exports = {
@@ -78,7 +78,7 @@ module.exports = {
             let songArt = songObj.art;
 
             let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review.msg_id');
-            let channelsearch = await find_review_channel(interaction, interaction.user.id, msgtoEdit);
+            let channelsearch = await get_review_channel(interaction, interaction.user.id, msgtoEdit);
 
             let msgEmbed;
             let epArtists;

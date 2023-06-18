@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { handle_error, find_review_channel, parse_artist_song_data } = require('../func.js');
+const { handle_error, get_review_channel, parse_artist_song_data } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -41,7 +41,7 @@ module.exports = {
                     .setDescription('The new written overall review of the EP/LP.')
                     .setRequired(false))),
 	help_desc: `TBD`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('ep_name');
@@ -94,7 +94,7 @@ module.exports = {
             }
 
             if (epReviewObj.msg_id != false && epReviewObj.msg_id != undefined) {
-                let channelsearch = await find_review_channel(interaction, interaction.user.id, epReviewObj.msg_id);
+                let channelsearch = await get_review_channel(client, epReviewObj.guild_id, epReviewObj.channel_id, epReviewObj.msg_id);
                 if (channelsearch != undefined) {
                     await channelsearch.messages.fetch(epReviewObj.msg_id).then(msg => {
                         let msgEmbed = EmbedBuilder.from(msg.embeds[0]);

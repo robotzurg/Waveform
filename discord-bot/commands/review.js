@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { update_art, review_song, handle_error, find_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art, get_user_reviews } = require('../func.js');
+const { update_art, review_song, handle_error, get_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art, get_user_reviews } = require('../func.js');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle, Embed } = require('discord.js');
 require('dotenv').config();
 
@@ -86,24 +86,11 @@ module.exports = {
 
         // Mailbox related variables
         let int_channel = interaction.channel;
-        let mailboxes = db.server_settings.get(interaction.guild.id, 'mailboxes');
         let is_mailbox = false;
         let spotifyApi = false;
         let mailbox_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
         let temp_mailbox_list;
         let ping_for_review = false;
-
-        // Check if we are reviewing in the right chat, if not, boot out
-        if (`<#${int_channel.id}>` != db.server_settings.get(interaction.guild.id, 'review_channel') && !mailboxes.some(v => v.includes(int_channel.id))) {
-            return await interaction.editReply(`You can only send reviews in ${db.server_settings.get(interaction.guild.id, 'review_channel')} or mailboxes!`);
-        }
-
-        // Check if we are in a spotify mailbox
-        spotifyApi = await spotify_api_setup(interaction.user.id);
-        if (interaction.options.getSubcommand() == 'manually') spotifyApi = false;
-        if (mailboxes.some(v => v.includes(int_channel.id)) && spotifyApi != false) {
-            is_mailbox = true;
-        }
 
         let vocalistArray = interaction.options.getString('vocalist');
         let rmxArtistArray = interaction.options.getString('remixers');
@@ -138,6 +125,13 @@ module.exports = {
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
 
+        // Check if we are in a spotify mailbox (TODO: Rewrite this to not be channel based but be based on what song we are reviewing)
+        spotifyApi = await spotify_api_setup(interaction.user.id);
+        if (interaction.options.getSubcommand() == 'manually') spotifyApi = false;
+        if (mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:track:', '')) && spotifyApi != false) {
+            is_mailbox = true;
+        }
+
         let rating = interaction.options.getString('rating');
         if (rating == null) rating = false;
         let review = interaction.options.getString('review');
@@ -148,11 +142,17 @@ module.exports = {
         
         // If we are in the mailbox and don't specify a user who sent, try to pull it from the mailbox list
         if (user_who_sent == null && is_mailbox == true) {
-            temp_mailbox_list = mailbox_list.filter(v => v.display_name == `${origArtistArray.join(' & ')} - ${displaySongName}`);
+            temp_mailbox_list = mailbox_list.filter(v => v.spotify_id == spotifyUri.replace('spotify:track:', ''));
             if (temp_mailbox_list.length != 0) {
                 mailbox_data = temp_mailbox_list[0];
-                user_who_sent = client.users.cache.get(mailbox_data.user_who_sent);
-                if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
+                await interaction.guild.members.fetch(mailbox_data.user_who_sent).then(() => {
+                    user_who_sent = client.users.cache.get(mailbox_data.user_who_sent);
+                    if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
+                }).catch(() => {
+                    user_who_sent = null;
+                    ping_for_review = false;
+                    is_mailbox = false;
+                });
             }
         }
 
@@ -277,13 +277,15 @@ module.exports = {
         }
         
         if (songArt == false || songArt == undefined) {
-            await reviewEmbed.setThumbnail(interaction.user.avatarURL({ extension: "png", dynamic: false }));
+            reviewEmbed.setThumbnail(interaction.user.avatarURL({ extension: "png", dynamic: false }));
         } else {
-            await reviewEmbed.setThumbnail(songArt);
+            reviewEmbed.setThumbnail(songArt);
         }
         
         if (taggedUser != false && taggedUser != undefined) {
-            reviewEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png", dynamic: false }) });
+            if (taggedUser.id != interaction.user.id) { // Don't add the sent by if it's sent by ourselves
+                reviewEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png", dynamic: false }) });
+            }
         }
         // End of Embed Code
 
@@ -469,8 +471,10 @@ module.exports = {
                     if (collector != undefined) collector.stop(); // Collector for all buttons
                     interaction.deleteReply();
 
-                    let msgtoEdit = db.user_stats.get(interaction.user.id, 'current_ep_review.msg_id');
-                    let channelsearch = await find_review_channel(interaction, interaction.user.id, msgtoEdit);
+                    let msgID = db.user_stats.get(interaction.user.id, 'current_ep_review.msg_id');
+                    let msgGuildID = db.user_stats.get(interaction.user.id, 'current_ep_review.guild_id');
+                    let msgChannelID = db.user_stats.get(interaction.user.id, 'current_ep_review.channel_id');
+                    let channelsearch = await get_review_channel(client, msgGuildID, msgChannelID, msgID);
 
                     let msgEmbed;
                     let epArtists;
@@ -550,7 +554,7 @@ module.exports = {
                     }
 
                     // Edit the EP embed
-                    await channelsearch.messages.fetch(`${msgtoEdit}`).then(msg => {
+                    await channelsearch.messages.fetch(`${msgID}`).then(msg => {
 
                         msgEmbed = EmbedBuilder.from(msg.embeds[0]);
                         epArtists = db.user_stats.get(interaction.user.id, 'current_ep_review.artist_array');
@@ -723,9 +727,11 @@ module.exports = {
                         }
                     }
 
-                    // Set msg_id for this review to false, since its part of the EP review message, and set artist images.
+                    // Set the IDs for this review to false (because we don't want to edit it), since its part of the EP review message.
                     for (let ii = 0; ii < artistArray.length; ii++) {
                         db.reviewDB.set(artistArray[ii], false, `${setterSongName}.${interaction.user.id}.msg_id`);
+                        db.reviewDB.set(artistArray[ii], false, `${setterSongName}.${interaction.user.id}.channel_id`);
+                        db.reviewDB.set(artistArray[ii], false, `${setterSongName}.${interaction.user.id}.guild_id`);
                     }
 
                     // Set artist images
@@ -773,9 +779,11 @@ module.exports = {
                         }
                     }
 
-                    // Setting the message id and url for the message we just sent, and setup artists images
+                    // Setting the message id, channel id, guild id, and message url for the message we just sent
                     for (let ii = 0; ii < artistArray.length; ii++) {
                         db.reviewDB.set(artistArray[ii], msg.id, `${setterSongName}.${interaction.user.id}.msg_id`); 
+                        db.reviewDB.set(artistArray[ii], interaction.channel.id, `${setterSongName}.${interaction.user.id}.channel_id`); 
+                        db.reviewDB.set(artistArray[ii], interaction.guild.id, `${setterSongName}.${interaction.user.id}.guild_id`); 
                         db.reviewDB.set(artistArray[ii], msg.url, `${setterSongName}.${interaction.user.id}.url`);
                     }
 
@@ -789,7 +797,7 @@ module.exports = {
 
                     // Fix artwork on all reviews for this song
                     if (songArt != false && db.reviewDB.has(artistArray[0])) {
-                        update_art(interaction, artistArray[0], songName, songArt);
+                        update_art(interaction, client, artistArray[0], songName, songArt);
                     }
 
                     // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
