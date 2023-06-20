@@ -55,7 +55,7 @@ module.exports = {
             if (spotifyCheck == false) {
                 return interaction.reply('Spotify playback not detected. Please start playing a song on spotify before using this command in this way!');
             }
-        } else {
+        } else if (spotifyApi == false && trackLink == null) {
             return interaction.reply(`You are not logged into spotify with Waveform, so you must specify a track link in the link argument or use \`/login\` to use this command in this way!`);
         }
 
