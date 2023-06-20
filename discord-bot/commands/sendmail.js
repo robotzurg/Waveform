@@ -18,7 +18,7 @@ module.exports = {
         .addStringOption(option => 
             option.setName('link')
                 .setDescription('Link to the song you would like to send to the mailbox.')
-                .setRequired(false)),
+                .setRequired(true)),
     help_desc: `Send a song to a users Waveform Mailbox.\n` + 
     `The songs are usually sent from Spotify (mainly), but you can also send YouTube, Apple Music, and SoundCloud links.\n` +
     `Leaving the link argument blank will pull from your currently playing song on spotify.` + 
@@ -41,12 +41,14 @@ module.exports = {
         let linkType;
         let mailFilter = db.user_stats.get(taggedUser.id, 'config.mail_filter');
         let dmMailConfig = db.user_stats.get(taggedUser.id, 'config.mailbox_dm');
+        if (dmMailConfig == undefined) dmMailConfig = true;
         let spotifyCheck = false;
 
         // Pull from spotify playback if trackLink is null
         if (trackLink == null && spotifyApi != false) {
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
                 if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
+                console.log(data.body.item, data.body.item.external_urls);
                 trackLink = data.body.item.external_urls.spotify;
                 spotifyCheck = true;
             });
@@ -155,7 +157,7 @@ module.exports = {
                 .setThumbnail(songArt);
 
                 interaction.editReply(`Sent [**${prodArtists.join(' & ')} - ${displayName}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
-                if (dmMailConfig && taggedUser.id != interaction.user.id) { 
+                if (dmMailConfig == true && taggedUser.id != interaction.user.id) { 
                     taggedUser.send({ content: `**You've got mail!** 📬`, embeds: [mailEmbed] });
                 }
 
@@ -194,7 +196,7 @@ module.exports = {
             db.user_stats.push(taggedUser.id, trackLink, 'mailbox_history');
 
             interaction.editReply(`Sent a non-spotify [track](${trackLink}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
-            if (dmMailConfig && interaction.user.id != taggedUser.id) { 
+            if (dmMailConfig == true && interaction.user.id != taggedUser.id) { 
                 taggedUser.send({ content: `**You've got mail!** 📬\nSent by **${interaction.member.displayName}**\n${trackLink}` });
             }
         }
