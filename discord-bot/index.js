@@ -213,18 +213,18 @@ client.on('interactionCreate', async interaction => {
 client.on('guildMemberAdd', async (member) => {
     if (!db.user_stats.has(member.user.id)) {
         db.user_stats.set(member.user.id, {
-            "access_token": "",
-            "refresh_token": false,
-            "current_ep_review": false,
-            "fav_genres": [],
-            "fav_song": "N/A",
-            "least_fav_song": "N/A",
-            "mailbox": false,
-            "mailbox_list": [],
-            "mailbox_playlist_id": false,
-            "name": `${member.user.username}`,
-            "recent_review": "N/A",
-            "config": {
+            access_token: "",
+            refresh_token: false,
+            current_ep_review: false,
+            fav_genres: [],
+            fav_song: "N/A",
+            fav_artist: "N/A",
+            mailbox: false,
+            mailbox_list: [],
+            mailbox_playlist_id: false,
+            mailbox_history: [],
+            name: `${member.user.username}`,
+            config: {
                 mail_filter: { // Filter settings for what type of songs you want to be sent, all default to true
                     sp: true, // Spotify
                     sp_ep: true, // Spotify (EP)
@@ -237,7 +237,16 @@ client.on('guildMemberAdd', async (member) => {
                 star_spotify_playlist: false,
                 mailbox_dm: true,
             },
-            "mailbox_history": [],
+            stats: {
+                most_reviewed: 'N/A',
+                most_starred: 'N/A',
+                star_num: 0, // Number of stars given from reviews done by the user
+                ten_num: 0, // Number of 10s given from reviews done by the user
+                zero_num: 0, // Number of 0s given from reviews done by the user
+                review_num: 0, // Number of reviews done by the user
+                ep_review_num: 0, // Number of EP/LP reviews done by the user
+                starred_songs: [],
+            },
         });
     }
 });
@@ -245,11 +254,35 @@ client.on('guildMemberAdd', async (member) => {
 client.on('guildCreate', async (guild) => {
     if (!db.server_settings.has(guild.id)) {
         db.server_settings.set(guild.id, {
-            star_cutoff: 3,
+            config: { 
+                star_cutoff: 3,
+            },
+            stats: {
+                most_reviewed: 'N/A',
+                most_starred: 'N/A',
+                star_num: 0, // Number of stars given from reviews done in the server
+                ten_num: 0, // Number of 10s given from reviews done in the server
+                zero_num: 0, // Number of 0s given from reviews done in the server
+                review_num: 0, // Number of reviews done in the server
+                ep_review_num: 0, // Number of EP/LP reviews done in the server
+            },
+            hall_of_fame: [],
         });
     }
 });
 
+db.global_bot.set('stats', {
+    artist_num: 0,
+    song_num: 0,
+    ep_num: 0,
+    ten_num: 0,
+    zero_num: 0,
+    most_reviewed: 'N/A',
+    most_starred: 'N/A',
+    user_num: 0,
+});
+
+db.global_bot.set('config', {});
 
 // login to Discord
 client.login(token_dev);
