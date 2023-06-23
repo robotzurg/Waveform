@@ -52,6 +52,7 @@ module.exports = {
         userArray = userArray.filter(e => e !== 'remix_collab');
         userArray = userArray.filter(e => e !== 'tags');
         userArray = userArray.filter(e => e !== 'spotify_uri');
+        userArray = userArray.filter(e => e !== 'songs');
         return userArray;
     },
 
@@ -540,10 +541,13 @@ module.exports = {
                 let msgstoEdit = [];
 
                 let userArray = get_user_reviews(imageSongObj);
+                console.log(userArray);
                 if (userArray.length != 0) {
                     userArray.forEach(user => {
                         let userData = db.reviewDB.get(first_artist)[song_name][user];
-                        msgstoEdit.push([userData.guild_id, userData.channel_id, userData.msg_id]);
+                        if (userData.msg_id != false && userData.channel_id != false && userData.guild_id != false) {
+                            msgstoEdit.push([userData.guild_id, userData.channel_id, userData.msg_id]);
+                        }
                     });
 
                     msgstoEdit = msgstoEdit.filter(item => item !== undefined);
