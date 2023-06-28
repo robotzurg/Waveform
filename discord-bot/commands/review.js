@@ -510,7 +510,7 @@ module.exports = {
                     ];
 
                     // If the song we are reviewing is not the same as our next song up, then quit out
-                    if (spotifyApi != false) {
+                    if (spotifyApi != false || db.user_stats.get(interaction.user.id, 'current_ep_review.next') != false) {
                         if (next_song != songName && next_song != undefined) {
                             return;
                         } else {

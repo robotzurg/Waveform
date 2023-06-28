@@ -109,6 +109,7 @@ module.exports = {
         let songArg = song;
         let displaySongArg = false;
         let rmxArtistArray = [];
+        let tempRmxArtistArray = [];
         let passesChecks = true;
         let trackList = false;
         let songArt = false;
@@ -164,25 +165,28 @@ module.exports = {
                 await spotifyApi.getAlbum(data.body.item.album.id)
                 .then(async album_data => {
                     if ((interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') || (editDataSubCommand == 'ep-lp')) {
-                        trackList = album_data.body.tracks.items.map(t => t.name);
+                        trackList = album_data.body.tracks.items.map(t => [t.name, t.artists]);
                         for (let i = 0; i < trackList.length; i++) {
-                            songArg = trackList[i];
+                            songArg = trackList[i][0];
+                            songArg = songArg.replace('remix', 'Remix'); // Just in case there is lower case remix
+                            trackList[i][1] = trackList[i][1].map(v => v.name);
+                            rmxArtist = false;
                             if (songArg.includes('feat.')) {
                                 songArg = songArg.split(' (feat. ');
                                 songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
-                                trackList[i] = songArg[0];
+                                trackList[i][0] = songArg[0];
                             }
                     
                             if (songArg.includes('ft. ')) {
                                 songArg = songArg.split(' (ft. ');
                                 songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
-                                trackList[i] = songArg[0];
+                                trackList[i][0] = songArg[0];
                             }
                     
                             if (songArg.includes('(with ')) {
                                 songArg = songArg.split(' (with ');
                                 songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
-                                trackList[i] = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
+                                trackList[i][0] = `${songArg[0]}${(rmxArtistArray.length > 0) ? ` (${rmxArtist} Remix)` : ``}`;
                             }
 
                             if (songArg.includes(' Remix)') || songArg.includes(' Remix]')) {
@@ -191,18 +195,32 @@ module.exports = {
                                 songArg = songArg.replace(']', ')');
                                 temp = songArg.split(' Remix)')[0].split('(');
                                 rmxArtist = temp[temp.length - 1];
-                    
+
+                                origSongArg = temp[0].trim();
                                 // Input validation
                                 rmxArtist = rmxArtist.replace(' VIP', '');
                                 if (rmxArtist.includes(' and ')) rmx_delimiter = ' and ';
                                 if (rmxArtist.includes(' x ')) rmx_delimiter = ' x ';
-                                songArg = `${temp[0].trim()} (${rmxArtist} Remix)`;
-                                trackList[i] = songArg;
+
+                                tempRmxArtistArray = rmxArtist.split(rmx_delimiter);
+                                for (let j = 0; j < tempRmxArtistArray.length; j++) {
+                                    if (!trackList[i][1].includes(tempRmxArtistArray[j])) {
+                                        for (let k = 0; k < trackList[i][1].length; k++) {
+                                            if (trackList[i][1][k].toUpperCase() === tempRmxArtistArray[j].toUpperCase()) {
+                                                tempRmxArtistArray[j] = trackList[i][1][k];
+                                            }
+                                        }
+                                    }
+                                }
+
+                                songArg = `${temp[0].trim()} (${tempRmxArtistArray.join(' & ')} Remix)`;
+                                trackList[i][0] = songArg;
                             }
                     
                             if ((songArg.includes('Remix') && songArg.includes(' - ')) && !songArg.includes('Remix)') && !songArg.includes('Remix]')) {
                                 rmxArtist = [];
                                 songArg = songArg.split(' - ');
+                                
                                 if (songArg[1] != 'Remix') {
                                     rmxArtist = songArg[1].slice(0, -6);
                                     rmxArtist = rmxArtist.replace(' VIP', '');
@@ -215,12 +233,27 @@ module.exports = {
                                         songArg[0] = songArg[0].split(` (ft.`)[0];
                                     }
                     
-                                    songArg = `${songArg[0]} (${rmxArtist} Remix)`;
-                                    trackList[i] = songArg;
+                                    tempRmxArtistArray = rmxArtist.split(rmx_delimiter);
+                                    for (let j = 0; j < tempRmxArtistArray.length; j++) {
+                                        if (!trackList[i][1].includes(tempRmxArtistArray[j])) {
+                                            for (let k = 0; k < trackList[i][1].length; k++) {
+                                                console.log(trackList[i][1][k], tempRmxArtistArray[j]);
+                                                if (trackList[i][1][k].toUpperCase() === tempRmxArtistArray[j].toUpperCase()) {
+                                                    tempRmxArtistArray[j] = trackList[i][1][k];
+                                                    console.log(tempRmxArtistArray[j]);
+                                                }
+                                            }
+                                        }
+                                    }
+                             
+                                    songArg = `${songArg[0]} (${tempRmxArtistArray.join(' & ')} Remix)`;
+                                    trackList[i][0] = songArg;
                                 } else {
                                     songArg = songArg.join(' - ');
                                 }
                             }
+
+                            trackList[i] = trackList[i][0];
                         }
 
                         if (trackList.length <= 1) {
