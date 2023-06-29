@@ -195,6 +195,7 @@ client.on('interactionCreate', async interaction => {
 	if (interaction.type !== InteractionType.ApplicationCommand) return;
 
     const command = client.commands.get(interaction.commandName);
+    console.log(command, interaction.commandName);
     if (!command) return;
 
     if (!client.cooldowns.has(interaction.commandName)) {
