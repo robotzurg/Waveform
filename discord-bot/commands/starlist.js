@@ -1,11 +1,11 @@
 const db = require('../db.js');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const _ = require('lodash');
-const { handle_error, get_user_reviews } = require('../func.js');
+const { handle_error, getEmbedColor } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('stars')
+        .setName('starlist')
         .setDescription('Get a list of all stars a user has given.')
         .setDMPermission(false)
         .addUserOption(option => 
@@ -29,66 +29,7 @@ module.exports = {
             taggedMember = interaction.member;
         }
 
-        let starList = [];
-        let artistCount = [];
-        let songSkip = [];
-
-        let artistArray = db.reviewDB.keyArray();
-
-        for (let i = 0; i < artistArray.length; i++) {
-            let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
-            songArray = songArray.filter(v => v != 'pfp_image');
-
-            for (let j = 0; j < songArray.length; j++) {
-                let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];
-                let userArray;
-                if (songObj != null && songObj != undefined) {
-                    userArray = get_user_reviews(songObj);
-                    userArray = userArray.filter(v => v == user.id);
-                } else {
-                    userArray = [];
-                }
-
-                if (songSkip.includes(`${artistArray[i]} - ${songArray[j]}`)) continue;
-
-                let mainArtistArray = [artistArray[i], db.reviewDB.get(artistArray[i])[songArray[j]].collab].flat(1);
-                let vocalistArray = db.reviewDB.get(artistArray[i])[songArray[j]].vocals;
-                let rmxArtistArray = [];
-                if (vocalistArray == undefined) vocalistArray = [];
-
-                let allArtists = mainArtistArray.map(v => {
-                    if (v == undefined) {
-                        return [];
-                    }
-                    return v;
-                });
-                allArtists = allArtists.flat(1);
-
-                mainArtistArray = mainArtistArray.filter(v => !vocalistArray.includes(v));
-                if (songArray[j].includes(' Remix)')) {
-                    let temp = songArray[j].split(' Remix)')[0].split('(');
-                    let rmxArtist = temp[temp.length - 1];
-                    rmxArtist = rmxArtist.replace(' VIP', '');
-                    rmxArtistArray = [rmxArtist.split(' & ')].flat(1);
-                    mainArtistArray = mainArtistArray.filter(v => !rmxArtistArray.includes(v));
-                }
-
-                if (userArray.length != 0) {
-                    artistCount.push(artistArray[i]);
-                    if (songObj[userArray[0]].starred == true) {
-                        starList.push(`${mainArtistArray.join(' & ')} - ${songArray[j]}` + 
-                        `${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
-                    } 
-                }
-
-                for (let v = 0; v < allArtists.length; v++) {
-                    if (!songSkip.includes(`${allArtists[v]} - ${songArray[j]}`)) {
-                        songSkip.push(`${allArtists[v]} - ${songArray[j]}`);
-                    }
-                }
-            }
-        }
-
+        let starList = db.user_stats.get(user.id, 'stats.star_list');
         let paged_star_list = _.chunk(starList, 10);
         let page_num = 0;
         const row = new ActionRowBuilder()
@@ -104,16 +45,26 @@ module.exports = {
         );
 
         for (let i = 0; i < paged_star_list.length; i++) {
-
             for (let j = 0; j < paged_star_list[i].length; j++) {
-                paged_star_list[i][j] = `• **[${paged_star_list[i][j]}](<https://www.google.com>)**`;
+
+                let songUrl = paged_star_list[i][j].spotify_uri;
+                if (songUrl == false) {
+                    songUrl = 'https://www.google.com/';
+                } else {
+                    if (paged_star_list[i][j].db_song_name.includes(' EP') || paged_star_list[i][j].db_song_name.includes(' LP')) {
+                        songUrl = `https://open.spotify.com/album/${songUrl.replace('spotify:album:', '').replace('spotify:track:', '')}`;
+                    } else {
+                        songUrl = `https://open.spotify.com/track/${songUrl.replace('spotify:track:', '').replace('spotify:album:', '')}`;
+                    }
+                }
+                paged_star_list[i][j] = `• **[${paged_star_list[i][j].orig_artists.join(' & ')} - ${paged_star_list[i][j].db_song_name}](<${songUrl}>)**`;
             }
 
             paged_star_list[i] = paged_star_list[i].join('\n');
         }  
 
         const starCommandEmbed = new EmbedBuilder()
-            .setColor(`${interaction.member.displayHexColor}`)
+            .setColor(`${getEmbedColor(taggedMember)}`)
             .setThumbnail(user.avatarURL({ extension: "png" }))
             .setTitle(`🌟 ${taggedMember.displayName}'s Stars 🌟`)
             .setDescription(paged_star_list[page_num]);

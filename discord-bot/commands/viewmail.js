@@ -1,6 +1,7 @@
 const db = require('../db.js');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const _ = require('lodash');
+const { getEmbedColor } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -33,7 +34,7 @@ module.exports = {
         );
 
         const mailEmbed = new EmbedBuilder()
-            .setColor(`${interaction.member.displayHexColor}`)
+            .setColor(`${getEmbedColor(interaction.member)}`)
             .setThumbnail(interaction.user.avatarURL({ extension: "png" }))
             .setTitle(`${interaction.member.displayName}'s Mailbox`)
             .setDescription(paged_mail_list[page_num].join(''));

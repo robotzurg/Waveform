@@ -1,6 +1,5 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, EmbedBuilder, ButtonStyle } = require('discord.js');
 const db = require('../db.js');
-const { get_user_reviews } = require('../func.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -15,87 +14,9 @@ module.exports = {
     help_desc: 'TBD',
 	async execute(interaction) {
         await interaction.deferReply();
-
-        await interaction.editReply(`Loading hall of fame list, please wait just a moment, this could take a while!`);
-
-        let hofList = [];
-        let starCutoff = db.server_settings.get(interaction.guild.id, 'star_cutoff');
-        let songSkip = [];
-        let starCount = 0;
-        let userStarList = [];
-        let ratingAvgList = [];
-        let addedToList = false;
+        
+        let hofList = db.server_settings.get(interaction.guild.id, 'hall_of_fame');
         let listView = interaction.options.getBoolean('list_view');
-
-        let artistArray = db.reviewDB.keyArray();
-
-        for (let i = 0; i < artistArray.length; i++) {
-            let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
-            songArray = songArray.filter(v => v != 'pfp_image');
-
-            for (let j = 0; j < songArray.length; j++) {
-                // Reset all song stats for the hof back to normal state
-                starCount = 0;
-                userStarList = [];
-                addedToList = false;
-                ratingAvgList = [];
-
-                // Basic data grabbing
-                let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];
-                let userArray;
-                if (songObj != null && songObj != undefined) {
-                    userArray = get_user_reviews(songObj);
-                } else {
-                    userArray = [];
-                }
-
-                if (songSkip.includes(`${artistArray[i]} - ${songArray[j]}`)) continue;
-
-                let mainArtistArray = [artistArray[i], db.reviewDB.get(artistArray[i])[songArray[j]].collab].flat(1);
-                let vocalistArray = db.reviewDB.get(artistArray[i])[songArray[j]].vocals;
-                if (vocalistArray == undefined) vocalistArray = [];
-
-                let allArtists = mainArtistArray.map(v => {
-                    if (v == undefined) {
-                        return [];
-                    }
-                    return v;
-                });
-                allArtists = allArtists.flat(1);
-                mainArtistArray = mainArtistArray.filter(v => !vocalistArray.includes(v));
-
-                for (let user of userArray) {
-                    if (songObj[user].rating != false) ratingAvgList.push(parseFloat(songObj[user].rating));
-                    if (songObj[user].starred == true) {
-                        starCount += 1;
-                        userStarList.push({ id: user, rating: songObj[user].rating });
-                    }
-
-                    if (starCount >= starCutoff && addedToList == false) {
-                        hofList.push({ 
-                            name: `${mainArtistArray.join(' & ')} - ${songArray[j]}` + `${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`,
-                            art: songObj.art,
-                            rating_avg: 10, 
-                            star_count: 3,
-                            user_stars: [],
-                        });
-                        addedToList = true;
-                    }
-                }
-
-                if (addedToList == true) {
-                    hofList[hofList.length - 1].star_count = starCount;
-                    hofList[hofList.length - 1].user_stars = userStarList;
-                    hofList[hofList.length - 1].rating_avg = Math.round(_.mean(ratingAvgList) * 10) / 10;
-                }
-
-                for (let v = 0; v < allArtists.length; v++) {
-                    if (!songSkip.includes(`${allArtists[v]} - ${songArray[j]}`)) {
-                        songSkip.push(`${allArtists[v]} - ${songArray[j]}`);
-                    }
-                }
-            }
-        }
 
         if (hofList.length == 0) {
             interaction.editReply('There are no songs in your servers hall of fame.');
@@ -128,7 +49,7 @@ module.exports = {
             );
 
         if (listView == true) {
-            hofList = hofList.map(v => `-  \`${v.star_count}⭐\` **[${v.name}](https://www.google.com)**`);
+            hofList = hofList.map(v => `-  \`${v.star_count}⭐\` **[${v.orig_artists.join(' & ')} - ${v.db_song_name}](${v.song_url})**`);
             pagedHofList = _.chunk(hofList, 10);
 
             hofCommandEmbed = new EmbedBuilder()
@@ -140,8 +61,9 @@ module.exports = {
         } else {
             hofCommandEmbed = new EmbedBuilder()
                 .setColor(`#ffff00`)
-                .setTitle(hofList[0].name)
-                .setDescription(`This song currently has **${hofList[0].star_count}** stars 🌟\nAverage Rating: **${hofList[0].rating_avg}**`)
+                .setTitle(`${hofList[0].orig_artists.join(' & ')} - ${hofList[0].db_song_name}`)
+                .setDescription(`This song currently has **${hofList[0].star_count}** stars 🌟` + 
+                `${hofList[0].song_url == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${hofList[0].song_url})`}`)
                 .addFields({ name: 'Starred Reviews:', value: hofList[0].user_stars.map(v => `🌟 <@${v.id}> \`${v.rating}/10\``).join('\n') })
                 .setImage(hofList[0].art)
                 .setFooter({ text: `Page 1 / ${hofList.length} • Use the middle button to select a page!` });
@@ -176,8 +98,9 @@ module.exports = {
                     } else {
                         hofCommandEmbed = new EmbedBuilder()
                             .setColor(`#ffff00`)
-                            .setTitle(hofList[page_num].name)
-                            .setDescription(`This song currently has **${hofList[page_num].star_count}** stars 🌟\nAverage Rating: **${hofList[page_num].rating_avg}**`)
+                            .setTitle(`${hofList[page_num].orig_artists.join(' & ')} - ${hofList[page_num].db_song_name}`)
+                            .setDescription(`This song currently has **${hofList[page_num].star_count}** stars 🌟` + 
+                            `${hofList[page_num].song_url == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${hofList[page_num].song_url})`}`)
                             .addFields({ name: 'Starred Reviews:', value: hofList[page_num].user_stars.map(v => `🌟 <@${v.id}> \`${v.rating}/10\``).join('\n') })
                             .setImage(hofList[page_num].art)
                             .setFooter({ text: `Page ${page_num + 1} / ${hofList.length} • Use the middle button to select a page!` });
@@ -201,8 +124,9 @@ module.exports = {
                 } else {
                     hofCommandEmbed = new EmbedBuilder()
                         .setColor(`#ffff00`)
-                        .setTitle(hofList[page_num].name)
-                        .setDescription(`This song currently has **${hofList[page_num].star_count}** stars 🌟\nAverage Rating: **${hofList[page_num].rating_avg}**`)
+                        .setTitle(`${hofList[page_num].orig_artists.join(' & ')} - ${hofList[page_num].db_song_name}`)
+                        .setDescription(`This song currently has **${hofList[page_num].star_count}** stars 🌟` +
+                        `${hofList[page_num].song_url == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${hofList[page_num].song_url})`}`)
                         .addFields({ name: 'Starred Reviews:', value: hofList[page_num].user_stars.map(v => `🌟 <@${v.id}> \`${v.rating}/10\``).join('\n') })
                         .setImage(hofList[page_num].art)
                         .setFooter({ text: `Page ${page_num + 1} / ${hofList.length} • Use the middle button to select a page!` });

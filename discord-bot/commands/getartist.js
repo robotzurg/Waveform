@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
-const { average, get_user_reviews, sort, removeItemOnce, handle_error, spotify_api_setup } = require('../func.js');
+const { average, get_user_reviews, sort, removeItemOnce, handle_error, spotify_api_setup, getEmbedColor, convertToSetterName } = require('../func.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -39,6 +39,7 @@ module.exports = {
             if (artistObj == undefined) return interaction.reply(`\`${artist}\` not found in the database.`);
             let artistImage = artistObj.pfp_image;
             let songArray = Object.keys(artistObj);
+            songArray = songArray.map(v => v = v.replace('_((', '[').replace('))_', ']'));
             songArray = songArray.filter(item => item !== 'pfp_image');
             songArray = songArray.filter(item => item !== 'Image');
             let epKeyArray = songArray.filter(item => item.includes(' LP') || item.includes(' EP'));
@@ -92,7 +93,7 @@ module.exports = {
             );
 
             const artistEmbed = new EmbedBuilder()
-                .setColor(`${interaction.member.displayHexColor}`)
+                .setColor(`${getEmbedColor(interaction.member)}`)
                 .setTitle(`${artist}'s reviewed tracks`);
                 if (artistImage != false && artistImage != undefined) {
                     artistEmbed.setThumbnail(artistImage);
@@ -100,17 +101,18 @@ module.exports = {
 
                 // Handle EP/LP songs
                 for (let i = 0; i < epKeyArray.length; i++) {
-                    let epCollabArray = artistObj[epKeyArray[i]].collab;
+                    let setterEpSong = epKeyArray[i].replace('[', '_((').replace(']', '))_');
+                    let epCollabArray = artistObj[setterEpSong].collab;
                     if (epCollabArray == undefined || epCollabArray == false) epCollabArray = [];
                     let epStarNum = 0;
-                    let epReviewNum = Object.keys(artistObj[epKeyArray[i]]);
+                    let epReviewNum = Object.keys(artistObj[setterEpSong]);
 
                     epReviewNum = epReviewNum.filter(x => x != 'art');
                     epReviewNum = epReviewNum.filter(x => x != 'collab');
                     epReviewNum = epReviewNum.filter(x => x != 'songs');
 
                     for (let s = 0; s < epReviewNum.length; s++) {
-                        if (artistObj[epKeyArray[i]][epReviewNum[s]].starred == true) epStarNum += 1;
+                        if (artistObj[setterEpSong][epReviewNum[s]].starred == true) epStarNum += 1;
                     }
 
                     epReviewNum = epReviewNum.length;
@@ -118,13 +120,15 @@ module.exports = {
 
                     let epData = [`**${epKeyArray[i]}` + 
                     `${(epCollabArray.length != 0) ? ` (with ${epCollabArray.join(' & ')})` : ``} ${epDetails}**`];
-                    let epSongs = artistObj[epKeyArray[i]].songs;
+                    let epSongs = artistObj[setterEpSong].songs;
                     if (epSongs == undefined) epSongs = [];
+                    console.log(epSongs, songArray);
 
                     for (let ii = 0; ii < epSongs.length; ii++) {
+                        let setterEpSongsII = convertToSetterName(epSongs[ii]);
                         starNum = 0;
-                        let songObj = artistObj[epSongs[ii]];
-                        if (epSongs[ii].includes(' Remix)')) songObj = db.reviewDB.get(epSongs[ii].split(' Remix)')[0].split('(').splice(1)[0], epSongs[ii]);
+                        let songObj = artistObj[epSongs[ii].replace('[', '_((').replace(']', '))_')];
+                        if (epSongs[ii].includes(' Remix)')) songObj = db.reviewDB.get(epSongs[ii].split(' Remix)')[0].split('(').splice(1)[0], `${setterEpSongsII}`);
                         let reviews = get_user_reviews(songObj);
                         reviewNum = reviews.length;
                         
@@ -143,8 +147,6 @@ module.exports = {
                         let remixerKeys = songObj.remixers;
                         let collabArray = songObj.collab; // This also doubles as remixer original artists
                         if (epSongs[ii].includes(' Remix)')) collabArray = [];
-                        let vocalistArray = songObj.vocals;
-                        collabArray = collabArray.filter(v => !vocalistArray.includes(v));
 
                         if (remixerKeys.length > 0) {
                             songDetails = [`\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
@@ -156,10 +158,10 @@ module.exports = {
 
                         epData.push([`• ${epSongs[ii]}` + 
                         `${(collabArray.length != 0) ? ` (with ${collabArray.join(' & ')})` : ``}` + 
-                        `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` + 
                         ` ${songDetails}`]);
 
-                        removeItemOnce(songArray, epSongs[ii]);
+                        removeItemOnce(songArray, epSongs[ii].replace('[', '_((').replace(']', '))_'));
+                        epData[epData.length - 1][0] = epData[epData.length - 1][0].replace('*', '\\*');
                     }
 
                     epArray.push(epData.join('\n'));
@@ -167,7 +169,9 @@ module.exports = {
 
                 for (let i = 0; i < songArray.length; i++) {
                     starNum = 0;
-                    const songObj = db.reviewDB.get(artist, `${songArray[i]}`);
+                    songArray[i] = songArray[i].replace('_((', '[').replace('))_', ']');
+                    let setterSongName = convertToSetterName(songArray[i]);
+                    const songObj = db.reviewDB.get(artist, `${setterSongName}`);
                     reviewNum = parseInt(songObj.review_num);
                     let reviews = get_user_reviews(songObj);
                     
@@ -187,8 +191,6 @@ module.exports = {
                     let collabArray = songObj.collab; // This also doubles as remixer original artists
                     let rmxOgArtistArray = [];
                     if (songArray[i].includes(' Remix)')) rmxOgArtistArray = songObj.collab;
-                    let vocalistArray = songObj.vocals;
-                    collabArray = collabArray.filter(v => !vocalistArray.includes(v));
 
                     if (remixerKeys.length > 0) {
                         songDetails = [`\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
@@ -205,7 +207,6 @@ module.exports = {
                     } else { // Singles
                         singleArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• ${songArray[i]}` + 
                         `${(collabArray.length != 0) ? ` (with ${collabArray.join(' & ')})` : ``}` + 
-                        `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}` + 
                         ` ${songDetails}`]);
                         // Escape character the stars so that they don't italicize the text
                         singleArray[singleArray.length - 1][1] = singleArray[singleArray.length - 1][1].replace('*', '\\*');

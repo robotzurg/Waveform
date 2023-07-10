@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { parse_artist_song_data, handle_error, get_review_channel, spotify_api_setup, get_user_reviews } = require('../func.js');
+const { parse_artist_song_data, handle_error, get_review_channel, spotify_api_setup, hallOfFameCheck, convertToSetterName, arrayEqual } = require('../func.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -39,22 +39,27 @@ module.exports = {
         
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
+        let displaySongName = song_info.display_song_name;
+        let rmxArtistArray = song_info.rmx_artists;
         let artistArray = song_info.db_artists;
-        let vocalistArray = song_info.vocal_artists;
         let spotifyUri = song_info.spotify_uri;
         let spotifyApi = await spotify_api_setup(interaction.user.id);
         let starPlaylistId = db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist');
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
-        let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
+        let setterSongName = convertToSetterName(songName);
+        let userStatsObj = db.user_stats.get(interaction.user.id, 'stats');
+        let guildStatsObj;
+        let botStatsObj = db.global_bot.get('stats');
 
         if (!db.reviewDB.has(artistArray[0])) return interaction.reply(`${artistArray[0]} not found in database.`);
-        let songObj = db.reviewDB.get(artistArray[0])[songName];
-        if (songObj == undefined) return interaction.reply(`${origArtistArray.join(' & ')} - ${songName} not found in database.`);
+        let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
+        if (songObj == undefined) return interaction.reply(`${origArtistArray.join(' & ')} - ${displaySongName} not found in database.`);
         let songReviewObj = songObj[interaction.user.id];
-        if (songReviewObj == undefined) return interaction.reply(`You haven't reviewed ${origArtistArray.join(' & ')} - ${songName}.`);
+        if (songReviewObj == undefined) return interaction.reply(`You haven't reviewed ${origArtistArray.join(' & ')} - ${displaySongName}.`);
         if (songReviewObj.rating != false) {
-            if (songReviewObj.rating < 8) return interaction.reply(`You haven't rated ${origArtistArray.join(' & ')} - ${songName} an 8/10 or higher!`);
+            if (songReviewObj.rating < 8) return interaction.reply(`You haven't rated ${origArtistArray.join(' & ')} - ${displaySongName} an 8/10 or higher!`);
         }
+        guildStatsObj = db.server_settings.get(songReviewObj.guild_id, 'stats');
 
         let star_check = songReviewObj.starred;
         if (star_check == undefined) star_check = false;
@@ -78,8 +83,23 @@ module.exports = {
         }
 
         if (star_check == false) {
-            interaction.reply(`Star added to **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray})` : '' }**!`);
-        
+            interaction.reply(`Star added to **${origArtistArray.join(' & ')} - ${displaySongName}**!`);
+
+            userStatsObj.star_num += 1;
+            guildStatsObj.star_num += 1;
+            botStatsObj.star_num += 1;
+
+            if (!userStatsObj.star_list.some(v => arrayEqual(v.db_artists, artistArray) && v.db_song_name == songName)) {
+                userStatsObj.star_list.push({ 
+                    db_artists: artistArray,
+                    orig_artists: origArtistArray,
+                    rmx_artists: rmxArtistArray,
+                    db_song_name: songName,
+                    display_name: displaySongName,
+                    spotify_uri: songObj.spotify_uri,
+                });
+            }
+
             if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != undefined && spotifyUri != false) {
                 // Remove from spotify playlist
                 await spotifyApi.addTracksToPlaylist(starPlaylistId, [spotifyUri])
@@ -88,7 +108,15 @@ module.exports = {
                 });
             }
         } else {
-            interaction.reply(`Unstarred **${origArtistArray.join(' & ')} - ${songName}${vocalistArray.length != 0 ? ` (ft. ${vocalistArray.join(' & ')})` : '' }**.`);
+            interaction.reply(`Unstarred **${origArtistArray.join(' & ')} - ${displaySongName}**.`);
+
+            userStatsObj.star_num -= 1;
+            guildStatsObj.star_num -= 1;
+            botStatsObj.star_num -= 1;
+
+            if (userStatsObj.star_list.some(v => arrayEqual(v.db_artists, artistArray) && v.db_song_name == songName)) {
+                userStatsObj.star_list = userStatsObj.star_list.filter(v => v.db_song_name != songName && !arrayEqual(v.db_artists, artistArray));
+            }
 
             if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != undefined && spotifyUri != false) {
                 // Remove from spotify playlist
@@ -99,17 +127,14 @@ module.exports = {
             }
         }
 
-        // Check if the song was added to hall of fame
-        let userReviews = get_user_reviews(db.reviewDB.get(artistArray[0], `${setterSongName}`));
-        let starCount = 0;
-        for (let userRev of userReviews) {
-            let userRevObj = db.reviewDB.get(origArtistArray[0], `${setterSongName}.${userRev}`);
-            if (userRevObj.starred == true) starCount += 1;
+        // Run stuff with hall of fame
+        if (!songName.includes(' EP') && !songName.includes(' LP')) {
+            await hallOfFameCheck(interaction, songReviewObj.guild_id, artistArray, origArtistArray, songName, displaySongName);
         }
 
-        if (starCount >= db.server_settings.get(interaction.guild.id, 'star_cutoff')) {
-            await interaction.channel.send({ content: `🏆 **${origArtistArray.join(' & ')} - ${songName}** has been added to the Hall of Fame for this server!` });
-        }
+        db.user_stats.set(interaction.user.id, userStatsObj, 'stats');
+        db.server_settings.set(songReviewObj.guild_id, guildStatsObj, 'stats');
+        db.global_bot.set('stats', botStatsObj);
 
         let msgtoEdit = songReviewObj.msg_id;
 

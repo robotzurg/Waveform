@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { average, get_user_reviews, handle_error, create_ep_review, get_review_channel, parse_artist_song_data, sort } = require('../func.js');
+const { average, get_user_reviews, handle_error, get_review_channel, parse_artist_song_data, sort, getEmbedColor, convertToSetterName } = require('../func.js');
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, Embed, ButtonBuilder, ButtonStyle } = require('discord.js');
 const _ = require('lodash');
 
@@ -33,10 +33,11 @@ module.exports = {
 
             let origArtistArray = song_info.prod_artists;
             let epName = song_info.song_name;
+            let setterEpName = convertToSetterName(epName);
             let artistArray = song_info.db_artists;
             let epType = epName.includes(' LP') ? `LP` : `EP`;
 
-            let epObj = db.reviewDB.get(artistArray[0])[epName];
+            let epObj = db.reviewDB.get(artistArray[0], `${setterEpName}`);
             if (epObj == undefined) {
                 return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
             }
@@ -52,14 +53,12 @@ module.exports = {
             let rating;
             let epSongArray = epObj.songs == undefined ? [] : epObj.songs;
 
-            await create_ep_review(interaction, client, origArtistArray, epSongArray, epName, ep_art);
-
             const epEmbed = new EmbedBuilder()
-                .setColor(`${interaction.member.displayHexColor}`)
+                .setColor(`${getEmbedColor(interaction.member)}`)
                 .setTitle(`${origArtistArray} - ${epName}`)
                 .setThumbnail(ep_art);
 
-            let reviewNum = Object.keys(db.reviewDB.get(artistArray[0])[epName]);
+            let reviewNum = Object.keys(epObj);
             reviewNum = reviewNum.filter(e => e !== 'art');
             reviewNum = reviewNum.filter(e => e !== 'songs');
             reviewNum = reviewNum.filter(e => e !== 'collab');
@@ -71,7 +70,7 @@ module.exports = {
             let epnum = 0;
 
             for (let i = 0; i < reviewNum.length; i++) {
-                let userObj = db.reviewDB.get(artistArray[0])[epName][reviewNum[i]];
+                let userObj = epObj[reviewNum[i]];
                 let ratingDisplay = `${(userObj.rating !== false) ? ` \`${userObj.rating}/10\`` : ` \`No Rating\``}`;
 
                 if (userObj.rating !== false && userObj.rating != undefined && !isNaN(userObj.rating)) {
@@ -182,14 +181,17 @@ module.exports = {
             if (epRankArray.length != 0) {
                 if (songRankArray.length != 0) {
                     epEmbed.setDescription(`*The average overall user rating of this ${epType} is* ***${Math.round(average(epRankArray) * 10) / 10}!***` + 
-                    `\n*The total average rating of all songs on this ${epType} is* ***${Math.round(average(songRankArray) * 10) / 10}!***` + 
+                    `\n*The total average rating of all songs on this ${epType} is* ***${Math.round(average(songRankArray) * 10) / 10}!***` +
+                    `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}` +
                     `\n${paged_user_list[0].join('\n')}`);
                 } else {
-                    epEmbed.setDescription(`*The average overall user rating of this ${epType} is* ***${Math.round(average(epRankArray) * 10) / 10}!***`);
+                    epEmbed.setDescription(`*The average overall user rating of this ${epType} is* ***${Math.round(average(epRankArray) * 10) / 10}!***` +
+                    `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}`);
                 }
             } else {
                 if (songRankArray.length != 0) {
                     epEmbed.setDescription(`*The total average rating of all songs on this ${epType} is* ***${Math.round(average(songRankArray) * 10) / 10}!***` + 
+                    `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}` +
                     `\n${paged_user_list[0].join('\n')}`);
                 } else {
                     epEmbed.setDescription(`This ${epType} has no songs in the database and has not been reviewed overall.`);
@@ -245,9 +247,9 @@ module.exports = {
                             let songArtist = artistArray[0];
                             if (epSong.includes(' Remix)')) songArtist = epSong.split(' Remix)')[0].split('(').splice(1);
                             let songName = epSong;
+                            let setterSongName = convertToSetterName(songName);
                             let artistsEmbed = [];
-                            let vocalistsEmbed = [];
-                            let songObj = db.reviewDB.get(songArtist)[songName];
+                            let songObj = db.reviewDB.get(songArtist, `${setterSongName}`);
                             let songReviewObj = songObj[taggedUser.id];
             
                             rreview = songReviewObj.review;
@@ -255,7 +257,7 @@ module.exports = {
                             rscore = songReviewObj.rating;
                             rstarred = songReviewObj.starred;
             
-                            // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
+                            // This is for adding in collaborators into the name inputted into the embed title, NOT for getting data out.
                             if (songObj.collab != undefined && !epSong.includes(' Remix)')) {
                                 if (songObj.collab.length != 0) {
                                     artistsEmbed = [];
@@ -264,27 +266,16 @@ module.exports = {
                                     artistsEmbed = artistsEmbed.join(' & ');
                                 }
                             }
-                    
-                            if (songObj.vocals != undefined && !epSong.includes(' Remix)')) {
-                                if (songObj.vocals.length != 0) {
-                                    vocalistsEmbed = [];
-                                    vocalistsEmbed.push(songObj.vocals);
-                                    vocalistsEmbed = vocalistsEmbed.flat(1);
-                                    vocalistsEmbed = vocalistsEmbed.join(' & ');
-                                }
-                            }
 
                             if (no_songs_review == false) {
                                 if (new Embed(epReviewEmbed.toJSON()).length < 5250) {
                                     epReviewEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                                     `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
-                                    `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
                                     `${rscore != false ? `(${rscore}/10)` : ``}`, 
                                     value: `${rreview == false ? `*No review written*` : `${rreview}`}` }]);
                                 } else {
                                     epReviewEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                                     `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
-                                    `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
                                     `${rscore != false ? `(${rscore}/10)` : ``}`, 
                                     value: `${rreview == false ? `*No review written*` : `*Review hidden to save space*`}` }]);
                                 }
@@ -294,7 +285,7 @@ module.exports = {
                     }
                     
                     if (taggedMember != undefined) {
-                        epReviewEmbed.setColor(`${taggedMember.displayHexColor}`);
+                        epReviewEmbed.setColor(`${getEmbedColor(taggedMember)}`);
                     }
 
                     epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName}` : `🌟 ${origArtistArray.join(' & ')} - ${epName} 🌟`);
@@ -387,13 +378,16 @@ module.exports = {
                         if (songRankArray.length != 0) {
                             epEmbed.setDescription(`*The average overall user rating of this ${epType} is* ***${Math.round(average(epRankArray) * 10) / 10}!***` + 
                             `\n*The total average rating of all songs on this ${epType} is* ***${Math.round(average(songRankArray) * 10) / 10}!***` + 
+                            `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}` +
                             `\n${paged_user_list[page_num].join('\n')}`);
                         } else {
-                            epEmbed.setDescription(`*The average overall user rating of this ${epType} is* ***${Math.round(average(epRankArray) * 10) / 10}!***`);
+                            epEmbed.setDescription(`*The average overall user rating of this ${epType} is* ***${Math.round(average(epRankArray) * 10) / 10}!***` +
+                            `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}`);
                         }
                     } else {
                         if (songRankArray.length != 0) {
                             epEmbed.setDescription(`*The total average rating of all songs on this ${epType} is* ***${Math.round(average(songRankArray) * 10) / 10}!***` + 
+                            `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}` +
                             `\n${paged_user_list[page_num].join('\n')}`);
                         } else {
                             epEmbed.setDescription(`This ${epType} has no songs in the database and has not been reviewed overall.`);

@@ -18,12 +18,12 @@ module.exports = {
             ),
         ) 
         .addSubcommand((subcommand) =>
-        subcommand.setName('least_fav_song')
-        .setDescription("Set what your least favorite song currently is on your Waveform Profile!")
+        subcommand.setName('fav_artist')
+        .setDescription("Set what your favorite artist currently is on your Waveform Profile!")
         .addStringOption((option) =>
             option
-                .setName('song_name')
-                .setDescription('Song name to put in (Full song name!)')
+                .setName('artist')
+                .setDescription('Artist name to put in')
                 .setRequired(true),
             ),
         ) 
@@ -47,9 +47,9 @@ module.exports = {
                 db.user_stats.set(interaction.user.id, interaction.options.getString('song_name'), 'fav_song');
                 interaction.reply(`Set favorite song to ${interaction.options.getString('song_name')}!`);
             break;
-            case 'least_fav_song': 
-                db.user_stats.set(interaction.user.id, interaction.options.getString('song_name'), 'least_fav_song');
-                interaction.reply(`Set least favorite song to ${interaction.options.getString('song_name')}!`);
+            case 'fav_artist': 
+                db.user_stats.set(interaction.user.id, interaction.options.getString('artist'), 'fav_artist');
+                interaction.reply(`Set favorite artist to ${interaction.options.getString('artist')}!`);
             break;
             case 'fav_genres':
                 split_genres = interaction.options.getString('genres').split(' & ');

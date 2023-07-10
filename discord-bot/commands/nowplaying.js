@@ -1,6 +1,6 @@
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const db = require('../db.js');
-const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data } = require('../func.js');
+const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data, getEmbedColor, convertToSetterName } = require('../func.js');
 const ms_format = require('format-duration');
 const progressbar = require('string-progressbar');
 
@@ -15,6 +15,7 @@ module.exports = {
         await interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
         let songArt, spotifyUrl, yourRating, origArtistArray, artistArray, songName, songDisplayName, isPlaying = true, isPodcast = false, validSong = true;
+        let setterSongName, song_info;
         let songLength, songCurMs, musicProgressBar = false; // Song length bar variables
         const spotifyApi = await spotify_api_setup(interaction.user.id);
         
@@ -33,14 +34,15 @@ module.exports = {
             songCurMs = data.body.progress_ms;
             musicProgressBar = progressbar.splitBar(songLength / 1000, songCurMs / 1000, 12)[0];
             isPlaying = data.body.is_playing;
-            let song_info = await parse_artist_song_data(interaction);
+            song_info = await parse_artist_song_data(interaction);
             if (song_info.error != undefined) {
                 validSong = false;
             }
 
-            origArtistArray = song_info.prod_artists;
             songName = song_info.song_name;
+            setterSongName = convertToSetterName(songName);
             artistArray = song_info.db_artists;
+            origArtistArray = song_info.prod_artists;
             songDisplayName = song_info.display_song_name;
         });
 
@@ -54,13 +56,13 @@ module.exports = {
         if (songArt == false) songArt = interaction.member.avatarURL({ extension: 'png' });
 
         const npEmbed = new EmbedBuilder()
-        .setColor(`${interaction.member.displayHexColor}`)
+        .setColor(`${getEmbedColor(interaction.member)}`)
         .setTitle(`${origArtistArray.join(' & ')} - ${songDisplayName}`)
         .setAuthor({ name: `${interaction.member.displayName}'s ${isPlaying ? `current song` : `last song played`}`, iconURL: `${interaction.user.avatarURL({ extension: "png", dynamic: false })}` })
         .setThumbnail(songArt);
 
         if (db.reviewDB.has(artistArray[0])) {
-            let songObj = db.reviewDB.get(artistArray[0])[songName];
+            let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
 
             if (songObj != undefined) {
                 let userArray = get_user_reviews(songObj);
@@ -79,7 +81,7 @@ module.exports = {
                                 yourStar = '⭐'; //Added to the end of your rating tab
                             }
                         }
-
+                        
                         if (rating != false) rankNumArray.push(parseFloat(rating));
                         userArray[i] = [rating, `${userArray[i]} \`${rating}\``];
                     }

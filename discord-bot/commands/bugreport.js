@@ -1,6 +1,6 @@
 /* eslint-disable no-unreachable */
 const { SlashCommandBuilder, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } = require('discord.js');
-const { handle_error } = require('../func');
+const { handle_error, getEmbedColor } = require('../func');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -81,8 +81,9 @@ module.exports = {
             await submitted.reply('Successfully submitted a bug report!');
             
             let bugChannel = interaction.guild.channels.cache.get('1038260795584303184');
+
             let bugEmbed = new EmbedBuilder()
-            .setColor(`${interaction.member.displayHexColor}`)
+            .setColor(`${getEmbedColor(interaction.member)}`)
             .setThumbnail(interaction.member.avatarURL({ extension: "png" }))
             .setAuthor({ name: `Bug report by ${interaction.member.displayName}`, iconURL: interaction.user.avatarURL({ extension: "png" }) })
             .setDescription(`**Cmd:** \`${cmd}\`\n` + 

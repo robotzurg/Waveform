@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { EmbedBuilder, SlashCommandBuilder, Embed } = require('discord.js');
-const { handle_error, get_review_channel, parse_artist_song_data } = require('../func.js');
+const { handle_error, get_review_channel, parse_artist_song_data, getEmbedColor, convertToSetterName } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -37,6 +37,7 @@ module.exports = {
 
             let origArtistArray = song_info.prod_artists;
             let epName = song_info.song_name;
+            let setterEpName = convertToSetterName(epName);
             let artistArray = song_info.db_artists;
             let epType = epName.includes(' LP') ? `LP` : `EP`;
 
@@ -53,12 +54,11 @@ module.exports = {
             if (!epName.includes(' EP') && !epName.includes(' LP')) epName = `${epName} EP`;
 
             let artistsEmbed;
-            let vocalistsEmbed;
             let rreview;
             let rscore;
             let rstarred;
 
-            let epObj = db.reviewDB.get(artistArray[0])[epName];
+            let epObj = db.reviewDB.get(artistArray[0], `${setterEpName}`);
             if (epObj == undefined) return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
 
             let epReviewObj = epObj[taggedUser.id];
@@ -87,7 +87,7 @@ module.exports = {
 
             const epEmbed = new EmbedBuilder();
             
-            epEmbed.setColor(`${taggedMember.displayHexColor}`);
+            epEmbed.setColor(`${getEmbedColor(interaction.member)}`);
             epEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName}` : `🌟 ${origArtistArray.join(' & ')} - ${epName} 🌟`);
 
             if (ep_overall_rating !== false && ep_overall_review != false) {
@@ -129,9 +129,9 @@ module.exports = {
                     let songArtist = artistArray[0];
                     if (ep_songs[i].includes(' Remix)')) songArtist = ep_songs[i].split(' Remix)')[0].split('(').splice(1);
                     let songName = ep_songs[i];
+                    let setterSongName = convertToSetterName(songName);
                     artistsEmbed = [];
-                    vocalistsEmbed = [];
-                    let songObj = db.reviewDB.get(songArtist)[songName];
+                    let songObj = db.reviewDB.get(songArtist, `${setterSongName}`);
                     let songReviewObj = songObj[taggedUser.id];
     
                     rreview = songReviewObj.review;
@@ -139,7 +139,7 @@ module.exports = {
                     rscore = songReviewObj.rating;
                     rstarred = songReviewObj.starred;
     
-                    // This is for adding in collaborators/vocalists into the name inputted into the embed title, NOT for getting data out.
+                    // This is for adding in collaborators into the name inputted into the embed title, NOT for getting data out.
                     if (songObj.collab != undefined && !ep_songs[i].includes(' Remix)')) {
                         if (songObj.collab.length != 0) {
                             artistsEmbed = [];
@@ -148,28 +148,16 @@ module.exports = {
                             artistsEmbed = artistsEmbed.join(' & ');
                         }
                     }
-            
-                    if (songObj.vocals != undefined && !ep_songs[i].includes(' Remix)')) {
-                        if (songObj.vocals.length != 0) {
-                            vocalistsEmbed = [];
-                            vocalistsEmbed.push(songObj.vocals);
-                            vocalistsEmbed = vocalistsEmbed.flat(1);
-                            vocalistsEmbed = vocalistsEmbed.join(' & ');
-                            artistsEmbed = artistsEmbed.split(' & ').filter(v => !vocalistsEmbed.includes(v)).join(' & ');
-                        }
-                    }
 
                     if (no_songs_review == false) {
                         if (new Embed(epEmbed.toJSON()).length < 5250) {
                             epEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                             `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
-                            `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
                             `${rscore != false ? `(${rscore}/10)` : ``}`, 
                             value: `${rreview == false ? `*No review written*` : `${rreview}`}` }]);
                         } else {
                             epEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                             `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
-                            `${vocalistsEmbed.length != 0 ? `(ft. ${vocalistsEmbed}) ` : ''}` +
                             `${rscore != false ? `(${rscore}/10)` : ``}`, 
                             value: `${rreview == false ? `*No review written*` : `*Review hidden to save space*`}` }]);
                         }

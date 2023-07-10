@@ -1,7 +1,7 @@
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 const db = require('../db.js');
-const { spotify_api_setup, parse_artist_song_data } = require('../func.js');
+const { spotify_api_setup, parse_artist_song_data, getEmbedColor } = require('../func.js');
 const fetch = require('isomorphic-unfetch');
 const { getData } = require('spotify-url-info')(fetch);
 const _ = require('lodash');
@@ -34,7 +34,7 @@ module.exports = {
         let trackUris = []; 
         let trackDurs = []; // Track durations
         let name;
-        let artists, prodArtists, displayName;
+        let artists, displayName, origArtistArray, rmxArtistArray;
         let url;
         let songArt;
         let mainId; // The main ID of the spotify link (the album URI or the main track URI)
@@ -48,7 +48,6 @@ module.exports = {
         if (trackLink == null && spotifyApi != false) {
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
                 if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
-                console.log(data.body.item, data.body.item.external_urls);
                 trackLink = data.body.item.external_urls.spotify;
                 spotifyCheck = true;
             });
@@ -60,8 +59,6 @@ module.exports = {
         } else if (spotifyApi == false && trackLink == null) {
             return interaction.reply(`You are not logged into spotify with Waveform, so you must specify a track link in the link argument or use \`/login\` to use this command in this way!`);
         }
-
-       
 
         // Check if we are not in a spotify link, and if so, what kind of link we have
         if (trackLink.includes('spotify')) {
@@ -98,8 +95,9 @@ module.exports = {
                     return;
                 }
 
+                origArtistArray = song_info.prod_artists;
+                rmxArtistArray = song_info.remix_artists;
                 artists = song_info.db_artists;
-                prodArtists = song_info.prod_artists;
                 name = song_info.song_name;
                 displayName = song_info.display_song_name;
 
@@ -144,19 +142,19 @@ module.exports = {
 
         if (linkType.includes('sp')) {
             if (db.user_stats.get(taggedUser.id, 'mailbox_history').includes(mainId)) {
-                return interaction.editReply(`\`${taggedMember.displayName}\` has already been sent **${prodArtists.join(' & ')} - ${displayName}** through Waveform Mailbox!`);
+                return interaction.editReply(`\`${taggedMember.displayName}\` has already been sent **${origArtistArray.join(' & ')} - ${displayName}** through Waveform Mailbox!`);
             }
 
             // Add tracks to the mailbox playlist
             await spotifyApi.addTracksToPlaylist(playlistId, trackUris)
             .then(() => {
                 const mailEmbed = new EmbedBuilder()
-                .setColor(`${interaction.member.displayHexColor}`)
-                .setTitle(`${prodArtists.join(' & ')} - ${displayName}`)
+                .setColor(`${getEmbedColor(interaction.member)}`)
+                .setTitle(`${origArtistArray.join(' & ')} - ${displayName}`)
                 .setDescription(`This music mail was sent to you by <@${interaction.user.id}>!`)
                 .setThumbnail(songArt);
 
-                interaction.editReply(`Sent [**${prodArtists.join(' & ')} - ${displayName}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
+                interaction.editReply(`Sent [**${origArtistArray.join(' & ')} - ${displayName}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
                 if (dmMailConfig == true && taggedUser.id != interaction.user.id) { 
                     taggedUser.send({ content: `**You've got mail!** 📬`, embeds: [mailEmbed] });
                 }
@@ -164,7 +162,11 @@ module.exports = {
                 // Put the song we just mailboxed into a mailbox list for the user, so it can be pulled up with /viewmail
                 if (db.user_stats.get(taggedUser.id, 'mailbox_list') == undefined) {
                     db.user_stats.set(taggedUser.id, [{ 
-                        display_name: `${prodArtists.join(' & ')} - ${displayName}`,
+                        display_name: `${origArtistArray.join(' & ')} - ${displayName}`,
+                        orig_artists: origArtistArray,
+                        db_artists: artists,
+                        db_song_name: name,
+                        remix_artists: rmxArtistArray,
                         user_who_sent: interaction.user.id,
                         spotify_id: mainId, 
                         track_uris: trackUris,
@@ -172,7 +174,11 @@ module.exports = {
                     }], 'mailbox_list');
                 } else {
                     db.user_stats.push(taggedUser.id, { 
-                        display_name: `${prodArtists.join(' & ')} - ${displayName}`,
+                        display_name: `${origArtistArray.join(' & ')} - ${displayName}`,
+                        orig_artists: origArtistArray,
+                        db_artists: artists,
+                        db_song_name: name,
+                        remix_artists: rmxArtistArray,
                         user_who_sent: interaction.user.id,
                         spotify_id: mainId, 
                         track_uris: trackUris,

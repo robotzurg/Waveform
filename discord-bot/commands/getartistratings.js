@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
-const { get_user_reviews, handle_error, spotify_api_setup } = require('../func.js');
+const { get_user_reviews, handle_error, spotify_api_setup, getEmbedColor, convertToSetterName } = require('../func.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -61,16 +61,17 @@ module.exports = {
         const artistObj = db.reviewDB.get(artist);
         if (artistObj == undefined) return interaction.reply(`${artist} was not found in the database.`);
         let songArray = Object.keys(artistObj);
+        songArray = songArray.map(v => v = v.replace('_((', '[').replace('))_', ']'));
         let songObj;
         let reviewObj = {};
         let reviewedArray = [];
         let userArray = [];
         let avg = 0;
         songArray = songArray.filter(item => item !== 'pfp_image');
-        songArray = songArray.map(item => item.replace('\\', '\\\\'));
 
         for (let i = 0; i < songArray.length; i++) {
-            songObj = db.reviewDB.get(artist)[songArray[i]];
+            let setterSongName = convertToSetterName(songArray[i]);
+            songObj = db.reviewDB.get(artist, `${setterSongName}`);
             userArray = get_user_reviews(songObj);
             userArray = userArray.filter(item => item == taggedUser.id);
             if (userArray.length != 0) {
@@ -131,7 +132,7 @@ module.exports = {
         }  
 
         const ratingListEmbed = new EmbedBuilder()
-            .setColor(`${interaction.member.displayHexColor}`)
+            .setColor(`${getEmbedColor(taggedMember)}`)
             .setThumbnail(taggedUser.avatarURL({ extension: "png" }))
             .setAuthor({ name: `All ratings for ${artist} by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png" }) })
             .addFields([

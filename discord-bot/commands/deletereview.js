@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { parse_artist_song_data, handle_error, get_review_channel } = require("../func.js");
+const { parse_artist_song_data, handle_error, get_review_channel, updateStats, spotify_api_setup, convertToSetterName } = require("../func.js");
 const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
@@ -43,23 +43,23 @@ module.exports = {
 
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
+        let displaySongName = song_info.display_song_name;
         let artistArray = song_info.db_artists;
         let rmxArtistArray = song_info.remix_artists;
-        let vocalistArray = song_info.vocal_artists;
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
-        let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
+        let setterSongName = convertToSetterName(songName);
+        let songObj = db.reviewDB.get(origArtistArray[0], `${setterSongName}`);
 
-        if (rmxArtistArray.length != 0) artistArray = rmxArtistArray;
-
-        // Update user stats
-        if (db.user_stats.get(interaction.user.id, 'recent_review').includes(songName)) {
-            db.user_stats.set(interaction.user.id, 'N/A', 'recent_review');
+        if (rmxArtistArray.length != 0) {
+            artistArray = rmxArtistArray;
+            songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
         }
 
         // Delete review message
-        let reviewMsgID = db.reviewDB.get(artistArray[0])[songName][interaction.user.id].msg_id;
-        let reviewChannelID = db.reviewDB.get(artistArray[0])[songName][interaction.user.id].channel_id;
-        let reviewGuildID = db.reviewDB.get(artistArray[0])[songName][interaction.user.id].guild_id;
+        let reviewMsgID = songObj[interaction.user.id].msg_id;
+        let reviewChannelID = songObj[interaction.user.id].channel_id;
+        let reviewGuildID = songObj[interaction.user.id].guild_id;
+        if (reviewGuildID == false) reviewGuildID = '680864893552951306';
         if (reviewMsgID != false && reviewMsgID != undefined) {
             let channelsearch = await get_review_channel(client, reviewGuildID, reviewChannelID, reviewMsgID);
             if (channelsearch != undefined) {
@@ -69,13 +69,27 @@ module.exports = {
             }
         }
 
+        // Update user statistics
+        await updateStats(interaction, reviewGuildID, origArtistArray, artistArray, rmxArtistArray, songName, displaySongName, songObj, (songName.includes(' EP') || songName.includes(' LP') ? true : false), true);
+
         for (let i = 0; i < artistArray.length; i++) {
-            let songObj = db.reviewDB.get(artistArray[i], `["${songName}"]`);
+            songObj = db.reviewDB.get(artistArray[i], `${setterSongName}`);
             let songReviewObj = songObj[interaction.user.id];
             if (songReviewObj.name == undefined) break;
 
             if (songReviewObj.starred == true) {
+                let spotifyUri = song_info.spotify_uri;
+                let spotifyApi = await spotify_api_setup(interaction.user.id);
+                let starPlaylistId = db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist');
+
                 db.reviewDB.set(artistArray[i], false, `${setterSongName}.${interaction.user.id}.starred`);   
+                if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != undefined && spotifyUri != false) {
+                    // Remove from spotify playlist
+                    await spotifyApi.removeTracksFromPlaylist(starPlaylistId, [{ uri: spotifyUri }])
+                    .then(() => {}, function(err) {
+                        console.log('Something went wrong!', err);
+                    });
+                }
             }
 
             delete songObj[`${interaction.user.id}`];
@@ -86,7 +100,7 @@ module.exports = {
             db.reviewDB.set(artistArray[i], songObj, `${setterSongName}`);
         }
 
-        await interaction.reply(`Deleted ${interaction.member.displayName}'s review of ${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}.`);
+        await interaction.reply(`Deleted ${interaction.member.displayName}'s review of ${origArtistArray.join(' & ')} - ${displaySongName}.`);
 
         } catch (err) {
             let error = err;
