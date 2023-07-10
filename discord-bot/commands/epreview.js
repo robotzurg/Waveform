@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
-const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art, update_art } = require('../func.js');
+const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art, update_art, updateStats, getEmbedColor, convertToSetterName } = require('../func.js');
 require('dotenv').config();
 
 module.exports = {
@@ -82,7 +82,7 @@ module.exports = {
             let epName = song_info.song_name;
             let artistArray = song_info.db_artists;
             // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
-            let setterEpName = epName.includes('.') ? `["${epName}"]` : epName;
+            let setterEpName = convertToSetterName(epName);
             let epType = epName.includes(' LP') ? `LP` : `EP`;
             let spotifyUri = song_info.spotify_uri;
 
@@ -159,9 +159,9 @@ module.exports = {
             if (art == false || art == null || art == undefined) {
                 art = await grab_spotify_art(origArtistArray, epName);
                 if (db.reviewDB.has(artistArray[0])) {
-                    if (db.reviewDB.get(artistArray[0][epName]) != undefined) {
-                        if (db.reviewDB.get(artistArray[0])[epName].art != false && db.reviewDB.get(artistArray[0])[epName].art != undefined) {
-                            art = await db.reviewDB.get(artistArray[0])[epName].art;
+                    if (db.reviewDB.get(artistArray[0], `${setterEpName}`) != undefined) {
+                        if (db.reviewDB.get(artistArray[0], `${setterEpName}`).art != false && db.reviewDB.get(artistArray[0], `${setterEpName}`).art != undefined) {
+                            art = await db.reviewDB.get(artistArray[0], `${setterEpName}`).art;
                         }
                     }
                 }
@@ -234,7 +234,7 @@ module.exports = {
 
             // Set up the embed
             const epEmbed = new EmbedBuilder()
-            .setColor(`${interaction.member.displayHexColor}`)
+            .setColor(`${getEmbedColor(interaction.member)}`)
             .setTitle(`${artistArray.join(' & ')} - ${epName}`)
             .setAuthor({ name: `${interaction.member.displayName}'s ${epType} review`, iconURL: `${interaction.user.avatarURL({ extension: "png", dynamic: false })}` });
 
@@ -304,7 +304,7 @@ module.exports = {
                                 art = await grab_spotify_art(artistArray, epName);
                                 if (art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             } else {
-                                if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0])[epName].art;
+                                if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0], `${setterEpName}`).art;
                                 if (art == undefined || art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             }
                             epEmbed.setThumbnail(art);
@@ -338,7 +338,7 @@ module.exports = {
                                 art = await grab_spotify_art(artistArray, epName);
                                 if (art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             } else {
-                                if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0])[epName].art;
+                                if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0], `${setterEpName}`).art;
                                 if (art == undefined || art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
                             }
                             epEmbed.setThumbnail(art);
@@ -504,6 +504,9 @@ module.exports = {
                             update_art(interaction, client, artistArray[0], epName, art);
                         }
 
+                        // Update user stats
+                        await updateStats(interaction, interaction.guild.id, origArtistArray, artistArray, [], epName, epName, db.reviewDB.get(artistArray[0], `${setterEpName}`), true);
+
                         db.user_stats.set(interaction.user.id, false, 'current_ep_review');
                         i.update({ embeds: [epEmbed], components: [] });
 
@@ -529,7 +532,11 @@ module.exports = {
                             });
 
                             // Remove from local playlist
-                            mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${epName}`);
+                            if (spotifyApi != false) {
+                                mailbox_list = mailbox_list.filter(v => v.spotify_id != spotifyUri.replace('spotify:album:', ''));
+                            } else {
+                                mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${epName}`);
+                            }
                             db.user_stats.set(interaction.user.id, mailbox_list, `mailbox_list`);
                         }
                     } break;
@@ -543,7 +550,7 @@ module.exports = {
                         review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, spotifyUri);
 
                         let epSongs = await (db.user_stats.get(interaction.user.id, 'current_ep_review.track_list') != false 
-                        ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(artistArray[0])[epName].songs);
+                        ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(artistArray[0], `${setterEpName}`).songs);
                         if (epSongs == false || epSongs == undefined) epSongs = [];
 
                         // Fix artwork on all reviews for this song
@@ -564,6 +571,9 @@ module.exports = {
                                 db.reviewDB.set(artistArray[j], artistImgs[j], `pfp_image`); 
                             }
                         }
+
+                        // Update user stats
+                        await updateStats(interaction, interaction.guild.id, origArtistArray, artistArray, [], epName, epName, db.reviewDB.get(artistArray[0], `${setterEpName}`), true);
 
                         await i.update({ embeds: [epEmbed], components: [] });
 

@@ -37,11 +37,15 @@ module.exports = {
         
         let origArtistArray = song_info.prod_artists;
         let displaySongName = song_info.display_song_name;
-
         let spotifyApi = await spotify_api_setup(interaction.user.id);
 
         let mailbox_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
-        let temp_mailbox_list = mailbox_list.filter(v => v.display_name == `${origArtistArray.join(' & ')} - ${displaySongName}`);
+        let temp_mailbox_list;
+        if (spotifyApi != false) {
+            temp_mailbox_list = mailbox_list.filter(v => v.spotify_id == song_info.spotify_uri.replace('spotify:track:', '').replace('spotify:album:', ''));
+        } else {
+            temp_mailbox_list = mailbox_list.filter(v => v.display_name == `${origArtistArray.join(' & ')} - ${displaySongName}`);
+        }
 
         if (temp_mailbox_list.length == 0) {
             interaction.reply(`**${origArtistArray.join(' & ')} - ${displaySongName}** is not in your mailbox.`);
@@ -62,7 +66,12 @@ module.exports = {
             }
 
             // Remove from local playlist
-            mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${displaySongName}`);
+            // TODO: Make this better??? This is bad
+            if (spotifyApi != false) {
+                mailbox_list = mailbox_list.filter(v => v.spotify_id != song_info.spotify_uri.replace('spotify:track:', '').replace('spotify:album:', ''));
+            } else {
+                mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${displaySongName}`);
+            }
             db.user_stats.set(interaction.user.id, mailbox_list, `mailbox_list`);
 
             interaction.reply(`Successfully removed **${origArtistArray.join(' & ')} - ${displaySongName}** from your mailbox.`);

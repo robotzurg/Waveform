@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, ActionRowBuilder, StringSelectMenuBuilder, EmbedBuilder } = require('discord.js');
 const db = require('../db.js');
-const { spotify_api_setup, get_user_reviews } = require('../func.js');
+const { spotify_api_setup, getEmbedColor } = require('../func.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -34,6 +34,11 @@ module.exports = {
                             value: 'mailbox_dm',
                         },
                         {
+                            label: 'Embed Color',
+                            description: 'Set the color you would like your embeds to have.',
+                            value: 'embed_color',
+                        },
+                        {
                             label: 'Star Spotify Playlist',
                             description: 'Setup your starred songs spotify playlist',
                             value: 'star_playlist',
@@ -52,7 +57,11 @@ module.exports = {
         if (config_data.mailbox_dm == undefined) {
             config_data.mailbox_dm = true;
         }
-        
+
+        if (config_data.embed_color == undefined) {
+            config_data.embed_color = false;
+        }
+
         db.user_stats.set(interaction.user.id, config_data, `config`);
 
         let config_desc = [`**Mail Filter:**\n${Object.entries(config_data.mail_filter).map(v => {
@@ -72,6 +81,7 @@ module.exports = {
         }).join('\n')}\n`,
         `**Mailbox Review Ping:** \`${config_data.review_ping}\``,
         `**Mailbox DM:** \`${config_data.mailbox_dm}\``,
+        `**Embed Color:** \`${config_data.embed_color == false ? 'Role Color' : config_data.embed_color}\``,
         `**Star Spotify Playlist:** \`${config_data.star_spotify_playlist != false ? 'Setup!' : 'Not Setup.'}\``];
 
         let mailFilterSel = new ActionRowBuilder()
@@ -120,12 +130,14 @@ module.exports = {
             );
 
         let configEmbed = new EmbedBuilder()
-        .setColor(`${interaction.member.displayHexColor}`)
+        .setColor(`${getEmbedColor(interaction.member)}`)
         .setThumbnail(interaction.user.avatarURL({ extension: "png" }))
         .setTitle('⚙️ Waveform Config Menu ⚙️')
         .setDescription(config_desc.join('\n'));
         await interaction.reply({ content: null, embeds: [configEmbed], components: [configMenu] });
 
+        let msg_filter = m => m.author.id == interaction.user.id;
+        let msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
         const collector = interaction.channel.createMessageComponentCollector({ time: 360000 });
         await collector.on('collect', async sel => {
             if (sel.customId == 'config') {
@@ -133,17 +145,47 @@ module.exports = {
                 if (sel.values[0] == 'mail_filter') {
                     await sel.update({ content: 'Select the filter option you\'d like to change.', embeds: [], components: [mailFilterSel] });
                 } else if (sel.values[0] == 'review_ping') {
+
                     await db.user_stats.set(interaction.user.id, !(user_profile.config.review_ping), 'config.review_ping');
                     config_desc[1] = `**Mailbox Review Ping:** \`${db.user_stats.get(interaction.user.id, 'config.review_ping')}\``;
                     user_profile = db.user_stats.get(interaction.user.id);
                     configEmbed.setDescription(config_desc.join('\n'));
                     await sel.update({ content: null, embeds: [configEmbed], components: [configMenu] });
+
                 } else if (sel.values[0] == 'mailbox_dm') {
+
                     await db.user_stats.set(interaction.user.id, !(user_profile.config.mailbox_dm), 'config.mailbox_dm');
                     config_desc[2] = `**Mailbox DM:** \`${db.user_stats.get(interaction.user.id, 'config.mailbox_dm')}\``;
                     user_profile = db.user_stats.get(interaction.user.id);
                     configEmbed.setDescription(config_desc.join('\n'));
                     await sel.update({ content: null, embeds: [configEmbed], components: [configMenu] });
+
+                } else if (sel.values[0] == 'embed_color') {
+
+                    await sel.update({ content: 'Type in the new color you\'d like your reviews to have, in the hexcode format!', embeds: [], components: [] });
+
+                    await msg_collector.on('collect', async m => { 
+                        let hexCheck = new RegExp('^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$');
+                        if (hexCheck.test(m.content) == false) {
+                            await interaction.followUp({ ephemeral: true, content: 'Please make sure you use a valid hexcode for the color!' });
+                            await m.delete();
+                        } else {
+                            await db.user_stats.set(interaction.user.id, m.content, 'config.embed_color');
+                            config_desc[3] = `**Embed Color:** \`${db.user_stats.get(interaction.user.id, 'config.embed_color')}\``;
+                            user_profile = db.user_stats.get(interaction.user.id);
+                            configEmbed.setDescription(config_desc.join('\n'));
+                            await interaction.editReply({ content: null, embeds: [configEmbed], components: [configMenu] });
+                            await m.delete();
+                        }
+                    });
+
+                    await msg_collector.on('end', async () => {
+                        await interaction.editReply({ content: null, embeds: [configEmbed], components: [configMenu] });
+                        await msg_collector.stop();
+                    });
+
+                    
+
                 } else if (sel.values[0] == 'star_playlist') {
                     const spotifyApi = await spotify_api_setup(interaction.user.id);
                     if (spotifyApi == false) {
@@ -162,69 +204,31 @@ module.exports = {
 
                     let starIDList = [];
 
-                    await sel.update({ content: `Setting up your star spotify playlist... (This usually takes up to 2-3 minutes, so please be patient!)`, embeds: [], components: [] });
+                    await sel.update({ content: `Setting up your star spotify playlist... (This usually takes up to 1 minute, so please be patient!)\n`
+                    + `Please keep in mind that this playlist generation may not get every song 100%. Feel free to manually change things yourself to fix it!`, embeds: [], components: [] });
                     await spotifyApi.createPlaylist('Waveform Stars', { 'description': 'This is an auto updated playlist of your Waveform stars, to give you an easier idea of what songs you have starred!', 'public': true })
                     .then(async data => {
                         db.user_stats.set(interaction.user.id, data.body.id, `config.star_spotify_playlist`);
-                        let songSkip = [];
-                        let artistArray = db.reviewDB.keyArray();
-                        for (let i = 0; i < artistArray.length; i++) {
-                            let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
-                            songArray = songArray.filter(v => v != 'pfp_image');
-                            songArray = songArray.filter(v => !v.includes(' EP'));
-                            songArray = songArray.filter(v => !v.includes(' LP'));
-    
-                            for (let j = 0; j < songArray.length; j++) {
-                                let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];
-                                let userArray;
-                                if (songObj != null && songObj != undefined) {
-                                    userArray = get_user_reviews(songObj);
-                                    userArray = userArray.filter(v => v == interaction.user.id);
-                                } else {
-                                    userArray = [];
-                                }
-    
-                                if (songSkip.includes(`${artistArray[i]} - ${songArray[j]}`)) continue;
-    
-                                let otherArtists = [artistArray[i], songObj.collab].flat(1);
-    
-                                let allArtists = otherArtists.map(v => {
-                                    if (v == undefined) {
-                                        return [];
-                                    }
-                                    return v;
-                                });
-                                allArtists = allArtists.flat(1);
-    
-                                for (let k = 0; k < userArray.length; k++) {
-                                    let userData = songObj[userArray[k]];
-                                    // Add to playlist if its starred
-                                    if (userData.starred) {
-                                        await spotify.search({ type: "track", query: `${artistArray[i]} ${songArray[j]}` }).then(function(song_data) {  
-                                            let results = song_data.tracks.items;
-                                            let pushed = false;
+                        let starList = db.user_stats.get(interaction.user.id, `stats.star_list`);
 
-                                            for (let result of results) {
-                                                if (result.album.artists.map(v => v.name.toLowerCase()).includes(artistArray[i].toLowerCase()) && result.name.toLowerCase() == `${songArray[j].toLowerCase()}`) {
-                                                    starIDList.push(result.uri);
-                                                    pushed = true;
-                                                    break;
-                                                }
-                                            }
+                        for (let starData of starList) {
+                            await spotify.search({ type: "track", query: `${starData.orig_artists[0]} ${starData.db_song_name}` }).then(function(song_data) {  
+                                let results = song_data.tracks.items;
+                                let pushed = false;
 
-                                            if (pushed == false) {
-                                                starIDList.push(results[0].uri);
-                                            }
-                                        });
+                                for (let result of results) {
+                                    console.log(result.album.artists, starData.orig_artists);
+                                    if (result.album.artists.map(v => v.name.toLowerCase()).includes(starData.orig_artists[0].toLowerCase()) && result.name.toLowerCase() == `${starData.db_song_name.toLowerCase()}`) {
+                                        starIDList.push(result.uri);
+                                        pushed = true;
+                                        break;
                                     }
                                 }
-    
-                                for (let v = 0; v < allArtists.length; v++) {
-                                    if (!songSkip.includes(`${allArtists[v]} - ${songArray[j]}`)) {
-                                        songSkip.push(`${allArtists[v]} - ${songArray[j]}`);
-                                    }
+
+                                if (pushed == false) {
+                                    starIDList.push(results[0].uri);
                                 }
-                            }
+                            });
                         }
                     });
 
@@ -233,7 +237,7 @@ module.exports = {
                         await spotifyApi.addTracksToPlaylist(db.user_stats.get(interaction.user.id, `config.star_spotify_playlist`), list); 
                     }
                      
-                    config_desc[3] = `**Star Spotify Playlist:** \`Setup!\``;
+                    config_desc[4] = `**Star Spotify Playlist:** \`Setup!\``;
                     configEmbed.setDescription(config_desc.join('\n'));
                     await interaction.editReply({ content: `Playlist has been created and starred songs have been added to it.`, embeds: [configEmbed], components: [configMenu] });                
                 }

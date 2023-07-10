@@ -4,7 +4,7 @@
 // 3. Collab remix artist support at some point
 
 const db = require("../db.js");
-const { parse_artist_song_data, get_user_reviews, convertToSetterName } = require("../func.js");
+const { parse_artist_song_data, get_user_reviews, convertToSetterName, getEmbedColor } = require("../func.js");
 const { EmbedBuilder, SlashCommandBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, StringSelectMenuBuilder } = require('discord.js');
 const _ = require('lodash');
 
@@ -69,6 +69,10 @@ module.exports = {
     `Leaving the artist and song name arguments blank will pull from currently playing song on Spotify, if you are logged in to Waveform with Spotify.\n\n`,
 	async execute(interaction) {
 
+        if (interaction.user.id != '122568101995872256') {
+            return interaction.reply('This command isn\'t for you!');
+        }
+
         let origArtistArray = interaction.options.getString('artist');
         let songName = interaction.options.getString('music_name');
         let rmxArtistArray = interaction.options.getString('remixers');
@@ -80,8 +84,6 @@ module.exports = {
             return;
         }
 
-        console.log(song_info);
-
         origArtistArray = song_info.prod_artists;
         let oldOrigArtistArray = origArtistArray.slice(0);
         songName = song_info.song_name;
@@ -90,7 +92,6 @@ module.exports = {
         rmxArtistArray = song_info.remix_artists;
         let oldRmxArtistArray = rmxArtistArray.slice(0);
         let noRemixSongName = songName.replace(` (${rmxArtistArray.join(' & ')} Remix)`, ``);
-        let vocalistArray = song_info.vocal_artists;
         let displaySongName = song_info.display_song_name;
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         // eslint-disable-next-line no-unused-vars
@@ -100,7 +101,7 @@ module.exports = {
         let epType = songName.includes(' EP') ? 'EP' : 'LP';
         let dataType = subCommand == 'song' ? 'song' : epType; // Used for the song name changing command, to display something as changing a "song" or "EP/LP"
 
-        let songObj = db.reviewDB.get(artistArray[0])[songName];
+        let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
         if (subCommand != 'artist' && songObj == undefined) {
             return interaction.reply(`The song \`${origArtistArray.join(' & ')} - ${displaySongName}\` is not in the database.`);
         } else if (subCommand == 'artist' && !db.reviewDB.has(origArtistArray[0])) {
@@ -121,6 +122,7 @@ module.exports = {
         // Artist subcommand variables
         let artistPfp = db.reviewDB.get(origArtistArray[0], `pfp_image`);
         let artistMusic = Object.keys(db.reviewDB.get(origArtistArray[0]));
+        artistMusic = artistMusic.map(v => v = v.replace('_((', '[').replace('))_', ']'));
         artistMusic = artistMusic.filter(v => v !== 'pfp_image');
         artistMusic = artistMusic.filter(v => v !== 'Image');
         let artistSingles = [];
@@ -142,7 +144,7 @@ module.exports = {
 
         // Separate out the artists discography into 3 separate arrays
         for (let music of artistMusic) {
-            let setterMusicName = music.includes('.') ? `["${music}"]` : music;
+            let setterMusicName = convertToSetterName(music);
             let musicObj = db.reviewDB.get(origArtistArray[0], `${setterMusicName}`);
 
             if (music.includes(' EP') || music.includes(' LP')) {
@@ -178,7 +180,7 @@ module.exports = {
         // Setup button rows
         let songEditButtons = [];
         let editEmbed = new EmbedBuilder()
-            .setColor(`${interaction.member.displayHexColor}`);
+            .setColor(`${getEmbedColor(interaction.member)}`);
 
         switch (subCommand) {
             case 'song':
@@ -507,7 +509,7 @@ module.exports = {
                                         editEmbed.data.fields[1].value = rmxArtistArray.join('\n');
                                         displaySongName = `${noRemixSongName} (${rmxArtistArray.join(' & ')} Remix)`;
                                         songName = `${noRemixSongName} (${rmxArtistArray.join(' & ')} Remix)`;
-                                        setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
+                                        setterSongName = convertToSetterName(songName);
                                         editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
                                     }
 
@@ -557,7 +559,7 @@ module.exports = {
                                     editEmbed.data.fields[1].value = rmxArtistArray.join('\n');
                                     displaySongName = `${noRemixSongName} (${rmxArtistArray.join(' & ')} Remix)`;
                                     songName = `${noRemixSongName} (${rmxArtistArray.join(' & ')} Remix)`;
-                                    setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
+                                    setterSongName = convertToSetterName(setterSongName);
                                     editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
                                 }
 
@@ -714,7 +716,7 @@ module.exports = {
                         // Only change things if we are editing a song name, or if the edited EP/LP name includes the keyword "EP" or "LP" in it, which is required.
                         if ((subCommand == 'ep-lp' && msg.content.includes(' EP') || msg.content.includes(' LP')) || (subCommand == 'song')) {
                             songName = msg.content;
-                            setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
+                            setterSongName = convertToSetterName(songName);
                             displaySongName = (`${songName}` + 
                             `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
                             editEmbed.data.fields[subCommand == 'song' ? 3 : 1].value = songName;
@@ -880,8 +882,8 @@ module.exports = {
                         // Update remixer data as well
                         // TODO(Test this): Make this work with collab remix artists
                         for (let rmxArtist of remixers) {
-                            setterOldSongName = songName.includes('.') ? `["${oldSongName}  (${rmxArtist} Remix)"]` : `${oldSongName} (${rmxArtist} Remix)`;
-                            setterSongName = songName.includes('.') ? `["${songName} (${rmxArtist} Remix)"]` : `${songName} (${rmxArtist} Remix)`;
+                            setterOldSongName = convertToSetterName(`${oldSongName}  (${rmxArtist} Remix)`);
+                            setterSongName = convertToSetterName(`${songName}  (${rmxArtist} Remix)`);
 
                             if (rmxArtist.includes('&') && !rmxArtist.includes('\\&') || (rmxArtist.includes(' & '))) {
                                 for (let collabRmxArtist of rmxArtist.split(' & ')) {

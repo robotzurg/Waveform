@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { average, get_user_reviews, parse_artist_song_data, sort, handle_error, get_review_channel } = require('../func.js');
+const { average, get_user_reviews, parse_artist_song_data, sort, handle_error, get_review_channel, getEmbedColor, convertToSetterName } = require('../func.js');
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const _ = require('lodash');
 
@@ -40,6 +40,7 @@ module.exports = {
 
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
+        let setterSongName = convertToSetterName(songName);
         let artistArray = song_info.db_artists;
         let displaySongName = song_info.display_song_name;
 
@@ -49,18 +50,22 @@ module.exports = {
         let remixes = [];
         let starCount = 0;
 
-        songObj = db.reviewDB.get(artistArray[0])[songName];
-        if (songObj == undefined) { return interaction.reply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
-        `\nUse \`/getArtist\` to get a full list of this artist's songs.`); }
-
         // See if we have any VIPs
         let artistSongs = Object.keys(db.reviewDB.get(artistArray[0]));
+        artistSongs = artistSongs.map(v => v = v.replace('_((', '[').replace('))_', ']'));
+        console.log(artistSongs, songName, setterSongName);
         let songVIP = false;
         for (let s of artistSongs) {
             if (s.includes('VIP') && s.includes(songName) && s != songName) songVIP = s;
         }
 
+        songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
+        if (songObj == undefined) { return interaction.reply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
+        `\nUse \`/getArtist\` to get a full list of this artist's songs.`); }
+
         songEP = songObj.ep;
+        let setterSongEP = songObj.ep;
+        if (songEP != false && songEP != undefined && songEP != null) setterSongEP = convertToSetterName(songEP);
         remixArray = songObj.remixers;
         if (remixArray == undefined) {
             remixArray = [];
@@ -76,17 +81,20 @@ module.exports = {
                 remixes.push(`\`${remixArray[i]} Remix\``);
             }
         }
-        if (songEP == undefined || songEP == false) songEP = false;
-        let songEPObj = db.reviewDB.get(artistArray[0], `${songEP}`);
+        if (setterSongEP == undefined) setterSongEP = false;
+        if (songEP == undefined) songEP = false;
+        let songEPObj = db.reviewDB.get(artistArray[0], `${setterSongEP}`);
         let songEPArt = false;
         if (songEPObj == undefined) {
             if (songName.includes(' Remix)')) {
-                songEPObj = db.reviewDB.get(songObj.collab[0], `${songEP}`);
+                songEPObj = db.reviewDB.get(songObj.collab[0], `${setterSongEP}`);
                 if (songEPObj == undefined) songEPObj = { art: false };
                 songEPArt = songEPObj.art;
             } else {
                 songEPObj = { art: false };
             }
+        } else {
+            songEPArt = { art: songEPObj.art };
         }
         
         let userArray = get_user_reviews(songObj);
@@ -95,7 +103,7 @@ module.exports = {
 
         const rankNumArray = [];
         const songEmbed = new EmbedBuilder()
-        .setColor(`${interaction.member.displayHexColor}`)
+        .setColor(`${getEmbedColor(interaction.member)}`)
         .setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
 
         for (let i = 0; i < userArray.length; i++) {
@@ -129,9 +137,10 @@ module.exports = {
         
         if (rankNumArray.length != 0) {
             songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` + 
-            `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} star${starCount == 1 ? '' : 's'}!** :star2:`)}`);
+            `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} star${starCount == 1 ? '' : 's'}!** :star2:`)}` + 
+            `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
         } else {
-            songEmbed.setDescription(`*The average rating of this song is N/A*`);
+            songEmbed.setDescription(`${songObj.spotify_uri == false ? `` : `<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
         }
 
         if (songArt == false) {
@@ -212,7 +221,7 @@ module.exports = {
         if (remixes.length != 0) songEmbed.addFields([{ name: 'Remixes:', value: remixes.join('\n') }]);
         if (songVIP != false) songEmbed.addFields([{ name: 'VIP:', value: `\`${songVIP}\`` }]);
         if (songEP != false) {
-            songEmbed.setFooter({ text: `from ${songEP}${paged_user_list > 1 ? ` • Page ${page_num + 1} / ${paged_user_list.length}` : ``}`, iconURL: songEPArt });
+            songEmbed.setFooter({ text: `from ${songEP}${paged_user_list > 1 ? ` • Page ${page_num + 1} / ${paged_user_list.length}` : ``}`, iconURL: songEPArt.art });
         } else if (paged_user_list > 1) {
             songEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_user_list.length}` });
         }
@@ -261,7 +270,7 @@ module.exports = {
 
                 const reviewEmbed = new EmbedBuilder();
                 if (taggedMember != undefined) {
-                    reviewEmbed.setColor(`${taggedMember.displayHexColor}`);
+                    reviewEmbed.setColor(`${getEmbedColor(taggedMember)}`);
                 }
     
                 if (starred == false) {
@@ -280,7 +289,7 @@ module.exports = {
                 if (sentby != false) {
                     reviewEmbed.setFooter({ text: `Sent by ${sentby.displayName}`, iconURL: `${sentby.user.avatarURL({ extension: "png" })}` });
                 } else if (songEP != undefined && songEP != false) {
-                    reviewEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0])[songEP].art });
+                    reviewEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0], `${setterSongEP}.art`) });
                 }
 
                 let reviewMsgID = songObj[i.values[0]][`msg_id`];

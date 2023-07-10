@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const forAsync = require('for-async');
-const { get_user_reviews, parse_artist_song_data, handle_error, get_review_channel, grab_spotify_art, grab_spotify_artist_art, spotify_api_setup } = require("../func.js");
+const { get_user_reviews, parse_artist_song_data, handle_error, get_review_channel, grab_spotify_art, grab_spotify_artist_art, spotify_api_setup, getEmbedColor, convertToSetterName } = require("../func.js");
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 
@@ -69,12 +69,12 @@ module.exports = {
             let origArtistArray = song_info.prod_artists;
             let songName = song_info.song_name;
             let artistArray = song_info.db_artists;
-            let vocalistArray = song_info.vocal_artists;
+            let displaySongName = song_info.display_song_name;
 
             // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
-            let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;    
+            let setterSongName = convertToSetterName(songName);    
 
-            if (db.reviewDB.get(artistArray[0])[songName] == undefined) {
+            if (db.reviewDB.get(artistArray[0], `${setterSongName}`) == undefined) {
                 return interaction.reply('This song does not exist in the database, you can only use this command with songs that exist in the database!');
             }
             
@@ -90,7 +90,7 @@ module.exports = {
             }
 
             // Fix artwork on all reviews for this song
-            let songObj = db.reviewDB.get(artistArray[0])[songName];
+            let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
             let msgstoEdit = [];
 
             if (songObj != undefined) {
@@ -122,8 +122,8 @@ module.exports = {
             }
 
             displayEmbed = new EmbedBuilder()
-                .setColor(`${interaction.member.displayHexColor}`)
-                .setDescription(`Art for **${origArtistArray.join(' & ')} - ${songName}${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}** has been changed to the new art below.`)
+                .setColor(`${getEmbedColor(interaction.member)}`)
+                .setDescription(`Art for **${origArtistArray.join(' & ')} - ${displaySongName}** has been changed to the new art below.`)
                 .setImage(art);
         } else {
             let spotifyCheck;
@@ -163,7 +163,7 @@ module.exports = {
             db.reviewDB.set(artist, art, `pfp_image`);
 
             displayEmbed = new EmbedBuilder()
-                .setColor(`${interaction.member.displayHexColor}`)
+                .setColor(`${getEmbedColor(interaction.member)}`)
                 .setDescription(`The display image for **${artist}** has been changed to the new image below.`)
                 .setImage(art);
         }

@@ -1,6 +1,6 @@
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const db = require("../db.js");
-const { parse_artist_song_data, handle_error, get_review_channel } = require('../func.js');
+const { parse_artist_song_data, handle_error, get_review_channel, getEmbedColor, convertToSetterName } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -43,6 +43,7 @@ module.exports = {
         
             let origArtistArray = song_info.prod_artists;
             let songName = song_info.song_name;
+            let setterSongName = convertToSetterName(songName);
             let artistArray = song_info.db_artists;
             let displaySongName = song_info.display_song_name;
 
@@ -62,12 +63,17 @@ module.exports = {
             let rurl;
             let usrSentBy;
             let rtimestamp;
-            let songObj = db.reviewDB.get(artistArray[0])[songName];
+            let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
+            if (songObj == undefined) return interaction.reply(`\`${origArtistArray.join(' & ')} - ${displaySongName}\` not found in the database.`);
             let songReviewObj = songObj[taggedUser.id];
-            if (songReviewObj == undefined) return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${songName}\`. *Note that for EP reviews, you need to use \`/getReviewEP\`.*`);
+            if (songReviewObj == undefined) return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${displaySongName}\`. *Note that for EP reviews, you need to use \`/getReviewEP\`.*`);
 
             let epfrom = songObj.ep;
-            if (db.reviewDB.get(artistArray[0], epfrom) == undefined) epfrom = false; 
+            let setterEpName = false;
+            if (epfrom != false && epfrom != undefined) {
+                setterEpName = convertToSetterName(epfrom);
+            }
+            if (db.reviewDB.get(artistArray[0], `${setterEpName}`) == undefined) epfrom = false; 
             let songArt = songObj.art;
 
             rreview = songReviewObj.review;
@@ -81,7 +87,7 @@ module.exports = {
 
             // If we don't have a single review link, we can check for an EP/LP review link
             if (rurl == false && (epfrom != false && epfrom != undefined)) {
-                let songEPObj = db.reviewDB.get(artistArray[0])[epfrom];
+                let songEPObj = db.reviewDB.get(artistArray[0], `${setterEpName}`);
                 if (songEPObj[interaction.user.id].url != false) {
                     rurl = songEPObj[interaction.user.id].url;
                 }
@@ -96,7 +102,7 @@ module.exports = {
             if (rreview == 'No written review.' || rreview == "This was from a ranking, so there is no written review for this song.") rreview = '-';
 
             const reviewEmbed = new EmbedBuilder()
-            .setColor(`${taggedMember.displayHexColor}`);
+            .setColor(`${getEmbedColor(taggedMember)}`);
 
             if (rstarred == false) {
                 reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
@@ -124,7 +130,7 @@ module.exports = {
             if (rsentby != false) {
                 reviewEmbed.setFooter({ text: `Sent by ${usrSentBy.displayName}`, iconURL: `${usrSentBy.user.avatarURL({ extension: "png" })}` });
             } else if (epfrom != undefined && epfrom != false) {
-                reviewEmbed.setFooter({ text: `from ${epfrom}`, iconURL: db.reviewDB.get(artistArray[0])[epfrom].art });
+                reviewEmbed.setFooter({ text: `from ${epfrom}`, iconURL: db.reviewDB.get(artistArray[0], `${setterEpName}`).art });
             }
 
             if ((rurl == undefined && rtimestamp == undefined) || rurl == false) {

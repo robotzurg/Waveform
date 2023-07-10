@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { parse_artist_song_data, handle_error, get_review_channel } = require("../func.js");
+const { parse_artist_song_data, handle_error, get_review_channel, convertToSetterName } = require("../func.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -66,11 +66,18 @@ module.exports = {
                     .setRequired(false))),
     help_desc: `Allows you to edit a review you have made for a song in the review database, and edits the review message in your review channel with the newly edited review.\n` +
     `Can be used for singles, remixes, or songs on an EP/LP review, but this CANNOT be used for EP/LP overall reviews or ratings. Use \`/epeditreview\` for that.`,
-	async execute(interaction, client) {
+	async execute(interaction, client, epCmd = false) {
         try {
-
+            
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('song_name');
+        if (song != null) {
+            if (song.includes(' EP') || song.incldes(' LP')) epCmd = true;
+        }
+        
+        if (epCmd == true) {
+            song = interaction.options.getString('ep_name');
+        }
         let remixers = interaction.options.getString('remixers');
         let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
         if (song_info.error != undefined) {
@@ -82,8 +89,9 @@ module.exports = {
         let songName = song_info.song_name;
         let artistArray = song_info.db_artists;
         let displaySongName = song_info.display_song_name;
+        let embedArtists = song_info.display_prod_artists;
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
-        let setterSongName = songName.includes('.') ? `["${songName}"]` : songName;
+        let setterSongName = convertToSetterName(songName);
 
         let rating = interaction.options.getString('rating');
         if (rating != null) {
@@ -106,6 +114,9 @@ module.exports = {
         let user_sent_name;
         let songObj;
         let songReviewObj;
+        let userStatsObj = db.user_stats.get(interaction.user.id, 'stats');
+        let guildStatsObj;
+        let botStatsObj = db.global_bot.get('stats');
 
         if (rating == null && review == null && user_who_sent == null) return interaction.reply('You must supply either a rating change, a review change, or a user_who_sent change.');
         if (user_who_sent != null && user_who_sent != undefined) {
@@ -115,10 +126,11 @@ module.exports = {
 
         for (let i = 0; i < artistArray.length; i++) {
             if (!db.reviewDB.has(artistArray[i])) return interaction.reply(`Artist ${artistArray[i]} not found!`);
-            songObj = db.reviewDB.get(artistArray[i])[songName];
+            songObj = db.reviewDB.get(artistArray[i], `${setterSongName}`);
             if (songObj == undefined) return interaction.reply(`Song ${songName} not found!`);
             songReviewObj = songObj[interaction.user.id];
             if (songReviewObj == undefined) return interaction.reply(`Review not found!`);
+            guildStatsObj = db.server_settings.get(songReviewObj.guild_id, 'stats');
 
             if (rating != null && rating != undefined) {
                 if (rating < 8 && songReviewObj.starred == true) {
@@ -126,6 +138,26 @@ module.exports = {
                 }
                 
                 oldrating = songReviewObj.rating;
+                if (userStatsObj.ratings_list[`${oldrating}`] != undefined && !isNaN(parseFloat(oldrating))) {
+                    userStatsObj.ratings_list[`${oldrating}`] -= 1;
+                }
+
+                if (oldrating == 10 && rating != 10) {
+                    userStatsObj.ten_num -= 1;
+                    guildStatsObj.ten_num -= 1;
+                    botStatsObj.ten_num -= 1;
+                } else if (oldrating != 10 && rating == 10) {
+                    userStatsObj.ten_num += 1;
+                    guildStatsObj.ten_num += 1;
+                    botStatsObj.ten_num += 1;
+                }
+
+                if (userStatsObj.ratings_list[`${rating}`] != undefined && !isNaN(parseFloat(rating))) {
+                    userStatsObj.ratings_list[`${rating}`] += 1;
+                } else if (!isNaN(parseFloat(rating))) {
+                    userStatsObj.ratings_list[`${rating}`] = 1;
+                }
+
                 db.reviewDB.set(artistArray[i], parseFloat(rating), `${setterSongName}.${interaction.user.id}.rating`);
             } 
 
@@ -150,8 +182,27 @@ module.exports = {
                 channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
                     let msgEmbed = EmbedBuilder.from(msg.embeds[0]);
 
-                    if (rating != null && rating != undefined) msgEmbed.data.fields[0].value = `**${rating}/10**`;
-                    if (review != null && review != undefined) msgEmbed.setDescription(review);
+                    if (epCmd == true) {
+                        if (rating != null && songReviewObj.no_songs == false) {
+                            // Change title
+                            msgEmbed.setTitle(`${embedArtists.join(' & ')} - ${displaySongName} (${rating}/10)`);
+                        } else if (rating != null && songReviewObj.no_songs == true) {
+                            // Change field /10 rating value
+                            if (msgEmbed.data.fields != undefined) {
+                                msgEmbed.data.fields[0].value = `**${rating}/10**`;
+                            } else {
+                                msgEmbed.addFields({ name: `Rating:`, value: `**${rating}/10**` });
+                            }
+                        }
+
+                        if (review != null) {
+                            msgEmbed.setDescription(songReviewObj.no_songs == false ? `*${review}*` : `${review}`);
+                        }
+                    } else {
+                        if (rating != null && rating != undefined) msgEmbed.data.fields[0].value = `**${rating}/10**`;
+                        if (review != null && review != undefined) msgEmbed.setDescription(review);
+                    }
+
                     if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
 
                     msg.edit({ embeds: [msgEmbed] });
@@ -166,7 +217,7 @@ module.exports = {
         let epObj = false;
 
         for (let i = 0; i < artistArray.length; i++) {
-            epObj = db.reviewDB.get(primArtist, db.reviewDB.get(primArtist)[songName].ep);
+            epObj = db.reviewDB.get(primArtist, db.reviewDB.get(primArtist, `${setterSongName}.ep`));
             if (epObj == undefined || epObj == false) break;
             if (epObj[interaction.user.id] == undefined || epObj[interaction.user.id] == false) break;
             epMsgToEdit = epObj[interaction.user.id].msg_id;
@@ -178,7 +229,7 @@ module.exports = {
             } 
         }
 
-        if (epObj != false && epObj != undefined) {
+        if (epObj != false && epObj != undefined && epCmd == false) {
             if (epMsgToEdit != undefined && epMsgToEdit != false) {
                 let displayArtists = origArtistArray.filter(v => v != primArtist);
                 let channelsearch = await get_review_channel(client, epMsgGuild, epMsgChannel, epMsgToEdit);
@@ -195,9 +246,9 @@ module.exports = {
 
                         if (rating != null && rating != undefined) {
                             if (msg_embed_fields[field_num].name.includes('🌟')) {
-                                msg_embed_fields[field_num].name = `🌟 ${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``} (${rating}/10) 🌟`;
+                                msg_embed_fields[field_num].name = `🌟 ${displaySongName}${displayArtists.length != 0 ? ` (with ${origArtistArray.join(' & ')})` : ``} (${rating}/10) 🌟`;
                             } else {
-                                msg_embed_fields[field_num].name = `${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``} (${rating}/10)`;
+                                msg_embed_fields[field_num].name = `${displaySongName}${displayArtists.length != 0 ? ` (with ${origArtistArray.join(' & ')})` : ``} (${rating}/10)`;
                             }
                         } 
                         if (review != null && review != undefined && msg_embed_fields[field_num].value != '*Review hidden to save space*') msg_embed_fields[field_num].value = review;
@@ -208,7 +259,12 @@ module.exports = {
             } 
         }
 
-        interaction.reply(`Here's what was edited on your review of **${origArtistArray.join(' & ')} - ${displaySongName}**:\n` +
+        // Finalize any edits made to stats
+        db.user_stats.set(interaction.user.id, userStatsObj, 'stats');
+        db.server_settings.set(songReviewObj.guild_id, guildStatsObj, 'stats');
+        db.global_bot.set('stats', botStatsObj);
+
+        interaction.reply(`Here's what was edited on your review of **${embedArtists.join(' & ')} - ${displaySongName}**:\n` +
         `${(oldrating != undefined) ? `\`${oldrating}/10\` changed to \`${rating}/10\`\n` : ``}` +
         `${(oldreview != undefined) ? `Review was changed to \`${review}\`\n` : ``}` +
         `${(user_who_sent != null) ? `User Who Sent was changed to \`${user_sent_name.displayName}\`` : ``}`);

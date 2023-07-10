@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
-const { get_user_reviews, handle_error } = require("../func.js");
+const { handle_error, getEmbedColor } = require("../func.js");
 const _ = require('lodash');
 
 module.exports = {
@@ -14,10 +14,9 @@ module.exports = {
                 .setRequired(false)),
     help_desc: `Gets a full list of every rating a specified user has given, and how many times they have given that rating.`,
 	async execute(interaction) {
-
         try {
 
-        await interaction.reply('Loading rating list, this takes a moment so please be patient!');
+        await interaction.deferReply();
 
         let taggedUser = interaction.options.getUser('user');
         let taggedMember;
@@ -29,62 +28,8 @@ module.exports = {
             taggedUser = interaction.user;
         }
 
-        let artistCount = [];
-        let songSkip = [];
-        let ratingList = {};
-        let ratingCount = 0;
-
-        let artistArray = db.reviewDB.keyArray();
-
-        for (let i = 0; i < artistArray.length; i++) {
-            let artistObj = db.reviewDB.get(artistArray[i]);
-            let songArray = Object.keys(artistObj);
-            songArray = songArray.filter(v => v != 'pfp_image');
-
-            for (let j = 0; j < songArray.length; j++) {
-                let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];
-                let userArray = get_user_reviews(songObj);
-                userArray = userArray.filter(v => v == taggedUser.id);
-                if (userArray.length != 0) artistCount.push(artistArray[i]);
-                if (songSkip.includes(`${artistArray[i]} - ${songArray[j]}`)) continue;
-
-                let collabArray = songObj.collab;
-                let vocalistArray = songObj.vocals;
-                if (collabArray == undefined) collabArray = [];
-                if (vocalistArray == undefined) vocalistArray = [];
-
-                collabArray = collabArray.filter(v => !vocalistArray.includes(v));
-                let otherArtists = [artistArray[i], collabArray].flat(1);
-                let allArtists = otherArtists.map(v => {
-                    if (v == undefined) {
-                        return [];
-                    }
-                    return v;
-                });
-                allArtists = allArtists.flat(1);
-
-                for (let k = 0; k < userArray.length; k++) {
-                    let userData = songObj[userArray[k]];
-                    if (userData.rating == undefined || userData.rating == null) continue;
-                    ratingCount += 1;
-                    userData.rating = userData.rating.toString();
-                    if (!(userData.rating in ratingList)) {
-                        ratingList[userData.rating] = 1;
-                    } else {
-                        ratingList[userData.rating] += 1;
-                    }
-                }
-
-                for (let v = 0; v < allArtists.length; v++) {
-                    if (!songSkip.includes(`${allArtists[v]} - ${songArray[j]}`)) {
-                        songSkip.push(`${allArtists[v]} - ${songArray[j]}`);
-                    }
-                }
-            }
-        }
-
+        let ratingList = db.user_stats.get(taggedUser.id, `stats.ratings_list`);
         if (Object.keys(ratingList).length == 0) return interaction.reply(`You have never rated a song before!`);
-        
         ratingList = Object.entries(ratingList).sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]));
 
         let pagedRatingList = _.chunk(ratingList, 10);
@@ -111,17 +56,15 @@ module.exports = {
         }  
 
         const ratingListEmbed = new EmbedBuilder()
-            .setColor(`${interaction.member.displayHexColor}`)
+            .setColor(`${getEmbedColor(taggedMember)}`)
             .setThumbnail(taggedUser.avatarURL({ extension: "png" }))
-            .setAuthor({ name: `All ratings by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png" }) })
+            .setAuthor({ name: `All ratings from all servers by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png" }) })
             .setDescription(pagedRatingList[page_num]);
             if (pagedRatingList.length > 1) {
-                ratingListEmbed.setFooter({ text: `Page 1 / ${pagedRatingList.length} • ${ratingCount} ratings given` });
-                interaction.editReply({ content: null, embeds: [ratingListEmbed], components: [row] });
-            } else {
-                ratingListEmbed.setFooter({ text: `${ratingCount} ratings given` });
-                interaction.editReply({ content: null, embeds: [ratingListEmbed], components: [] });
+                ratingListEmbed.setFooter({ text: `Page 1 / ${pagedRatingList.length}` });
             }
+
+            interaction.editReply({ content: null, embeds: [ratingListEmbed], components: [row] });
         
         if (pagedRatingList.length > 1) {
             let message = await interaction.fetchReply();
@@ -132,7 +75,7 @@ module.exports = {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;
                 page_num = _.clamp(page_num, 0, pagedRatingList.length - 1);
                 ratingListEmbed.setDescription(pagedRatingList[page_num]);
-                ratingListEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedRatingList.length} • ${ratingCount} ratings given` });
+                ratingListEmbed.setFooter({ text: `Page ${page_num + 1} / ${pagedRatingList.length}` });
                 i.update({ embeds: [ratingListEmbed] });
             });
 

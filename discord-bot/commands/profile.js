@@ -1,8 +1,7 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('discord.js');
 const { Canvas, loadImage, FontLibrary } = require('skia-canvas');
-const { get_user_reviews, handle_error, find_most_duplicate } = require("../func.js");
-const _ = require('lodash');
+const { handle_error } = require("../func.js");
 
 const applyText = (font, fontSize, cutoff, canvas, text) => {
 	const context = canvas.getContext('2d');
@@ -27,8 +26,7 @@ module.exports = {
                 .setRequired(false)),
     help_desc: `TBD`,
 	async execute(interaction) {
-
-        await interaction.reply('Loading profile, this may take a bit of time so please be patient!');
+        await interaction.deferReply();
         let canvas = new Canvas(1305, 872);
 
         // render to files using a background thread
@@ -49,82 +47,14 @@ module.exports = {
                 taggedUser = interaction.user;
             }
 
-            let starCount = 0;
-            let reviewCount = 0;
-            let epReviewCount = 0;
-            let lpReviewCount = 0;
-            let tenCount = 0;
-            let zeroCount = 0;
-            let mostArtist = 0;
-            let starArtistList = [];
-            let mostStarred = 0;
-            let artistCount = [];
-            let songSkip = [];
-            let ratingList = [];
-            let ratingAvg = 0;
+            let userStatsObj = db.user_stats.get(taggedUser.id, 'stats');
 
-            let artistArray = db.reviewDB.keyArray();
+            let starCount = userStatsObj.star_num;
+            let reviewCount = userStatsObj.review_num;
+            let epReviewCount = userStatsObj.ep_review_num;
+            let tenCount = userStatsObj.ten_num;
 
-            for (let i = 0; i < artistArray.length; i++) {
-                let songArray = Object.keys(db.reviewDB.get(artistArray[i]));
-                songArray = songArray.filter(v => v != 'pfp_image');
-
-                for (let j = 0; j < songArray.length; j++) {
-                    let songObj = db.reviewDB.get(artistArray[i])[songArray[j]];
-                    let userArray;
-                    if (songObj != null && songObj != undefined) {
-                        userArray = get_user_reviews(songObj);
-                        userArray = userArray.filter(v => v == taggedUser.id);
-                    } else {
-                        userArray = [];
-                    }
-                    if (userArray.length != 0) {
-                        artistCount.push(artistArray[i]);
-                        if (songObj[userArray[0]].starred == true) {
-                            starArtistList.push(artistArray[i]);
-                        } 
-                    }
-                    if (songSkip.includes(`${artistArray[i]} - ${songArray[j]}`)) continue;
-
-                    let otherArtists = [artistArray[i], songObj.collab].flat(1);
-
-                    let allArtists = otherArtists.map(v => {
-                        if (v == undefined) {
-                            return [];
-                        }
-                        return v;
-                    });
-                    allArtists = allArtists.flat(1);
-
-                    for (let k = 0; k < userArray.length; k++) {
-                        let userData = songObj[userArray[k]];
-                        reviewCount += 1;
-                        ratingList.push(parseFloat(userData.rating));
-                        if (songArray[j].includes(' EP')) epReviewCount += 1;
-                        if (songArray[j].includes(' LP')) lpReviewCount += 1;
-                        if (userData.starred == true) starCount += 1;
-
-                        if (parseFloat(userData.rating) == 10) tenCount += 1;
-                        if (parseFloat(userData.rating) == 0) zeroCount += 1;
-                    }
-
-                    for (let v = 0; v < allArtists.length; v++) {
-                        if (!songSkip.includes(`${allArtists[v]} - ${songArray[j]}`)) {
-                            songSkip.push(`${allArtists[v]} - ${songArray[j]}`);
-                        }
-                    }
-                }
-            }
-
-            mostArtist = find_most_duplicate(artistCount);
-            mostStarred = find_most_duplicate(starArtistList);
-            ratingList = ratingList.filter(v => !Number.isNaN(v));
-            ratingAvg = _.mean(ratingList);
-
-            // If this is undefined, we have a legacy profile that needs to be setup properly and they need to work with me
-            if (mostStarred == undefined) {
-                return interaction.editReply('You have a legacy Waveform profile. Please message Jeff to get a proper one setup!');
-            }
+            console.log(reviewCount);
 
             FontLibrary.use("main", ["./fonts/LEMONMILK-Light.otf"]);
             FontLibrary.use("main_med", ["./fonts/LEMONMILK-Medium.otf"]);
@@ -152,15 +82,17 @@ module.exports = {
             let offset = 45;
             ctx.textAlign = 'center';
             
-            ctx.font = `40px main_reg`;
-            ctx.fillText('Favorite Song', canvas.width / 2, 250 - offset);
-            ctx.font = applyText('main', 25, 540, canvas, db.user_stats.get(taggedUser.id, 'fav_song'));
-            ctx.fillText(`${db.user_stats.get(taggedUser.id, 'fav_song')}`, canvas.width / 2, 290 - offset);
+            if (db.user_stats.get(taggedUser.id, 'fav_artist') == undefined) db.user_stats.set(taggedUser.id, 'N/A', 'fav_artist');
 
             ctx.font = `40px main_reg`;
-            ctx.fillText('Least Favorite Song', canvas.width / 2, 365 - offset);
-            ctx.font = applyText('main', 25, 620, canvas, db.user_stats.get(taggedUser.id, 'least_fav_song'));
-            ctx.fillText(`${db.user_stats.get(taggedUser.id, 'least_fav_song')}`, canvas.width / 2, 405 - offset);
+            ctx.fillText('Favorite Artist', canvas.width / 2, 250 - offset);
+            ctx.font = applyText('main', 25, 540, canvas, db.user_stats.get(taggedUser.id, 'fav_artist'));
+            ctx.fillText(`${db.user_stats.get(taggedUser.id, 'fav_artist')}`, canvas.width / 2, 290 - offset);
+
+            ctx.font = `40px main_reg`;
+            ctx.fillText('Favorite Song', canvas.width / 2, 365 - offset);
+            ctx.font = applyText('main', 25, 620, canvas, db.user_stats.get(taggedUser.id, 'fav_song'));
+            ctx.fillText(`${db.user_stats.get(taggedUser.id, 'fav_song')}`, canvas.width / 2, 405 - offset);
 
             ctx.font = `40px main_reg`;
             ctx.fillText('Favorite Genres', canvas.width / 2, 485 - offset);
@@ -173,16 +105,6 @@ module.exports = {
                 ctx.fillText(genreList[i], canvas.width / 2, 525 + (i * 40) - offset);
             }
 
-            ctx.font = `40px main_reg`;
-            ctx.fillText('Most Reviewed Artist', canvas.width / 2, 685 - offset);
-            ctx.font = `25px main`;
-            ctx.fillText(`${mostArtist[0][0]} (${mostArtist[0][1]} Reviews)`, canvas.width / 2, 725 - offset);
-
-            ctx.font = `40px main_reg`;
-            ctx.fillText('Most Starred Artist', canvas.width / 2, 805 - offset);
-            ctx.font = `25px main`;
-            ctx.fillText(`${mostStarred[0][0]} (${mostStarred[0][1]} Stars)`, canvas.width / 2, 845 - offset);
-
             // Recent Review / Recent Stars lists
             let stats_x = 210;
             let stats_y = 250;
@@ -190,13 +112,10 @@ module.exports = {
             ctx.font = `40px main_reg`;
             ctx.fillText('General Stats', stats_x, stats_y);
             ctx.font = `30px main`;
-            ctx.fillText(`Rating Avg: ${ratingAvg.toFixed(2)}`, stats_x, stats_y + 40);
-            ctx.fillText(`Stars: ${starCount}`, stats_x, stats_y + 80);
-            ctx.fillText(`Reviews: ${reviewCount}`, stats_x, stats_y + 120);
-            ctx.fillText(`EP Reviews: ${epReviewCount}`, stats_x, stats_y + 160);
-            ctx.fillText(`LP Reviews: ${lpReviewCount}`, stats_x, stats_y + 200);
-            ctx.fillText(`10/10: ${tenCount}`, stats_x, stats_y + 240);
-            ctx.fillText(`0/10: ${zeroCount}`, stats_x, stats_y + 280);
+            ctx.fillText(`Stars: ${starCount}`, stats_x, stats_y + 40);
+            ctx.fillText(`Reviews: ${reviewCount}`, stats_x, stats_y + 80);
+            ctx.fillText(`EP/LP Reviews: ${epReviewCount}`, stats_x, stats_y + 120);
+            ctx.fillText(`10/10: ${tenCount}`, stats_x, stats_y + 160);
 
             // Draw Waveform Logo
             const waveformLogo = await loadImage('./images/Waveform_Logo_Transparent.png');

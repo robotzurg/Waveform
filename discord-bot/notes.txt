@@ -1,0 +1,852 @@
+{
+    "743⁺Aether*✧ ˳ ⁎ ¹¹¹} ⁺ . ˳": {
+        "166644275793100801": {
+            "msg_id": false,
+            "name": "Swifter",
+            "rating": 10,
+            "review": "I am literally so addicted to this. I've listened to it like 170 times and it's only been out for like 1.5 months. I listen to this every single day. The steezy ass beat in the intro, the loud outro to the intro, the ethereal atmospheric midsection, the thumpy buildup to the last drop, and the payoff from all of that is just amazing. Please more shit like this.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "221006870129803264": {
+            "msg_id": false,
+            "name": "Xynkers13",
+            "rating": 10,
+            "review": "The sound design in this one just pops off and feels like an out of body expierence. Cant put into words how amazing this is.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "331821722594443274": {
+            "msg_id": false,
+            "name": "EthanScraggy22 | GAY2022",
+            "rating": 10,
+            "review": "This is musical perfection. This is the best song of 2022. The creativity that just explodes thoughout this song is unmatched. The melodies and buildups are insanely emotional and euphoric and the drops are so intricate and beautiful. This is future bass in its peak form.",
+            "sentby": false,
+            "starred": true,
+            "url": false
+        },
+        "449314134387982347": {
+            "msg_id": "1018664000772390932",
+            "name": "Iapplepieguy",
+            "rating": 7.5,
+            "review": "a couple things to say, 1 this song is like the auditory version of sparkles and chrome shine, 2 wtf is that machine gun kick moment right before the 2nd drop, 3 this is vocal chop central, 4 future bass is not my genre",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/1018664000772390932"
+        },
+        "734123244868862052": {
+            "msg_id": "1021526346398179358",
+            "name": "Nate | Seven Lions Is The Future",
+            "rating": 9.5,
+            "review": "This has literally 0 of the things that would normally irk me with Jaron tracks. Once again, I like the feel good vibe of the track but wish it did a bit more impactful work with the ending, but otherwise, both the drops and atmosphere of this are excellent",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/1021526346398179358"
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2734a3790da3d561a3b5c781206",
+        "collab": [],
+        "ep": "it's hard to see color [When You're So Impossibly Far Away*] LP",
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 5,
+        "tags": null,
+        "vocals": []
+    },
+    ">1000 [miles]": {
+        "166644275793100801": {
+            "msg_id": false,
+            "name": "Swifter",
+            "rating": 8.5,
+            "review": "Love the vocals in this one and the uplifting sort of vibe. The only problem I have with it are some of the vocals are a little cringy in the beginning part, I usually skip past it. But the rest of the song more than makes up for it.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "221006870129803264": {
+            "msg_id": false,
+            "name": "Xynkers13",
+            "rating": 9,
+            "review": "I guess this is an interlude, but man this one is too pretty to pass up. Amazing.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "331821722594443274": {
+            "msg_id": false,
+            "name": "EthanScraggy22 | GAY2022",
+            "rating": 8,
+            "review": "nice chill middle song on the album.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2734a3790da3d561a3b5c781206",
+        "collab": [],
+        "ep": "it's hard to see color [When You're So Impossibly Far Away*] LP",
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 3,
+        "tags": null,
+        "vocals": []
+    },
+    "Absence of Association": {
+        "331821722594443274": {
+            "msg_id": "947228529374924850",
+            "name": "EthanScraggy22 | NSFW2022",
+            "rating": 9.5,
+            "review": "Idk what I even have to say at this point with Jaron, his music is just beyond incredible.",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/947228529374924850"
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2730977615a2557b89edd7a67ce",
+        "collab": [],
+        "ep": false,
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 1,
+        "vocals": []
+    },
+    "Do you remember yesterday?": {
+        "166644275793100801": {
+            "msg_id": false,
+            "name": "Swifter",
+            "rating": 9,
+            "review": "Not much to say about this one, just a nice little beat for the intro of the album. Really fitting and really nice.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "221006870129803264": {
+            "msg_id": false,
+            "name": "Xynkers13",
+            "rating": 8,
+            "review": "Boppin intro. Nothing much to say.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "331821722594443274": {
+            "msg_id": false,
+            "name": "EthanScraggy22 | GAY2022",
+            "rating": 8,
+            "review": "This is a really nice intro track to get you introduced to the way this album is about to go.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2734a3790da3d561a3b5c781206",
+        "collab": [],
+        "ep": "it's hard to see color [When You're So Impossibly Far Away*] LP",
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 3,
+        "tags": null,
+        "vocals": []
+    },
+    "In a Dream": {
+        "331821722594443274": {
+            "msg_id": "945396637096894504",
+            "name": "EthanScraggy22 | NSFW2022",
+            "rating": 10,
+            "review": "I wonder how many 10s this guy has? This song is a perfect definition of incredible progression, starts off vibey and emotional and grows into an incredible drop with so much emotion.",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/945396637096894504"
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2738292e05c66dfb29419c04b80",
+        "collab": [],
+        "ep": false,
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 1,
+        "vocals": []
+    },
+    "Love [in Every Single Way]": {
+        "166644275793100801": {
+            "msg_id": false,
+            "name": "Swifter",
+            "rating": 10,
+            "review": "God. This is like a smaller Only For A Moment, is the best way I can describe it. Does a lot of the same stuff right but still stays unique. Jaron absolutely nails his etherial/emotional vibe on this one and I really love this.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "221006870129803264": {
+            "msg_id": false,
+            "name": "Xynkers13",
+            "rating": 9.5,
+            "review": "What an incredible ending to this LP. Really cool song. Again Jaron's vocals are mesmerising.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "331821722594443274": {
+            "msg_id": false,
+            "name": "EthanScraggy22 | GAY2022",
+            "rating": 10,
+            "review": "The perfect ending to an incredible album. This song has amazing vocals and an ending section that is so pretty and closes out the album so perfectly. I love this song and I freaking love this album.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2734a3790da3d561a3b5c781206",
+        "collab": [],
+        "ep": "it's hard to see color [When You're So Impossibly Far Away*] LP",
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 3,
+        "tags": null,
+        "vocals": []
+    },
+    "NOWNEVER": {
+        "166644275793100801": {
+            "msg_id": false,
+            "name": "Swifter",
+            "rating": 10,
+            "review": "Similarly to WIRES222, I am not usually a fan of this music at all, even moreso. But the energy hits just right on this one that I just keep coming back to it. Plus that squeakyness in the intro is so over the top and loud and I love it.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "221006870129803264": {
+            "msg_id": false,
+            "name": "Xynkers13",
+            "rating": 9.5,
+            "review": "Its a *bit* messy but sound design is top notch yet again. Great track",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "331821722594443274": {
+            "msg_id": false,
+            "name": "EthanScraggy22 | GAY2022",
+            "rating": 10,
+            "review": "This song has grown on me SO MUCH. I don't know what it is about this song but it is SO addicting I just wanna listen to it over and over. The way he sings in this song is just so nice to listen to its hard to explain but its just so good.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2734a3790da3d561a3b5c781206",
+        "collab": [],
+        "ep": "it's hard to see color [When You're So Impossibly Far Away*] LP",
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 3,
+        "tags": null,
+        "vocals": []
+    },
+    "ONCE": {
+        "122568101995872256": {
+            "msg_id": "1068455738470580224",
+            "name": "Fejjdev",
+            "rating": 9,
+            "review": "The shorter length of this track hurts it so much because I feel like it doesn't end up feeling as full as it could, but that second drop is absolutely WONDERFUL and more than makes up for it. Welcome back Jaron!!!",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/1068455738470580224"
+        },
+        "166644275793100801": {
+            "msg_id": "1068646794520711168",
+            "name": "Swifter",
+            "rating": 10,
+            "review": "this shit is fire",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/1068646794520711168"
+        },
+        "221006870129803264": {
+            "msg_id": "1068605605318754444",
+            "name": "Zynkers",
+            "rating": 9.5,
+            "review": "Jaron W yet again. Though its sad it's so short.",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/1068605605318754444"
+        },
+        "331821722594443274": {
+            "msg_id": "1068670932123656292",
+            "name": "FutureBasser22",
+            "rating": 9.5,
+            "review": "Jaron my beloved, but make this song longer or else.",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/1068670932123656292"
+        },
+        "734123244868862052": {
+            "msg_id": "1068589542048792617",
+            "name": "Nate | DnB Is The Future",
+            "rating": 7.5,
+            "review": "Good song, mediocre vocals that kinda ruin it for me",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/1068589542048792617"
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2732c2a3ae8067c3ec9c8cc63c0",
+        "collab": [
+            "Jedwill"
+        ],
+        "ep": false,
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 5,
+        "tags": [],
+        "vocals": [
+            "Jedwill"
+        ]
+    },
+    "ORANGES": {
+        "166644275793100801": {
+            "msg_id": "1105344162766798949",
+            "name": "Swifter",
+            "rating": 10,
+            "review": "jaron's new direction is perfection",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/1105344162766798949"
+        },
+        "331821722594443274": {
+            "msg_id": "1105490446521749504",
+            "name": "FutureBasser22",
+            "rating": 7,
+            "review": "Jarons new direction is making short music it seems, very upsetting. This song itself is decent just nothing wowing me.",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/1105490446521749504"
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b273ac10ad76eaf687177c01927a",
+        "collab": [],
+        "ep": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 2,
+        "vocals": []
+    },
+    "Only For A Moment": {
+        "122568101995872256": {
+            "msg_id": "924785429532803082",
+            "name": "Jeffdeeznutsephine22",
+            "rating": 10,
+            "review": "11 minutes... an extremely long song length, that very few songs ever even dare to go towards out of fear of lasting too long and overstaying their welcome. And yet, here Jaron is, taking his crack at creating the ultimate song experience that truly culminates all of his skill in music making.\n\nAnd he did it.\n\nHe knocked it out of the PARK.\n\nThis is one of the most unique experiences I've listened to across all of my time listening to EDM, a song that never quite drops and yet continually builds and flows upon itself in a way that only an artist like Jaron could create.\n\nIs it the kind of song you'd listen to on your own? No, probably not. But as Jarons only release of 2021, and as what many could even consider the magnum opus of his entire career?\n\nHe absolutely did it. Welcome back Jaron. We missed you.",
+            "sentby": false,
+            "starred": true,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/924785429532803082"
+        },
+        "166644275793100801": {
+            "msg_id": false,
+            "name": "Swifter",
+            "rating": 10,
+            "review": "Literally thought I'd only ever listen to this all the way through once. But I find myself going back and listening to it all the way through and just becoming immersed in it's atmosphere. It's somehow not boring for 11 FUCKING MINUTES. And the fact it all comes together to this really fucking awesome and unique drop is just awesome. I am obsessed with this album.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "221006870129803264": {
+            "msg_id": false,
+            "name": "Xynkers13",
+            "rating": 10,
+            "review": "THIS SONG MY GOD THIS IS INCREDIBLE. 11 minutes with a lyric that goes *only for a second, only for a moment* but it just WORKS. Along with the vocal chops and sound design that keeps switching it up, this one is just masterful. Second half as well feels ascending.",
+            "sentby": false,
+            "starred": true,
+            "url": false
+        },
+        "331821722594443274": {
+            "msg_id": false,
+            "name": "EthanScraggy22 | GAY2022",
+            "rating": 10,
+            "review": "Where do I even begin with this song, first of all this is my favorite thing Jaron has ever done. This song just feels like everything Jaron has done in his career has built up to this masterpiece of a song. I feel like this is his magnum opus. The length of the song might scare some away but it does everything it possibly can and more with the 11 minutes. There are no flashy drops and yet the emotion stays rising and building the entire 11 minutes. The vocal chops used in this are just stunning and the sound design is changing throughout making the song stay interesting. The 2nd half of this song especially just gives me chills the entire time. This is one of the most beautiful and stunning songs I will ever hear in my life.",
+            "sentby": false,
+            "starred": true,
+            "url": false
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b273ba9e4b56de493914f887f754",
+        "collab": [],
+        "ep": "it's hard to see color [When You're So Impossibly Far Away*] LP",
+        "hof_id": "945921855489982474",
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 4,
+        "tags": null,
+        "vocals": []
+    },
+    "Sonder": {
+        "122568101995872256": {
+            "msg_id": "934384783679692860",
+            "name": "Jeffdeeznutsephine22",
+            "rating": 10,
+            "review": "One of the greatest pieces of EDM ever created, and stands to this day as what is in my opinion Jaron's best song (and it would be his magnum opus if only for a moment didn't exist).\n\nThis song is just jaw dropping in every perfect way, a rollercoaster of perfect impact and melodies and emotion as it flip flops between the quiet pianos into the hard hitting drops, I cannot get over just how perfect this song is. One of the best pieces of music ever created.",
+            "sentby": false,
+            "starred": true,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/934384783679692860"
+        },
+        "129721859783524352": {
+            "msg_id": "920791034982703216",
+            "name": "Vladify",
+            "rating": 10,
+            "review": "rollercoaster of emotions in the best way possible, super good contrast between super quiet and super loud sections, hits really hard and conveys intense emotion so well, this is just really special",
+            "sentby": false,
+            "starred": true,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/920791034982703216"
+        },
+        "143091697096720384": {
+            "msg_id": "975479028439990342",
+            "name": "yacob",
+            "rating": 10,
+            "review": "this song hits almost every music kink i have. especially the falling scales durring the drops, the atmosphere is palpable and just an incredible listen. epic pogger song. and the calm outro to it is soooo good too.",
+            "sentby": "129721859783524352",
+            "starred": true,
+            "url": "https://discord.com/channels/680864893552951306/743174969407832075/975479028439990342"
+        },
+        "331821722594443274": {
+            "msg_id": "945395070176219247",
+            "name": "EthanScraggy22 | NSFW2022",
+            "rating": 10,
+            "review": "Tbh I kinda forgot that this song is one of the best things ever created. The emotion and impact this song carries is just incredible and is definitely in Jaron's top 5 best songs. Jaron is just such a special artist that nobody will ever be like. Some could make the same style but they will never achieve the emotional impact that Jaron's songs have. Genuine genius of a producer.",
+            "sentby": false,
+            "starred": true,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/945395070176219247"
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b273695e7706dd73dc5b7e0a7a2f",
+        "collab": [],
+        "ep": false,
+        "hof_id": "945395091881754664",
+        "remixers": [],
+        "review_num": 4,
+        "tags": [],
+        "vocals": []
+    },
+    "These Thoughts In My Head": {
+        "331821722594443274": {
+            "msg_id": "859509819089747988",
+            "name": "EthanScraggy22",
+            "rating": "10",
+            "review": "This, this is the song that made me realize how incredibly impactful Future Bass could be. The whole song starts with this insanely magical atmosphere with Jaron's vocals just really shining through. The progression in this song is just unbelievable as it progresses in such a cool way up to the first drop and then into the second. Definitely one of the most impactful future bass songs ever made.",
+            "sentby": false,
+            "starred": true
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2737d378a6cad47cd6e524696b3",
+        "collab": [],
+        "ep": false,
+        "hof_id": false,
+        "remixers": [],
+        "review_num": 2,
+        "vocals": []
+    },
+    "Time, Real & Imaginary": {
+        "331821722594443274": {
+            "msg_id": "947228781897211924",
+            "name": "EthanScraggy22 | NSFW2022",
+            "rating": 10,
+            "review": "I think Jaron has the highest rating average of any artist I have reviewed if I am being honest.",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/947228781897211924"
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b273ab3b0e55458cbd0fdbc7f1f1",
+        "collab": [],
+        "ep": false,
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 1,
+        "vocals": []
+    },
+    "WIRES222": {
+        "166644275793100801": {
+            "msg_id": false,
+            "name": "Swifter",
+            "rating": 10,
+            "review": "MASSIVE bop. I've listened to this so many times, I just love the energy and the flow of the lyrics. The thumpy nature of this song fits so well. I usually don't like this kind of music but Jaron is musically holding me at gunpoint so I have no choice but to enjoy this.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "221006870129803264": {
+            "msg_id": false,
+            "name": "Xynkers13",
+            "rating": 9.5,
+            "review": "Jaron singing alone makes this incredible. Very nice song.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "331821722594443274": {
+            "msg_id": false,
+            "name": "EthanScraggy22 | GAY2022",
+            "rating": 9,
+            "review": "This is just a really fun moment in the album, this song is an absolute bop and Jarons vocals are really standout in this one.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2734a3790da3d561a3b5c781206",
+        "collab": [],
+        "ep": "it's hard to see color [When You're So Impossibly Far Away*] LP",
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 3,
+        "tags": null,
+        "vocals": []
+    },
+    "When Everything is Grey": {
+        "122568101995872256": {
+            "msg_id": "934936248462770196",
+            "name": "Jeffdeeznutsephine22",
+            "rating": 9.5,
+            "review": "While it doesn't quite reach the masterpiece that is Only For A Moment, this is still an incredibly nice song that just makes me go :>",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/934936248462770196"
+        },
+        "166644275793100801": {
+            "msg_id": false,
+            "name": "Swifter",
+            "rating": 10,
+            "review": "This was the first song that got my eyes onto Jaron. Def one of my favorites from the album. Very nice vocals, very nice beat.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "221006870129803264": {
+            "msg_id": false,
+            "name": "Xynkers13",
+            "rating": 10,
+            "review": "Think this is the first Jaron song i heard and MAN i fell in love with this. Just gorgeous all around. Emotional yet boppy",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "331821722594443274": {
+            "msg_id": false,
+            "name": "EthanScraggy22 | GAY2022",
+            "rating": 9.5,
+            "review": "This song has so much emotion poured into it. Its not flashy but it gets all the melodies and emotion through and has such a nice triumphant drop section. Jarons vocals are also just stunning throughout this whole album. Amazing song.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b273f6bd65a15f8ad4a4bc804b02",
+        "collab": [],
+        "ep": "it's hard to see color [When You're So Impossibly Far Away*] LP",
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 4,
+        "tags": null,
+        "vocals": []
+    },
+    "[just out of reach*]": {
+        "166644275793100801": {
+            "msg_id": false,
+            "name": "Swifter",
+            "rating": 8,
+            "review": "Very unique kind of chill song. It's not just ambience, but there's some conversation going on. I find it kind of hard to chill out to this for this reason, but I respect the experimentation.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "221006870129803264": {
+            "msg_id": false,
+            "name": "Xynkers13",
+            "rating": 8,
+            "review": "Very nice song, and cool idea with the people talking but i personally dont love it that much.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "331821722594443274": {
+            "msg_id": false,
+            "name": "EthanScraggy22 | GAY2022",
+            "rating": 8.5,
+            "review": "This technically is barely a song, but I am an abolute sucker for moments in albums like this where it peaks into the artists life with a vintage audio clip. It just immerses you into the album even more and it brings another level of personal connection to the album.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2734a3790da3d561a3b5c781206",
+        "collab": [],
+        "ep": "it's hard to see color [When You're So Impossibly Far Away*] LP",
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 3,
+        "tags": null,
+        "vocals": []
+    },
+    "de4th\\\\__* Spirit": {
+        "122568101995872256": {
+            "channel_id": false,
+            "guild_id": "680864893552951306",
+            "msg_id": false,
+            "name": "jeffdev",
+            "rating": 10,
+            "review": "A beautiful track with beatuful vocals, I adore this",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/945476095048814652/945476128884269216/1126952660617154590"
+        },
+        "166644275793100801": {
+            "msg_id": false,
+            "name": "Swifter",
+            "rating": 10,
+            "review": "Been listening to this a lot more recently. Love the energy in this one. The unique glitchy stuff is also really fun and cool too.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "221006870129803264": {
+            "msg_id": false,
+            "name": "Xynkers13",
+            "rating": 10,
+            "review": "Just.. wow. Incredible production, amazing vocals, a repeating lyric (not just this song) that just WORKS. Gorgeous.",
+            "sentby": false,
+            "starred": true,
+            "url": false
+        },
+        "331821722594443274": {
+            "msg_id": false,
+            "name": "EthanScraggy22 | GAY2022",
+            "rating": 10,
+            "review": "My god what a stunnig song. Jaron uses the euphoric and triumphant feeling so well in this song. This song starts out with a really unique and chill house section with the emotional vocals thrown in and then goes full euphoric at the end that just brings the song all together. Absolutely adore this one.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "734123244868862052": {
+            "msg_id": false,
+            "name": "Nate | Seven Lions Is The Future",
+            "rating": 8.5,
+            "review": "Decided to listen to the other two inchers songs from this, I actually find this mostly pretty good. Not a fan of most of the vocals or offdrop sections, but the drops themselves are nice. Just wish there was a bit more behind the finishing section",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2734a3790da3d561a3b5c781206",
+        "collab": [],
+        "ep": "it's hard to see color [When You're So Impossibly Far Away*] LP",
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 5,
+        "spotify_uri": "spotify:track:5lUIxH6zoHODU0UA9ANeOT",
+        "vocals": []
+    },
+    "escape": {
+        "331821722594443274": {
+            "msg_id": "918390244007628852",
+            "name": "MerryScraggy22🎄 | GRONT2021",
+            "rating": 10,
+            "review": "This is Jaron's 2nd best song! But Jaron deserves 2 stars because he is just that good. This song is so impactful and has absolutely incredible vocal chops. Just a masterpiece.",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/918390244007628852"
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2735870d97cd3d1a2133e62b1af",
+        "collab": [],
+        "ep": false,
+        "hof_id": false,
+        "remixers": [],
+        "review_num": 1,
+        "vocals": []
+    },
+    "honey [2019]": {
+        "166644275793100801": {
+            "msg_id": false,
+            "name": "Swifter",
+            "rating": 9.5,
+            "review": "I have this in my chill playlist, really really nice. I didn't like it at first but it's grown on me a lot.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "221006870129803264": {
+            "msg_id": false,
+            "name": "Xynkers13",
+            "rating": 8,
+            "review": "Doesn't have that much substenance to it but pretty song.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "331821722594443274": {
+            "msg_id": false,
+            "name": "EthanScraggy22 | NSFW2022",
+            "rating": 9.5,
+            "review": "you know it really impresses me when an EDM artist can make a non EDM song so well, this is up there with some of my favorite non EDM tunes. This is really vibey and has a great melody that really makes you feel good.",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/945781340333305966"
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2734a3790da3d561a3b5c781206",
+        "collab": [],
+        "ep": "it's hard to see color [When You're So Impossibly Far Away*] LP",
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 3,
+        "tags": null,
+        "vocals": []
+    },
+    "i can be myself with you": {
+        "166644275793100801": {
+            "msg_id": false,
+            "name": "Swifter",
+            "rating": 9.5,
+            "review": "Lovely little DNB vibe. I will happily spin in my chair (with my wireless headphones) to this.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "221006870129803264": {
+            "msg_id": false,
+            "name": "Xynkers13",
+            "rating": 9,
+            "review": "Kinda jammy. Diggin it.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "331821722594443274": {
+            "msg_id": false,
+            "name": "EthanScraggy22 | GAY2022",
+            "rating": 7.5,
+            "review": "I dont loooove the vocal sample he used in this but I can't deny the production is still great and it helps the album flow.",
+            "sentby": false,
+            "starred": false,
+            "url": false
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2734a3790da3d561a3b5c781206",
+        "collab": [],
+        "ep": "it's hard to see color [When You're So Impossibly Far Away*] LP",
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 3,
+        "tags": null,
+        "vocals": []
+    },
+    "it's hard to see color [When You're So Impossibly Far Away*] LP": {
+        "166644275793100801": {
+            "msg_id": "966441669031514112",
+            "name": "Swifter",
+            "no_songs": false,
+            "ranking": [],
+            "rating": false,
+            "review": "My favorite album of the year so far. I am literally so fucking obsessed with this. I have every single song added. I literally usually do not care about Jaron at all, but he just came out of NOWHERE with this album where I love every single song.. holy shit.",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/966441669031514112"
+        },
+        "221006870129803264": {
+            "msg_id": "990681656023187478",
+            "name": "Xynkers13",
+            "no_songs": false,
+            "rating": 9.5,
+            "review": "Just a stunning album from front to back. What a vibe. Def one of my favourite albums of 2022. Jaron delivers not just incredible vocals but stunning sound design.",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/990681656023187478"
+        },
+        "331821722594443274": {
+            "msg_id": "971457980912504912",
+            "name": "EthanScraggy22 | GAY2022",
+            "no_songs": false,
+            "ranking": [],
+            "rating": false,
+            "review": "This is my favorite album, like ever. It may not have the most saves of any album I have heard and it may not have my #1 song of all time on it, but the way this album is put together is masterfully crafted and just one of the best album listening experiences you will ever have. Jaron has always been an artist with pretty hard hitting and impactful tunes, this album strays away from that a bit and goes full creativity mode and its the best Jaron has ever been. You can just hear the passion and creativity flow through this entire album. Its not a perfect album, but its a perfect experience. Most deserving album for the title of masterpiece in my opinion.",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/971457980912504912"
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b2734a3790da3d561a3b5c781206",
+        "collab": [],
+        "songs": [
+            "Do you remember yesterday?",
+            "When Everything is Grey",
+            "honey [2019]",
+            "de4th\\\\_* Spirit",
+            ">1000 [miles]",
+            "743⁺Aether*✧ ˳ ⁎ ¹¹¹} ⁺ . ˳",
+            "Only For A Moment",
+            "i can be myself with you",
+            "[just out of reach*]",
+            "WIRES222",
+            "NOWNEVER",
+            "Love [in Every Single Way]",
+            "de4th_* Spirit"
+        ]
+    },
+    "lift me from the ground (Jaron Remix)": {
+        "283068026960609283": {
+            "msg_id": "934916495836860457",
+            "name": "nickname 2: dumbass boogaloo",
+            "rating": 2,
+            "review": "Cool offdrops but the drop is nothing short of ridiculously loud, unpleasant, and painful. Shrill lead and painful kicks that stab my eardrums.",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/934916495836860457"
+        },
+        "art": false,
+        "collab": [
+            "San Holo",
+            "Sofie Winterson"
+        ],
+        "ep": false,
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 1,
+        "vocals": [
+            "Sofie Winterson"
+        ]
+    },
+    "pfp_image": "https://i.scdn.co/image/2090ce47d8f68c28c33518b345c15aa8cae3c1bb",
+    "take me daydreaming and don't look backwards": {
+        "166644275793100801": {
+            "msg_id": "973084834249461760",
+            "name": "Swifter",
+            "rating": 9,
+            "review": "very nice little experience",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/973084834249461760"
+        },
+        "221006870129803264": {
+            "msg_id": "977945649586765824",
+            "name": "Xynkers13",
+            "rating": 8,
+            "review": "Bit minimalist for my taste",
+            "sentby": "166644275793100801",
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/725800819651248318/977945649586765824"
+        },
+        "331821722594443274": {
+            "msg_id": "973261621696802816",
+            "name": "EthanScraggy22 | GAY2022",
+            "rating": 9,
+            "review": "Very pretty song, just a really nice atmospheric experience. I can't believe Jaron has already released another song.",
+            "sentby": false,
+            "starred": false,
+            "url": "https://discord.com/channels/680864893552951306/680877758909382757/973261621696802816"
+        },
+        "art": "https://i.scdn.co/image/ab67616d0000b273e6e2482c22e4de17f4fea198",
+        "collab": [],
+        "ep": false,
+        "hof_id": false,
+        "remix_collab": [],
+        "remixers": [],
+        "review_num": 3,
+        "tags": null,
+        "vocals": []
+    }
+}

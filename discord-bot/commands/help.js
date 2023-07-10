@@ -1,5 +1,6 @@
 /* eslint-disable no-unreachable */
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, ComponentType } = require('discord.js');
+const { getEmbedColor } = require('../func');
 // const db = require('../db.js');
 
 module.exports = {
@@ -29,7 +30,7 @@ module.exports = {
             );
 
         const helpEmbed = new EmbedBuilder()
-        .setColor(`${interaction.member.displayHexColor}`)
+        .setColor(`${getEmbedColor(interaction.member)}`)
         .setThumbnail(client.user.displayAvatarURL())
         .setTitle(`Waveform Help Desk 🗂️`)
         .setDescription(`Use the buttons below to select through the categories to get help on specific things!\n\n` + 
@@ -68,7 +69,7 @@ module.exports = {
             );
 
         const commandEmbed = new EmbedBuilder()
-        .setColor(`${interaction.member.displayHexColor}`)
+        .setColor(`${getEmbedColor(interaction.member)}`)
         .setThumbnail(client.user.displayAvatarURL())
         .setTitle(`${commandList[0][0]}`)
         .setDescription(`${commandList[0][1].help_desc}`);

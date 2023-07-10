@@ -8,6 +8,7 @@ const { Routes, InteractionType } = require('discord-api-types/v9');
 
 // create a new Discord client and give it some variables
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
+const { convertToSetterName } = require('./func');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions, 
     GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildPresences, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages], partials: [Partials.Channel, Partials.Message, Partials.Reaction] });
@@ -83,7 +84,7 @@ client.on('interactionCreate', async interaction => {
                 return msg == search_segment;
             };
             
-            if (focused[0].name == 'artist' || focused[0].name == 'vocalist') {
+            if (focused[0].name == 'artist') {
                 let artist_names = db.reviewDB.keyArray();
 
                 // Search filters
@@ -98,6 +99,7 @@ client.on('interactionCreate', async interaction => {
 
                 if (artist_names.length == 1 && interaction.commandName != 'getartist' && !interaction.commandName.includes('ep')) {
                     artist_collab = Object.keys(db.reviewDB.get(artist_names[0].name));
+                    artist_collab = artist_collab.map(v => v = v.replace('_((', '[').replace('))_', ']'));
                     artist_collab = artist_collab.filter(v => v != 'pfp_image');
                     if (artist_collab != undefined) {
                         for (let i = 0; i < artist_collab.length; i++) {
@@ -105,7 +107,9 @@ client.on('interactionCreate', async interaction => {
                                 artist_collab[i] = [];
                                 continue;
                             }
-                            artist_collab[i] = db.reviewDB.get(artist_names[0].name)[artist_collab[i]].collab;
+                            let setterArtistCollab = convertToSetterName(artist_collab[i]);
+
+                            artist_collab[i] = db.reviewDB.get(artist_names[0].name, `${setterArtistCollab}`).collab;
                             if (artist_collab[i] == undefined) artist_collab[i] = [];
                             if (artist_collab[i].length > 1) {
                                 artist_collab[i] = artist_collab[i].join(' & ');
@@ -129,6 +133,7 @@ client.on('interactionCreate', async interaction => {
                 } 
 
                 artist_songs = Object.keys(artist_songs);
+                artist_songs = artist_songs.map(v => v = v.replace('_((', '[').replace('))_', ']'));
                 let collab_artist_songs = [];
                 artist_songs = artist_songs.filter(v => v != 'pfp_image');
                 artist_songs = artist_songs.reverse();
@@ -143,11 +148,12 @@ client.on('interactionCreate', async interaction => {
 
                 for (let i = 0; i < artist_songs.length; i++) {
                     let val_artist_array = val_artist.split(' & ');
+                    let setterArtistSong = convertToSetterName(artist_songs[i]);
                     if (val_artist_array.length <= 1) {
                         break;
                     } else {
-                        if (db.reviewDB.get(val_artist_array[0])[artist_songs[i]].collab == undefined) return interaction.respond([]);
-                        if (db.reviewDB.get(val_artist_array[0])[artist_songs[i]].collab.includes(`${val_artist_array[1]}`)) {
+                        if (db.reviewDB.get(val_artist_array[0], `${setterArtistSong}`).collab == undefined) return interaction.respond([]);
+                        if (db.reviewDB.get(val_artist_array[0], `${setterArtistSong}`).collab.includes(`${val_artist_array[1]}`)) {
                             collab_artist_songs.push(artist_songs[i]);
                         }
                     }
@@ -169,7 +175,8 @@ client.on('interactionCreate', async interaction => {
 
             } else if (focused[0].name == 'remixers') {
                 if (db.reviewDB.has(val_artist.split(' & ')[0])) {
-                    let artist_remixers = db.reviewDB.get(val_artist.split(' & ')[0])[val_song].remixers;
+                    let valSongSetter = convertToSetterName(val_song);
+                    let artist_remixers = db.reviewDB.get(val_artist.split(' & ')[0], `${valSongSetter}`).remixers;
                     if (artist_remixers == undefined) {
                         interaction.respond([]);
                         return;   
@@ -233,14 +240,16 @@ client.on('guildMemberAdd', async (member) => {
                 mailbox_dm: true,
             },
             stats: {
-                most_reviewed: 'N/A',
-                most_starred: 'N/A',
+                // These 2 were removed due to speed issues with my current hardware.
+                // Could be re-added later when I get better hardware.
+                // most_reviewed: ['N/A', 0], 
+                // most_starred: ['N/A', 0],
                 star_num: 0, // Number of stars given from reviews done by the user
                 ten_num: 0, // Number of 10s given from reviews done by the user
-                zero_num: 0, // Number of 0s given from reviews done by the user
                 review_num: 0, // Number of reviews done by the user
                 ep_review_num: 0, // Number of EP/LP reviews done by the user
-                starred_songs: [],
+                star_list: [],
+                ratings_list: {},
             },
         });
     }
@@ -249,15 +258,13 @@ client.on('guildMemberAdd', async (member) => {
 client.on('guildCreate', async (guild) => {
     if (!db.server_settings.has(guild.id)) {
         db.server_settings.set(guild.id, {
-            config: { 
-                star_cutoff: 3,
-            },
             stats: {
-                most_reviewed: 'N/A',
-                most_starred: 'N/A',
+                // These 2 were removed due to speed issues with my current hardware.
+                // Could be re-added later when I get better hardware.
+                // most_reviewed: ['N/A', 0], 
+                // most_starred: ['N/A', 0],
                 star_num: 0, // Number of stars given from reviews done in the server
                 ten_num: 0, // Number of 10s given from reviews done in the server
-                zero_num: 0, // Number of 0s given from reviews done in the server
                 review_num: 0, // Number of reviews done in the server
                 ep_review_num: 0, // Number of EP/LP reviews done in the server
             },
@@ -266,18 +273,11 @@ client.on('guildCreate', async (guild) => {
     }
 });
 
-db.global_bot.set('stats', {
-    artist_num: 0,
-    song_num: 0,
-    ep_num: 0,
-    ten_num: 0,
-    zero_num: 0,
-    most_reviewed: 'N/A',
-    most_starred: 'N/A',
-    user_num: 0,
+client.on('guildDelete', async (guild) => {
+    if (db.server_settings.has(guild.id)) {
+        db.server_settings.delete(guild.id);
+    }
 });
-
-db.global_bot.set('config', {});
 
 // login to Discord
 client.login(token);
