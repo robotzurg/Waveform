@@ -75,8 +75,14 @@ module.exports = {
         const collector = message.createMessageComponentCollector({ time: 360000 });
 
         collector.on('collect', async i => {
-            if (i.customId == 'left') { page_num -= 1; }
-            else if (i.customId == 'right') { page_num += 1; }
+            if (i.customId == 'left') { 
+                page_num -= 1; 
+                if (page_num < 0) page_num = hofList.length - 1;
+            }
+            else if (i.customId == 'right') { 
+                page_num += 1;
+                if (page_num > hofList.length - 1) page_num = 0;
+            }
             else { // If its the choose your own page customId
                 const filter = m => m.author.id == interaction.user.id;
                 let pagenum_collector = interaction.channel.createMessageCollector({ filter: filter, max: 1, time: 60000 });

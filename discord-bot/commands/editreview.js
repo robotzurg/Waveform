@@ -89,7 +89,6 @@ module.exports = {
         let songName = song_info.song_name;
         let artistArray = song_info.db_artists;
         let displaySongName = song_info.display_song_name;
-        let embedArtists = song_info.display_prod_artists;
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterSongName = convertToSetterName(songName);
 
@@ -185,7 +184,7 @@ module.exports = {
                     if (epCmd == true) {
                         if (rating != null && songReviewObj.no_songs == false) {
                             // Change title
-                            msgEmbed.setTitle(`${embedArtists.join(' & ')} - ${displaySongName} (${rating}/10)`);
+                            msgEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName} (${rating}/10)`);
                         } else if (rating != null && songReviewObj.no_songs == true) {
                             // Change field /10 rating value
                             if (msgEmbed.data.fields != undefined) {
@@ -264,7 +263,7 @@ module.exports = {
         db.server_settings.set(songReviewObj.guild_id, guildStatsObj, 'stats');
         db.global_bot.set('stats', botStatsObj);
 
-        interaction.reply(`Here's what was edited on your review of **${embedArtists.join(' & ')} - ${displaySongName}**:\n` +
+        interaction.reply(`Here's what was edited on your review of **${origArtistArray.join(' & ')} - ${displaySongName}**:\n` +
         `${(oldrating != undefined) ? `\`${oldrating}/10\` changed to \`${rating}/10\`\n` : ``}` +
         `${(oldreview != undefined) ? `Review was changed to \`${review}\`\n` : ``}` +
         `${(user_who_sent != null) ? `User Who Sent was changed to \`${user_sent_name.displayName}\`` : ``}`);
