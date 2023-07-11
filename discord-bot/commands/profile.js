@@ -85,24 +85,24 @@ module.exports = {
             if (db.user_stats.get(taggedUser.id, 'fav_artist') == undefined) db.user_stats.set(taggedUser.id, 'N/A', 'fav_artist');
 
             ctx.font = `40px main_reg`;
-            ctx.fillText('Favorite Artist', canvas.width / 2, 250 - offset);
+            ctx.fillText('Favorite Artist', canvas.width / 2, 350 - offset);
             ctx.font = applyText('main', 25, 540, canvas, db.user_stats.get(taggedUser.id, 'fav_artist'));
-            ctx.fillText(`${db.user_stats.get(taggedUser.id, 'fav_artist')}`, canvas.width / 2, 290 - offset);
+            ctx.fillText(`${db.user_stats.get(taggedUser.id, 'fav_artist')}`, canvas.width / 2, 390 - offset);
 
             ctx.font = `40px main_reg`;
-            ctx.fillText('Favorite Song', canvas.width / 2, 365 - offset);
+            ctx.fillText('Favorite Song', canvas.width / 2, 480 - offset);
             ctx.font = applyText('main', 25, 620, canvas, db.user_stats.get(taggedUser.id, 'fav_song'));
-            ctx.fillText(`${db.user_stats.get(taggedUser.id, 'fav_song')}`, canvas.width / 2, 405 - offset);
+            ctx.fillText(`${db.user_stats.get(taggedUser.id, 'fav_song')}`, canvas.width / 2, 520 - offset);
 
             ctx.font = `40px main_reg`;
-            ctx.fillText('Favorite Genres', canvas.width / 2, 485 - offset);
+            ctx.fillText('Favorite Genres', canvas.width / 2, 615 - offset);
             ctx.font = `25px main`;
             let genreList = db.user_stats.get(taggedUser.id, 'fav_genres');
             while (genreList.length < 3) {
                 genreList.push('N/A');
             }
             for (let i = 0; i < genreList.length; i++) {
-                ctx.fillText(genreList[i], canvas.width / 2, 525 + (i * 40) - offset);
+                ctx.fillText(genreList[i], canvas.width / 2, 655 + (i * 40) - offset);
             }
 
             // Recent Review / Recent Stars lists
