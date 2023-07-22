@@ -31,7 +31,9 @@ module.exports = {
                     .setDescription('Put remixers here, if you reviewing a remix of the original song. (NOT IN ARTISTS ARGUMENT)')
                     .setAutocomplete(true)
                     .setRequired(false))),
-    help_desc: `TBD`,
+    help_desc: `Push an existing song review you've made in the database into an ongoing EP/LP review. See the "EP/LP Review Guide" button to find out how this works.\n\n`
+    + `The subcommand \`with_spotify\` pulls from your spotify playback (if logged into Waveform with Spotify)` + 
+    ` while the \`manually\` subcommand allows you to manually type in the song name yourself.`,
 	async execute(interaction, client) {
         try {
             // This command basically just runs /review, but instead of pulling from arguments for the review, it pulls from the database.

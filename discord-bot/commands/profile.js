@@ -24,7 +24,8 @@ module.exports = {
             option.setName('user')
                 .setDescription('The user whose profile you\'d like to see.')
                 .setRequired(false)),
-    help_desc: `TBD`,
+    help_desc: `Pulls up your Waveform profile, which displays some basic statistics about your reviewing as well as your specified favorite artist, favorite song, and favorite genres.\n\n` + 
+    `You can view other users profiles by specifying them in the user argument, or leave it blank to view your own.`,
 	async execute(interaction) {
         await interaction.deferReply();
         let canvas = new Canvas(1305, 872);

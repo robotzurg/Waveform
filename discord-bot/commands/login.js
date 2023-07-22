@@ -8,7 +8,9 @@ module.exports = {
         .setName('login')
         .setDescription('Connect your Spotify account to Waveform.')
         .setDMPermission(false),
-    help_desc: `TBD`,
+    help_desc: `Connect your Spotify account to Waveform, unlocking the main features of the bot such as using your spotify playback in place of arguments, Waveform Mailbox functionality, and more.\n\n` +
+    `In order for this command to work, Waveform must be able to DM you, so please ensure you allow it to do so!\n\n` + 
+    `This command only needs to be run one time for you to stay logged in, unless your password gets changed or you make a new Spotify account.`,
 	async execute(interaction) {
         
         await interaction.reply({ content: 'Sent a DM about logging in to Waveform with Spotify!' });

@@ -48,7 +48,7 @@ module.exports = {
                 option.setName('image')
                     .setDescription('Override Spotify auto-image placement with your own image link.')
                     .setRequired(false))),
-    help_desc: `TBD`,
+    help_desc: `This command is an admin command for use in editing art of a song. It is not a command you can use.`,
 	async execute(interaction, client) {
         try {
 

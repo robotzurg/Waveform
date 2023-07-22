@@ -65,8 +65,7 @@ module.exports = {
                     .setDescription('The name of the artist.')
                     .setAutocomplete(true)
                     .setRequired(false))),
-    help_desc: `Allows you to edit the metadata of a song, or an EP/LP, or an artist in the database, depending on which subcommand you use.\n` +
-    `Leaving the artist and song name arguments blank will pull from currently playing song on Spotify, if you are logged in to Waveform with Spotify.\n\n`,
+    help_desc: `This command is an admin command for use in editing metadata of a song. It is not a command you can use.`,
 	async execute(interaction) {
 
         if (interaction.user.id != '122568101995872256') {

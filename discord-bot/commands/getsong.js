@@ -25,7 +25,9 @@ module.exports = {
                 .setDescription('Remix artists on the song, if any.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-    help_desc: `TBD`,
+    help_desc: `Pulls up all data relating to a song or remix in Waveform, such as all reviews, rating averages, and more.\n\n` +
+    `The remixers argument should have the remixer specified if you are trying to pull up a remix, the remixer should be put in the song_name or artists arguments.\n\n` +
+    `Leaving the artist, song_name, and remixers arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)`,
 	async execute(interaction, client) {
         try {
 

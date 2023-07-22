@@ -8,7 +8,7 @@ module.exports = {
         .setName('botstats')
         .setDescription('Get general info about the bot as a whole!')
         .setDMPermission(false),
-    help_desc: `TBD`,
+    help_desc: `View statistics/information about Waveform as a whole, across all servers and users.`,
 	async execute(interaction, client) {
         try {
             let botStats = db.global_bot.get('stats');

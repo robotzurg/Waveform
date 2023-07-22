@@ -6,9 +6,9 @@ const { getEmbedColor } = require('../func.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('viewmail')
-        .setDescription('View your Waveform Mailbox list.')
+        .setDescription('View all songs in your personal Waveform mailbox that you have not reviewed yet.')
         .setDMPermission(false),
-    help_desc: `View a list of every song you currently have in your mailbox that you have not reviewed yet.\n` + 
+    help_desc: `View a list of every song you currently have in your mailbox that you have not reviewed yet.\n\n` + 
     `This command will only properly work with Spotify mailboxes. If you do not have a spotify Waveform mailbox, you can still use this, but it won't auto update, so you will have to manually update it with /deletemail.`,
 	async execute(interaction) {
         let mail_list = db.user_stats.get(interaction.user.id, 'mailbox_list');

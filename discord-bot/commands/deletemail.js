@@ -24,7 +24,8 @@ module.exports = {
                 .setDescription('Remix artists on the song, if any.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-    help_desc: `TBD`,
+    help_desc: `Manually remove a song from your mailbox playlist.\n\n` +
+    `DOES NOT remove the song from your spotify mailbox playlist, only your local waveform mailbox playlist.`,
 	async execute(interaction) {
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('name');

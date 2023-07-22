@@ -23,7 +23,9 @@ module.exports = {
             option.setName('user')
                 .setDescription('User who made the review. Defaults to yourself.')
                 .setRequired(false)),
-    help_desc: `TBD`,
+    help_desc: `Pulls up an individual server users EP/LP review.\n\n` +
+    `Leaving the artist and ep_name arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)\n\n` +
+    `Putting in a user into the user argument will allow you to view another users ratings of the specified artist, otherwise leaving it blank will default to yourself.`,
 	async execute(interaction, client) {
 
         try {

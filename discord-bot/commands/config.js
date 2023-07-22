@@ -8,7 +8,8 @@ module.exports = {
         .setName('config')
         .setDescription('Your personal Waveform config menu.')
         .setDMPermission(false),
-    help_desc: `View and edit your personal configuration for Waveform.`,
+    help_desc: `Configure your personal preferences on Waveform, including privacy, mailbox, customization, and other features.\n\n` + 
+    `For configuring a spotify account, look at the /login command.`,
 	async execute(interaction) {
 
         // Main Configuration Select Menu

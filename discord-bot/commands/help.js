@@ -43,6 +43,7 @@ module.exports = {
         commandSelectOptions[1] = [];
         let counter = 0;
         for (let cmd of client.commands) {
+            console.log(cmd[1].data.options[0]);
             commandList.push(cmd);
             commandSelectOptions[(counter <= 24 ? 0 : 1)].push({
                 label: `/${cmd[0]}`,
@@ -71,7 +72,7 @@ module.exports = {
         const commandEmbed = new EmbedBuilder()
         .setColor(`${getEmbedColor(interaction.member)}`)
         .setThumbnail(client.user.displayAvatarURL())
-        .setTitle(`${commandList[0][0]}`)
+        .setTitle(`/${commandList[0][0]}`)
         .setDescription(`${commandList[0][1].help_desc}`);
 
         interaction.reply({ content: null, embeds: [helpEmbed], components: [help_buttons] });

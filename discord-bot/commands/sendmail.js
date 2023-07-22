@@ -18,11 +18,10 @@ module.exports = {
         .addStringOption(option => 
             option.setName('link')
                 .setDescription('Link to the song you would like to send to the mailbox.')
-                .setRequired(true)),
-    help_desc: `Send a song to a users Waveform Mailbox.\n` + 
-    `The songs are usually sent from Spotify (mainly), but you can also send YouTube, Apple Music, and SoundCloud links.\n` +
-    `Leaving the link argument blank will pull from your currently playing song on spotify.` + 
-    `For example, if you send a song in a mailbox chat, it'll send it to that users mailbox.`,
+                .setRequired(false)),
+    help_desc: `Send a song to a users Waveform Mailbox, specified with the user argument.\n\n` + 
+    `The songs are usually sent from Spotify (mainly), but you can also send YouTube, Apple Music, and SoundCloud links.\n\n` +
+    `Leaving the link argument blank will pull from your currently playing song on spotify.`,
 	async execute(interaction) {
         await interaction.deferReply();
         let taggedUser = interaction.options.getUser('user');

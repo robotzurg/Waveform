@@ -9,13 +9,15 @@ module.exports = {
         .setDMPermission(false)
         .addStringOption(option => 
             option.setName('playlist_name')
-                .setDescription('The name of the mailbox playlist on Spotify (defaults to Waveform Mailbox)')
+                .setDescription('The name of the mailbox playlist on Spotify (defaults to "Waveform Mailbox")')
                 .setRequired(false))
         .addStringOption(option => 
             option.setName('playlist_desc')
-                .setDescription('The description for your mailbox playlist on Spotify.')
+                .setDescription('The description for your mailbox playlist on Spotify. (Optional)')
                 .setRequired(false)),
-    help_desc: `TBD`,
+    help_desc: `Sets up a Waveform Mailbox system. This creates a mailbox playlist on Spotify if the user is logged into spotify, and sets up internal variables to be able to hold the data.\n\n` + 
+    `Waveform Mailboxes cannot be used without running this command first, and the spotify playlist can safely be set as private or deleted without interfering with the system.\n\n` + 
+    `You can use a Waveform Mailbox if you are not connected to Spotify, but you will lose lots of functionality.`,
 	async execute(interaction) {
         try {
 

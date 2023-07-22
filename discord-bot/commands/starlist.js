@@ -12,7 +12,8 @@ module.exports = {
             option.setName('user')
                 .setDescription('User to see stars from. (Optional, Defaults to yourself)')
                 .setRequired(false)),
-    help_desc: `TBD`,
+    help_desc: `View a list of every song a specified server user has starred on Waveform.\n\n` + 
+    `You can view another server users list of starred songs using the \`user\` argument, leaving it blank will default to your own list.`,
 	async execute(interaction) {
 
         try {

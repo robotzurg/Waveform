@@ -19,7 +19,9 @@ module.exports = {
                 .setDescription('The name of the EP.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-    help_desc: `TBD`,
+    help_desc: `Pulls up all data relating to an EP/LP in Waveform, such as all reviews, rating averages, and more.\n\n` +
+    `You can also view individual server users EP/LP reviews with the drop down menu.\n\n` +
+    `Leaving the artist and ep_name arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)`,
 	async execute(interaction, client) {
         try {
 

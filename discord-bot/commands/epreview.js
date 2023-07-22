@@ -67,7 +67,9 @@ module.exports = {
                 option.setName('user_who_sent')
                     .setDescription('User who sent you this EP/LP in Mailbox. Ignore if not a mailbox review.')
                     .setRequired(false))),
-    help_desc: `TBD`,
+    help_desc: `Start or create an EP/LP (aka album) review on Waveform. See the "EP/LP Review Guide" button to find out how this works.\n\n`
+    + `The subcommand \`with_spotify\` pulls from your spotify playback to fill in arguments (if logged into Waveform with Spotify)` + 
+    ` while the \`manually\` subcommand allows you to manually type in the EP/LP name yourself.`,
 	async execute(interaction, client) {
         try {
             let artists = interaction.options.getString('artist');

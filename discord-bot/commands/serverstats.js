@@ -7,7 +7,7 @@ module.exports = {
         .setName('serverstats')
         .setDescription('View general Waveform stats about the server.')
         .setDMPermission(false),
-    help_desc: `TBD`,
+    help_desc: `View statistics/information about reviews made with Waveform in this server as a whole.`,
 	async execute(interaction, client) {
         try {
             let serverStats = db.server_settings.get(interaction.guild.id, 'stats');

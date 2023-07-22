@@ -74,7 +74,9 @@ module.exports = {
                 option.setName('art')
                     .setDescription('Image link of the song art (put \'s\' here if you want to use your spotify playback.)')
                     .setRequired(false))),
-    help_desc: `TBD`,
+    help_desc: `Create an song/remix review on Waveform. See the "Song Review Guide" button to find out how this works.\n\n`
+    + `The subcommand \`with_spotify\` pulls from your spotify playback to fill in arguments (if logged into Waveform with Spotify)` + 
+    ` while the \`manually\` subcommand allows you to manually type in the song name yourself.`,
 	async execute(interaction, client) {
         try {
         await interaction.deferReply();

@@ -13,7 +13,8 @@ module.exports = {
                 .setDescription('The name of the artist(s). (DO NOT PUT ANY REMIXERS HERE) (Leave empty to use spotify playback)')
                 .setAutocomplete(true)
                 .setRequired(false)),
-    help_desc: `TBD`,
+    help_desc: `Displays all songs, EPs/LPs, Remixes, and other information regarding an artist in Waveform.\n\n` +
+    `Leaving the artist argument blank will pull from your spotify playback to fill in the argument (if logged in to Waveform with Spotify)`,
 	async execute(interaction) {
         try {
             let spotifyCheck;

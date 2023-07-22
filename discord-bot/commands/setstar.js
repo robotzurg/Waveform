@@ -21,10 +21,14 @@ module.exports = {
 
         .addStringOption(option => 
             option.setName('remixers')
-                .setDescription('Remix artists on the song.')
+                .setDescription('Remix artists on the song. (ignore if an EP/LP)')
                 .setAutocomplete(true)
                 .setRequired(false)),
-    help_desc: `TBD`,
+    help_desc: `Sets a review you have made to have a star (or removes one, if the review has a star)\n\n` + 
+    `A star is a personal accolade you can give a song, that just signifies you really like a song. It is up to you how you want to use stars.\n\n` + 
+    `It should be noted that reviews can only be starred if they are rated 8/10 or higher, and reviews without a rating can be starred.\n\n` + 
+    `Leaving the artist, song_name, and remixers arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)\n\n` + 
+    `The remixers argument should have the remixer specified if you are trying to pull up a remix, the remixer should be put in the song_name or artists arguments.`,
 	async execute(interaction, client) {
         try {
 

@@ -11,7 +11,8 @@ module.exports = {
 			option.setName('list_view')
 				.setDescription('Select if you\'d like to view the hall of fame as a list')
 				.setRequired(false)),
-    help_desc: 'TBD',
+    help_desc: 'Pulls up the servers hall of fame, which is compromised of all songs reviewed in the server that have 3 or more stars from server members.\n\n' + 
+    `Can be viewed in a card view (leaving the list_view argument blank), which displays each song one by one in a fancy card view, or can be viewed in a list view using the \`list_view\` argument for a more concise viewing.`,
 	async execute(interaction) {
         await interaction.deferReply();
         
