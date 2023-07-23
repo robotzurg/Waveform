@@ -123,7 +123,6 @@ module.exports = {
                     `${(epCollabArray.length != 0) ? ` (with ${epCollabArray.join(' & ')})` : ``} ${epDetails}**`];
                     let epSongs = artistObj[setterEpSong].songs;
                     if (epSongs == undefined) epSongs = [];
-                    console.log(epSongs, songArray);
 
                     for (let ii = 0; ii < epSongs.length; ii++) {
                         let setterEpSongsII = convertToSetterName(epSongs[ii]);

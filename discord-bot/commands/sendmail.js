@@ -37,11 +37,12 @@ module.exports = {
         let url;
         let songArt;
         let mainId; // The main ID of the spotify link (the album URI or the main track URI)
-        let linkType;
+        let linkType = 'sp';
         let mailFilter = db.user_stats.get(taggedUser.id, 'config.mail_filter');
         let dmMailConfig = db.user_stats.get(taggedUser.id, 'config.mailbox_dm');
         if (dmMailConfig == undefined) dmMailConfig = true;
         let spotifyCheck = false;
+        let passesChecks = true;
 
         // Pull from spotify playback if trackLink is null
         if (trackLink == null && spotifyApi != false) {
@@ -88,9 +89,11 @@ module.exports = {
                     artists = data.artists.map(artist => artist.name);
                 } 
 
+                artists = artists.map(v => v.replace(' & ', ' \\& '));
                 let song_info = await parse_artist_song_data(interaction, artists.join(' & '), name);
                 if (song_info.error != undefined) {
-                    await interaction.reply(song_info.error);
+                    await interaction.editReply(song_info.error);
+                    passesChecks = false;
                     return;
                 }
 
@@ -140,6 +143,7 @@ module.exports = {
         }
 
         if (linkType.includes('sp')) {
+            if (passesChecks == false) return;
             if (db.user_stats.get(taggedUser.id, 'mailbox_history').includes(mainId)) {
                 return interaction.editReply(`\`${taggedMember.displayName}\` has already been sent **${origArtistArray.join(' & ')} - ${displayName}** through Waveform Mailbox!`);
             }
@@ -190,7 +194,7 @@ module.exports = {
                     db.user_stats.push(taggedUser.id, mainId, 'mailbox_history');
                 }
             }).catch(() => {
-                return interaction.editReply(`Waveform ran into an issue sending this mail. Make sure they have set music mailbox setup by using \`/setupmailbox\`!`);
+                return interaction.editReply(`Waveform ran into an issue sending this mail. This is either due to a spotify issue, or this user doesn't have a music mailbox setup.`);
             });
         } else { // If we have a non-spotify link
 

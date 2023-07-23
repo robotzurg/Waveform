@@ -219,6 +219,7 @@ module.exports = {
                         taggedMember = undefined;
                     });
                     taggedUser = await client.users.fetch(i.values[0]);
+                    console.log(taggedUser);
 
                     if (taggedMember == undefined) {
                         displayName = taggedUser.username;
@@ -230,6 +231,7 @@ module.exports = {
 
                     let ep_url = epReviewObj.url;
                     let ep_overall_rating = epReviewObj.rating;
+                    if (ep_overall_rating == -1) ep_overall_rating = false; // ????
                     let ep_overall_review = epReviewObj.review;
                     let no_songs_review = epReviewObj.no_songs;
                     let ep_sent_by = epReviewObj.sentby;
@@ -240,7 +242,7 @@ module.exports = {
                     let rstarred;
 
                     if (ep_sent_by != undefined && ep_sent_by != false && taggedMember != undefined) {
-                        ep_sent_by = await interaction.guild.members.fetch(ep_sent_by);
+                        ep_sent_by = await client.users.fetch(ep_sent_by);
                     }
 
                     const epReviewEmbed = new EmbedBuilder();
@@ -254,10 +256,12 @@ module.exports = {
                             let songObj = db.reviewDB.get(songArtist, `${setterSongName}`);
                             let songReviewObj = songObj[taggedUser.id];
             
-                            rreview = songReviewObj.review;
-                            if (rreview.length > 1000) rreview = '*Review hidden to save space*';
-                            rscore = songReviewObj.rating;
-                            rstarred = songReviewObj.starred;
+                            if (no_songs_review == false) {
+                                rreview = songReviewObj.review;
+                                if (rreview.length > 1000) rreview = '*Review hidden to save space*';
+                                rscore = songReviewObj.rating;
+                                rstarred = songReviewObj.starred;
+                            }
             
                             // This is for adding in collaborators into the name inputted into the embed title, NOT for getting data out.
                             if (songObj.collab != undefined && !epSong.includes(' Remix)')) {
@@ -269,7 +273,7 @@ module.exports = {
                                 }
                             }
 
-                            if (no_songs_review == false) {
+                            if (no_songs_review == false && (rscore != false && rreview != false)) {
                                 if (new Embed(epReviewEmbed.toJSON()).length < 5250) {
                                     epReviewEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                                     `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
@@ -291,15 +295,15 @@ module.exports = {
                     }
 
                     epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName}` : `🌟 ${origArtistArray.join(' & ')} - ${epName} 🌟`);
-            
-                    if (ep_overall_rating !== false && ep_overall_review != false) {
+
+                    if (ep_overall_rating != false && ep_overall_review != false) {
                         if (no_songs_review == false) {
                             epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                         } else {
                             epReviewEmbed.addFields([{ name: `Rating`, value: `**${ep_overall_rating}/10**` }]);
                         }
                         epReviewEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
-                    } else if (ep_overall_rating !== false) {
+                    } else if (ep_overall_rating != false) {
                         if (no_songs_review == false) {
                             epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                         } else {
@@ -313,7 +317,7 @@ module.exports = {
 
                     epReviewEmbed.setThumbnail(ep_art);
                     if (ep_sent_by != false && ep_sent_by != undefined) {
-                        epReviewEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}`, iconURL: `${ep_sent_by.user.avatarURL({ extension: "png" })}` });
+                        epReviewEmbed.setFooter({ text: `Sent by ${ep_sent_by.username}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
                     }
 
                     let reviewMsgID = epReviewObj.msg_id;

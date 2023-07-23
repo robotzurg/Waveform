@@ -1198,7 +1198,6 @@ module.exports = {
                         // Remove the remix artists from the remix artist listing
                         for (let artist of origArtistArray) {
                             let remixerArray = db.reviewDB.get(artist, `${setterNoRemixSongName}.remixers`);
-                            console.log(remixerArray, setterNoRemixSongName);
                             remixerArray = remixerArray.filter(v => v != rmxArtistArray.join(' & '));
                             db.reviewDB.set(artist, remixerArray, `${setterNoRemixSongName}.remixers`);
                         }
