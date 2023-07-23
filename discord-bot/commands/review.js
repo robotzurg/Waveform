@@ -74,7 +74,9 @@ module.exports = {
                 option.setName('art')
                     .setDescription('Image link of the song art (put \'s\' here if you want to use your spotify playback.)')
                     .setRequired(false))),
-    help_desc: `TBD`,
+    help_desc: `Create an song/remix review on Waveform. See the "Song Review Guide" button to find out how this works.\n\n`
+    + `The subcommand \`with_spotify\` pulls from your spotify playback to fill in arguments (if logged into Waveform with Spotify)` + 
+    ` while the \`manually\` subcommand allows you to manually type in the song name yourself.`,
 	async execute(interaction, client) {
         try {
         await interaction.deferReply();
@@ -102,7 +104,7 @@ module.exports = {
 
         let song_info = await parse_artist_song_data(interaction, artists, song, rmxArtistArray);
         if (song_info.error != undefined) {
-            await interaction.reply(song_info.error);
+            await interaction.editReply(song_info.error);
             return;
         }
 
@@ -621,7 +623,7 @@ module.exports = {
                                             if (overallRating.includes('/10')) overallRating = overallRating.replace('/10', '');
                                             overallRating = parseFloat(overallRating);
                                             if (isNaN(overallRating)) j.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
-                                            msgEmbed.setTitle(`${artistArray.join(' & ')} - ${ep_name} (${overallRating}/10)`);
+                                            msgEmbed.setTitle(`${epArtists} - ${ep_name} (${overallRating}/10)`);
                                             for (let artist of epArtists) {
                                                 db.reviewDB.set(artist, overallRating, `${setterEpName}.${interaction.user.id}.rating`);
                                             }

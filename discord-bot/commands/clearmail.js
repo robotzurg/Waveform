@@ -6,7 +6,7 @@ module.exports = {
         .setName('clearmail')
         .setDescription('Clear out your local Waveform Mailbox list.')
         .setDMPermission(false),
-    help_desc: `Clears out your LOCAL Waveform Mailbox list, deleting all song entries within it.\n` + 
+    help_desc: `Clears out your LOCAL Waveform Mailbox list, deleting all song entries within it.\n\n` + 
     `Note that this does NOT delete the songs in your Spotify playlist, only your local playlist, and that this will delete **ALL** songs in it at once. Use with caution!`,
 	async execute(interaction) {
         db.user_stats.set(interaction.user.id, [], 'mailbox_list');

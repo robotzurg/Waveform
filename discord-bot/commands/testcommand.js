@@ -8,7 +8,7 @@ module.exports = {
         .setName('testcommand')
         .setDescription('Test command for admins. Not for you, most likely!')
         .setDMPermission(false),
-    help_desc: `A development command not for your use.`,
+    help_desc: `This is an admin command designed for development purposes, and as a result is not a command you can use.`,
 	async execute(interaction) {
         try {
 
@@ -33,10 +33,11 @@ module.exports = {
         let artistCount = [];
         let songSkip = [];
         let userRatingObj = [];
-        // let avgRatingList = [];
-        // let topSongsList = [];
+        let avgRatingList = [];
+        let topSongsList = [];
+        let listReviewNum = 5;
 
-        db.server_settings.set('680864893552951306', [], 'hall_of_fame');
+        //db.server_settings.set('680864893552951306', [], 'hall_of_fame');
 
         const ARTISTARRAY = db.reviewDB.keyArray();
         const WAVEFORMUSERARRAY = db.user_stats.keyArray();
@@ -57,7 +58,7 @@ module.exports = {
                 if (gottenGlobalData == false) globalArtistCount += 1;
 
                 for (let song of songArray) {
-                    // avgRatingList = [];
+                    avgRatingList = [];
                     let setterSongName = convertToSetterName(song);
                     let songObj = db.reviewDB.get(artist, `${setterSongName}`);
                     let userArray = [];
@@ -115,15 +116,15 @@ module.exports = {
                         }
                     }
 
-                    if (gottenGlobalData == false) {
-                        await hallOfFameCheck(interaction, '680864893552951306', allArtists, origArtistArray, rmxArtistArray, song);
-                    }
+                    // if (gottenGlobalData == false) {
+                    //     await hallOfFameCheck(interaction, '680864893552951306', allArtists, origArtistArray, rmxArtistArray, song);
+                    // }
 
                     for (let k = 0; k < userArray.length; k++) {
                         let userData = songObj[userArray[k]];
-                        // if (userData.rating != false) {
-                        //     avgRatingList.push(parseFloat(userData.rating));
-                        // }
+                        if (userData.rating !== false && !isNaN(parseFloat(userData.rating))) {
+                            avgRatingList.push(parseFloat(userData.rating));
+                        }
 
                         if (userArray[k] == user) {
                             userReviewCount += 1;
@@ -163,11 +164,12 @@ module.exports = {
                         }
                     }
 
-                    // if (gottenGlobalData == false) {
-                    //     if (avgRatingList.length >= 3 && !song.includes(' EP') && !song.includes(' LP')) {
-                    //         topSongsList.push([_.mean(avgRatingList), `${origArtistArray.join(' & ')} - ${song} (Avg: ${_.mean(avgRatingList).toFixed(2)})`]);
-                    //     }
-                    // }
+                    if (gottenGlobalData == false) {
+                        if (avgRatingList.length >= listReviewNum && !song.includes(' EP') && !song.includes(' LP')) {
+                            topSongsList.push([_.mean(avgRatingList), `${origArtistArray.join(' & ')} - ${song} (Avg: ${_.mean(avgRatingList).toFixed(2)})`]);
+                        }
+                        avgRatingList = [];
+                    }
 
                     for (let v = 0; v < allArtists.length; v++) {
                         if (!songSkip.includes(`${allArtists[v]} - ${song}`)) {
@@ -189,16 +191,42 @@ module.exports = {
             console.log(`User Rating List`);
             console.log(userRatingObj);
 
-            db.user_stats.set(user, {
-                star_num: userStarCount, // Number of stars given from reviews done by the user
-                ten_num: userTenCount, // Number of 10s given from reviews done by the user
-                review_num: userReviewCount, // Number of reviews done by the user
-                ep_review_num: eplpUserReviewCount, // Number of EP/LP reviews done by the user
-                star_list: userStarList,
-                ratings_list: userRatingObj,
-            }, 'stats');
+            // db.user_stats.set(user, {
+            //     star_num: userStarCount, // Number of stars given from reviews done by the user
+            //     ten_num: userTenCount, // Number of 10s given from reviews done by the user
+            //     review_num: userReviewCount, // Number of reviews done by the user
+            //     ep_review_num: eplpUserReviewCount, // Number of EP/LP reviews done by the user
+            //     star_list: userStarList,
+            //     ratings_list: userRatingObj,
+            // }, 'stats');
 
             gottenGlobalData = true;
+
+            console.log(`Worst Songs with ${listReviewNum} or more reviews:`);
+            topSongsList.sort((a, b) => {
+                return b[0] - a[0];
+            });
+    
+            topSongsList.reverse();
+            topSongsList = topSongsList.slice(0, 500);
+    
+            let count = 0;
+            topSongsList = topSongsList.map(v => {
+                count += 1;
+                v = `${count}. ${v[1]}`;
+                return v;
+            });
+    
+            const fs = require('fs');
+    
+            await fs.writeFile(`../worstsongs_${listReviewNum}reviews.txt`, topSongsList.join('\n'), err => {
+            if (err) {
+                console.error(err);
+            }
+            // file written successfully
+            });
+
+            return interaction.editReply('Done.');
         }
 
         console.log(`Bot Stats:`);
@@ -212,44 +240,23 @@ module.exports = {
         console.log(`Number of Waveform Servers: ${serverWaveformCount}`);
         console.log(`Number of Waveform Users: ${usersUsingWaveform}\n`);
 
-        db.global_bot.set('stats', {
-            artist_num: globalArtistCount,
-            song_num: globalSongCount,
-            ep_num: globalEPLPCount,
-            star_num: globalStarCount,
-            ten_num: globalTenCount,
-            review_num: globalReviewCount,
-            ep_review_num: eplpGlobalReviewCount,
-            waveform_users: usersUsingWaveform,
-        });
-
-        db.server_settings.set('680864893552951306', {
-            star_num: globalStarCount,
-            ten_num: globalTenCount,
-            review_num: globalReviewCount,
-            ep_review_num: eplpGlobalReviewCount,
-        }, 'stats');
-
-        // console.log(`Top Songs with 3 or more reviews:`);
-        // topSongsList.sort((a, b) => {
-        //     return b[0] - a[0];
+        // db.global_bot.set('stats', {
+        //     artist_num: globalArtistCount,
+        //     song_num: globalSongCount,
+        //     ep_num: globalEPLPCount,
+        //     star_num: globalStarCount,
+        //     ten_num: globalTenCount,
+        //     review_num: globalReviewCount,
+        //     ep_review_num: eplpGlobalReviewCount,
+        //     waveform_users: usersUsingWaveform,
         // });
 
-        // let count = 0;
-        // topSongsList = topSongsList.map(v => {
-        //     count += 1;
-        //     v = `${count}. ${v[1]}`;
-        //     return v;
-        // });
-
-        // const fs = require('fs');
-
-        // await fs.writeFile('../topsongs.txt', topSongsList.join('\n'), err => {
-        // if (err) {
-        //     console.error(err);
-        // }
-        // // file written successfully
-        // });
+        // db.server_settings.set('680864893552951306', {
+        //     star_num: globalStarCount,
+        //     ten_num: globalTenCount,
+        //     review_num: globalReviewCount,
+        //     ep_review_num: eplpGlobalReviewCount,
+        // }, 'stats');
 
         await interaction.editReply('This command successfully ran.');
         console.log('Done!');

@@ -19,7 +19,9 @@ module.exports = {
                 .setDescription('The user who you would like to use for this command (defaults to yourself)')
                 .setRequired(false)),
 
-    help_desc: `TBD`,
+    help_desc: `Displays all ratings you have given to an artists, and what songs you haven't rated from the given artist.\n\n` +
+    `Leaving the artist argument blank will pull from your spotify playback to fill in the argument (if logged in to Waveform with Spotify)\n\n` +
+    `Putting in a user into the user argument will allow you to view another users ratings of the specified artist, otherwise leaving it blank will default to yourself.`,
 	async execute(interaction) {
         try {
 

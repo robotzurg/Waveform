@@ -148,6 +148,7 @@ module.exports = {
                     };
                     return; 
                 } 
+
                 origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
                 songArg = data.body.item.name;
                 songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
@@ -157,6 +158,11 @@ module.exports = {
                 await spotifyApi.getAlbum(data.body.item.album.id)
                 .then(async album_data => {
                     if ((interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') || (editDataSubCommand == 'ep-lp')) {
+                        if (album_data.body.album_type == 'compilation') {
+                            passesChecks = false;
+                            return;
+                        }
+
                         trackList = album_data.body.tracks.items.map(t => [t.name, t.artists]);
                         for (let i = 0; i < trackList.length; i++) {
                             songArg = trackList[i][0];
@@ -262,40 +268,17 @@ module.exports = {
                         if (songArg.includes(' - EP')) songArg = songArg.replace(' - EP', ' EP');
                         if (songArg.includes(' - LP')) songArg = songArg.replace(' - LP', ' LP');
 
-                        if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
+                        if (interaction.commandName == 'epreview') {
                             db.user_stats.set(interaction.user.id, { msg_id: false, channel_id: false, guild_id: interaction.guild.id, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] }, 'current_ep_review');  
                         }
                     }
                 });
-            });
-
-            if (songArg.includes('\\') && songArg.includes('.')) {
-                passesChecks = false;
-            }
+            });  
 
             // Check if a podcast is being played, as we don't support that.
             if (isPodcast == true) {
                 return { error: 'Podcasts are not supported with `/np`.' };
             }
-
-            if (passesChecks == 'notplaying') {
-                return { error: 'You are not currently playing a song on Spotify.' };
-            }
-
-            if (passesChecks == 'local') {
-                return localReturnObj;
-            }
-
-            if (passesChecks == false) {
-                return { error: 'This song cannot be parsed properly in the database, and as such cannot be reviewed or have data pulled up for it.' };
-            } else if (passesChecks == 'ep') {
-                return { error: 'This track cannot be added to EP/LP reviews, therefore is invalid to be used in relation with EP/LP commands.' };
-            } else if (passesChecks == 'length') {
-                return { error: 'This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.' };
-            }
-
-            songArg = songArg.replace('(With', '(with');
-            
         } else {
             if (remixers != null) {
                 songArg = `${songArg} (${remixers} Remix)`;
@@ -352,6 +335,13 @@ module.exports = {
                 }
             }
             
+            // Check to see if the original artist array has the remixer, if it doesn't, we have an invalid remix
+            for (let r of rmxArtistArray) {
+                if (!origArtistArray.includes(r) && interaction.commandName == 'sendmail') {
+                    passesChecks = false;
+                }
+            }
+
             origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
             songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
             if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
@@ -382,6 +372,14 @@ module.exports = {
                         }
                     }
                 }
+                
+                // Check to see if the original artist array has the remixer, if it doesn't, we have an invalid remix
+                for (let r of rmxArtistArray) {
+                    if (!origArtistArray.includes(r) && interaction.commandName == 'sendmail') {
+                        passesChecks = false;
+                    }
+                }
+
                 origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
                 songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
                 if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
@@ -391,15 +389,11 @@ module.exports = {
         }
 
         if (songArg.includes('\\')) {
-            console.log(songArg);
             songArg = songArg.replace('\\', '\\\\');
-            console.log(songArg);
             if (origSongArg != null) origSongArg = origSongArg.replace('\\', '\\\\');
         }
 
-        if (origArtistArray.length == 0) {
-            passesChecks = false;
-        }
+        songArg = songArg.replace('(With', '(with');
 
         let artistArray;
         if (!Array.isArray(origArtistArray)) {
@@ -427,6 +421,31 @@ module.exports = {
             }
         }
 
+        // Error check
+        if (songArg.includes('\\') && songArg.includes('.')) {
+            passesChecks = false;
+        } else if (origArtistArray.includes('Various Artists')) {
+            passesChecks = false;
+        } else if (origArtistArray.includes('')) {
+            passesChecks = false;
+        }
+
+        if (passesChecks == 'notplaying') {
+            return { error: 'You are not currently playing a song on Spotify.' };
+        }
+
+        if (passesChecks == 'local') {
+            return localReturnObj;
+        }
+
+        if (passesChecks == false) {
+            return { error: 'This piece of music cannot be parsed properly in the database, and as such cannot be used within Waveform in any way.' };
+        } else if (passesChecks == 'ep') {
+            return { error: 'This track cannot be added to EP/LP reviews, therefore is invalid to be used in relation with EP/LP commands.' };
+        } else if (passesChecks == 'length') {
+            return { error: 'This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.' };
+        }
+
         let setterSongArg = convertToSetterName(songArg);
 
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
@@ -451,7 +470,7 @@ module.exports = {
         songArg = songArg.replace('- VIP', 'VIP');
         songArg = songArg.replace('(VIP)', 'VIP');
      
-        if (interaction.commandName != 'nowplaying' && interaction.commandName != 'sendmail') {
+        if (interaction.commandName != 'nowplaying' && !interaction.commandName.includes('mail')) {
             // Check if all the artists exist (don't check this if we're pulling data for /review or /epreview)
             if (interaction.commandName != 'review' && interaction.commandName != 'epreview' && interaction.commandName != 'pushtoepreview') {
                 for (let i = 0; i < artistArray.length; i++) {
@@ -950,9 +969,9 @@ module.exports = {
      */
     get_review_channel: async function(client, guild_id, channel_id, msg_id) {
         let guild = await client.guilds.cache.get(guild_id);
-        if (guild == undefined) guild = await client.guilds.cache.get('680864893552951306');
+        if (guild == undefined) return undefined;
         let channelsearch = await guild.channels.cache.get(channel_id);
-        if (channelsearch == undefined) channelsearch = await guild.channels.cache.get('680877758909382757');
+        if (channelsearch == undefined) return undefined;
 
         let target = undefined;
         await channelsearch.messages.fetch(msg_id).then(async () => {

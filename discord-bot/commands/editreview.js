@@ -64,8 +64,10 @@ module.exports = {
                     .setDescription('Remixers involved in a remix of a song, for remix reviews.')
                     .setAutocomplete(true)
                     .setRequired(false))),
-    help_desc: `Allows you to edit a review you have made for a song in the review database, and edits the review message in your review channel with the newly edited review.\n` +
-    `Can be used for singles, remixes, or songs on an EP/LP review, but this CANNOT be used for EP/LP overall reviews or ratings. Use \`/epeditreview\` for that.`,
+    help_desc: `Allows you to edit a review you have made for a song in the review database, and edits the review message in your review channel with the newly edited review.\n\n` +
+    `Can be used for singles, remixes, or songs on an EP/LP review, but this CANNOT be used for EP/LP overall reviews or ratings. Use \`/epeditreview\` for that.\n\n` + 
+    `Using the \`with_spotify\` subcommand will pull from your spotify playback to fill in arguments (if logged into Waveform with Spotify), ` + 
+    `while the \`manually\` subcommand will allow you to type in the arguments manually.`,
 	async execute(interaction, client, epCmd = false) {
         try {
             

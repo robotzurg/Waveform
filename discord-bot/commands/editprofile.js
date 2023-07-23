@@ -37,7 +37,8 @@ module.exports = {
                 .setRequired(true),
             ),
         ),
-    help_desc: `TBD`,
+    help_desc: `Allows you to edit entries on your Waveform profile, such as your favorite artist, favorite song, and favorite genres.\n\n`
+    + `The favorite genres can have up to 3 genres put in, separated by \`&\``,
 	async execute(interaction) {
         try {
             

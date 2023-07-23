@@ -9,7 +9,8 @@ module.exports = {
         .setName('nowplaying')
         .setDescription('Display your currently playing song on Spotify.')
         .setDMPermission(false),
-    help_desc: `TBD`,
+    help_desc: `If logged into Waveform with Spotify, this command will display your currently playing song, and some basic data in Waveform about the song, if any exists.\n\n` + 
+    `This requires /login to be successfully run before it can be used, and can only be used with Spotify.`,
 	async execute(interaction) {
         try {
         await interaction.deferReply();

@@ -7,7 +7,7 @@ module.exports = {
         .setName('epdone')
         .setDescription('Finish an in-progress EP/LP review.')
         .setDMPermission(false),
-	help_desc: `Running this command will wrap up an in-progress EP/LP review. It should be run whenever you finish reviewing a **manual** EP/LP review.`,
+	help_desc: `Manually finishes an in-progress EP/LP review. For use in non-spotify EP/LP reviews when you have reviewed each song, or any other times you may run into an issue with the normal button.`,
 	async execute(interaction) {
         try {
             db.user_stats.set(interaction.user.id, false, 'current_ep_review');

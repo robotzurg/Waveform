@@ -23,7 +23,9 @@ module.exports = {
             option.setName('user')
                 .setDescription('User who made the review. Defaults to yourself.')
                 .setRequired(false)),
-    help_desc: `TBD`,
+    help_desc: `Pulls up an individual server users EP/LP review.\n\n` +
+    `Leaving the artist and ep_name arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)\n\n` +
+    `Putting in a user into the user argument will allow you to view another users ratings of the specified artist, otherwise leaving it blank will default to yourself.`,
 	async execute(interaction, client) {
 
         try {
@@ -66,6 +68,7 @@ module.exports = {
             if (user_name == undefined) return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` has not been reviewed by the user ${taggedMember.displayName}.`);
 
             let ep_overall_rating = epReviewObj.rating;
+            if (ep_overall_rating == -1) ep_overall_rating = false; // ????
             let ep_overall_review = epReviewObj.review;
             let no_songs_review = epReviewObj.no_songs;
             let ep_sent_by = epReviewObj.sentby;
@@ -82,7 +85,7 @@ module.exports = {
             }
 
             if (ep_sent_by != undefined && ep_sent_by != false) {
-                ep_sent_by = await interaction.guild.members.fetch(ep_sent_by);
+                ep_sent_by = await client.users.fetch(ep_sent_by);
             }
 
             const epEmbed = new EmbedBuilder();
@@ -111,7 +114,7 @@ module.exports = {
 
             epEmbed.setThumbnail(ep_art);
             if (ep_sent_by != false && ep_sent_by != undefined) {
-                epEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}`, iconURL: `${ep_sent_by.user.avatarURL({ extension: "png" })}` });
+                epEmbed.setFooter({ text: `Sent by ${ep_sent_by.username}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
             }
 
             let reviewMsgID = epReviewObj.msg_id;
@@ -134,10 +137,12 @@ module.exports = {
                     let songObj = db.reviewDB.get(songArtist, `${setterSongName}`);
                     let songReviewObj = songObj[taggedUser.id];
     
-                    rreview = songReviewObj.review;
-                    if (rreview.length > 1000) rreview = '*Review hidden to save space*';
-                    rscore = songReviewObj.rating;
-                    rstarred = songReviewObj.starred;
+                    if (no_songs_review == false) {
+                        rreview = songReviewObj.review;
+                        if (rreview.length > 1000) rreview = '*Review hidden to save space*';
+                        rscore = songReviewObj.rating;
+                        rstarred = songReviewObj.starred;
+                    }
     
                     // This is for adding in collaborators into the name inputted into the embed title, NOT for getting data out.
                     if (songObj.collab != undefined && !ep_songs[i].includes(' Remix)')) {

@@ -25,7 +25,9 @@ module.exports = {
                 .setDescription('Remix artists on the song, if any.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-    help_desc: `TBD`,
+    help_desc: `Pulls up all data relating to a song or remix in Waveform, such as all reviews, rating averages, and more.\n\n` +
+    `The remixers argument should have the remixer specified if you are trying to pull up a remix, the remixer should be put in the song_name or artists arguments.\n\n` +
+    `Leaving the artist, song_name, and remixers arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)`,
 	async execute(interaction, client) {
         try {
 
@@ -53,7 +55,6 @@ module.exports = {
         // See if we have any VIPs
         let artistSongs = Object.keys(db.reviewDB.get(artistArray[0]));
         artistSongs = artistSongs.map(v => v = v.replace('_((', '[').replace('))_', ']'));
-        console.log(artistSongs, songName, setterSongName);
         let songVIP = false;
         for (let s of artistSongs) {
             if (s.includes('VIP') && s.includes(songName) && s != songName) songVIP = s;
@@ -253,6 +254,8 @@ module.exports = {
                 let review = songObj[i.values[0]].review;
                 let rating = songObj[i.values[0]].rating;
                 let sentby = songObj[i.values[0]].sentby;
+                let sentbyIconURL = false;
+                let sentbyDisplayName = false;
                 let url = songObj[i.values[0]].url;
                 
                 // If we don't have a single review link, we can check for an EP/LP review link
@@ -264,8 +267,11 @@ module.exports = {
                     }
                 }
 
-                if (sentby != false && taggedMember != undefined) {
-                    sentby = await interaction.guild.members.cache.get(sentby);              
+                if (sentby != false && taggedUser != undefined) {
+                    sentby = await client.users.fetch(sentby);
+                    console.log(`User: ` + sentby);  
+                    sentbyIconURL = sentby.avatarURL({ extension: 'png' });
+                    sentbyDisplayName = sentby.username;
                 }
 
                 const reviewEmbed = new EmbedBuilder();
@@ -287,7 +293,7 @@ module.exports = {
                 reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ extension: "png" }) : songArt);
 
                 if (sentby != false) {
-                    reviewEmbed.setFooter({ text: `Sent by ${sentby.displayName}`, iconURL: `${sentby.user.avatarURL({ extension: "png" })}` });
+                    reviewEmbed.setFooter({ text: `Sent by ${sentbyDisplayName}`, iconURL: `${sentbyIconURL}` });
                 } else if (songEP != undefined && songEP != false) {
                     reviewEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0], `${setterSongEP}.art`) });
                 }

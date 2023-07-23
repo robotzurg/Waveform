@@ -29,7 +29,10 @@ module.exports = {
                 .setDescription('Remix artists on the song.')
                 .setAutocomplete(true)
                 .setRequired(false)),
-    help_desc: `TBD`,
+    help_desc: `Pulls up an individual server users song review.\n` +
+    `The remixers argument should have the remixer specified if you are trying to pull up a remix, the remixer should be put in the song_name or artists arguments.\n\n` +
+    `Leaving the artist, song_name, and remixers arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)\n\n` +
+    `Putting in a user into the user argument will allow you to view another users ratings of the specified artist, otherwise leaving it blank will default to yourself.`,
 	async execute(interaction, client) {
         try {
             let artists = interaction.options.getString('artist');

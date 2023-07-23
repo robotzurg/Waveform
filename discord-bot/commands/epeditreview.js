@@ -39,7 +39,9 @@ module.exports = {
                 option.setName('review')
                     .setDescription('The new written overall review of the EP/LP.')
                     .setRequired(false))),
-	help_desc: `TBD`,
+	help_desc: `Edits an EP/LP review, allowing you to change the overall rating or overall review of an EP/LP.\n\n` +
+    `Using the \`with_spotify\` subcommand will pull from your spotify playback (if logged into Waveform with Spotify), while the \`manually\` subcommand will allow you to type it in manually.\n\n` +
+    `For editing single/remix reviews, see \`/editreview\`.`,
 	async execute(interaction, client) {
         try {
             // This command basically just runs /review, but instead of pulling from arguments for the review, it pulls from the database.
