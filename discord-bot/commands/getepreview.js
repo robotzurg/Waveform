@@ -110,6 +110,11 @@ module.exports = {
                 epEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
             }
 
+            // If we have an incomplete ep/lp review
+            if (epEmbed.description == '' || epEmbed.description == undefined || epEmbed.description == false) {
+                epEmbed.setDescription(`This ${epType} review was not finished, so there is no review.`);
+            }
+
             epEmbed.setAuthor({ name: `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
 
             epEmbed.setThumbnail(ep_art);
@@ -136,6 +141,7 @@ module.exports = {
                     artistsEmbed = [];
                     let songObj = db.reviewDB.get(songArtist, `${setterSongName}`);
                     let songReviewObj = songObj[taggedUser.id];
+                    if (songReviewObj == undefined) no_songs_review = true;
     
                     if (no_songs_review == false) {
                         rreview = songReviewObj.review;
@@ -167,6 +173,10 @@ module.exports = {
                             value: `${rreview == false ? `*No review written*` : `*Review hidden to save space*`}` }]);
                         }
                     }
+                }
+
+                if (no_songs_review == true) {
+                    epEmbed.setFields([]);
                 }
             }
 

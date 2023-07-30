@@ -38,20 +38,20 @@ module.exports = {
             song_info = await parse_artist_song_data(interaction);
             if (song_info.error != undefined) {
                 validSong = false;
+            } else {
+                songName = song_info.song_name;
+                setterSongName = convertToSetterName(songName);
+                artistArray = song_info.db_artists;
+                origArtistArray = song_info.prod_artists;
+                songDisplayName = song_info.display_song_name;
             }
-
-            songName = song_info.song_name;
-            setterSongName = convertToSetterName(songName);
-            artistArray = song_info.db_artists;
-            origArtistArray = song_info.prod_artists;
-            songDisplayName = song_info.display_song_name;
         });
 
         // Check if a podcast is being played, as we don't support that.
         if (isPodcast == true) {
             return interaction.editReply('Podcasts are not supported with `/np`.');
         } else if (validSong == false) {
-            return interaction.editReply(`This song has an invalid song layout, and cannot be parsed by Waveform, therefore cannot be pulled up.`);
+            return interaction.editReply(`This song cannot be parsed by Waveform, therefore cannot be pulled up.`);
         }
 
         if (songArt == false) songArt = interaction.member.avatarURL({ extension: 'png' });

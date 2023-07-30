@@ -219,7 +219,6 @@ module.exports = {
                         taggedMember = undefined;
                     });
                     taggedUser = await client.users.fetch(i.values[0]);
-                    console.log(taggedUser);
 
                     if (taggedMember == undefined) {
                         displayName = taggedUser.username;
@@ -255,6 +254,7 @@ module.exports = {
                             let artistsEmbed = [];
                             let songObj = db.reviewDB.get(songArtist, `${setterSongName}`);
                             let songReviewObj = songObj[taggedUser.id];
+                            if (songReviewObj == undefined) no_songs_review = true;
             
                             if (no_songs_review == false) {
                                 rreview = songReviewObj.review;
@@ -294,6 +294,10 @@ module.exports = {
                         epReviewEmbed.setColor(`${getEmbedColor(taggedMember)}`);
                     }
 
+                    if (no_songs_review == true) {
+                        epReviewEmbed.setFields([]);
+                    }
+
                     epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName}` : `🌟 ${origArtistArray.join(' & ')} - ${epName} 🌟`);
 
                     if (ep_overall_rating != false && ep_overall_review != false) {
@@ -311,6 +315,11 @@ module.exports = {
                         }
                     } else if (ep_overall_review != false) {
                         epReviewEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
+                    }
+
+                    // If we have an incomplete ep/lp review
+                    if (epReviewEmbed.description == '' || epReviewEmbed.description == undefined || epReviewEmbed.description == false) {
+                        epReviewEmbed.setDescription(`This ${epType} review was not finished, so there is no review.`);
                     }
 
                     epReviewEmbed.setAuthor({ name: `${displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });

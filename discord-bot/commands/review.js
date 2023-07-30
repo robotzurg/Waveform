@@ -137,7 +137,6 @@ module.exports = {
         // If we are in the mailbox and don't specify a user who sent, try to pull it from the mailbox list
         if (user_who_sent == null && is_mailbox == true) {
             temp_mailbox_list = mailbox_list.filter(v => v.spotify_id == spotifyUri.replace('spotify:track:', ''));
-            console.log(temp_mailbox_list);
             if (temp_mailbox_list.length != 0) {
                 mailbox_data = temp_mailbox_list[0];
                 await interaction.guild.members.fetch(mailbox_data.user_who_sent).then(async user_data => {
@@ -282,8 +281,10 @@ module.exports = {
             let songReviewObj = songObj[interaction.user.id];
             rating = songReviewObj.rating;
             review = songReviewObj.review;
+            starred = songReviewObj.starred;
             if (rating !== false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rating}/10**`, inline: true }]);
             if (review != false) reviewEmbed.setDescription(review);
+            if (starred != false) reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
         }
         
         if (songArt == false || songArt == undefined) {

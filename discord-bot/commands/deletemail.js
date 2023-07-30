@@ -67,7 +67,6 @@ module.exports = {
             }
 
             // Remove from local playlist
-            // TODO: Make this better??? This is bad
             if (spotifyApi != false) {
                 mailbox_list = mailbox_list.filter(v => v.spotify_id != song_info.spotify_uri.replace('spotify:track:', '').replace('spotify:album:', ''));
             } else {
