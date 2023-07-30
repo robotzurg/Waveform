@@ -25,7 +25,8 @@ module.exports = {
         await interaction.deferReply();
         let taggedUser = interaction.options.getUser('user');
         let taggedMember = await interaction.guild.members.fetch(taggedUser.id);
-        let spotifyApi = await spotify_api_setup(taggedUser.id);
+        let spotifyCmdUserApi = await spotify_api_setup(interaction.user.id);
+        let spotifyTaggedApi = await spotify_api_setup(taggedUser.id);
 
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
         let trackLink = interaction.options.getString('link');
@@ -45,8 +46,8 @@ module.exports = {
         let passesChecks = true;
 
         // Pull from spotify playback if trackLink is null
-        if (trackLink == null && spotifyApi != false) {
-            await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+        if (trackLink == null && spotifyCmdUserApi != false) {
+            await spotifyCmdUserApi.getMyCurrentPlayingTrack().then(async data => {
                 if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
                 trackLink = data.body.item.external_urls.spotify;
                 spotifyCheck = true;
@@ -56,39 +57,37 @@ module.exports = {
             if (spotifyCheck == false) {
                 return interaction.reply('Spotify playback not detected. Please start playing a song on spotify before using this command in this way!');
             }
-        } else if (spotifyApi == false && trackLink == null) {
+        } else if (spotifyCmdUserApi == false && trackLink == null) {
             return interaction.reply(`You are not logged into spotify with Waveform, so you must specify a track link in the link argument or use \`/login\` to use this command in this way!`);
         }
 
-        // Check if we are not in a spotify link, and if so, what kind of link we have
+        // Check if we are in a spotify link, and if not, what kind of link we have
         if (trackLink.includes('spotify')) {
             // Create the api object with the credentials
-            if (spotifyApi == false) {
-                spotifyApi = new SpotifyWebApi({
-                    redirectUri: process.env.SPOTIFY_REDIRECT_URI,
-                    clientId: process.env.SPOTIFY_API_ID,
-                    clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-                });
-                
-                // Retrieve an access token.
-                spotifyApi.clientCredentialsGrant().then(
-                    function(data) {
-                        // Save the access token so that it's used in future calls
-                        spotifyApi.setAccessToken(data.body['access_token']);
-                    },
-                    function(err) {
-                        console.log('Something went wrong when retrieving an access token', err);
-                    },
-                );
-            }
+            let spotifyApi = new SpotifyWebApi({
+                redirectUri: process.env.SPOTIFY_REDIRECT_URI,
+                clientId: process.env.SPOTIFY_API_ID,
+                clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+            });
+            
+            // Retrieve an access token.
+            spotifyApi.clientCredentialsGrant().then(
+                function(data) {
+                    // Save the access token so that it's used in future calls
+                    spotifyTaggedApi.setAccessToken(data.body['access_token']);
+                },
+                function(err) {
+                    console.log('Something went wrong when retrieving an access token', err);
+                },
+            );
             mainId = trackLink.split('/')[4].split('?')[0];
 
-            if (db.user_stats.get(taggedUser.id, 'spotify_playlist') == false || spotifyApi == false) {
+            if (db.user_stats.get(taggedUser.id, 'spotify_playlist') == false || spotifyTaggedApi == false) {
                 return interaction.editReply('This user has not setup a spotify mailbox playlist, and thus cannot be sent spotify songs.');
             }
 
             if (trackLink.includes("track")) {
-                await spotifyApi.getTrack(mainId).then(async data => {
+                await spotifyTaggedApi.getTrack(mainId).then(async data => {
                     data = data.body;
                     mainId = data.id;
                     url = trackLink;
@@ -100,7 +99,7 @@ module.exports = {
                     console.log(err);
                 });
             } else if (trackLink.includes("album")) {
-                await spotifyApi.getAlbum(mainId).then(async data => {
+                await spotifyTaggedApi.getAlbum(mainId).then(async data => {
                     data = data.body;
                     mainId = data.id;
                     url = trackLink;
@@ -135,7 +134,6 @@ module.exports = {
                 trackUris.push(spotifyData.uri); // Used to add to playlist
                 linkType = 'sp';
             } else if (spotifyData.type == 'album') {
-                console.log(spotifyData);
                 for (let i = 0; i < spotifyData.tracks.items.length; i++) {
                     trackUris.push(spotifyData.tracks.items[i].uri);
                     trackDurs.push(spotifyData.tracks.items[i].duration);
@@ -175,7 +173,7 @@ module.exports = {
             }
 
             // Add tracks to the mailbox playlist
-            await spotifyApi.addTracksToPlaylist(playlistId, trackUris)
+            await spotifyTaggedApi.addTracksToPlaylist(playlistId, trackUris)
             .then(() => {
                 const mailEmbed = new EmbedBuilder()
                 .setColor(`${getEmbedColor(interaction.member)}`)
