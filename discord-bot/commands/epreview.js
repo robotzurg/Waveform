@@ -72,6 +72,13 @@ module.exports = {
     ` while the \`manually\` subcommand allows you to manually type in the EP/LP name yourself.`,
 	async execute(interaction, client) {
         try {
+            // Check if we have an existing EP/LP review running, and back out immediately if we do.
+            if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
+                let epReviewUserData = db.user_stats.get(interaction.user.id, 'current_ep_review');
+                return interaction.reply(`You already have an EP/LP review for ${epReviewUserData.artist_array.join(' & ')} - ${epReviewUserData.ep_name} in progress.\n` + 
+                `Please finish the EP/LP review before starting a new one, or run \`/epdone\` to end it manually.`);
+            }
+
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('ep_name');
             let song_info = await parse_artist_song_data(interaction, artists, ep);
@@ -503,14 +510,14 @@ module.exports = {
 
                         // Fix artwork on all reviews for this song
                         if (art != false && db.reviewDB.has(artistArray[0])) {
-                            update_art(interaction, client, artistArray[0], epName, art);
+                            await update_art(interaction, client, artistArray[0], epName, art);
                         }
 
                         // Update user stats
                         await updateStats(interaction, interaction.guild.id, origArtistArray, artistArray, [], epName, epName, db.reviewDB.get(artistArray[0], `${setterEpName}`), true);
 
                         db.user_stats.set(interaction.user.id, false, 'current_ep_review');
-                        i.update({ embeds: [epEmbed], components: [] });
+                        await interaction.editReply({ embeds: [epEmbed], components: [] });
 
                         // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
                         if (is_mailbox == true) {
@@ -541,6 +548,8 @@ module.exports = {
                             }
                             db.user_stats.set(interaction.user.id, mailbox_list, `mailbox_list`);
                         }
+
+                        await interaction.editReply({ embeds: [epEmbed], components: [] });
                     } break;
                     case 'begin': {
                         if (ra_collector != undefined) ra_collector.stop();

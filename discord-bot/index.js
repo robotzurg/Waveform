@@ -217,7 +217,9 @@ client.on('interactionCreate', async interaction => {
         await command.execute(interaction, client);
     } catch (error) {
         await console.error(error);
-        await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true });
+        await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true }).catch(() => {
+            interaction.editReply('There was an error while executing this command!');
+        });
     }
     
 });

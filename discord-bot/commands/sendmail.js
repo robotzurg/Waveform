@@ -2,9 +2,8 @@ const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 const db = require('../db.js');
 const { spotify_api_setup, parse_artist_song_data, getEmbedColor } = require('../func.js');
-const fetch = require('isomorphic-unfetch');
-const { getData } = require('spotify-url-info')(fetch);
 const _ = require('lodash');
+const SpotifyWebApi = require('spotify-web-api-node');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -26,12 +25,13 @@ module.exports = {
         await interaction.deferReply();
         let taggedUser = interaction.options.getUser('user');
         let taggedMember = await interaction.guild.members.fetch(taggedUser.id);
-        const spotifyApi = await spotify_api_setup(taggedUser.id);
+        let spotifyApi = await spotify_api_setup(taggedUser.id);
 
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
         let trackLink = interaction.options.getString('link');
         let trackUris = []; 
         let trackDurs = []; // Track durations
+        let spotifyData;
         let name;
         let artists, displayName, origArtistArray, rmxArtistArray;
         let url;
@@ -62,72 +62,98 @@ module.exports = {
 
         // Check if we are not in a spotify link, and if so, what kind of link we have
         if (trackLink.includes('spotify')) {
+            // Create the api object with the credentials
+            if (spotifyApi == false) {
+                spotifyApi = new SpotifyWebApi({
+                    redirectUri: process.env.SPOTIFY_REDIRECT_URI,
+                    clientId: process.env.SPOTIFY_API_ID,
+                    clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+                });
+                
+                // Retrieve an access token.
+                spotifyApi.clientCredentialsGrant().then(
+                    function(data) {
+                        // Save the access token so that it's used in future calls
+                        spotifyApi.setAccessToken(data.body['access_token']);
+                    },
+                    function(err) {
+                        console.log('Something went wrong when retrieving an access token', err);
+                    },
+                );
+            }
+            mainId = trackLink.split('/')[4].split('?')[0];
+
             if (db.user_stats.get(taggedUser.id, 'spotify_playlist') == false || spotifyApi == false) {
                 return interaction.editReply('This user has not setup a spotify mailbox playlist, and thus cannot be sent spotify songs.');
             }
 
-            await getData(trackLink).then(async data => {
-                mainId = data.id;
-                url = trackLink;
-                songArt = data.coverArt.sources[0].url;
-                name = data.name;
-                if (data.type == 'album') {
-                    // Use the tracklist to figure out who is a collab artist on an EP/LP for the entire EP/LP (and not just a one off)
-                    artists = [];
-                    for (let tracks of data.trackList) {
-                        artists.push(tracks.subtitle.split(', '));
-                        artists = artists.flat(1);
-                    }
-
-                    let occurences = artists.reduce((acc, e) => acc.set(e, (acc.get(e) || 0) + 1), new Map());
-                    occurences = [...occurences.entries()];
-                    artists = [];
-                    for (let a of occurences) {
-                        if (a[1] == data.trackList.length) artists.push(a[0]);
-                    }
-                } else {
+            if (trackLink.includes("track")) {
+                await spotifyApi.getTrack(mainId).then(async data => {
+                    data = data.body;
+                    mainId = data.id;
+                    url = trackLink;
+                    songArt = data.album.images[0].url;
+                    name = data.name;
                     artists = data.artists.map(artist => artist.name);
-                } 
+                    spotifyData = data;
+                }).catch((err) => {
+                    console.log(err);
+                });
+            } else if (trackLink.includes("album")) {
+                await spotifyApi.getAlbum(mainId).then(async data => {
+                    data = data.body;
+                    mainId = data.id;
+                    url = trackLink;
+                    songArt = data.images[0].url;
+                    name = data.name;
+                    artists = data.artists.map(artist => artist.name);
+                    spotifyData = data;
+                }).catch((err) => {
+                    console.log(err);
+                });
+            }
 
-                artists = artists.map(v => v.replace(' & ', ' \\& '));
-                let song_info = await parse_artist_song_data(interaction, artists.join(' & '), name);
-                if (song_info.error != undefined) {
-                    await interaction.editReply(song_info.error);
-                    passesChecks = false;
-                    return;
+            if (spotifyData == undefined) {
+                return interaction.editReply('Could not properly parse spotify link data due to an internal error. Please try again, or report this as a bug.');
+            }
+
+            artists = artists.map(v => v.replace(' & ', ' \\& '));
+            let song_info = await parse_artist_song_data(interaction, artists.join(' & '), name);
+            if (song_info.error != undefined) {
+                await interaction.editReply(song_info.error);
+                passesChecks = false;
+                return;
+            }
+
+            origArtistArray = song_info.prod_artists;
+            rmxArtistArray = song_info.remix_artists;
+            artists = song_info.db_artists;
+            name = song_info.song_name;
+            displayName = song_info.display_song_name;
+
+            if (spotifyData.type == 'track' || spotifyData.type == 'single') {
+                trackUris.push(spotifyData.uri); // Used to add to playlist
+                linkType = 'sp';
+            } else if (spotifyData.type == 'album') {
+                console.log(spotifyData);
+                for (let i = 0; i < spotifyData.tracks.items.length; i++) {
+                    trackUris.push(spotifyData.tracks.items[i].uri);
+                    trackDurs.push(spotifyData.tracks.items[i].duration);
                 }
-
-                origArtistArray = song_info.prod_artists;
-                rmxArtistArray = song_info.remix_artists;
-                artists = song_info.db_artists;
-                name = song_info.song_name;
-                displayName = song_info.display_song_name;
-
-                if (data.type == 'track' || data.type == 'single') {
-                    trackUris.push(data.uri); // Used to add to playlist
-                    linkType = 'sp';
-                } else if (data.type == 'album') {
-                    for (let i = 0; i < data.trackList.length; i++) {
-                        trackUris.push(data.trackList[i].uri);
-                        trackDurs.push(data.trackList[i].duration);
-                    }
-                    if (!name.includes(' EP') && !name.includes(' LP')) {
-                        if (_.sum(trackDurs) >= 1.8e+6 || data.trackList.length >= 7) {
-                            displayName += ' LP';
-                            linkType = 'sp_lp';
-                        } else {
-                            displayName += ' EP';
-                            linkType = 'sp_ep';
-                        }
-                    } else if (name.includes(' EP')) {
-                        linkType = 'sp_ep';
-                    } else if (name.includes(' LP')) {
+                if (!name.includes(' EP') && !name.includes(' LP')) {
+                    if (_.sum(trackDurs) >= 1.8e+6 || spotifyData.tracks.items.length >= 7) {
+                        displayName += ' LP';
                         linkType = 'sp_lp';
+                    } else {
+                        displayName += ' EP';
+                        linkType = 'sp_ep';
                     }
+                } else if (name.includes(' EP')) {
+                    linkType = 'sp_ep';
+                } else if (name.includes(' LP')) {
+                    linkType = 'sp_lp';
                 }
-            }).catch((err) => {
-                console.log(err);
-            });
+            }
         } else if (trackLink.includes('music.apple.com')) {
             linkType = 'apple';
         } else if (trackLink.includes('soundcloud.com')) {
