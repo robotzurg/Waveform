@@ -74,7 +74,7 @@ module.exports = {
             spotifyApi.clientCredentialsGrant().then(
                 function(data) {
                     // Save the access token so that it's used in future calls
-                    spotifyTaggedApi.setAccessToken(data.body['access_token']);
+                    spotifyApi.setAccessToken(data.body['access_token']);
                 },
                 function(err) {
                     console.log('Something went wrong when retrieving an access token', err);
