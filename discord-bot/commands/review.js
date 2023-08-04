@@ -726,7 +726,7 @@ module.exports = {
                     for (let ii = 0; ii < artistArray.length; ii++) {
                         db.reviewDB.set(artistArray[ii], false, `${setterSongName}.${interaction.user.id}.msg_id`);
                         db.reviewDB.set(artistArray[ii], false, `${setterSongName}.${interaction.user.id}.channel_id`);
-                        db.reviewDB.set(artistArray[ii], false, `${setterSongName}.${interaction.user.id}.guild_id`);
+                        db.reviewDB.set(artistArray[ii], interaction.guild.id, `${setterSongName}.${interaction.user.id}.guild_id`);
                     }
 
                     // Set artist images

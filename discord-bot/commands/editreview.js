@@ -74,7 +74,7 @@ module.exports = {
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('song_name');
         if (song != null) {
-            if (song.includes(' EP') || song.incldes(' LP')) epCmd = true;
+            if (song.includes(' EP') || song.includes(' LP')) epCmd = true;
         }
         
         if (epCmd == true) {
@@ -131,6 +131,7 @@ module.exports = {
             if (songObj == undefined) return interaction.reply(`Song ${songName} not found!`);
             songReviewObj = songObj[interaction.user.id];
             if (songReviewObj == undefined) return interaction.reply(`Review not found!`);
+            if (songReviewObj.guild_id == false) songReviewObj.guild_id = '680864893552951306';
             guildStatsObj = db.server_settings.get(songReviewObj.guild_id, 'stats');
 
             if (rating != null && rating != undefined) {
