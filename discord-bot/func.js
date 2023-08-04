@@ -629,9 +629,9 @@ module.exports = {
         }
     },
 
-    review_song: function(interaction, artistArray, origArtistArray, song, origSongName, review, rating, starred, rmxArtistArray, songArt, user_who_sent, spotifyUri, ep_name = false) {
+    review_song: async function(interaction, artistArray, origArtistArray, song, origSongName, review, rating, starred, rmxArtistArray, songArt, user_who_sent, spotifyUri, ep_name = false) {
 
-        const { convertToSetterName } = require('./func.js');
+        const { convertToSetterName, updateStats } = require('./func.js');
 
         if (user_who_sent == undefined || user_who_sent == null) {
             user_who_sent = false;
@@ -703,7 +703,12 @@ module.exports = {
             } else if (db.reviewDB.get(artistArray[i], `${setterSongName}`)[interaction.user.id] && review_object.name != undefined) { // Check if you are already in the system, and replace the review if you are.
 
                 const songObj = db.reviewDB.get(artistArray[i], `${setterSongName}`);
-                delete songObj[`${interaction.user.id}`];
+                let songReviewObj = songObj[interaction.user.id];
+
+                // Quickly update stats
+                await updateStats(interaction, songReviewObj.guild_id, origArtistArray, artistArray, rmxArtistArray, songName, songName, songObj, false, true);
+
+                delete songObj[interaction.user.id];
     
                 const newuserObj = {
                     [`${interaction.user.id}`]: review_object,
@@ -784,8 +789,8 @@ module.exports = {
         }
     },
 
-    review_ep: function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred, spotifyUri) {
-        let { convertToSetterName } = require('./func.js');
+    review_ep: async function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred, spotifyUri) {
+        let { convertToSetterName, updateStats } = require('./func.js');
 
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterEpName = convertToSetterName(ep_name);
@@ -847,14 +852,23 @@ module.exports = {
                     addedToEPCount = true;
                 }
             } else { // If both exist
-                const db_song_obj = db.reviewDB.get(artistArray[i], `${setterEpName}`);
+                const db_ep_obj = db.reviewDB.get(artistArray[i], `${setterEpName}`);
+
+                if (db_ep_obj[interaction.user.id] != undefined) {
+                    let epReviewObj = db_ep_obj[interaction.user.id];
+
+                    // Quickly update stats
+                    await updateStats(interaction, epReviewObj.guild_id, artistArray, artistArray, [], ep_name, ep_name, db_ep_obj, true, true);
+
+                    delete db_ep_obj[interaction.user.id];
+                }
 
                 let new_user_obj = {
                     [`${interaction.user.id}`]: reviewObject,
                 };
 
-                Object.assign(db_song_obj, new_user_obj);
-                db.reviewDB.set(artistArray[i], db_song_obj, `${setterEpName}`);
+                Object.assign(db_ep_obj, new_user_obj);
+                db.reviewDB.set(artistArray[i], db_ep_obj, `${setterEpName}`);
                 if (art != undefined && art != false && art != null && !art.includes('avatar')) {
                     db.reviewDB.set(artistArray[i], art, `${setterEpName}.art`);
                 }
