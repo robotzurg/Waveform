@@ -2,6 +2,7 @@
 const { EmbedBuilder } = require('discord.js');
 const db = require("./db.js");
 const _ = require('lodash');
+const SpotifyWebApi = require('spotify-web-api-node');
 
 // TODO: ADD FUNCTION HEADERS/DEFS FOR ALL OF THESE!!!
 
@@ -546,17 +547,27 @@ module.exports = {
 
         // Grab a spotify song uri through spotify search if we don't already have one.
         if (songUri == false) {
-            const Spotify = require('node-spotify-api');
-            const client_id = process.env.SPOTIFY_API_ID; // Your client id
-            const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
+            // let spotifyApi = new SpotifyWebApi({
+            //     redirectUri: process.env.SPOTIFY_REDIRECT_URI,
+            //     clientId: process.env.SPOTIFY_API_ID,
+            //     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+            // });
+            
+            // // Retrieve an access token.
+            // spotifyApi.clientCredentialsGrant().then(
+            //     function(data) {
+            //         // Save the access token so that it's used in future calls
+            //         spotifyApi.setAccessToken(data.body['access_token']);
+            //     },
+            //     function(err) {
+            //         console.log('Something went wrong when retrieving an access token', err);
+            //     },
+            // );
 
-            const spotify = new Spotify({
-                id: client_id,
-                secret: client_secret,
-            });
+            const spotifyApi = await spotify_api_setup('122568101995872256');
 
-            await spotify.search({ type: "track", query: `${origArtistArray[0]} ${songArg}` }).then(function(song_data) {  
-                let results = song_data.tracks.items;
+            await spotifyApi.searchTracks(`${origArtistArray[0]} ${songArg}`).then(function(song_data) {  
+                let results = song_data.body.tracks.items;
                 let pushed = false;
 
                 for (let result of results) {
@@ -887,23 +898,35 @@ module.exports = {
      * @param {String} name The name of the song or EP/LP to search on Spotify.
      */
     grab_spotify_art: async function(artistArray, name) {
-        const Spotify = require('node-spotify-api');
-        const client_id = process.env.SPOTIFY_API_ID; // Your client id
-        const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
+        const { spotify_api_setup } = require('./func.js');
+        // let spotifyApi = new SpotifyWebApi({
+        //     redirectUri: process.env.SPOTIFY_REDIRECT_URI,
+        //     clientId: process.env.SPOTIFY_API_ID,
+        //     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+        // });
+        
+        // // Retrieve an access token.
+        // spotifyApi.clientCredentialsGrant().then(
+        //     function(data) {
+        //         // Save the access token so that it's used in future calls
+        //         spotifyApi.setAccessToken(data.body['access_token']);
+        //     },
+        //     function(err) {
+        //         console.log('Something went wrong when retrieving an access token', err);
+        //     },
+        // );
+
+        const spotifyApi = await spotify_api_setup('122568101995872256');
+
         let search = name;
         search = name.replace(' EP', '');
         search = search.replace(' LP', '');
         const song = `${artistArray[0]} ${search}`;
         let result = false;
-        
-        const spotify = new Spotify({
-            id: client_id,
-            secret: client_secret,
-        });
 
-        await spotify.search({ type: "track", query: song }).then(function(data) {  
-            let results = data.tracks.items;
-            let songData = data.tracks.items[0];
+        await spotifyApi.searchTracks(song).then(function(data) {  
+            let results = data.body.tracks.items;
+            let songData = data.body.tracks.items[0];
             for (let i = 0; i < results.length; i++) {
                 if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].album.name.toLowerCase()}` == `${song.toLowerCase()}`) {
                     songData = results[i];
@@ -916,6 +939,8 @@ module.exports = {
             if (results.length != 0) {
                 result = songData.album.images[0].url;
             }
+        }).catch((err) => {
+            console.log(err);
         });
 
         return await result;
@@ -927,22 +952,33 @@ module.exports = {
      * @return {Array} An array of image links, in the same order as artistArray.
      */
     grab_spotify_artist_art: async function(artistArray) {
-        const Spotify = require('node-spotify-api');
-        const client_id = process.env.SPOTIFY_API_ID; // Your client id
-        const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
+        const { spotify_api_setup } = require('./func.js');
+        // let spotifyApi = new SpotifyWebApi({
+        //     redirectUri: process.env.SPOTIFY_REDIRECT_URI,
+        //     clientId: process.env.SPOTIFY_API_ID,
+        //     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+        // });
+        
+        // // Retrieve an access token.
+        // spotifyApi.clientCredentialsGrant().then(
+        //     function(data) {
+        //         // Save the access token so that it's used in future calls
+        //         spotifyApi.setAccessToken(data.body['access_token']);
+        //     },
+        //     function(err) {
+        //         console.log('Something went wrong when retrieving an access token', err);
+        //     },
+        // );
+
+        const spotifyApi = await spotify_api_setup('122568101995872256');
         let imageArray = [];
 
         // Check if our artistArray is somehow 0, and if so just return an empty list.
         if (artistArray.length == 0) return [];
 
-        const spotify = new Spotify({
-            id: client_id,
-            secret: client_secret,
-        });
-
         for (let artist of artistArray) {
-            await spotify.search({ type: "artist", query: artist }).then(function(data) {  
-                let results = data.artists.items[0].images;
+            await spotifyApi.searchArtists(artist).then(function(data) {  
+                let results = data.body.artists.items[0].images;
                 if (results.length == 0) imageArray.push(false);
                 else imageArray.push(results[0].url);
             });
@@ -1014,7 +1050,6 @@ module.exports = {
      * @param {String} user_id The user id to authenticate to the Spotify API.
      */
     spotify_api_setup:  async function(user_id) {
-        const SpotifyWebApi = require('spotify-web-api-node');
         const access_token = db.user_stats.get(user_id, 'access_token');
 
         // If we have an access token for spotify API (therefore can use it)

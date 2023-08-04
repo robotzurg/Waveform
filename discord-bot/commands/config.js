@@ -194,15 +194,6 @@ module.exports = {
                         return;
                     }
 
-                    const Spotify = require('node-spotify-api');
-                    const client_id = process.env.SPOTIFY_API_ID; // Your client id
-                    const client_secret = process.env.SPOTIFY_CLIENT_SECRET; // Your secret
-        
-                    const spotify = new Spotify({
-                        id: client_id,
-                        secret: client_secret,
-                    });
-
                     let starIDList = [];
 
                     await sel.update({ content: `Setting up your star spotify playlist... (This usually takes up to 1 minute, so please be patient!)\n`
@@ -213,7 +204,7 @@ module.exports = {
                         let starList = db.user_stats.get(interaction.user.id, `stats.star_list`);
 
                         for (let starData of starList) {
-                            await spotify.search({ type: "track", query: `${starData.orig_artists[0]} ${starData.db_song_name}` }).then(function(song_data) {  
+                            await spotifyApi.searchTracks(`${starData.orig_artists[0]} ${starData.db_song_name}`).then(function(song_data) {  
                                 let results = song_data.tracks.items;
                                 let pushed = false;
 
