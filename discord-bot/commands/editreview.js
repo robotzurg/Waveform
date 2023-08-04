@@ -248,9 +248,9 @@ module.exports = {
 
                         if (rating != null && rating != undefined) {
                             if (msg_embed_fields[field_num].name.includes('🌟')) {
-                                msg_embed_fields[field_num].name = `🌟 ${displaySongName}${displayArtists.length != 0 ? ` (with ${origArtistArray.join(' & ')})` : ``} (${rating}/10) 🌟`;
+                                msg_embed_fields[field_num].name = `🌟 ${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``} (${rating}/10) 🌟`;
                             } else {
-                                msg_embed_fields[field_num].name = `${displaySongName}${displayArtists.length != 0 ? ` (with ${origArtistArray.join(' & ')})` : ``} (${rating}/10)`;
+                                msg_embed_fields[field_num].name = `${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``} (${rating}/10)`;
                             }
                         } 
                         if (review != null && review != undefined && msg_embed_fields[field_num].value != '*Review hidden to save space*') msg_embed_fields[field_num].value = review;
