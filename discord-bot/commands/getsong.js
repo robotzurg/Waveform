@@ -141,7 +141,7 @@ module.exports = {
             `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} star${starCount == 1 ? '' : 's'}!** :star2:`)}` + 
             `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
         } else {
-            songEmbed.setDescription(`${songObj.spotify_uri == false ? `` : `<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
+            songEmbed.setDescription(`${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
         }
 
         if (songArt == false) {

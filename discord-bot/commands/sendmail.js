@@ -183,7 +183,7 @@ module.exports = {
 
                 interaction.editReply(`Sent [**${origArtistArray.join(' & ')} - ${displayName}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
                 if (dmMailConfig == true && taggedUser.id != interaction.user.id) { 
-                    taggedUser.send({ content: `**You've got mail!** 📬`, embeds: [mailEmbed] });
+                    taggedUser.send({ content: `**You've got mail! 📬**\n${origArtistArray.join(' & ')} - ${displayName}`, embeds: [mailEmbed] });
                 }
 
                 // Put the song we just mailboxed into a mailbox list for the user, so it can be pulled up with /viewmail
