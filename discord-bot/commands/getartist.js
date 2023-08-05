@@ -111,6 +111,7 @@ module.exports = {
                     epReviewNum = epReviewNum.filter(x => x != 'art');
                     epReviewNum = epReviewNum.filter(x => x != 'collab');
                     epReviewNum = epReviewNum.filter(x => x != 'songs');
+                    epReviewNum = epReviewNum.filter(x => x != 'tags');
 
                     for (let s = 0; s < epReviewNum.length; s++) {
                         if (artistObj[setterEpSong][epReviewNum[s]].starred == true) epStarNum += 1;
