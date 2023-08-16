@@ -172,14 +172,20 @@ module.exports = {
         }
 
         // Setup review editing buttons
-        const editButtons = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('artist').setLabel('Artist')
-                .setStyle(ButtonStyle.Primary).setEmoji('📝'),
-            new ButtonBuilder()
-                .setCustomId('song').setLabel('Song')
-                .setStyle(ButtonStyle.Primary).setEmoji('📝'),
+        const editButtons = new ActionRowBuilder();
+
+        if (interaction.options.getSubcommand() == 'manually') {
+            editButtons.addComponents(
+                new ButtonBuilder()
+                    .setCustomId('artist').setLabel('Artist')
+                    .setStyle(ButtonStyle.Primary).setEmoji('📝'),
+                new ButtonBuilder()
+                    .setCustomId('song').setLabel('Song')
+                    .setStyle(ButtonStyle.Primary).setEmoji('📝'),
+            );
+        }
+
+        editButtons.addComponents(
             new ButtonBuilder()
                 .setCustomId('rating').setLabel('Rating')
                 .setStyle(ButtonStyle.Primary).setEmoji('📝'),

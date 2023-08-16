@@ -864,8 +864,8 @@ module.exports = {
                             // Deal with merge conflict, if necessary
                             if (mergeSong == true) {
                                 let mergeSongObj = db.reviewDB.get(artist, `${setterSongName}`);
-                                let mergeSongUsers = get_user_reviews(mergeSongObj);
-                                let oldSongUsers = get_user_reviews(oldSongObj);
+                                let mergeSongUsers = await get_user_reviews(mergeSongObj);
+                                let oldSongUsers = await get_user_reviews(oldSongObj);
                                 // We're basically going to take the song we're editing (oldSong) and the conflict song (mergeSong)
                                 // and put any reviews from mergeSong into oldSong (unless the user has reviewed both versions)
                                 for (let user of mergeSongUsers) {
@@ -945,8 +945,8 @@ module.exports = {
                             // Deal with merge conflict, if necessary
                             if (mergeSong == true) {
                                 let mergeSongObj = db.reviewDB.get(artist, `${setterSongName}`);
-                                let mergeSongUsers = get_user_reviews(mergeSongObj);
-                                let oldSongUsers = get_user_reviews(oldSongObj);
+                                let mergeSongUsers = await get_user_reviews(mergeSongObj);
+                                let oldSongUsers = await get_user_reviews(oldSongObj);
                                 // We're basically going to take the song we're editing (oldSong) and the conflict song (mergeSong)
                                 // and put any reviews from mergeSong into oldSong (unless the user has reviewed both versions)
                                 for (let user of mergeSongUsers) {
@@ -1108,8 +1108,8 @@ module.exports = {
                             // Deal with merge conflict, if necessary
                             if (mergeEP == true) {
                                 let mergeEPObj = db.reviewDB.get(artist, `${setterSongName}`);
-                                let mergeEPUsers = get_user_reviews(mergeEPObj);
-                                let oldSongUsers = get_user_reviews(oldEPObj);
+                                let mergeEPUsers = await get_user_reviews(mergeEPObj);
+                                let oldSongUsers = await get_user_reviews(oldEPObj);
                                 // We're basically going to take the EP/LP we're editing (oldSong) and the conflict EP/LP (mergeEP)
                                 // and put any reviews from mergeEP into oldSong (unless the user has reviewed both versions)
                                 for (let user of mergeEPUsers) {

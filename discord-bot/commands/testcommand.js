@@ -63,7 +63,7 @@ module.exports = {
                     let songObj = db.reviewDB.get(artist, `${setterSongName}`);
                     let userArray = [];
                     if (songObj != null && songObj != undefined) {
-                        userArray = get_user_reviews(songObj);
+                        userArray = await get_user_reviews(songObj);
                     } else {
                         userArray = [];
                     }

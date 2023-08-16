@@ -27,9 +27,11 @@ module.exports = {
     help_desc: `Delete a review you have made from the review database.\n\n` + 
     `This only deletes YOUR review, not anyone else's review or the song/artist data itself.\n\n` + 
     `Leaving the artist and song name arguments blank will pull from currently playing song on Spotify, if you are logged in to Waveform with Spotify.`,
-    async execute(interaction, client) {
+    async execute(interaction, client, userID = false) {
 
         try {
+
+        if (userID == false) userID = interaction.user.id;
 
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('name');
@@ -56,9 +58,9 @@ module.exports = {
         }
 
         // Delete review message
-        let reviewMsgID = songObj[interaction.user.id].msg_id;
-        let reviewChannelID = songObj[interaction.user.id].channel_id;
-        let reviewGuildID = songObj[interaction.user.id].guild_id;
+        let reviewMsgID = songObj[userID].msg_id;
+        let reviewChannelID = songObj[userID].channel_id;
+        let reviewGuildID = songObj[userID].guild_id;
         if (reviewGuildID == false) reviewGuildID = '680864893552951306';
         if (reviewMsgID != false && reviewMsgID != undefined) {
             let channelsearch = await get_review_channel(client, reviewGuildID, reviewChannelID, reviewMsgID);
@@ -70,20 +72,24 @@ module.exports = {
         }
 
         // Update user statistics
-        await updateStats(interaction, reviewGuildID, origArtistArray, artistArray, rmxArtistArray, songName, displaySongName, songObj, (songName.includes(' EP') || songName.includes(' LP') ? true : false), true);
+        if (userID == interaction.user.id) {
+            await updateStats(interaction, reviewGuildID, origArtistArray, artistArray, rmxArtistArray, songName, displaySongName, songObj, (songName.includes(' EP') || songName.includes(' LP') ? true : false), true);
+        } else {
+            await updateStats({ user: { id: userID } }, reviewGuildID, origArtistArray, artistArray, rmxArtistArray, songName, displaySongName, songObj, (songName.includes(' EP') || songName.includes(' LP') ? true : false), true);
+        }
 
         for (let i = 0; i < artistArray.length; i++) {
             songObj = db.reviewDB.get(artistArray[i], `${setterSongName}`);
-            let songReviewObj = songObj[interaction.user.id];
+            let songReviewObj = songObj[userID];
             if (songReviewObj.name == undefined) break;
 
             if (songReviewObj.starred == true) {
                 let spotifyUri = song_info.spotify_uri;
                 let spotifyApi = await spotify_api_setup(interaction.user.id);
-                let starPlaylistId = db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist');
+                let starPlaylistId = db.user_stats.get(userID, 'config.star_spotify_playlist');
 
-                db.reviewDB.set(artistArray[i], false, `${setterSongName}.${interaction.user.id}.starred`);   
-                if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != undefined && spotifyUri != false) {
+                db.reviewDB.set(artistArray[i], false, `${setterSongName}.${userID}.starred`);   
+                if (spotifyApi != false && db.user_stats.get(userID, 'config.star_spotify_playlist') != false && db.user_stats.get(userID, 'config.star_spotify_playlist') != undefined && spotifyUri != false) {
                     // Remove from spotify playlist
                     await spotifyApi.removeTracksFromPlaylist(starPlaylistId, [{ uri: spotifyUri }])
                     .then(() => {}, function(err) {
@@ -92,7 +98,7 @@ module.exports = {
                 }
             }
 
-            delete songObj[`${interaction.user.id}`];
+            delete songObj[`${userID}`];
             if (!songName.includes(' EP') && !songName.includes(' LP')) {
                 songObj.review_num -= 1;
             }

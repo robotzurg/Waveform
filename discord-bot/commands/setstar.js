@@ -7,23 +7,42 @@ module.exports = {
 		.setName('setstar')
 		.setDescription('Toggle a star on a review you have made.')
         .setDMPermission(false)
-        .addStringOption(option => 
-            option.setName('artist')
-                .setDescription('The name of the artist(s).')
+        .addSubcommand(subcommand =>
+            subcommand.setName('song')
+            .setDescription('Set a star for a song/remix.')
+            .addStringOption(option => 
+                option.setName('artist')
+                    .setDescription('The name of the artist(s).')
+                    .setAutocomplete(true)
+                    .setRequired(false))
+    
+            .addStringOption(option => 
+                option.setName('song_name')
+                    .setDescription('The name of the song/remix.')
+                    .setAutocomplete(true)
+                    .setRequired(false))
+    
+            .addStringOption(option => 
+                option.setName('remixers')
+                    .setDescription('Remix artists on the song, if any.')
+                    .setAutocomplete(true)
+                    .setRequired(false)))
+
+        .addSubcommand(subcommand =>
+            subcommand.setName('ep')
+            .setDescription('Set a star for an EP/LP.')
+            .addStringOption(option =>
+                option.setName('artist')
+                .setDescription('The name of the artist.')
                 .setAutocomplete(true)
                 .setRequired(false))
 
-        .addStringOption(option => 
-            option.setName('name')
-                .setDescription('The name of the song or EP/LP.')
-                .setAutocomplete(true)
-                .setRequired(false))
-
-        .addStringOption(option => 
-            option.setName('remixers')
-                .setDescription('Remix artists on the song. (ignore if an EP/LP)')
-                .setAutocomplete(true)
-                .setRequired(false)),
+            .addStringOption(option => 
+                option.setName('ep_name')
+                    .setDescription('The name of the song/remix.')
+                    .setAutocomplete(true)
+                    .setRequired(false))),
+        
     help_desc: `Sets a review you have made to have a star (or removes one, if the review has a star)\n\n` + 
     `A star is a personal accolade you can give a song, that just signifies you really like a song. It is up to you how you want to use stars.\n\n` + 
     `It should be noted that reviews can only be starred if they are rated 8/10 or higher, and reviews without a rating can be starred.\n\n` + 
@@ -32,8 +51,15 @@ module.exports = {
 	async execute(interaction, client) {
         try {
 
+        let subcommand = interaction.options.getSubcommand();
         let artists = interaction.options.getString('artist');
-        let song = interaction.options.getString('name');
+        let song;
+        if (subcommand == 'song') {
+            song = interaction.options.getString('song_name');
+        } else {
+            song = interaction.options.getString('ep_name');
+        }
+
         let remixers = interaction.options.getString('remixers');
         let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
         if (song_info.error != undefined) {
@@ -104,7 +130,9 @@ module.exports = {
                 });
             }
 
-            if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != undefined && spotifyUri != false) {
+            if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false 
+                && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != undefined && spotifyUri != false
+                && subcommand != 'ep') {
                 // Remove from spotify playlist
                 await spotifyApi.addTracksToPlaylist(starPlaylistId, [spotifyUri])
                 .then(() => {}, function(err) {
@@ -122,7 +150,9 @@ module.exports = {
                 userStatsObj.star_list = userStatsObj.star_list.filter(v => v.db_song_name != songName && !arrayEqual(v.db_artists, artistArray));
             }
 
-            if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != undefined && spotifyUri != false) {
+            if (spotifyApi != false && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != false
+                && db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist') != undefined && spotifyUri != false
+                && subcommand != 'ep') {
                 // Remove from spotify playlist
                 await spotifyApi.removeTracksFromPlaylist(starPlaylistId, [{ uri: spotifyUri }])
                 .then(() => {}, function(err) {

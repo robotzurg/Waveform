@@ -213,6 +213,11 @@ client.on('interactionCreate', async interaction => {
         client.cooldowns.set(interaction.commandName, 0);
     }
 
+    let ban_list = db.global_bot.get('ban_list');
+    if (ban_list.includes(interaction.user.id)) {
+        return interaction.reply(`You have been banned from Waveform. For more information or to appeal your ban, please contact \`jeffdev\` on discord.`);
+    }
+
     try {
         await command.execute(interaction, client);
     } catch (error) {
@@ -247,9 +252,9 @@ client.on('guildMemberAdd', async (member) => {
                     yt: true, // YouTube and Youtube Music
                     apple: true, // Apple Music
                 },
-                review_ping: false, // If you want to get pinged for a review if you are tagged as a user who sent it, default to false
-                star_spotify_playlist: false,
-                mailbox_dm: true,
+                review_ping: false, // If you want to get pinged for a review if you are tagged as a user who sent it (default: false)
+                star_spotify_playlist: false, // If you have a star spotify playlist setup (default: false)
+                mailbox_dm: true, // If you want to be DM'd when you receive a mailbox send (default: true)
             },
             stats: {
                 // These 2 were removed due to speed issues with my current hardware.

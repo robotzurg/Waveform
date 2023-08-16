@@ -130,7 +130,7 @@ module.exports = {
                         starNum = 0;
                         let songObj = artistObj[epSongs[ii].replace('[', '_((').replace(']', '))_')];
                         if (epSongs[ii].includes(' Remix)')) songObj = db.reviewDB.get(epSongs[ii].split(' Remix)')[0].split('(').splice(1)[0], `${setterEpSongsII}`);
-                        let reviews = get_user_reviews(songObj);
+                        let reviews = await get_user_reviews(songObj);
                         reviewNum = reviews.length;
                         
                         for (let x = 0; x < reviews.length; x++) {
@@ -174,7 +174,7 @@ module.exports = {
                     let setterSongName = convertToSetterName(songArray[i]);
                     const songObj = db.reviewDB.get(artist, `${setterSongName}`);
                     reviewNum = parseInt(songObj.review_num);
-                    let reviews = get_user_reviews(songObj);
+                    let reviews = await get_user_reviews(songObj);
                     
                     for (let ii = 0; ii < reviews.length; ii++) {
                         let rating = songObj[reviews[ii]].rating;

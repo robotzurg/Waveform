@@ -11,7 +11,7 @@ module.exports = {
         .setDMPermission(false),
     help_desc: `If logged into Waveform with Spotify, this command will display your currently playing song, and some basic data in Waveform about the song, if any exists.\n\n` + 
     `This requires /login to be successfully run before it can be used, and can only be used with Spotify.`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
         await interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
@@ -66,39 +66,66 @@ module.exports = {
             let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
 
             if (songObj != undefined) {
-                let userArray = get_user_reviews(songObj);
-                const rankNumArray = [];
-                let starNum = 0;
+                const guild = client.guilds.cache.get(interaction.guild.id);
+                let localUserArray = await get_user_reviews(songObj, guild);
+                let globalUserArray = await get_user_reviews(songObj);
+                let globalRankNumArray = [];
+                let localRankNumArray = [];
+                let globalStarNum = 0;
+                let localStarNum = 0;
                 let yourStar = '';
 
-                for (let i = 0; i < userArray.length; i++) {
-                    if (userArray[i] == `${interaction.user.id}`) yourRating = songObj[userArray[i]].rating;
-                    if (userArray[i] != 'ep') {
-                        let rating;
-                        rating = songObj[userArray[i]].rating;
-                        if (songObj[userArray[i]].starred == true) {
-                            starNum++;
-                            if (userArray[i] == `${interaction.user.id}`) {
-                                yourStar = '⭐'; //Added to the end of your rating tab
-                            }
+                // Global
+                for (let i = 0; i < globalUserArray.length; i++) {
+                    if (globalUserArray[i] == `${interaction.user.id}`) yourRating = songObj[globalUserArray[i]].rating;
+                    let rating;
+                    rating = songObj[globalUserArray[i]].rating;
+                    if (songObj[globalUserArray[i]].starred == true) {
+                        globalStarNum++;
+                        if (global[i] == `${interaction.user.id}`) {
+                            yourStar = '⭐'; //Added to the end of your rating tab
                         }
-                        
-                        if (rating != false) rankNumArray.push(parseFloat(rating));
-                        userArray[i] = [rating, `${userArray[i]} \`${rating}\``];
                     }
+                    
+                    if (rating != false) globalRankNumArray.push(parseFloat(rating));
+                    globalUserArray[i] = [rating, `${globalUserArray[i]} \`${rating}\``];
                 }
 
-                if (rankNumArray.length != 0) { 
-                    npEmbed.setDescription(`Reviews: ${userArray.length != 0 ? `\`${userArray.length} reviews\`` : ``}` + 
-                    `\nAverage Rating: \`${Math.round(average(rankNumArray) * 10) / 10}` + 
-                    `\`${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}` + 
-                    `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
+                // Local
+                for (let i = 0; i < localUserArray.length; i++) {
+                    let rating;
+                    rating = songObj[localUserArray[i]].rating;
+                    if (songObj[localUserArray[i]].starred == true) {
+                        localStarNum++;
+                        if (global[i] == `${interaction.user.id}`) {
+                            yourStar = '⭐'; //Added to the end of your rating tab
+                        }
+                    }
+                    
+                    if (rating != false) localRankNumArray.push(parseFloat(rating));
+                    localUserArray[i] = [rating, `${localUserArray[i]} \`${rating}\``];
+                }
+
+                if (globalRankNumArray.length != 0) { 
+                    npEmbed.setDescription(`Global Reviews: ${globalUserArray.length != 0 ? `\`${globalUserArray.length} reviews\`` : ``}` + 
+                    `\nAverage Global Rating: \`${Math.round(average(globalRankNumArray) * 10) / 10}` + 
+                    `\`${globalStarNum >= 1 ? `\nGlobal Stars: \`${globalStarNum} ⭐\`` : ''}` + 
+
+                    `\n\nServer Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} reviews\`` : ``}` + 
+                    `\nAverage Server Rating: \`${Math.round(average(localRankNumArray) * 10) / 10}` + 
+                    `\`${localStarNum >= 1 ? `\nLocal Stars: \`${localStarNum} ⭐\`` : ''}` + 
+
+                    `${(yourRating !== false && yourRating != undefined) ? `\n\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
-                } else if (userArray.length != 0) {
-                    npEmbed.setDescription(`Reviews: ${userArray.length != 0 ? `\`${userArray.length} reviews\`` : ``}` +  
-                    `${starNum >= 1 ? `\nStars: \`${starNum} ⭐\`` : ''}` + 
-                    `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
+                } else if (globalUserArray.length != 0) {
+                    npEmbed.setDescription(`Global Reviews: ${globalUserArray.length != 0 ? `\`${globalUserArray.length} reviews\`` : ``}` + 
+                    `\`${globalStarNum >= 1 ? `\nGlobal Stars: \`${globalStarNum} ⭐\`` : ''}` + 
+
+                    `\n\nServer Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} reviews\`` : ``}` + 
+                    `\`${localStarNum >= 1 ? `\nLocal Stars: \`${localStarNum} ⭐\`` : ''}` + 
+
+                    `${(yourRating !== false && yourRating != undefined) ? `\n\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 } else {
