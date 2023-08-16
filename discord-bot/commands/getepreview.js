@@ -64,17 +64,18 @@ module.exports = {
             if (epObj == undefined) return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
 
             let epReviewObj = epObj[taggedUser.id];
-            let user_name = epReviewObj.name;
-            if (user_name == undefined) return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` has not been reviewed by the user ${taggedMember.displayName}.`);
+            if (epReviewObj == undefined) return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` has not been reviewed by the user ${taggedMember.displayName}.`);
 
             let ep_overall_rating = epReviewObj.rating;
             if (ep_overall_rating == -1) ep_overall_rating = false; // ????
             let ep_overall_review = epReviewObj.review;
             let no_songs_review = epReviewObj.no_songs;
+            let incomplete_review = false;
             let ep_sent_by = epReviewObj.sentby;
             if (no_songs_review == undefined) no_songs_review = false; // Undefined handling for EP/LP reviews without this
             let ep_url = epReviewObj.url;
             let ep_starred = epReviewObj.starred;
+            if (ep_starred == undefined) ep_starred = false;
 
             let ep_art = epObj.art;
             let ep_songs = epObj.songs;
@@ -110,11 +111,6 @@ module.exports = {
                 epEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
             }
 
-            // If we have an incomplete ep/lp review
-            if (epEmbed.description == '' || epEmbed.description == undefined || epEmbed.description == false) {
-                epEmbed.setDescription(`This ${epType} review was not finished, so there is no review.`);
-            }
-
             epEmbed.setAuthor({ name: `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
 
             epEmbed.setThumbnail(ep_art);
@@ -141,7 +137,10 @@ module.exports = {
                     artistsEmbed = [];
                     let songObj = db.reviewDB.get(songArtist, `${setterSongName}`);
                     let songReviewObj = songObj[taggedUser.id];
-                    if (songReviewObj == undefined) no_songs_review = true;
+                    if (songReviewObj == undefined) {
+                        no_songs_review = true;
+                        incomplete_review = true;
+                    }
     
                     if (no_songs_review == false) {
                         rreview = songReviewObj.review;
@@ -178,6 +177,10 @@ module.exports = {
                 if (no_songs_review == true) {
                     epEmbed.setFields([]);
                 }
+            }
+
+            if (incomplete_review == true) {
+                epEmbed.setDescription(`This ${epType} review was manually finished before all songs were reviewed, so there is no review.`);
             }
 
             if (ep_url) {

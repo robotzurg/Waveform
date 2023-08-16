@@ -5,31 +5,96 @@ const { parse_artist_song_data, handle_error, get_review_channel, convertToSette
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('editreview')
-        .setDescription('Edit a song review you\'ve made.')
+        .setDescription('Edit a song or EP/LP review you\'ve made.')
         .setDMPermission(false)
-        .addSubcommand(subcommand =>
-            subcommand.setName('with_spotify')
-            .setDescription('Edit/add data to a song review with spotify playback data.')
+        // Group for songs
+        .addSubcommandGroup(group =>
+            group.setName('song')
+            .setDescription('Edit a song review you have made.')
+            .addSubcommand(subcommand => 
+                subcommand.setName('with_spotify')
+                .setDescription('Edit/add data to a song review with spotify playback data.')
 
-            .addStringOption(option => 
-                option.setName('rating')
-                    .setDescription('The newly edited rating of the song.')
-                    .setRequired(false)
-                    .setMaxLength(3))
-    
-            .addStringOption(option => 
-                option.setName('review')
-                    .setDescription('The newly edited written review.')
-                    .setRequired(false))
-    
-            .addUserOption(option => 
-                option.setName('user_who_sent')
-                    .setDescription('The newly edited user who sent you this song.')
-                    .setRequired(false)))
+                .addStringOption(option => 
+                    option.setName('rating')
+                        .setDescription('The newly edited rating of the song.')
+                        .setRequired(false)
+                        .setMaxLength(3))
+        
+                .addStringOption(option => 
+                    option.setName('review')
+                        .setDescription('The newly edited written review.')
+                        .setRequired(false))
+        
+                .addUserOption(option => 
+                    option.setName('user_who_sent')
+                        .setDescription('The newly edited user who sent you this song.')
+                        .setRequired(false)))
+
+            .addSubcommand(subcommand =>
+                subcommand.setName('manually')
+                .setDescription('Edit/add data to a song review with manually entered information.')
+
+                .addStringOption(option => 
+                    option.setName('artist')
+                        .setDescription('The name of primary artist(s).')
+                        .setAutocomplete(true)
+                        .setRequired(true))
+        
+                .addStringOption(option => 
+                    option.setName('song_name')
+                        .setDescription('The song name.')
+                        .setAutocomplete(true)
+                        .setRequired(true))
+
+                .addStringOption(option => 
+                    option.setName('rating')
+                        .setDescription('The newly edited rating of the song.')
+                        .setRequired(false)
+                        .setMaxLength(3))
+        
+                .addStringOption(option => 
+                    option.setName('review')
+                        .setDescription('The newly edited written review.')
+                        .setRequired(false))
+        
+                .addUserOption(option => 
+                    option.setName('user_who_sent')
+                        .setDescription('The newly edited user who sent you this song.')
+                        .setRequired(false))
+
+                .addStringOption(option => 
+                    option.setName('remixers')
+                        .setDescription('Remixers involved in a remix of a song, for remix reviews.')
+                        .setAutocomplete(true)
+                        .setRequired(false))))
+
+        .addSubcommandGroup(group =>
+            group.setName('ep')
+            .setDescription('Edit an EP/LP review you have made.')
+            .addSubcommand(subcommand => 
+                subcommand.setName('with_spotify')
+                .setDescription('Edit/add data to an EP/LP review with spotify playback data.')
+
+                .addStringOption(option => 
+                    option.setName('rating')
+                        .setDescription('The newly edited rating of the EP/LP.')
+                        .setRequired(false)
+                        .setMaxLength(3))
+        
+                .addStringOption(option => 
+                    option.setName('review')
+                        .setDescription('The newly edited written review.')
+                        .setRequired(false))
+        
+                .addUserOption(option => 
+                    option.setName('user_who_sent')
+                        .setDescription('The newly edited user who sent you this EP/LP.')
+                        .setRequired(false)))
 
         .addSubcommand(subcommand =>
             subcommand.setName('manually')
-            .setDescription('Edit/add data to a song review with manually entered information.')
+            .setDescription('Edit/add data to a EP/LP review with manually entered information.')
 
             .addStringOption(option => 
                 option.setName('artist')
@@ -38,14 +103,14 @@ module.exports = {
                     .setRequired(true))
     
             .addStringOption(option => 
-                option.setName('song_name')
-                    .setDescription('The song name.')
+                option.setName('ep_name')
+                    .setDescription('The EP/LP name.')
                     .setAutocomplete(true)
                     .setRequired(true))
 
             .addStringOption(option => 
                 option.setName('rating')
-                    .setDescription('The newly edited rating of the song.')
+                    .setDescription('The newly edited rating of the EP/LP.')
                     .setRequired(false)
                     .setMaxLength(3))
     
@@ -56,20 +121,19 @@ module.exports = {
     
             .addUserOption(option => 
                 option.setName('user_who_sent')
-                    .setDescription('The newly edited user who sent you this song.')
-                    .setRequired(false))
-
-            .addStringOption(option => 
-                option.setName('remixers')
-                    .setDescription('Remixers involved in a remix of a song, for remix reviews.')
-                    .setAutocomplete(true)
-                    .setRequired(false))),
-    help_desc: `Allows you to edit a review you have made for a song in the review database, and edits the review message in your review channel with the newly edited review.\n\n` +
-    `Can be used for singles, remixes, or songs on an EP/LP review, but this CANNOT be used for EP/LP overall reviews or ratings. Use \`/epeditreview\` for that.\n\n` + 
+                    .setDescription('The newly edited user who sent you this EP/LP.')
+                    .setRequired(false)))),
+    help_desc: `Allows you to edit a review you have made for a song or EP/LP in the review database, and edits the review message in your review channel with the newly edited review.\n\n` +
+    `Can be used for all types of reviews, using either the "song" subcommand for songs/remixes, or the "ep" command for EPs/LPs/Albums.\n\n` + 
     `Using the \`with_spotify\` subcommand will pull from your spotify playback to fill in arguments (if logged into Waveform with Spotify), ` + 
     `while the \`manually\` subcommand will allow you to type in the arguments manually.`,
-	async execute(interaction, client, epCmd = false) {
+	async execute(interaction, client) {
         try {
+
+        let epCmd = false;
+        if (interaction.options.getSubcommandGroup() == 'ep') {
+            epCmd = true;
+        }
             
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('song_name');
@@ -80,6 +144,7 @@ module.exports = {
         if (epCmd == true) {
             song = interaction.options.getString('ep_name');
         }
+        
         let remixers = interaction.options.getString('remixers');
         let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
         if (song_info.error != undefined) {
@@ -201,7 +266,10 @@ module.exports = {
                             msgEmbed.setDescription(songReviewObj.no_songs == false ? `*${review}*` : `${review}`);
                         }
                     } else {
-                        if (rating != null && rating != undefined) msgEmbed.data.fields[0].value = `**${rating}/10**`;
+                        if (rating != null && rating != undefined) {
+                            msgEmbed.data.fields = [];
+                            msgEmbed.addFields([{ name: `Rating`, value: `**${rating}/10**` }]);
+                        } 
                         if (review != null && review != undefined) msgEmbed.setDescription(review);
                     }
 

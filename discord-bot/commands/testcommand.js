@@ -35,7 +35,7 @@ module.exports = {
         let userRatingObj = [];
         let avgRatingList = [];
         let topSongsList = [];
-        let listReviewNum = 5;
+        let listReviewNum = 1;
 
         //db.server_settings.set('680864893552951306', [], 'hall_of_fame');
 
@@ -63,7 +63,7 @@ module.exports = {
                     let songObj = db.reviewDB.get(artist, `${setterSongName}`);
                     let userArray = [];
                     if (songObj != null && songObj != undefined) {
-                        userArray = get_user_reviews(songObj);
+                        userArray = await get_user_reviews(songObj);
                     } else {
                         userArray = [];
                     }
@@ -122,8 +122,8 @@ module.exports = {
 
                     for (let k = 0; k < userArray.length; k++) {
                         let userData = songObj[userArray[k]];
-                        if (userData.rating !== false && !isNaN(parseFloat(userData.rating))) {
-                            avgRatingList.push(parseFloat(userData.rating));
+                        if (userData.starred !== false && userData.starred !== undefined) {
+                            avgRatingList.push(1);
                         }
 
                         if (userArray[k] == user) {
@@ -166,7 +166,7 @@ module.exports = {
 
                     if (gottenGlobalData == false) {
                         if (avgRatingList.length >= listReviewNum && !song.includes(' EP') && !song.includes(' LP')) {
-                            topSongsList.push([_.mean(avgRatingList), `${origArtistArray.join(' & ')} - ${song} (Avg: ${_.mean(avgRatingList).toFixed(2)})`]);
+                            topSongsList.push([avgRatingList.length, `${origArtistArray.join(' & ')} - ${song} (Stars: ${avgRatingList.length})`]);
                         }
                         avgRatingList = [];
                     }
@@ -202,13 +202,10 @@ module.exports = {
 
             gottenGlobalData = true;
 
-            console.log(`Worst Songs with ${listReviewNum} or more reviews:`);
+            console.log(`Songs with Stars:`);
             topSongsList.sort((a, b) => {
                 return b[0] - a[0];
             });
-    
-            topSongsList.reverse();
-            topSongsList = topSongsList.slice(0, 500);
     
             let count = 0;
             topSongsList = topSongsList.map(v => {
@@ -219,7 +216,7 @@ module.exports = {
     
             const fs = require('fs');
     
-            await fs.writeFile(`../worstsongs_${listReviewNum}reviews.txt`, topSongsList.join('\n'), err => {
+            await fs.writeFile(`../starsongs.txt`, topSongsList.join('\n'), err => {
             if (err) {
                 console.error(err);
             }

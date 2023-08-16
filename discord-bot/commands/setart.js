@@ -95,7 +95,7 @@ module.exports = {
 
             if (songObj != undefined) {
                 
-                let userArray = get_user_reviews(songObj);
+                let userArray = await get_user_reviews(songObj);
 
                 userArray.forEach(user => {
                     msgstoEdit.push([songObj[user].guild_id, songObj[user].channel_id, songObj[user].msg_id]);

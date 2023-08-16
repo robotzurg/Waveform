@@ -8,29 +8,55 @@ module.exports = {
         .setName('getsong')
         .setDescription('Get data about a song.')
         .setDMPermission(false)
-        .addStringOption(option => 
-            option.setName('artist')
-                .setDescription('The name of the artist(s).')
-                .setAutocomplete(true)
-                .setRequired(false))
+        .addSubcommand(subcommand =>
+            subcommand.setName('server')
+            .setDescription('Get data specific to the server about a song.')
+            .addStringOption(option => 
+                option.setName('artist')
+                    .setDescription('The name of the artist(s).')
+                    .setAutocomplete(true)
+                    .setRequired(false))
+    
+            .addStringOption(option => 
+                option.setName('song_name')
+                    .setDescription('The name of the song.')
+                    .setAutocomplete(true)
+                    .setRequired(false))
+                
+            .addStringOption(option => 
+                option.setName('remixers')
+                    .setDescription('Remix artists on the song, if any.')
+                    .setAutocomplete(true)
+                    .setRequired(false)))
 
-        .addStringOption(option => 
-            option.setName('song_name')
-                .setDescription('The name of the song.')
-                .setAutocomplete(true)
-                .setRequired(false))
-            
-        .addStringOption(option => 
-            option.setName('remixers')
-                .setDescription('Remix artists on the song, if any.')
-                .setAutocomplete(true)
-                .setRequired(false)),
+            .addSubcommand(subcommand =>
+                subcommand.setName('global')
+                .setDescription('Get data specific across the whole bot about a song.')
+                .addStringOption(option => 
+                    option.setName('artist')
+                        .setDescription('The name of the artist(s).')
+                        .setAutocomplete(true)
+                        .setRequired(false))
+        
+                .addStringOption(option => 
+                    option.setName('song_name')
+                        .setDescription('The name of the song.')
+                        .setAutocomplete(true)
+                        .setRequired(false))
+                    
+                .addStringOption(option => 
+                    option.setName('remixers')
+                        .setDescription('Remix artists on the song, if any.')
+                        .setAutocomplete(true)
+                        .setRequired(false))),
     help_desc: `Pulls up all data relating to a song or remix in Waveform, such as all reviews, rating averages, and more.\n\n` +
+    `You can view a summary view of all data relating to a song globally by using the \`server\` subcommand, or view a list of all local server reviews using the \`server\` subcommand.\n\n` +
     `The remixers argument should have the remixer specified if you are trying to pull up a remix, the remixer should be put in the song_name or artists arguments.\n\n` +
     `Leaving the artist, song_name, and remixers arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)`,
 	async execute(interaction, client) {
         try {
 
+        let subcommand = interaction.options.getSubcommand();
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('song_name');
         let remixers = interaction.options.getString('remixers');
@@ -98,7 +124,15 @@ module.exports = {
             songEPArt = { art: songEPObj.art };
         }
         
-        let userArray = get_user_reviews(songObj);
+        let userArray;
+        // Get all users if global, otherwise get only guild specific users if server.
+        if (subcommand == 'server') {
+            const guild = client.guilds.cache.get(interaction.guild.id);
+            userArray = await get_user_reviews(songObj, guild);
+        } else {
+            userArray = await get_user_reviews(songObj);
+        }
+        
         let userIDList = userArray.slice(0); //.slice(0) is there to create a COPY, not a REFERENCE.
         const songArt = songObj.art;
 
@@ -137,9 +171,16 @@ module.exports = {
         }
         
         if (rankNumArray.length != 0) {
-            songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` + 
-            `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} star${starCount == 1 ? '' : 's'}!** :star2:`)}` + 
-            `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
+            if (subcommand == 'server') {
+                songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` + 
+                `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} star${starCount == 1 ? '' : 's'}!** :star2:`)}` + 
+                `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
+            } else {
+                songEmbed.setDescription(`The average rating of this song globally is **${Math.round(average(rankNumArray) * 10) / 10}!**` + 
+                `\nThis song has **${rankNumArray.length}** ratings.` +
+                `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} star${starCount == 1 ? '' : 's'} globally!** :star2:`)}` + 
+                `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
+            }        
         } else {
             songEmbed.setDescription(`${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
         }
@@ -163,14 +204,14 @@ module.exports = {
                 .setEmoji('➡️'),
         );
 
-        if (userArray.length != 0) { // Sort it by highest to lowest rating
+        if (userArray.length != 0 && subcommand != 'global') { // Sort it by highest to lowest rating
             userArray = sort(userArray);
             userIDList = sort(userIDList);
 
             for (let i = 0; i < userArray.length; i++) {
                 userArray[i] = `**${i + 1}.** `.concat(userArray[i]);
             }
-        } else {
+        } else if (subcommand != 'global') {
             songEmbed.addFields([{ name: 'Reviews:', value: 'No reviews :(' }]);
         }
 
@@ -217,150 +258,178 @@ module.exports = {
                 .addOptions(select_options),
         );
         
+        if (subcommand == 'server') {
+            if (userArray.length != 0) songEmbed.addFields([{ name: 'Reviews:', value: paged_user_list[0].join('\n') }]);
+        } else {
+            if (rankNumArray.length != 0) {
+                let ratingList = rankNumArray.reduce(function(acc, curr) {
+                    return acc[curr] ? ++acc[curr] : acc[curr] = 1, acc;
+                }, {});
 
-        if (userArray.length != 0) songEmbed.addFields([{ name: 'Reviews:', value: paged_user_list[0].join('\n') }]);
+                ratingList = Object.entries(ratingList);
+                ratingList = ratingList.map(v => {
+                    let temp = v[0];
+                    v[0] = v[1];
+                    v[1] = temp;
+                    return v;
+                });
+
+                ratingList = ratingList.sort((a, b) => b[0] - a[0]);
+                ratingList = ratingList.map(v => `**${v[1]}: ${v[0]}**`);
+                songEmbed.addFields([{ name: 'Ratings:', value: `${ratingList.join('\n')}` }]);
+            }
+        }
+        
         if (remixes.length != 0) songEmbed.addFields([{ name: 'Remixes:', value: remixes.join('\n') }]);
         if (songVIP != false) songEmbed.addFields([{ name: 'VIP:', value: `\`${songVIP}\`` }]);
         if (songEP != false) {
-            songEmbed.setFooter({ text: `from ${songEP}${paged_user_list > 1 ? ` • Page ${page_num + 1} / ${paged_user_list.length}` : ``}`, iconURL: songEPArt.art });
-        } else if (paged_user_list > 1) {
+            songEmbed.setFooter({ text: `from ${songEP}${paged_user_list > 1 && subcommand != 'global' ? ` • Page ${page_num + 1} / ${paged_user_list.length}` : ``}`, iconURL: songEPArt.art });
+        } else if (paged_user_list > 1 && subcommand != 'global') {
             songEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_user_list.length}` });
         }
+
+        let components = [];
+        if (subcommand == 'server') {
+            components = paged_user_list.length > 1 ? [sel_row, btn_row] : [sel_row];
+        }
         
-        interaction.reply({ embeds: [songEmbed], components: paged_user_list.length > 1 ? [sel_row, btn_row] : [sel_row] });
+        interaction.reply({ embeds: [songEmbed], components: components });
         let message = await interaction.fetchReply();
 
-        const collector = message.createMessageComponentCollector({ time: 360000 });
-        collector.on('collect', async i => {
-            if (i.customId == 'select') { // Select Menu
+        if (subcommand == 'server') {
+            const collector = message.createMessageComponentCollector({ time: 360000 });
+            collector.on('collect', async i => {
+                if (i.customId == 'select') { // Select Menu
 
-                if (i.values[0] == 'back') { // Back Selection
-                    return await i.update({ content: null, embeds: [songEmbed], components: paged_user_list.length > 1 ? [sel_row, btn_row] : [sel_row] });
-                }
-            
-                let taggedUser, taggedMember, displayName;
-                taggedMember = await interaction.guild.members.fetch(i.values[0]).catch(() => {
-                    taggedMember = undefined;
-                });
-                taggedUser = await client.users.fetch(i.values[0]);
-
-                if (taggedMember == undefined) {
-                    displayName = taggedUser.username;
-                } else {
-                    displayName = taggedMember.displayName;
-                }
-
-                let starred = songObj[i.values[0]].starred;
-                let review = songObj[i.values[0]].review;
-                let rating = songObj[i.values[0]].rating;
-                let sentby = songObj[i.values[0]].sentby;
-                let sentbyIconURL = false;
-                let sentbyDisplayName = false;
-                let url = songObj[i.values[0]].url;
+                    if (i.values[0] == 'back') { // Back Selection
+                        return await i.update({ content: null, embeds: [songEmbed], components: components });
+                    }
                 
-                // If we don't have a single review link, we can check for an EP/LP review link
-                if (url == false && (songEP != false && songEP != undefined)) {
-                    if (songEPObj[`${interaction.user.id}`] != undefined) {
-                        if (songEPObj[`${interaction.user.id}`].url != false) {
-                            url = songEPObj[`${interaction.user.id}`].url;
+                    let taggedUser, taggedMember, displayName;
+                    taggedMember = await interaction.guild.members.fetch(i.values[0]).catch(() => {
+                        taggedMember = undefined;
+                    });
+                    taggedUser = await client.users.fetch(i.values[0]);
+
+                    if (taggedMember == undefined) {
+                        displayName = taggedUser.username;
+                    } else {
+                        displayName = taggedMember.displayName;
+                    }
+
+                    let starred = songObj[i.values[0]].starred;
+                    let review = songObj[i.values[0]].review;
+                    if (review == '-') review = false;
+                    let rating = songObj[i.values[0]].rating;
+                    let sentby = songObj[i.values[0]].sentby;
+                    let sentbyIconURL = false;
+                    let sentbyDisplayName = false;
+                    let url = songObj[i.values[0]].url;
+                    
+                    // If we don't have a single review link, we can check for an EP/LP review link
+                    if (url == false && (songEP != false && songEP != undefined)) {
+                        if (songEPObj[`${interaction.user.id}`] != undefined) {
+                            if (songEPObj[`${interaction.user.id}`].url != false) {
+                                url = songEPObj[`${interaction.user.id}`].url;
+                            }
                         }
                     }
-                }
 
-                if (sentby != false && taggedUser != undefined) {
-                    sentby = await client.users.fetch(sentby);
-                    console.log(`User: ` + sentby);  
-                    sentbyIconURL = sentby.avatarURL({ extension: 'png' });
-                    sentbyDisplayName = sentby.username;
-                }
+                    if (sentby != false && taggedUser != undefined) {
+                        sentby = await client.users.fetch(sentby);
+                        console.log(`User: ` + sentby);  
+                        sentbyIconURL = sentby.avatarURL({ extension: 'png' });
+                        sentbyDisplayName = sentby.username;
+                    }
 
-                const reviewEmbed = new EmbedBuilder();
-                if (taggedMember != undefined) {
-                    reviewEmbed.setColor(`${getEmbedColor(taggedMember)}`);
-                }
-    
-                if (starred == false) {
-                    reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+                    const reviewEmbed = new EmbedBuilder();
+                    if (taggedMember != undefined) {
+                        reviewEmbed.setColor(`${getEmbedColor(taggedMember)}`);
+                    }
+        
+                    if (starred == false) {
+                        reviewEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+                    } else {
+                        reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${displaySongName} :star2:`);
+                    }
+        
+                    reviewEmbed.setAuthor({ name: `${displayName}'s review`, iconURL: `${taggedUser.avatarURL({ extension: "png" })}` });
+        
+                    if (rating !== false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rating}/10**`, inline: true }]);
+                    if (review != false) reviewEmbed.setDescription(review);
+        
+                    reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ extension: "png" }) : songArt);
+
+                    if (sentby != false) {
+                        reviewEmbed.setFooter({ text: `Sent by ${sentbyDisplayName}`, iconURL: `${sentbyIconURL}` });
+                    } else if (songEP != undefined && songEP != false) {
+                        reviewEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0], `${setterSongEP}.art`) });
+                    }
+
+                    let reviewMsgID = songObj[i.values[0]][`msg_id`];
+                    if (reviewMsgID != false && reviewMsgID != undefined) {
+                        let channelsearch = await get_review_channel(client, songObj[i.values[0]].guild_id, songObj[i.values[0]].channel_id, reviewMsgID);
+                        if (channelsearch != undefined) {
+                            await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
+                                reviewEmbed.setTimestamp(msg.createdTimestamp);
+                            });
+                        }
+                    }
+
+                    if (url == undefined || url == false) {
+                        await i.update({ content: null, embeds: [reviewEmbed], components: components });
+                    } else {
+                        await i.update({ content: `[View Review Message](${url})`, embeds: [reviewEmbed], components: components });
+                    }
+
                 } else {
-                    reviewEmbed.setTitle(`:star2: ${origArtistArray.join(' & ')} - ${displaySongName} :star2:`);
-                }
-    
-                reviewEmbed.setAuthor({ name: `${displayName}'s review`, iconURL: `${taggedUser.avatarURL({ extension: "png" })}` });
-    
-                if (rating !== false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rating}/10**`, inline: true }]);
-                if (review != false) reviewEmbed.setDescription(review);
-    
-                reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ extension: "png" }) : songArt);
+                    (i.customId == 'left') ? page_num -= 1 : page_num += 1;
+                    page_num = _.clamp(page_num, 0, paged_user_list.length - 1);
 
-                if (sentby != false) {
-                    reviewEmbed.setFooter({ text: `Sent by ${sentbyDisplayName}`, iconURL: `${sentbyIconURL}` });
-                } else if (songEP != undefined && songEP != false) {
-                    reviewEmbed.setFooter({ text: `from ${songEP}`, iconURL: db.reviewDB.get(artistArray[0], `${setterSongEP}.art`) });
-                }
-
-                let reviewMsgID = songObj[i.values[0]][`msg_id`];
-                if (reviewMsgID != false && reviewMsgID != undefined) {
-                    let channelsearch = await get_review_channel(client, songObj[i.values[0]].guild_id, songObj[i.values[0]].channel_id, reviewMsgID);
-                    if (channelsearch != undefined) {
-                        await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
-                            reviewEmbed.setTimestamp(msg.createdTimestamp);
+                    // Update select menu
+                    select_options = [];
+                    for (let userID of paged_user_id_list[page_num]) {
+                        taggedMemberSel = await interaction.guild.members.fetch(userID).catch(() => {
+                            taggedMemberSel = undefined;
+                        });
+            
+                        if (taggedMemberSel == undefined) {
+                            taggedUserSel = await client.users.fetch(userID);
+                            selDisplayName = taggedUserSel.username;
+                        } else {
+                            selDisplayName = taggedMemberSel.displayName;
+                        }
+            
+                        select_options.push({
+                            label: `${selDisplayName}`,
+                            description: `${selDisplayName}'s review of the song.`,
+                            value: `${userID}`,
                         });
                     }
-                }
-
-                if (url == undefined || url == false) {
-                    await i.update({ content: null, embeds: [reviewEmbed], components: paged_user_list.length > 1 ? [sel_row, btn_row] : [sel_row] });
-                } else {
-                    await i.update({ content: `[View Review Message](${url})`, embeds: [reviewEmbed], components: paged_user_list.length > 1 ? [sel_row, btn_row] : [sel_row] });
-                }
-
-            } else {
-                (i.customId == 'left') ? page_num -= 1 : page_num += 1;
-                page_num = _.clamp(page_num, 0, paged_user_list.length - 1);
-
-                // Update select menu
-                select_options = [];
-                for (let userID of paged_user_id_list[page_num]) {
-                    taggedMemberSel = await interaction.guild.members.fetch(userID).catch(() => {
-                        taggedMemberSel = undefined;
-                    });
-        
-                    if (taggedMemberSel == undefined) {
-                        taggedUserSel = await client.users.fetch(userID);
-                        selDisplayName = taggedUserSel.username;
-                    } else {
-                        selDisplayName = taggedMemberSel.displayName;
-                    }
-        
                     select_options.push({
-                        label: `${selDisplayName}`,
-                        description: `${selDisplayName}'s review of the song.`,
-                        value: `${userID}`,
+                        label: `Back`,
+                        description: `Go back to the main song data menu.`,
+                        value: `back`,
                     });
+
+                    sel_row = new ActionRowBuilder()
+                    .addComponents(
+                        new StringSelectMenuBuilder()
+                            .setCustomId('select')
+                            .setPlaceholder('See other reviews by clicking on me!')
+                            .addOptions(select_options),
+                    );
+                    
+                    songEmbed.data.fields[0].value = paged_user_list[page_num].join('\n');
+
+                    i.update({ embeds: [songEmbed], components: components });
                 }
-                select_options.push({
-                    label: `Back`,
-                    description: `Go back to the main song data menu.`,
-                    value: `back`,
-                });
+            });
 
-                sel_row = new ActionRowBuilder()
-                .addComponents(
-                    new StringSelectMenuBuilder()
-                        .setCustomId('select')
-                        .setPlaceholder('See other reviews by clicking on me!')
-                        .addOptions(select_options),
-                );
-                
-                songEmbed.data.fields[0].value = paged_user_list[page_num].join('\n');
-
-                i.update({ embeds: [songEmbed], components: [sel_row, btn_row] });
-            }
-        });
-
-        collector.on('end', async () => {
-            interaction.editReply({ content: ` `, embeds: [songEmbed], components: [] });
-        });
+            collector.on('end', async () => {
+                interaction.editReply({ content: ` `, embeds: [songEmbed], components: [] });
+            });
+        }
 
         } catch (err) {
             let error = err;

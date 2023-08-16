@@ -182,33 +182,35 @@ module.exports = {
             let artistImgs = await grab_spotify_artist_art(artistArray);
 
             // Setup buttons
-            const row = new ActionRowBuilder()
-            .addComponents(
+            const row = new ActionRowBuilder();
+
+            if (interaction.options.getSubcommand() == 'manually') {
+                row.addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('artist')
+                        .setLabel('Artist')
+                        .setStyle(ButtonStyle.Primary)
+                        .setEmoji('📝'),
+                    new ButtonBuilder()
+                        .setCustomId('ep')
+                        .setLabel('Name')
+                        .setStyle(ButtonStyle.Primary)
+                        .setEmoji('📝'),
+                );
+            }
+
+            row.addComponents(
                 new ButtonBuilder()
-                    .setCustomId('artist')
-                    .setLabel('Artist')
-                    .setStyle(ButtonStyle.Primary)
-                    .setEmoji('📝'),
+                    .setCustomId('rating').setLabel('Rating')
+                    .setStyle(ButtonStyle.Primary).setEmoji('📝'),
                 new ButtonBuilder()
-                    .setCustomId('ep')
-                    .setLabel('Name')
-                    .setStyle(ButtonStyle.Primary)
-                    .setEmoji('📝'),
-                new ButtonBuilder()
-                    .setCustomId('rating')
-                    .setLabel('Rating')
-                    .setStyle(ButtonStyle.Primary)
-                    .setEmoji('📝'),
-                new ButtonBuilder()
-                    .setCustomId('review')
-                    .setLabel('Review')
-                    .setStyle(ButtonStyle.Primary)
-                    .setEmoji('📝'),
+                    .setCustomId('review').setLabel('Review')
+                    .setStyle(ButtonStyle.Primary).setEmoji('📝'),
                 new ButtonBuilder()
                     .setCustomId('star')
-                    .setStyle(ButtonStyle.Secondary)
-                    .setEmoji('🌟'),
+                    .setStyle(ButtonStyle.Secondary).setEmoji('🌟'),
             );
+
 
             // Setup bottom row
             if (overallRating == false && overallReview == false) {

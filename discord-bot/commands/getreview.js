@@ -80,6 +80,7 @@ module.exports = {
             let songArt = songObj.art;
 
             rreview = songReviewObj.review;
+            if (rreview == '-') rreview = false;
             rscore = songReviewObj.rating;
             rsentby = songReviewObj.sentby;
             rstarred = songReviewObj.starred;

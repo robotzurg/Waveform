@@ -39,7 +39,8 @@ module.exports = {
         return array;
     },
 
-    get_user_reviews: function(songObj) {
+    // server_filter is an object of the server guild
+    get_user_reviews: async function(songObj, guild = false) {
         if (songObj == undefined && songObj == null) return [];
         let userArray = Object.keys(songObj);
 
@@ -54,34 +55,27 @@ module.exports = {
         userArray = userArray.filter(e => e !== 'tags');
         userArray = userArray.filter(e => e !== 'spotify_uri');
         userArray = userArray.filter(e => e !== 'songs');
-        return userArray;
-    },
 
-    /**
-     * Takes in a song object and gives back the number of starred reviews the song has.
-     * @param {Object} songObj The song object from the database.
-     * @returns An integer of the number of stars on this song.
-     */
-    get_star_num: function(songObj) {
-        const { get_user_reviews } = require('./func.js');
-        if (songObj == undefined && songObj == null) return [];
-        let userArray = get_user_reviews(songObj);
-        let starCount = 0;
-        for (let user of userArray) {
-            if (songObj[user].starred) starCount += 1;
+        // Filter out the user array to only those in the guild, if this is not false
+        if (guild != false) {
+            let res = await guild.members.fetch();
+            let guildUsers = [...res.keys()];
+            userArray = userArray.filter(e => {
+                return guildUsers.includes(e);
+            });
         }
-        return starCount;
+
+        return userArray;
     },
 
     parse_artist_song_data: async function(interaction, artists = null, song = null, remixers = null) {
         const { spotify_api_setup, getProperRemixers, convertToSetterName } = require('./func.js');
 
         // If we are in the /editdata artist command and put in a manual name entry, run this a little differently
-        let editDataSubCommand = 'N/A';
+        let subcommand = interaction.options.getSubcommand();
 
         if (interaction.commandName == 'editdata') {
-            editDataSubCommand = interaction.options.getSubcommand();
-            if (editDataSubCommand == 'artist' && artists != null) {
+            if (subcommand == 'artist' && artists != null) {
                 return { 
                     prod_artists: [artists], 
                     song_name: 'N/A', // Song name with remixers in the name
@@ -158,7 +152,8 @@ module.exports = {
                 songUri = data.body.item.uri;
                 await spotifyApi.getAlbum(data.body.item.album.id)
                 .then(async album_data => {
-                    if ((interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') || (editDataSubCommand == 'ep-lp')) {
+                    if ((interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') || (subcommand.includes('ep'))
+                        || interaction.options.getSubcommandGroup() == 'ep') {
                         if (album_data.body.album_type == 'compilation') {
                             passesChecks = false;
                             return;
@@ -344,15 +339,20 @@ module.exports = {
                 }
                 
                 // Check to see if the original artist array has the remixer, if it doesn't, we have an invalid remix
+                let invalidRemix = false;
                 for (let r of rmxArtistArray) {
-                    if (!origArtistArray.includes(r) && interaction.commandName == 'sendmail') {
-                        passesChecks = false;
+                    if (!origArtistArray.includes(r)) {
+                        invalidRemix = true;
                     }
                 }
 
-                origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
-                songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
-                if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
+                if (invalidRemix == true) {
+                    rmxArtistArray = [];
+                } else {
+                    origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
+                    songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
+                    if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
+                }
             }
 
             if ((songArg.includes('Remix') && songArg.includes(' - ')) && !songArg.includes('Remix)') && !songArg.includes('Remix]')) {
@@ -383,15 +383,21 @@ module.exports = {
                     }
                     
                     // Check to see if the original artist array has the remixer, if it doesn't, we have an invalid remix
+                    let invalidRemix = false;
                     for (let r of rmxArtistArray) {
-                        if (!origArtistArray.includes(r) && interaction.commandName == 'sendmail') {
-                            passesChecks = false;
+                        if (!origArtistArray.includes(r)) {
+                            invalidRemix = true;
                         }
                     }
 
-                    origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
-                    songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
-                    if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
+                    if (invalidRemix == true) {
+                        songArg = songArg.join(' - ');
+                        rmxArtistArray = [];
+                    } else {
+                        origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
+                        songArg = `${origSongArg} (${rmxArtistArray.join(' & ')} Remix)`;
+                        if (rmxArtistArray[0] == '' || rmxArtistArray.length == 0) passesChecks = false;
+                    }
                 } else {
                     songArg = songArg.join(' - ');
                 }
@@ -413,7 +419,6 @@ module.exports = {
         }
 
         artistArray = artistArray.flat(1);
-        origArtistArray = artistArray.slice(0);
 
         // Fix the remix artist array if needed
         if (rmxArtistArray.length != 0) {
@@ -606,7 +611,7 @@ module.exports = {
             if (imageSongObj != undefined) {
                 let msgstoEdit = [];
 
-                let userArray = get_user_reviews(imageSongObj);
+                let userArray = await get_user_reviews(imageSongObj);
                 if (userArray.length != 0) {
                     userArray.forEach(user => {
                         let userData = db.reviewDB.get(first_artist, `${setterSongName}.${user}`);
@@ -1216,7 +1221,7 @@ module.exports = {
             return [false, {}];
         }
 
-        let userReviews = get_user_reviews(songObj);
+        let userReviews = await get_user_reviews(songObj);
         let songUrl = songObj.spotify_uri;
         if (songUrl == undefined || songUrl == false) {
             songUrl = 'https://www.google.com';
