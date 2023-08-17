@@ -72,7 +72,12 @@ module.exports = {
         const { spotify_api_setup, getProperRemixers, convertToSetterName } = require('./func.js');
 
         // If we are in the /editdata artist command and put in a manual name entry, run this a little differently
-        let subcommand = interaction.options.getSubcommand();
+        let subcommand;
+        try {
+            subcommand = interaction.options.getSubcommand();
+        } catch {
+            subcommand = 'N/A';
+        }
 
         if (interaction.commandName == 'editdata') {
             if (subcommand == 'artist' && artists != null) {
