@@ -122,7 +122,7 @@ module.exports = {
             }
 
             if (i.customId != 'choose') {
-                page_num = _.clamp(page_num, 0, hofList.length - 1);
+                page_num = _.clamp(page_num, 0, pagedHofList.length - 1);
 
                 if (listView == true) {
                     hofCommandEmbed = new EmbedBuilder()
