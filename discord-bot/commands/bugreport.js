@@ -8,7 +8,7 @@ module.exports = {
         .setDescription('Submit a bug report.')
         .setDMPermission(false),
     help_desc: `Creates a modal form that allows you to fill out a bug report to send to Jeffdev, Waveform's Developer.`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
 
         let modalID = Math.random().toString(36).slice(2, 7);
@@ -80,7 +80,9 @@ module.exports = {
 
             await submitted.reply('Successfully submitted a bug report!');
             
-            let bugChannel = interaction.guild.channels.cache.get('1038260795584303184');
+            // These are from the official waveform server
+            let guild = client.guilds.cache.get('1119885734913003551');
+            let bugChannel = guild.channels.cache.get('1119916857890185218');
 
             let bugEmbed = new EmbedBuilder()
             .setColor(`${getEmbedColor(interaction.member)}`)
@@ -96,6 +98,7 @@ module.exports = {
 
         } catch (err) {
             let error = err;
+            console.log(err);
             handle_error(interaction, error);
         }
     },

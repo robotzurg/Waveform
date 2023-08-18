@@ -71,7 +71,6 @@ module.exports = {
                 let globalUserArray = await get_user_reviews(songObj);
                 let globalRankNumArray = [];
                 let localRankNumArray = [];
-                let globalStarNum = 0;
                 let localStarNum = 0;
                 let yourStar = '';
 
@@ -80,12 +79,6 @@ module.exports = {
                     if (globalUserArray[i] == `${interaction.user.id}`) yourRating = songObj[globalUserArray[i]].rating;
                     let rating;
                     rating = songObj[globalUserArray[i]].rating;
-                    if (songObj[globalUserArray[i]].starred == true) {
-                        globalStarNum++;
-                        if (global[i] == `${interaction.user.id}`) {
-                            yourStar = '⭐'; //Added to the end of your rating tab
-                        }
-                    }
                     
                     if (rating != false) globalRankNumArray.push(parseFloat(rating));
                     globalUserArray[i] = [rating, `${globalUserArray[i]} \`${rating}\``];
@@ -107,25 +100,19 @@ module.exports = {
                 }
 
                 if (globalRankNumArray.length != 0) { 
-                    npEmbed.setDescription(`Global Reviews: ${globalUserArray.length != 0 ? `\`${globalUserArray.length} reviews\`` : ``}` + 
-                    `\nAverage Global Rating: \`${Math.round(average(globalRankNumArray) * 10) / 10}` + 
-                    `\`${globalStarNum >= 1 ? `\nGlobal Stars: \`${globalStarNum} ⭐\`` : ''}` + 
+                    npEmbed.setDescription(`\nAvg Global Rating: \`${Math.round(average(globalRankNumArray) * 10) / 10}\`` +
+                    `\nAvg Server Rating: \`${Math.round(average(localRankNumArray) * 10) / 10}\`` + 
+                    `\nServer Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
+                    `${localStarNum >= 1 ? `\nServer Stars: \`${localStarNum} ⭐\`` : ''}` + 
 
-                    `\n\nServer Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} reviews\`` : ``}` + 
-                    `\nAverage Server Rating: \`${Math.round(average(localRankNumArray) * 10) / 10}` + 
-                    `\`${localStarNum >= 1 ? `\nLocal Stars: \`${localStarNum} ⭐\`` : ''}` + 
-
-                    `${(yourRating !== false && yourRating != undefined) ? `\n\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
+                    `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 } else if (globalUserArray.length != 0) {
-                    npEmbed.setDescription(`Global Reviews: ${globalUserArray.length != 0 ? `\`${globalUserArray.length} reviews\`` : ``}` + 
-                    `\`${globalStarNum >= 1 ? `\nGlobal Stars: \`${globalStarNum} ⭐\`` : ''}` + 
-
-                    `\n\nServer Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} reviews\`` : ``}` + 
+                    npEmbed.setDescription(`Server Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
                     `\`${localStarNum >= 1 ? `\nLocal Stars: \`${localStarNum} ⭐\`` : ''}` + 
 
-                    `${(yourRating !== false && yourRating != undefined) ? `\n\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
+                    `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 } else {

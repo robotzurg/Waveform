@@ -163,7 +163,7 @@ module.exports = {
 
         // Run stuff with hall of fame
         if (!songName.includes(' EP') && !songName.includes(' LP')) {
-            await hallOfFameCheck(interaction, songReviewObj.guild_id, artistArray, origArtistArray, songName, displaySongName);
+            await hallOfFameCheck(interaction, client, songReviewObj.guild_id, artistArray, origArtistArray, songName, displaySongName);
         }
 
         db.user_stats.set(interaction.user.id, userStatsObj, 'stats');

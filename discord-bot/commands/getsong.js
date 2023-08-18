@@ -29,26 +29,26 @@ module.exports = {
                     .setAutocomplete(true)
                     .setRequired(false)))
 
-            .addSubcommand(subcommand =>
-                subcommand.setName('global')
-                .setDescription('Get data specific across the whole bot about a song.')
-                .addStringOption(option => 
-                    option.setName('artist')
-                        .setDescription('The name of the artist(s).')
-                        .setAutocomplete(true)
-                        .setRequired(false))
-        
-                .addStringOption(option => 
-                    option.setName('song_name')
-                        .setDescription('The name of the song.')
-                        .setAutocomplete(true)
-                        .setRequired(false))
-                    
-                .addStringOption(option => 
-                    option.setName('remixers')
-                        .setDescription('Remix artists on the song, if any.')
-                        .setAutocomplete(true)
-                        .setRequired(false))),
+        .addSubcommand(subcommand =>
+            subcommand.setName('global')
+            .setDescription('Get data specific across the whole bot about a song.')
+            .addStringOption(option => 
+                option.setName('artist')
+                    .setDescription('The name of the artist(s).')
+                    .setAutocomplete(true)
+                    .setRequired(false))
+    
+            .addStringOption(option => 
+                option.setName('song_name')
+                    .setDescription('The name of the song.')
+                    .setAutocomplete(true)
+                    .setRequired(false))
+                
+            .addStringOption(option => 
+                option.setName('remixers')
+                    .setDescription('Remix artists on the song, if any.')
+                    .setAutocomplete(true)
+                    .setRequired(false))),
     help_desc: `Pulls up all data relating to a song or remix in Waveform, such as all reviews, rating averages, and more.\n\n` +
     `You can view a summary view of all data relating to a song globally by using the \`server\` subcommand, or view a list of all local server reviews using the \`server\` subcommand.\n\n` +
     `The remixers argument should have the remixer specified if you are trying to pull up a remix, the remixer should be put in the song_name or artists arguments.\n\n` +
@@ -169,7 +169,7 @@ module.exports = {
                 }
             }
         }
-        
+
         if (rankNumArray.length != 0) {
             if (subcommand == 'server') {
                 songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` + 
@@ -204,15 +204,17 @@ module.exports = {
                 .setEmoji('➡️'),
         );
 
-        if (userArray.length != 0 && subcommand != 'global') { // Sort it by highest to lowest rating
+        if (userArray.length != 0) {
             userArray = sort(userArray);
             userIDList = sort(userIDList);
+        } else {
+            songEmbed.addFields([{ name: 'Reviews:', value: 'No reviews :(' }]);
+        }
 
+        if (subcommand != 'global') {
             for (let i = 0; i < userArray.length; i++) {
                 userArray[i] = `**${i + 1}.** `.concat(userArray[i]);
             }
-        } else if (subcommand != 'global') {
-            songEmbed.addFields([{ name: 'Reviews:', value: 'No reviews :(' }]);
         }
 
         let taggedMemberSel, taggedUserSel, selDisplayName;
@@ -288,12 +290,12 @@ module.exports = {
             songEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_user_list.length}` });
         }
 
-        let components = [];
+        let components = null;
         if (subcommand == 'server') {
             components = paged_user_list.length > 1 ? [sel_row, btn_row] : [sel_row];
         }
         
-        interaction.reply({ embeds: [songEmbed], components: components });
+        await interaction.reply({ embeds: [songEmbed], components: components });
         let message = await interaction.fetchReply();
 
         if (subcommand == 'server') {
@@ -337,7 +339,6 @@ module.exports = {
 
                     if (sentby != false && taggedUser != undefined) {
                         sentby = await client.users.fetch(sentby);
-                        console.log(`User: ` + sentby);  
                         sentbyIconURL = sentby.avatarURL({ extension: 'png' });
                         sentbyDisplayName = sentby.username;
                     }
@@ -422,6 +423,8 @@ module.exports = {
                     
                     songEmbed.data.fields[0].value = paged_user_list[page_num].join('\n');
 
+                    components = [sel_row, btn_row];
+
                     i.update({ embeds: [songEmbed], components: components });
                 }
             });
@@ -433,6 +436,7 @@ module.exports = {
 
         } catch (err) {
             let error = err;
+            console.log(err);
             handle_error(interaction, error);
         }
 	},
