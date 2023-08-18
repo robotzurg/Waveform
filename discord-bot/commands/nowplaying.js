@@ -80,7 +80,7 @@ module.exports = {
                     let rating;
                     rating = songObj[globalUserArray[i]].rating;
                     
-                    if (rating != false) globalRankNumArray.push(parseFloat(rating));
+                    if (rating !== false) globalRankNumArray.push(parseFloat(rating));
                     globalUserArray[i] = [rating, `${globalUserArray[i]} \`${rating}\``];
                 }
 
@@ -95,7 +95,7 @@ module.exports = {
                         }
                     }
                     
-                    if (rating != false) localRankNumArray.push(parseFloat(rating));
+                    if (rating !== false) localRankNumArray.push(parseFloat(rating));
                     localUserArray[i] = [rating, `${localUserArray[i]} \`${rating}\``];
                 }
 
