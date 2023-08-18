@@ -464,8 +464,10 @@ module.exports = {
                                 epEmbed.setDescription(`This ${epType} has no songs in the database and has not been reviewed overall.`);
                             }
                         }
+
+                        components = [sel_row, btn_row];
         
-                        i.update({ embeds: [epEmbed], components: [sel_row, btn_row] });
+                        i.update({ embeds: [epEmbed], components: components });
                     }
                 });
 

@@ -292,7 +292,13 @@ module.exports = {
 
         // Fix song formatting
         // TODO: MAKE ALL OF THIS INTO A FUNCTION THAT CAN BE CALLED TO CHECK IF A SONG IS VALID
-        if (!Array.isArray(origArtistArray)) origArtistArray = origArtistArray.split(' & ');
+        if (!Array.isArray(origArtistArray) && origArtistArray != null) {
+            origArtistArray = origArtistArray.split(' & ');
+        } else if (origArtistArray == null) {
+            passesChecks = 'notplaying';
+            origArtistArray = [];
+            songArg = 'N/A';
+        }
 
         if (songArg.includes('feat.')) {
             songArg = songArg.split(' (feat. ');
@@ -1217,7 +1223,7 @@ module.exports = {
         return embedColor;
     },
 
-    hallOfFameCheck: async function(interaction, guild_id, dbArtistArray, origArtistArray, rmxArtistArray, songName) {
+    hallOfFameCheck: async function(interaction, client, guild_id, dbArtistArray, origArtistArray, rmxArtistArray, songName) {
         const { get_user_reviews, convertToSetterName } = require('./func.js');
         // Check if the song was added to hall of fame
         let setterSongName = convertToSetterName(songName);
@@ -1226,7 +1232,8 @@ module.exports = {
             return [false, {}];
         }
 
-        let userReviews = await get_user_reviews(songObj);
+        let guild = client.guilds.cache.get(guild_id);
+        let userReviews = await get_user_reviews(songObj, guild);
         let songUrl = songObj.spotify_uri;
         if (songUrl == undefined || songUrl == false) {
             songUrl = 'https://www.google.com';

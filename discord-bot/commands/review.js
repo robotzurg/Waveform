@@ -747,7 +747,7 @@ module.exports = {
                     await updateStats(interaction, interaction.guild.id, origArtistArray, artistArray, rmxArtistArray, songName, displaySongName, db.reviewDB.get(artistArray[0], `${songName}`), false);
 
                     // Update hall of fame
-                    await hallOfFameCheck(interaction, interaction.guild.id, artistArray, origArtistArray, songName, displaySongName);
+                    await hallOfFameCheck(interaction, client, interaction.guild.id, artistArray, origArtistArray, songName, displaySongName);
 
                 } break;
                 case 'done': { // Send the review to the database
@@ -796,7 +796,7 @@ module.exports = {
                     await updateStats(interaction, interaction.guild.id, origArtistArray, artistArray, rmxArtistArray, songName, displaySongName, db.reviewDB.get(artistArray[0], `${songName}`), false);
 
                     // Update hall of fame
-                    await hallOfFameCheck(interaction, interaction.guild.id, artistArray, origArtistArray, songName, displaySongName);
+                    await hallOfFameCheck(interaction, client, interaction.guild.id, artistArray, origArtistArray, songName, displaySongName);
 
                     // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
                     if (is_mailbox == true) {

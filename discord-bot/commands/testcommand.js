@@ -9,7 +9,7 @@ module.exports = {
         .setDescription('Test command for admins. Not for you, most likely!')
         .setDMPermission(false),
     help_desc: `This is an admin command designed for development purposes, and as a result is not a command you can use.`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
 
         if (interaction.user.id != '122568101995872256') return interaction.reply('Not for you!');
@@ -117,7 +117,7 @@ module.exports = {
                     }
 
                     if (gottenGlobalData == false) {
-                        await hallOfFameCheck(interaction, '680864893552951306', allArtists, origArtistArray, rmxArtistArray, song);
+                        await hallOfFameCheck(interaction, client, '680864893552951306', allArtists, origArtistArray, rmxArtistArray, song);
                     }
 
                     for (let k = 0; k < userArray.length; k++) {
