@@ -14,7 +14,8 @@ module.exports = {
 	async execute(interaction) {
         
         await interaction.reply({ content: 'Sent a DM about logging in to Waveform with Spotify!' });
-        let dmMsg = await interaction.user.send('Here is how you login to Waveform with Spotify!\nGo to [this website](https://nimble-kataifi-dbceca.netlify.app/), then with the refresh token it returns, send the refresh token here (as a message), and you\'ll be all set!');
+        let dmMsg = await interaction.user.send('Here is how you login to Waveform with Spotify!\nGo to [this website](https://nimble-kataifi-dbceca.netlify.app/), then with the refresh token it returns, send the refresh token here (as a message), and you\'ll be all set!' +
+        `\nPlease note that this process works best on Chrome. Your mileage may vary on other platforms, but if you are not receiving a proper refresh token, try using chrome, and try disabling any password collectors you may have. If you are still running into issues, please contact jeffdev on Discord!`);
         const collector = await dmMsg.channel.createMessageCollector({ max: 1, time: 120000 });
 
         collector.on('collect', async token => {

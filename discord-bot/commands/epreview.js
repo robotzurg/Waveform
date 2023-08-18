@@ -234,7 +234,7 @@ module.exports = {
                         .setStyle(ButtonStyle.Success),
                     new ButtonBuilder()
                         .setCustomId('done')
-                        .setLabel('Send to Database with No Song Reviews')
+                        .setLabel(`Review ${epType} Without Individual Song Reviews`)
                         .setStyle(ButtonStyle.Success),
                     new ButtonBuilder()
                         .setCustomId('delete')

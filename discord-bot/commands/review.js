@@ -211,14 +211,14 @@ module.exports = {
             } else {
                 reviewButtons.addComponents( 
                     new ButtonBuilder()
-                    .setCustomId('done').setLabel('Send to Database')
+                    .setCustomId('done').setLabel('Confirm Review')
                     .setStyle(ButtonStyle.Success),
                 );
             }
         } else {
             reviewButtons.addComponents( 
                 new ButtonBuilder()
-                .setCustomId('done').setLabel('Send to Database')
+                .setCustomId('done').setLabel('Confirm Review')
                 .setStyle(ButtonStyle.Success),
             );
         }
