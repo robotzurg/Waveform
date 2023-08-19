@@ -17,7 +17,6 @@ module.exports = {
 
         if (songArt == false) songArt = interaction.member.avatarURL({ extension: 'png' });
 
-        // TODO: Make this pick a random song
         let randomArtist = db.reviewDB.randomKey();
         let artistObj = db.reviewDB.get(randomArtist);
         let artistSongs = Object.keys(artistObj);
@@ -44,7 +43,7 @@ module.exports = {
 
         spotifyUrl = songObj.spotify_uri;
         songArt = songObj.art;
-        if (songArt == undefined || songArt == false) songArt = '';
+        if (songArt == undefined || songArt == false || songArt == '') songArt = null;
         if (spotifyUrl == undefined || spotifyUrl == false) {
             spotifyUrl = 'N/A';
         } else {
