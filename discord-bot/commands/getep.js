@@ -23,20 +23,20 @@ module.exports = {
                     .setAutocomplete(true)
                     .setRequired(false)))
 
-            .addSubcommand(subcommand =>
-                subcommand.setName('global')
-                .setDescription('Get data specific across the whole bot about an EP/LP.')
-                .addStringOption(option => 
-                    option.setName('artist')
-                        .setDescription('The name of the artist(s).')
-                        .setAutocomplete(true)
-                        .setRequired(false))
-        
-                .addStringOption(option => 
-                    option.setName('ep_name')
-                        .setDescription('The name of the EP.')
-                        .setAutocomplete(true)
-                        .setRequired(false))),
+        .addSubcommand(subcommand =>
+            subcommand.setName('global')
+            .setDescription('Get data specific across the whole bot about an EP/LP.')
+            .addStringOption(option => 
+                option.setName('artist')
+                    .setDescription('The name of the artist(s).')
+                    .setAutocomplete(true)
+                    .setRequired(false))
+    
+            .addStringOption(option => 
+                option.setName('ep_name')
+                    .setDescription('The name of the EP.')
+                    .setAutocomplete(true)
+                    .setRequired(false))),
     help_desc: `Pulls up all data relating to an EP/LP in Waveform, such as all reviews, rating averages, and more.\n\n` +
     `You can view a summary view of all data relating to an EP/LP globally by using the \`server\` subcommand, or view a list of all local server reviews using the \`server\` subcommand.\n\n` +
     `You can also view individual server users EP/LP reviews with the drop down menu.\n\n` +
@@ -66,7 +66,7 @@ module.exports = {
 
             let ep_art = epObj.art;
             if (ep_art == undefined || ep_art == false) {
-                ep_art = interaction.user.avatarURL({ extension: "png", dynamic: false });
+                ep_art = interaction.user.avatarURL({ extension: "png", dynamic: true });
             }
 
             let rankNumArray = [];
@@ -121,7 +121,14 @@ module.exports = {
                 let songObj = db.reviewDB.get(songArtist)[epSongArray[i]];
                 epnum++;
 
-                reviewNum = await get_user_reviews(songObj);
+                // Get all users if global, otherwise get only guild specific users if server.
+                if (subcommand == 'server') {
+                    const guild = client.guilds.cache.get(interaction.guild.id);
+                    reviewNum = await get_user_reviews(epObj, guild);
+                } else {
+                    reviewNum = await get_user_reviews(epObj);
+                }
+
                 rankNumArray = [];
                 let star_num = 0;
 
@@ -136,7 +143,7 @@ module.exports = {
                 }
 
                 reviewNum = reviewNum.length;
-                epEmbed.addFields([{ name: `${epnum}. ${epSongArray[i]} (Avg: ${(rankNumArray.length != 0) ? `${Math.round(average(rankNumArray) * 10) / 10}` : `N/A`})`,
+                await epEmbed.addFields([{ name: `${epnum}. ${epSongArray[i]} (Avg: ${(rankNumArray.length != 0) ? `${Math.round(average(rankNumArray) * 10) / 10}` : `N/A`})`,
                     value: `\`${reviewNum} review${reviewNum > 1 ? 's' : ''}\` ${star_num > 0 ? `\`${star_num} 🌟\`` : ''}` }]);
 
                 if (rankNumArray.length != 0) songRankArray.push(Math.round(average(rankNumArray) * 10) / 10);
@@ -209,13 +216,13 @@ module.exports = {
                 // If there are songs attached to the EP/LP
                 if (songRankArray.length != 0) {
                     if (subcommand == 'server') {
-                        epEmbed.setDescription(`*The average overall user rating of this ${epType} is* ***${Math.round(average(epRankArray) * 10) / 10}!***` + 
+                        epEmbed.setDescription(`*The average overall user rating of this ${epType} is* **${Math.round(average(epRankArray) * 10) / 10}!**` + 
                         `\n*The total average rating of all songs on this ${epType} is* ***${Math.round(average(songRankArray) * 10) / 10}!***` +
                         `${(starCount == 0 ? `` : `\n:star2: **This ${epType} has ${starCount} star${starCount == 1 ? '' : 's'}!** :star2:`)}` +
                         `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}` +
                         `\n${paged_user_list[0].join('\n')}`);
                     } else {
-                        epEmbed.setDescription(`The average overall user rating of this ${epType} is ***${Math.round(average(epRankArray) * 10) / 10}!***` + 
+                        epEmbed.setDescription(`The average overall user rating of this ${epType} is **${Math.round(average(epRankArray) * 10) / 10}!**` + 
                         `\nThe total average rating of all songs on this ${epType} is **${Math.round(average(songRankArray) * 10) / 10}!**` +
                         `\nThis ${epType} has **${songRankArray.length}** ratings.` +
                         `${(starCount == 0 ? `` : `\n:star2: **This ${epType} has ${starCount} star${starCount == 1 ? '' : 's'} globally!** :star2:`)}` +
@@ -378,7 +385,7 @@ module.exports = {
                             epReviewEmbed.setDescription(`This ${epType} review was manually finished before all songs were reviewed, so there is no review.`);
                         }
 
-                        epReviewEmbed.setAuthor({ name: `${displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
+                        epReviewEmbed.setAuthor({ name: `${displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: true })}` });
 
                         epReviewEmbed.setThumbnail(ep_art);
                         if (ep_sent_by != false && ep_sent_by != undefined) {
@@ -386,13 +393,16 @@ module.exports = {
                         }
 
                         let reviewMsgID = epReviewObj.msg_id;
-                        if (reviewMsgID != false && reviewMsgID != undefined) {
+                        let timestamp = epReviewObj.timestamp;
+                        if (reviewMsgID != false && reviewMsgID != undefined && timestamp == undefined) {
                             let channelsearch = await get_review_channel(client, epReviewObj.guild_id, epReviewObj.channel_id, reviewMsgID);
                             if (channelsearch != undefined) {
                                 await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
                                     epReviewEmbed.setTimestamp(msg.createdTimestamp);
                                 });
                             }
+                        } else if (timestamp != undefined) {
+                            epReviewEmbed.setTimestamp(timestamp);
                         }
 
                         if (new Embed(epReviewEmbed.toJSON()).length > 5250) {

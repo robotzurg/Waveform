@@ -6,15 +6,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('setupmailbox')
         .setDescription('Setup a Waveform Mailbox.')
-        .setDMPermission(false)
-        .addStringOption(option => 
-            option.setName('playlist_name')
-                .setDescription('The name of the mailbox playlist on Spotify (defaults to "Waveform Mailbox")')
-                .setRequired(false))
-        .addStringOption(option => 
-            option.setName('playlist_desc')
-                .setDescription('The description for your mailbox playlist on Spotify. (Optional)')
-                .setRequired(false)),
+        .setDMPermission(false),
     help_desc: `Sets up a Waveform Mailbox system. This creates a mailbox playlist on Spotify if the user is logged into spotify, and sets up internal variables to be able to hold the data.\n\n` + 
     `Waveform Mailboxes cannot be used without running this command first, and the spotify playlist can safely be set as private or deleted without interfering with the system.\n\n` + 
     `You can use a Waveform Mailbox if you are not connected to Spotify, but you will lose lots of functionality.`,
@@ -27,13 +19,8 @@ module.exports = {
         if (spotifyApi == false) spotifyCheck = false;
         await interaction.reply('Setting up mailbox...');
 
-        let playlist_name = interaction.options.getString('playlist_name');
-        if (playlist_name == null) playlist_name = 'Waveform Mailbox';
-        let playlist_desc = interaction.options.getString('playlist_desc');
-        if (playlist_desc == null) playlist_desc = 'Your own personal Waveform Mailbox for people to send you music! Will be updated with music that people send you!';
-
         if (spotifyCheck != false) { 
-            await spotifyApi.createPlaylist(playlist_name, { 'description': playlist_desc, 'public': true })
+            await spotifyApi.createPlaylist('Waveform Mailbox', { 'description': 'Your own personal Waveform Mailbox for people to send you music! Will be updated with music that people send you!', 'public': true })
             .then(async function(data) {
                 db.user_stats.set(interaction.user.id, data.body.id, 'mailbox_playlist_id');
                 db.user_stats.set(interaction.user.id, [], 'mailbox_list');

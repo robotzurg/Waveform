@@ -368,13 +368,16 @@ module.exports = {
                     }
 
                     let reviewMsgID = songObj[i.values[0]][`msg_id`];
-                    if (reviewMsgID != false && reviewMsgID != undefined) {
+                    let timestamp = songObj[i.values[0]][`timestamp`];
+                    if (reviewMsgID != false && reviewMsgID != undefined && timestamp == undefined) {
                         let channelsearch = await get_review_channel(client, songObj[i.values[0]].guild_id, songObj[i.values[0]].channel_id, reviewMsgID);
                         if (channelsearch != undefined) {
                             await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
                                 reviewEmbed.setTimestamp(msg.createdTimestamp);
                             });
                         }
+                    } else if (timestamp != undefined) {
+                        reviewEmbed.setTimestamp(timestamp);
                     }
 
                     if (url == undefined || url == false) {

@@ -160,7 +160,6 @@ module.exports = {
                 collab: musicObj.collab,
                 remix_collab: musicObj.remix_collab == undefined ? [] : musicObj.remix_collab,
                 remixers: musicObj.remixers == undefined ? [] : musicObj.remixers,
-                vocals: musicObj.vocals == undefined ? [] : musicObj.vocals,
                 no_remix_name: music.replace(` (${origArtistArray[0]} Remix)`, ``),
                 ep_songs: musicObj.songs == undefined ? [] : musicObj.songs,
             });
@@ -190,9 +189,6 @@ module.exports = {
                         .setCustomId('artists').setLabel('Artists')
                         .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
                     new ButtonBuilder()
-                        .setCustomId('vocalists').setLabel('Vocalists')
-                        .setStyle(ButtonStyle.Secondary).setEmoji('📝'),
-                    new ButtonBuilder()
                         .setCustomId('remixers').setLabel('Remixers')
                         .setStyle(ButtonStyle.Secondary).setEmoji('📝').setDisabled(remixers.length == 0),
                     new ButtonBuilder()
@@ -211,7 +207,7 @@ module.exports = {
             editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
             editEmbed.addFields(
                 { name: 'Artists:', value: `${origArtistArray.join('\n')}\n${rmxArtistArray.join('\n')}`, inline: true },
-                { name: 'Vocalists:', value: `${vocalistArray.length != 0 ? vocalistArray.join('\n') : `N/A`}`, inline: true },
+                { name: 'Vocalists:', value: `N/A`, inline: true },
                 { name: 'Remixers:', value: `${remixers.length != 0 ? remixers.join('\n') : `N/A`}`, inline: true },
                 { name: 'Song Name:', value: `${songName}`, inline: true },
                 { name: 'Song Type:', value: `${songType}`, inline: true },
@@ -346,9 +342,8 @@ module.exports = {
         const menu_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
         let msg_collector;
         let remove_collector;
-        let artistRemoveSelect, vocalistRemoveSelect, remixerRemoveSelect, a_select_options, v_select_options, r_select_options;
+        let artistRemoveSelect, remixerRemoveSelect, a_select_options, r_select_options;
         let artist_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
-        let vocalist_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
         let remixer_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
         let msg_filter = m => m.author.id == interaction.user.id;
 
@@ -372,22 +367,6 @@ module.exports = {
             );
             
             if (subCommand != 'ep-lp') {
-                v_select_options = [];
-                for (let i = 0; i < vocalistArray.length; i++) {
-                    v_select_options.push({
-                        label: `${vocalistArray[i]}`,
-                        description: `Select this to remove ${vocalistArray[i]} as a vocalist.`,
-                        value: `${vocalistArray[i]}`,
-                    });
-                }
-                vocalistRemoveSelect = new ActionRowBuilder()
-                .addComponents(
-                    new StringSelectMenuBuilder()
-                        .setCustomId('vocalists_remove_sel')
-                        .setPlaceholder('Vocalists')
-                        .addOptions(v_select_options),
-                );
-
                 r_select_options = [];
                 for (let i = 0; i < remixers.length; i++) {
                     r_select_options.push({
@@ -451,7 +430,6 @@ module.exports = {
                 adjustButtons.components[0].setDisabled(false);
                 adjustButtons.components[1].setDisabled(false);
                 await artist_r_collector.stop();
-                await vocalist_r_collector.stop();
                 await remixer_r_collector.stop();
                 await artist_collector.stop();
                 if (msg_collector != undefined) await msg_collector.stop();
@@ -496,11 +474,8 @@ module.exports = {
                                         // If we don't need to block input from the EP/LP check above, parse input.
                                         if (blockInput == false) {
                                             origArtistArray.push(msg.content);
-                                            // Remove the artist from the original vocalist array if they're in the artist array, to prevent duplicates
-                                            if (vocalistArray.includes(msg.content)) vocalistArray = origArtistArray.filter(v => v != msg.content);
                                             // Edit the embed
                                             editEmbed.data.fields[0].value = origArtistArray.join('\n');
-                                            editEmbed.data.fields[1].value = vocalistArray.length != 0 ? vocalistArray.join('\n') : `N/A`;
                                             editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
                                         }
                                     } else if (subCommand == 'remix') {
@@ -549,8 +524,7 @@ module.exports = {
                             if (sel.customId == 'artists_remove_sel') {
                                 if (subCommand == 'song' || subCommand == 'ep-lp') {
                                     origArtistArray = origArtistArray.filter(v => v != sel.values[0]);
-                                    displaySongName = (`${songName}` + 
-                                    `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
+                                    displaySongName = songName;
 
                                     editEmbed.data.fields[0].value = origArtistArray.join('\n');
                                 } else if (subCommand == 'remix') {
@@ -575,92 +549,6 @@ module.exports = {
                                     `Successfully removed **${sel.values[0]}**.`,
                                     components: [artistRemoveSelect, confirmButton],
                                 });
-                            }
-                        });
-                    }
-                }
-            } else if (i.customId == 'vocalists' || ((i.customId == 'add' || i.customId == 'remove') && mode == 'vocalists')) {
-                mode = 'vocalists';
-                adjustButtons.components[1].setDisabled(vocalistArray.length == 0);
-                vocalist_r_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
-                msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
-                if (i.customId == 'vocalists') {
-                    await i.update({ 
-                        content: `**Would you like to add or remove vocalists from ${origArtistArray.join(' & ')} - ${displaySongName}?**`,
-                        embeds: [], 
-                        components: [adjustButtons],
-                    });
-                } else {
-                    if (i.customId == 'add') { // If we are adding data
-                        mode = 'vocalists_add';
-                        await i.update({ 
-                            content: `**Type in the name of the vocalists you would like to add one by one. When you are finished, press confirm.**\n` +
-                            `__**Vocalists:**__\n\`\`\`\n${vocalistArray.length != 0 ? vocalistArray.join('\n') : ' '}\`\`\``,
-                            embeds: [], 
-                            components: [confirmButton],
-                        });
-
-                        msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
-                        msg_collector.on('collect', async msg => {
-                            if (mode == 'vocalists_add') {
-                                if (!vocalistArray.includes(msg.content)) {
-                                    vocalistArray.push(msg.content);
-                                    displaySongName = (`${songName}` + 
-                                    `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
-                                    // Remove the artist from the original artist array if they're in the vocalist array, to prevent duplicates
-                                    if (origArtistArray.includes(msg.content)) origArtistArray = origArtistArray.filter(v => v != msg.content);
-
-                                    // Update select menu options
-                                    v_select_options.push({
-                                        label: `${msg.content}`,
-                                        description: `Select this to remove ${msg.content} as a vocalist.`,
-                                        value: `${msg.content}`,
-                                    });
-                                    vocalistRemoveSelect.components[0].setOptions(v_select_options);
-
-                                    // Update the embed
-                                    editEmbed.data.fields[0].value = origArtistArray.length != 0 ? origArtistArray.join('\n') : `N/A`;
-                                    editEmbed.data.fields[1].value = vocalistArray.join('\n');
-                                    editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
-                                    await i.editReply({ 
-                                        content: `**Type in the name of the vocalists you would like to add, one by one. When you are finished, press confirm.**\n` +
-                                        `__**Vocalists:**__\n\`\`\`\n${vocalistArray.length != 0 ? vocalistArray.join('\n') : ' '}\`\`\``,
-                                    });
-                                }
-                                await msg.delete();
-                            }
-                        });
-                    } else if (i.customId == 'remove') { // If we are removing data
-                        mode = 'vocalists_remove';
-                        await i.update({ 
-                            content: `**Select vocalists that you would like to remove, one by one in the select menu. When you are finished, press confirm.**`,
-                            embeds: [], 
-                            components: [vocalistRemoveSelect, confirmButton],
-                        });
-
-                        remove_collector = message.createMessageComponentCollector({ filter: int_filter, time: 720000 });
-                        remove_collector.on('collect', async sel => {
-                            if (sel.customId == 'vocalists_remove_sel') {
-                                vocalistArray = vocalistArray.filter(v => v != sel.values[0]);
-                                displaySongName = (`${songName}` + 
-                                `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
-
-                                editEmbed.data.fields[1].value = vocalistArray.length != 0 ? vocalistArray.join('\n') : 'N/A';
-                                editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
-                                v_select_options = v_select_options.filter(v => v.label != sel.values[0]);
-                                vocalistRemoveSelect.components[0].setOptions(v_select_options);
-                                if (vocalistArray.length == 0) {
-                                    sel.update({
-                                        content: `**No vocalists left to remove, click confirm to return back to the main menu.**`,
-                                        components: [confirmButton],
-                                    });
-                                } else {
-                                    sel.update({
-                                        content: `**Select vocalists that you would like to remove, one by one in the select menu. When you are finished, press confirm.**\n` +
-                                        `Successfully removed **${sel.values[0]}**.`,
-                                        components: [vocalistRemoveSelect, confirmButton],
-                                    });
-                                }
                             }
                         });
                     }
@@ -716,8 +604,7 @@ module.exports = {
                         if ((subCommand == 'ep-lp' && msg.content.includes(' EP') || msg.content.includes(' LP')) || (subCommand == 'song')) {
                             songName = msg.content;
                             setterSongName = convertToSetterName(songName);
-                            displaySongName = (`${songName}` + 
-                            `${(vocalistArray.length != 0) ? ` (ft. ${vocalistArray.join(' & ')})` : ``}`);
+                            displaySongName = songName;
                             editEmbed.data.fields[subCommand == 'song' ? 3 : 1].value = songName;
                             editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
                             await i.editReply({ 
@@ -857,7 +744,6 @@ module.exports = {
                             db.reviewDB.delete(artist, `${setterOldSongName}`);
                             // Start editing oldSongObj with new data
                             oldSongObj.collab = origArtistArray.filter(v => v != artist);
-                            oldSongObj.vocals = vocalistArray;
                             oldSongObj.remixers = remixers;
                             delete oldSongObj.tags;
                             
@@ -891,7 +777,6 @@ module.exports = {
                                     db.reviewDB.delete(collabRmxArtist, `${setterOldSongName}`);
                                     // Start editing oldSongObj with new data
                                     oldSongObj.collab = origArtistArray;
-                                    oldSongObj.vocals = vocalistArray;
                                     delete oldSongObj.tags;
                                     // Set the new song object with all the newly edited data into the database for that artist
                                     db.reviewDB.set(collabRmxArtist, oldSongObj, `${setterSongName}`);
@@ -902,7 +787,6 @@ module.exports = {
                                 db.reviewDB.delete(rmxArtist, `${setterOldSongName}`);
                                 // Start editing oldSongObj with new data
                                 oldSongObj.collab = origArtistArray;
-                                oldSongObj.vocals = vocalistArray;
                                 delete oldSongObj.tags;
                                 // Set the new song object with all the newly edited data into the database for that artist
                                 db.reviewDB.set(rmxArtist, oldSongObj, `${setterSongName}`);
@@ -974,7 +858,7 @@ module.exports = {
                             // If we renamed the artist, start updating data
                             if (ogArtistName != origArtistArray[0]) {
                                 // Update all artists data
-                                let newCollab, newVocals, newRemixers;
+                                let newCollab, newRemixers;
                                 for (let collab of extraArtistMusicData[j].collab) {
                                     if (!artistMusic[j].includes(ogArtistName)) {
                                         newCollab = await db.reviewDB.get(collab, `${extraArtistMusicData[j].setter_name}.collab`);
@@ -984,11 +868,7 @@ module.exports = {
                                             await newCollab.push(origArtistArray[0]);
                                         }
 
-                                        newVocals = await db.reviewDB.get(collab, `${extraArtistMusicData[j].setter_name}.vocals`);
-                                        newVocals = await newVocals.filter(v => v !== ogArtistName);
                                         db.reviewDB.set(collab, newCollab, `${extraArtistMusicData[j].setter_name}.collab`);
-                                        db.reviewDB.set(collab, newVocals, `${extraArtistMusicData[j].setter_name}.vocals`);
-                                        db.reviewDB.set(ogArtistName, newVocals, `${extraArtistMusicData[j].setter_name}.vocals`);
                                     } else {
                                         newRemixers = await db.reviewDB.get(collab, `${extraArtistMusicData[j].no_remix_name}.remixers`);
                                         newRemixers = await newRemixers.filter(v => v !== ogArtistName);
@@ -1010,12 +890,10 @@ module.exports = {
                                     if (rmxArtist.includes('&') && !rmxArtist.includes('\\&') || (rmxArtist.includes(' & '))) {
                                         for (let collabRmxArtist of rmxArtist.split(' & ')) {
                                             db.reviewDB.set(rmxArtist, db.reviewDB.get(collabRmxArtist, `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).collab`).filter(v => v !== ogArtistName).push(origArtistArray[0]), `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).collab`);
-                                            db.reviewDB.set(rmxArtist, db.reviewDB.get(collabRmxArtist, `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).vocals`).filter(v => v !== ogArtistName), `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).vocals`);
                                         }
                                     } else {
                                         // Set the new song object with all the newly edited data into the database for that artist
                                         db.reviewDB.set(rmxArtist, db.reviewDB.get(rmxArtist, `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).collab`).filter(v => v !== ogArtistName).push(origArtistArray[0]), `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).collab`);
-                                        db.reviewDB.set(rmxArtist, db.reviewDB.get(rmxArtist, `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).vocals`).filter(v => v !== ogArtistName), `${extraArtistMusicData[j].setter_name} (${rmxArtist} Remix).vocals`);
                                     }     
                                 }
                             }
@@ -1134,8 +1012,6 @@ module.exports = {
                                     objectToAdd.collab = objectToAdd.collab.filter(v => !deleteArray.includes(v));
                                     objectToAdd.collab.push(origArtistArray.filter(v => v != newArtist));
                                     objectToAdd.collab = objectToAdd.collab.flat();
-
-                                    objectToAdd.vocals = objectToAdd.vocals.filter(v => v != newArtist);
                                     db.reviewDB.set(newArtist, objectToAdd, `${setterEpSong}`);
                                 }
                             }

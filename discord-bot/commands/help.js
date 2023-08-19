@@ -48,10 +48,6 @@ module.exports = {
                     .setCustomId('command_help')
                     .setLabel('Commands')
                     .setStyle(ButtonStyle.Secondary),
-                new ButtonBuilder()
-                    .setCustomId('bugreport_help')
-                    .setLabel('Reporting Issues')
-                    .setStyle(ButtonStyle.Danger),
             );
 
         const helpEmbed = new EmbedBuilder()
@@ -165,16 +161,6 @@ module.exports = {
                     other_buttons.components[1].setDisabled(false);
 
                     commandEmbed.setTitle(`How to use Waveform Mailbox`);
-                    commandEmbed.setDescription(`WIP, this will be updated later.`);
-                    commandEmbed.setFields([]);
-
-                    i.update({ content: null, embeds: [commandEmbed], components: [guide_select_menu, other_buttons] });
-                break;
-                case 'bugreport_help':
-                    other_buttons.components[0].setDisabled(false);
-                    other_buttons.components[1].setDisabled(true);
-
-                    commandEmbed.setTitle(`How to report a bug with Waveform`);
                     commandEmbed.setDescription(`WIP, this will be updated later.`);
                     commandEmbed.setFields([]);
 

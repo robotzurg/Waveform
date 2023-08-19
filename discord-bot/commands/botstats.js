@@ -15,7 +15,7 @@ module.exports = {
 
             const statsEmbed = new EmbedBuilder()
             .setColor(`${getEmbedColor(interaction.member)}`)
-            .setThumbnail(client.user.avatarURL({ extension: "png", dynamic: false }))
+            .setThumbnail(client.user.avatarURL({ extension: "png", dynamic: true }))
             .setTitle('Waveform Statistics')
             .addFields(
                 { name: 'Number of Artists', value: `${botStats.artist_num}`, inline: true },

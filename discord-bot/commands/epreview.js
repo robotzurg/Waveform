@@ -247,10 +247,10 @@ module.exports = {
             const epEmbed = new EmbedBuilder()
             .setColor(`${getEmbedColor(interaction.member)}`)
             .setTitle(`${artistArray.join(' & ')} - ${epName}`)
-            .setAuthor({ name: `${interaction.member.displayName}'s ${epType} review`, iconURL: `${interaction.user.avatarURL({ extension: "png", dynamic: false })}` });
+            .setAuthor({ name: `${interaction.member.displayName}'s ${epType} review`, iconURL: `${interaction.user.avatarURL({ extension: "png", dynamic: true })}` });
 
             if (art == false) {
-                epEmbed.setThumbnail(interaction.user.avatarURL({ extension: "png", dynamic: false }));
+                epEmbed.setThumbnail(interaction.user.avatarURL({ extension: "png", dynamic: true }));
             } else {
                 epEmbed.setThumbnail(art);
             }
@@ -265,7 +265,7 @@ module.exports = {
             }
 
             if (taggedUser.id != false) {
-                epEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
+                epEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: true })}` });
             }
 
             await interaction.reply({ embeds: [epEmbed], components: [row, row2] });
@@ -313,10 +313,10 @@ module.exports = {
                             if (art == undefined || art == false) {
                                 // If we don't have art for the edited ep info, search it on the spotify API.
                                 art = await grab_spotify_art(artistArray, epName);
-                                if (art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
+                                if (art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: true });
                             } else {
                                 if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0], `${setterEpName}`).art;
-                                if (art == undefined || art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
+                                if (art == undefined || art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: true });
                             }
                             epEmbed.setThumbnail(art);
 
@@ -347,10 +347,10 @@ module.exports = {
                             if (art == undefined || art == false) {
                                 // If we don't have art for the edited ep info, search it on the spotify API.
                                 art = await grab_spotify_art(artistArray, epName);
-                                if (art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
+                                if (art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: true });
                             } else {
                                 if (db.reviewDB.has(artistArray[0])) art = db.reviewDB.get(artistArray[0], `${setterEpName}`).art;
-                                if (art == undefined || art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: false });
+                                if (art == undefined || art == false) art = interaction.user.avatarURL({ extension: "png", dynamic: true });
                             }
                             epEmbed.setThumbnail(art);
 
@@ -483,6 +483,7 @@ module.exports = {
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
                         review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, spotifyUri);
+                        let timestamp = msg.createdTimestamp;
 
                         // Set message ids and setup artist images
                         for (let j = 0; j < artistArray.length; j++) {
@@ -490,6 +491,7 @@ module.exports = {
                             db.reviewDB.set(artistArray[j], interaction.channel.id, `${setterEpName}.${interaction.user.id}.channel_id`);
                             db.reviewDB.set(artistArray[j], interaction.guild.id, `${setterEpName}.${interaction.user.id}.guild_id`);
                             db.reviewDB.set(artistArray[j], msg.url, `${setterEpName}.${interaction.user.id}.url`);
+                            db.reviewDB.set(artistArray[j], timestamp, `${setterEpName}.${interaction.user.id}.timestamp`);
 
                             // Deal with artist images
                             let cur_img = db.reviewDB.get(artistArray[j], 'pfp_image');
@@ -561,6 +563,7 @@ module.exports = {
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
                         review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, spotifyUri);
+                        let timestamp = msg.createdTimestamp;
 
                         let epSongs = await (db.user_stats.get(interaction.user.id, 'current_ep_review.track_list') != false 
                         ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(artistArray[0], `${setterEpName}`).songs);
@@ -577,6 +580,7 @@ module.exports = {
                             db.reviewDB.set(artistArray[j], msg.channelId, `${setterEpName}.${interaction.user.id}.channel_id`);
                             db.reviewDB.set(artistArray[j], msg.guildId, `${setterEpName}.${interaction.user.id}.guild_id`);
                             db.reviewDB.set(artistArray[j], msg.url, `${setterEpName}.${interaction.user.id}.url`);
+                            db.reviewDB.set(artistArray[j], timestamp, `${setterEpName}.${interaction.user.id}.timestamp`);
 
                             // Deal with artist images
                             let cur_img = db.reviewDB.get(artistArray[j], 'pfp_image');
