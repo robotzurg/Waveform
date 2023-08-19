@@ -291,7 +291,6 @@ module.exports = {
         }
 
         // Fix song formatting
-        // TODO: MAKE ALL OF THIS INTO A FUNCTION THAT CAN BE CALLED TO CHECK IF A SONG IS VALID
         if (!Array.isArray(origArtistArray) && origArtistArray != null) {
             origArtistArray = origArtistArray.split(' & ');
         } else if (origArtistArray == null) {
@@ -447,7 +446,16 @@ module.exports = {
             }
         }
 
-        if (origArtistArray.length == 0) passesChecks = false;
+        if (origArtistArray.length == 0) {
+            if (rmxArtistArray.length != 0) {
+                origArtistArray = rmxArtistArray;
+                artistArray = rmxArtistArray;
+                rmxArtistArray = [];
+                origSongArg = song;
+            } else {
+                passesChecks = false;
+            }
+        }
 
         // Error check
         if (songArg.includes('\\') && songArg.includes('.')) {
@@ -478,8 +486,10 @@ module.exports = {
 
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
             if (db.reviewDB.has(artistArray[0]) && db.reviewDB.get(artistArray[0], `${setterSongArg}`) != undefined) trackList = db.reviewDB.get(artistArray[0], `${setterSongArg}`).songs;
-            if (!trackList) trackList = false;
-            db.user_stats.set(interaction.user.id, { msg_id: false, channel_id: false, guild_id: interaction.guild.id, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: false }, 'current_ep_review');  
+            if (!trackList) {
+                trackList = false;
+            }
+            db.user_stats.set(interaction.user.id, { msg_id: false, channel_id: false, guild_id: interaction.guild.id, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] }, 'current_ep_review');  
         }
         
         if (db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name') != undefined) {
@@ -679,6 +689,7 @@ module.exports = {
             // Used if both the artist and song object exist
             let review_object = {
                 url: false,
+                timestamp: false, 
                 name: interaction.member.displayName, // For debug purposes
                 msg_id: false,
                 channel_id: false,
@@ -831,6 +842,7 @@ module.exports = {
                 [objEpName]: {
                     [interaction.user.id]: {
                         url: false,
+                        timestamp: false, 
                         msg_id: false,
                         channel_id: false,
                         guild_id: interaction.guild.id,

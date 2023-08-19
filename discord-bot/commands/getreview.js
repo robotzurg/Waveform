@@ -120,13 +120,16 @@ module.exports = {
             if (rreview != false) reviewEmbed.setDescription(rreview);
 
             let reviewMsgID = songReviewObj.msg_id;
-            if (reviewMsgID != false && reviewMsgID != undefined) {
+            let timestamp = songReviewObj.timestamp;
+            if (reviewMsgID != false && reviewMsgID != undefined && timestamp == undefined) {
                 let channelsearch = await get_review_channel(client, songReviewObj.guild_id, songReviewObj.channel_id, reviewMsgID);
                 if (channelsearch != undefined) {
                     await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
                         reviewEmbed.setTimestamp(msg.createdTimestamp);
                     });
                 }
+            } else if (timestamp != undefined) {
+                reviewEmbed.setTimestamp(timestamp);
             }
 
             reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ extension: "png" }) : songArt);

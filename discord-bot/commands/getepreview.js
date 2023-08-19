@@ -111,7 +111,7 @@ module.exports = {
                 epEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
             }
 
-            epEmbed.setAuthor({ name: `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
+            epEmbed.setAuthor({ name: `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: true })}` });
 
             epEmbed.setThumbnail(ep_art);
             if (ep_sent_by != false && ep_sent_by != undefined) {
@@ -119,13 +119,16 @@ module.exports = {
             }
 
             let reviewMsgID = epReviewObj.msg_id;
-            if (reviewMsgID != false && reviewMsgID != undefined) {
+            let timestamp = epReviewObj.timestamp;
+            if (reviewMsgID != false && reviewMsgID != undefined && timestamp == undefined) {
                 let channelsearch = await get_review_channel(client, epReviewObj.guild_id, epReviewObj.channel_id, reviewMsgID);
                 if (channelsearch != undefined) {
                     await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
                         epEmbed.setTimestamp(msg.createdTimestamp);
                     });
                 }
+            } else if (timestamp != undefined) {
+                epEmbed.setTimestamp(timestamp);
             }
 
             if (ep_songs.length != 0) {

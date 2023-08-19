@@ -3,7 +3,7 @@ const db = require('../db.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('clearmail')
+        .setName('clearallmail')
         .setDescription('Clear out your local Waveform Mailbox list.')
         .setDMPermission(false),
     help_desc: `Clears out your LOCAL Waveform Mailbox list, deleting all song entries within it.\n\n` + 

@@ -45,6 +45,8 @@ module.exports = {
                 origArtistArray = song_info.prod_artists;
                 songDisplayName = song_info.display_song_name;
             }
+
+            console.log(song_info);
         });
 
         // Check if a podcast is being played, as we don't support that.
@@ -59,7 +61,7 @@ module.exports = {
         const npEmbed = new EmbedBuilder()
         .setColor(`${getEmbedColor(interaction.member)}`)
         .setTitle(`${origArtistArray.join(' & ')} - ${songDisplayName}`)
-        .setAuthor({ name: `${interaction.member.displayName}'s ${isPlaying ? `current song` : `last song played`}`, iconURL: `${interaction.user.avatarURL({ extension: "png", dynamic: false })}` })
+        .setAuthor({ name: `${interaction.member.displayName}'s ${isPlaying ? `current song` : `last song played`}`, iconURL: `${interaction.user.avatarURL({ extension: "png", dynamic: true })}` })
         .setThumbnail(songArt);
 
         if (db.reviewDB.has(artistArray[0])) {
@@ -90,7 +92,7 @@ module.exports = {
                     rating = songObj[localUserArray[i]].rating;
                     if (songObj[localUserArray[i]].starred == true) {
                         localStarNum++;
-                        if (global[i] == `${interaction.user.id}`) {
+                        if (localUserArray[i] == `${interaction.user.id}`) {
                             yourStar = '⭐'; //Added to the end of your rating tab
                         }
                     }
@@ -101,8 +103,8 @@ module.exports = {
 
                 if (globalRankNumArray.length != 0) { 
                     npEmbed.setDescription(`\nAvg Global Rating: \`${Math.round(average(globalRankNumArray) * 10) / 10}\`` +
-                    `\nAvg Server Rating: \`${Math.round(average(localRankNumArray) * 10) / 10}\`` + 
-                    `\nServer Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
+                    `\nAvg Server Rating: \`${localRankNumArray.length > 0 ? Math.round(average(localRankNumArray) * 10) / 10 : `N/A`}\`` + 
+                    `${localUserArray.length != 0 ? `\nServer Reviews: \`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
                     `${localStarNum >= 1 ? `\nServer Stars: \`${localStarNum} ⭐\`` : ''}` + 
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +

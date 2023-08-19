@@ -237,6 +237,7 @@ module.exports = {
                 user_sent_name = await interaction.guild.members.fetch(user_who_sent);
                 db.reviewDB.set(artistArray[i], user_who_sent.id, `${setterSongName}.${interaction.user.id}.user_who_sent`);
             }
+            
         }
 
         let reviewMsgID = songReviewObj.msg_id;
@@ -273,7 +274,7 @@ module.exports = {
                         if (review != null && review != undefined) msgEmbed.setDescription(review);
                     }
 
-                    if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: false })}` });
+                    if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: true })}` });
 
                     msg.edit({ embeds: [msgEmbed] });
                 });
@@ -334,10 +335,16 @@ module.exports = {
         db.server_settings.set(songReviewObj.guild_id, guildStatsObj, 'stats');
         db.global_bot.set('stats', botStatsObj);
 
-        interaction.reply(`Here's what was edited on your review of **${origArtistArray.join(' & ')} - ${displaySongName}**:\n` +
+        await interaction.reply(`Here's what was edited on your review of **${origArtistArray.join(' & ')} - ${displaySongName}**:\n` +
         `${(oldrating != undefined) ? `\`${oldrating}/10\` changed to \`${rating}/10\`\n` : ``}` +
         `${(oldreview != undefined) ? `Review was changed to \`${review}\`\n` : ``}` +
         `${(user_who_sent != null) ? `User Who Sent was changed to \`${user_sent_name.displayName}\`` : ``}`);
+
+        const review_msg = await interaction.fetchReply();
+        let timestamp = review_msg.createdTimestamp;
+        for (let i = 0; i < artistArray.length; i++) {
+            db.reviewDB.set(artistArray[i], timestamp, `${setterSongName}.${interaction.user.id}.timestamp`);
+        }
 
         } catch (err) {
             let error = err;

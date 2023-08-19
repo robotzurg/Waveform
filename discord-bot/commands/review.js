@@ -93,15 +93,6 @@ module.exports = {
         let song = interaction.options.getString('song_name');
         let rmxArtistArray = interaction.options.getString('remixers');
 
-        // Songname check to avoid not using the arguments properly.
-        if (song != null) {
-            if (song.includes('Remix)') || song.includes('ft.') || song.includes('feat.')) {
-                await interaction.editReply('Please make sure that no artist names are placed in the song name argument.\n' + 
-                'For example, do not put `Song (Dude Remix)`, just put `Song`, and put the remixer in the Remixers argument.');
-                return;
-            }
-        }
-
         let song_info = await parse_artist_song_data(interaction, artists, song, rmxArtistArray);
         if (song_info.error != undefined) {
             await interaction.editReply(song_info.error);
@@ -251,7 +242,7 @@ module.exports = {
         let reviewEmbed = new EmbedBuilder()
         .setColor(`${getEmbedColor(interaction.member)}`)
         .setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`)
-        .setAuthor({ name: `${interaction.member.displayName}'s review`, iconURL: `${interaction.user.avatarURL({ extension: "png", dynamic: false })}` });
+        .setAuthor({ name: `${interaction.member.displayName}'s review`, iconURL: `${interaction.user.avatarURL({ extension: "png", dynamic: true })}` });
 
         // Check rating input to ensure we have a valid number.
         if (rating !== false) {
@@ -294,14 +285,14 @@ module.exports = {
         }
         
         if (songArt == false || songArt == undefined) {
-            reviewEmbed.setThumbnail(interaction.user.avatarURL({ extension: "png", dynamic: false }));
+            reviewEmbed.setThumbnail(interaction.user.avatarURL({ extension: "png", dynamic: true }));
         } else {
             reviewEmbed.setThumbnail(songArt);
         }
         
         if (taggedUser != false && taggedUser != undefined) {
             if (taggedUser.id != interaction.user.id) { // Don't add the sent by if it's sent by ourselves
-                reviewEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png", dynamic: false }) });
+                reviewEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png", dynamic: true }) });
             }
         }
         // End of Embed Code
@@ -356,10 +347,10 @@ module.exports = {
                         if (songArt == undefined || songArt == false) {
                             // If we don't have art for the edited song info, search it on the spotify API.
                             songArt = await grab_spotify_art(artistArray, songName);
-                            if (songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: false });
+                            if (songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: true });
                         } else {
                             if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0])[songName].art;
-                            if (songArt == undefined || songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: false });
+                            if (songArt == undefined || songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: true });
                         }
                         reviewEmbed.setThumbnail(songArt);
 
@@ -393,10 +384,10 @@ module.exports = {
                         if (songArt == undefined || songArt == false) {
                             // If we don't have art for the edited song info, search it on the spotify API.
                             songArt = await grab_spotify_art(artistArray, songName);
-                            if (songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: false });
+                            if (songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: true });
                         } else {
                             if (db.reviewDB.has(artistArray[0])) songArt = db.reviewDB.get(artistArray[0])[songName].art;
-                            if (songArt == undefined || songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: false });
+                            if (songArt == undefined || songArt == false) songArt = interaction.user.avatarURL({ extension: "png", dynamic: true });
                         }
                         reviewEmbed.setThumbnail(songArt);
 
@@ -485,6 +476,8 @@ module.exports = {
                     if (ra_collector != undefined) ra_collector.stop();
                     if (re_collector != undefined) re_collector.stop();
                     if (collector != undefined) collector.stop(); // Collector for all buttons
+                    const review_msg = await interaction.fetchReply();
+                    let timestamp = review_msg.createdTimestamp;
                     interaction.deleteReply();
 
                     let msgID = db.user_stats.get(interaction.user.id, 'current_ep_review.msg_id');
@@ -526,7 +519,7 @@ module.exports = {
                     ];
 
                     // If the song we are reviewing is not the same as our next song up, then quit out
-                    if (spotifyApi != false || db.user_stats.get(interaction.user.id, 'current_ep_review.next') != false) {
+                    if (next_song != false && ep_songs.length != []) {
                         if (next_song != songName && next_song != undefined) {
                             return;
                         } else {
@@ -729,10 +722,12 @@ module.exports = {
                     }
 
                     // Set the IDs for this review to false (because we don't want to edit it), since its part of the EP review message.
+                    // Also set the timestamp for this review
                     for (let ii = 0; ii < artistArray.length; ii++) {
                         db.reviewDB.set(artistArray[ii], false, `${setterSongName}.${interaction.user.id}.msg_id`);
                         db.reviewDB.set(artistArray[ii], false, `${setterSongName}.${interaction.user.id}.channel_id`);
                         db.reviewDB.set(artistArray[ii], interaction.guild.id, `${setterSongName}.${interaction.user.id}.guild_id`);
+                        db.reviewDB.set(artistArray[ii], timestamp, `${setterSongName}.${interaction.user.id}.timestamp`);
                     }
 
                     // Set artist images
@@ -756,6 +751,7 @@ module.exports = {
                     // Review the song
                     await review_song(interaction, artistArray, origArtistArray, songName, origSongName, review, rating, starred, rmxArtistArray, songArt, taggedUser.id, spotifyUri);
                     const msg = await interaction.fetchReply();
+                    let timestamp = msg.createdTimestamp;
 
                     // Add or remove this song from the users star spotify playlist, if they have one
                     let starPlaylistId = await db.user_stats.get(interaction.user.id, 'config.star_spotify_playlist');
@@ -777,6 +773,7 @@ module.exports = {
                         db.reviewDB.set(artistArray[ii], interaction.channel.id, `${setterSongName}.${interaction.user.id}.channel_id`); 
                         db.reviewDB.set(artistArray[ii], interaction.guild.id, `${setterSongName}.${interaction.user.id}.guild_id`); 
                         db.reviewDB.set(artistArray[ii], msg.url, `${setterSongName}.${interaction.user.id}.url`);
+                        db.reviewDB.set(artistArray[ii], timestamp, `${setterSongName}.${interaction.user.id}.timestamp`);
                     }
 
                     // Set artist images
