@@ -4,7 +4,7 @@ const { handle_error, getEmbedColor } = require('../func');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('bugreport')
+        .setName('reportbug')
         .setDescription('Submit a bug report.')
         .setDMPermission(false),
     help_desc: `Creates a modal form that allows you to fill out a bug report to send to Jeffdev, Waveform's Developer.`,
