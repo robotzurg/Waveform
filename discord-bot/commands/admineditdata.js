@@ -10,7 +10,7 @@ const _ = require('lodash');
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('editdata')
+		.setName('admineditdata')
 		.setDescription('Edit metadata of music or artists in the database.')
         .setDMPermission(false)
         .addSubcommand(subcommand =>
