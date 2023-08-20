@@ -5,7 +5,7 @@ const _ = require('lodash');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('testcommand')
+        .setName('admintestcommand')
         .setDescription('Test command for admins. Not for you, most likely!')
         .setDMPermission(false),
     help_desc: `This is an admin command designed for development purposes, and as a result is not a command you can use.`,
