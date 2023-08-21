@@ -32,7 +32,7 @@ module.exports = {
             await interaction.reply({ content: `Successfully ended your EP/LP review manually.`, ephemeral: true });
         } catch (err) {
             let error = err;
-            handle_error(interaction, error);
+            handle_error(interaction, client, error);
         }
     },
 };

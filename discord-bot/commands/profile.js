@@ -26,7 +26,7 @@ module.exports = {
                 .setRequired(false)),
     help_desc: `Pulls up your Waveform profile, which displays some basic statistics about your reviewing as well as your specified favorite artist, favorite song, and favorite genres.\n\n` + 
     `You can view other users profiles by specifying them in the user argument, or leave it blank to view your own.`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         await interaction.deferReply();
         let canvas = new Canvas(1305, 872);
 
@@ -144,7 +144,7 @@ module.exports = {
         } catch (err) {
             console.log(err);
             let error = err;
-            handle_error(interaction, error);
+            handle_error(interaction, client, error);
         }
     },
 };

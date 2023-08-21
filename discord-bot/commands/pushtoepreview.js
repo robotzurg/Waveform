@@ -44,7 +44,7 @@ module.exports = {
         } catch (err) {
             console.log(err);
             let error = err;
-            handle_error(interaction, error);
+            handle_error(interaction, client, error);
         }
 	},
 };

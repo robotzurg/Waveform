@@ -15,7 +15,7 @@ module.exports = {
                 .setRequired(false)),
     help_desc: `Displays all songs, EPs/LPs, Remixes, and other information regarding an artist in Waveform.\n\n` +
     `Leaving the artist argument blank will pull from your spotify playback to fill in the argument (if logged in to Waveform with Spotify)`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
             let spotifyCheck;
             let artist = interaction.options.getString('artist');
@@ -339,7 +339,7 @@ module.exports = {
         } catch (err) {
             console.log(err);
             let error = err;
-            handle_error(interaction, error);
+            handle_error(interaction, client, error);
         }
 	},
 };

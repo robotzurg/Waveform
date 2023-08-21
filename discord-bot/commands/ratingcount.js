@@ -13,7 +13,7 @@ module.exports = {
                 .setDescription('User whose list you want to see. Defaults to yourself.')
                 .setRequired(false)),
     help_desc: `Gets a full list of every rating a specified user has given, and how many times they have given that rating.`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
 
         await interaction.deferReply();
@@ -86,7 +86,7 @@ module.exports = {
 
         } catch (err) {
             let error = err;
-            handle_error(interaction, error);
+            handle_error(interaction, client, error);
         }
     },
 };

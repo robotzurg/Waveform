@@ -194,9 +194,11 @@ module.exports = {
         // If we're in an EP/LP review, stick in a button to push to EP review instead of a send to database button.
         if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
             if (origArtistArray.includes(db.user_stats.get(interaction.user.id, 'current_ep_review.artist_array')[0])) {
+                let ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name');
+                let ep_type = ep_name.includes('LP') ? 'LP' : 'EP';
                 reviewButtons.addComponents( 
                     new ButtonBuilder()
-                    .setCustomId('ep_done').setLabel('Push to EP Review')
+                    .setCustomId('ep_done').setLabel(`Push to ${ep_type} Review`)
                     .setStyle(ButtonStyle.Success),
                 );
             } else {
@@ -262,7 +264,8 @@ module.exports = {
 
         if (interaction.commandName != 'pushtoepreview') {
             if (review == false && rating === false) {
-                return await interaction.editReply('Your song review must either have a rating or review, it cannot be missing both.');
+                return await interaction.editReply('While you can review with only a rating or only a text review, you cannot review with neither.\n' +
+                'Please make sure you use the `rating` and `review` arguments in this command to properly review this song.');
             } else {
                 if (rating !== false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rating}/10**`, inline: true }]);
                 if (review != false) reviewEmbed.setDescription(review);
@@ -306,7 +309,7 @@ module.exports = {
         await interaction.editReply({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
 
         const filter = i => i.user.id == interaction.user.id;
-        const collector = int_channel.createMessageComponentCollector({ filter, time: 100000000 });
+        const collector = int_channel.createMessageComponentCollector({ filter, time: 300000 });
         let a_collector;
         let s_collector;
         let ra_collector;
@@ -406,13 +409,27 @@ module.exports = {
                     const ra_filter = m => m.author.id == interaction.user.id;
                     ra_collector = int_channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                     ra_collector.on('collect', async m => {
-                        if (rating == false) reviewEmbed.addFields({ name: 'Rating', value: `TBA` });
-                        rating = parseFloat(m.content);
-                        if (m.content.includes('/10')) rating = parseFloat(m.content.replace('/10', ''));
-                        if (isNaN(rating)) {
-                            i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!'); return;
+                        if (m.content == '-') m.content = false;
+                        // Double check to ensure we don't have review and rating as false
+                        if (m.content == false && review == false) {
+                            m.delete(); 
+                            return;
                         }
-                        reviewEmbed.data.fields[0] = { name : 'Rating', value : `**${rating}/10**` };
+
+                        if (rating == false) reviewEmbed.addFields({ name: 'Rating', value: `TBA` });
+                        if (m.content != false) {
+                            rating = parseFloat(m.content);
+                            if (m.content.includes('/10')) rating = parseFloat(m.content.replace('/10', ''));
+                            if (isNaN(rating)) {
+                                i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!'); return;
+                            }
+
+                            reviewEmbed.data.fields[0] = { name : 'Rating', value : `**${rating}/10**` };
+                        } else if (m.content == false) {
+                            rating = false;
+                            reviewEmbed.data.fields = [];
+                        }
+
                         await i.editReply({ content: null, embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
                         m.delete();
                     });
@@ -434,7 +451,18 @@ module.exports = {
                             review = review.split('\\n').join('\n');
                         }
 
-                        reviewEmbed.setDescription(review);
+                        if (review == '-') review = false;
+                        if (rating === false && review == false) {
+                            m.delete(); 
+                            return;
+                        }
+
+                        if (review != false) {
+                            reviewEmbed.setDescription(review);
+                        } else {
+                            reviewEmbed.setDescription(null);   
+                        }
+
                         await i.editReply({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
                         m.delete();
                     });
@@ -488,6 +516,7 @@ module.exports = {
                     let msgEmbed;
                     let epArtists;
                     let ep_name = db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name');
+                    let ep_type = ep_name.includes('LP') ? 'LP' : 'EP';
                     let setterEpName = convertToSetterName(ep_name);
                     let collab;
                     let field_name;
@@ -513,7 +542,7 @@ module.exports = {
                             .addComponents( 
                                 new ButtonBuilder()
                                 .setCustomId('finish_ep_review')
-                                .setLabel('Finalize the EP/LP Review')
+                                .setLabel(`Finalize the ${ep_type} Review`)
                                 .setStyle(ButtonStyle.Success),
                             ),
                     ];
@@ -609,7 +638,7 @@ module.exports = {
                             let ep_final_collector = int_channel.createMessageComponentCollector({ filter: ep_final_filter, time: 120000 });
                             let overallRating, overallReview;
 
-                            interaction.followUp({ content: `Make sure you click Finalize Review button to finalize your EP/LP review, and add/edit an overall rating/review of it if you'd like!`, ephemeral: true });
+                            interaction.followUp({ content: `Make sure you click Finalize Review button to finalize your ${ep_type} review, and add/edit an overall rating/review of it if you'd like!`, ephemeral: true });
 
                             ep_final_collector.on('collect', async j => {
                                 switch (j.customId) {
@@ -640,7 +669,7 @@ module.exports = {
                                         await j.deferUpdate();
                                         await j.editReply({ content: `Type in the new overall review.`, embeds: [], components: [] });
 
-                                        re_collector = interaction.channel.createMessageCollector({ filter: msg_filter, max: 1, time: 120000 });
+                                        re_collector = interaction.channel.createMessageCollector({ filter: msg_filter, max: 1, time: 240000 });
                                         re_collector.on('collect', async m => {
                                             overallReview = m.content;
                                             if (overallReview.includes('\\n')) {
@@ -711,7 +740,7 @@ module.exports = {
                         }
 
                     }).catch((err) => {
-                        handle_error(interaction, err);
+                        handle_error(interaction, client, err);
                     });
 
                     for (let ii = 0; ii < epArtists.length; ii++) {
@@ -828,7 +857,15 @@ module.exports = {
             }
         });
 
-        collector.on('end', async () => {
+        collector.on('end', async (collected) => {
+            if (collected.size == 0) {
+                try {
+                    await interaction.deleteReply();
+                } catch (err) {
+                    console.log(err);
+                }
+            }
+
             if (a_collector != undefined) a_collector.stop();
             if (s_collector != undefined) s_collector.stop();
             if (ra_collector != undefined) ra_collector.stop();
@@ -837,7 +874,7 @@ module.exports = {
 
         } catch (err) {
             let error = err;
-            handle_error(interaction, error);
+            handle_error(interaction, client, error);
         }
     },
 };

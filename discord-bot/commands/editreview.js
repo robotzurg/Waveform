@@ -17,13 +17,13 @@ module.exports = {
 
                 .addStringOption(option => 
                     option.setName('rating')
-                        .setDescription('The newly edited rating of the song.')
+                        .setDescription('The newly edited rating of the song. (Type "-" to remove)')
                         .setRequired(false)
                         .setMaxLength(3))
         
                 .addStringOption(option => 
                     option.setName('review')
-                        .setDescription('The newly edited written review.')
+                        .setDescription('The newly edited written review. (Type "-" to remove)')
                         .setRequired(false))
         
                 .addUserOption(option => 
@@ -49,13 +49,13 @@ module.exports = {
 
                 .addStringOption(option => 
                     option.setName('rating')
-                        .setDescription('The newly edited rating of the song.')
+                        .setDescription('The newly edited rating of the song. (Type "-" to remove)')
                         .setRequired(false)
                         .setMaxLength(3))
         
                 .addStringOption(option => 
                     option.setName('review')
-                        .setDescription('The newly edited written review.')
+                        .setDescription('The newly edited written review. (Type "-" to remove)')
                         .setRequired(false))
         
                 .addUserOption(option => 
@@ -78,13 +78,13 @@ module.exports = {
 
                 .addStringOption(option => 
                     option.setName('rating')
-                        .setDescription('The newly edited rating of the EP/LP.')
+                        .setDescription('The newly edited rating of the EP/LP. (Type "-" to remove)')
                         .setRequired(false)
                         .setMaxLength(3))
         
                 .addStringOption(option => 
                     option.setName('review')
-                        .setDescription('The newly edited written review.')
+                        .setDescription('The newly edited written review. (Type "-" to remove)')
                         .setRequired(false))
         
                 .addUserOption(option => 
@@ -110,13 +110,13 @@ module.exports = {
 
             .addStringOption(option => 
                 option.setName('rating')
-                    .setDescription('The newly edited rating of the EP/LP.')
+                    .setDescription('The newly edited rating of the EP/LP. (Type "-" to remove)')
                     .setRequired(false)
                     .setMaxLength(3))
     
             .addStringOption(option => 
                 option.setName('review')
-                    .setDescription('The newly edited written review.')
+                    .setDescription('The newly edited written review. (Type "-" to remove)')
                     .setRequired(false))
     
             .addUserOption(option => 
@@ -160,16 +160,24 @@ module.exports = {
         let setterSongName = convertToSetterName(songName);
 
         let rating = interaction.options.getString('rating');
-        if (rating != null) {
+        if (rating != null && rating !== '-') {
             if (rating.includes('/10')) rating = rating.replace('/10', '');
+        } else if (rating === '-') {
+            rating = false;
         }
 
         let review = interaction.options.getString('review');
         // Handle new lines
-        if (review != null) {
+        if (review != null && review !== '-') {
             if (review.includes('\\n')) {
                 review = review.split('\\n').join('\n');
             } 
+        } else if (review === '-') {
+            review = false;
+        }
+
+        if (rating == false && review == false) {
+            return interaction.reply('You cannot remove both your rating and your review at the same time. You can only remove one or the other.');
         }
 
         let user_who_sent = interaction.options.getUser('user_who_sent');
@@ -196,11 +204,14 @@ module.exports = {
             if (songObj == undefined) return interaction.reply(`Song ${songName} not found!`);
             songReviewObj = songObj[interaction.user.id];
             if (songReviewObj == undefined) return interaction.reply(`Review not found!`);
-            if (songReviewObj.guild_id == false) songReviewObj.guild_id = '680864893552951306';
+            if (songReviewObj.guild_id === false) songReviewObj.guild_id = '680864893552951306';
             guildStatsObj = db.server_settings.get(songReviewObj.guild_id, 'stats');
+            if ((songReviewObj.rating === false && review == false) || (songReviewObj.review == false && rating === false)) {
+                return interaction.reply('You cannot remove both the rating and review at the same time.');
+            }
 
             if (rating != null && rating != undefined) {
-                if (rating < 8 && songReviewObj.starred == true) {
+                if (rating < 8 && songReviewObj.starred == true && rating !== false) {
                     return interaction.reply(`This review has a star on it, so you cannot change the rating to anything under 8.\nRemove the star with \`/setstar\` if you'd like to lower the rating!`);
                 }
                 
@@ -225,7 +236,7 @@ module.exports = {
                     userStatsObj.ratings_list[`${rating}`] = 1;
                 }
 
-                db.reviewDB.set(artistArray[i], parseFloat(rating), `${setterSongName}.${interaction.user.id}.rating`);
+                db.reviewDB.set(artistArray[i], rating === false ? rating : parseFloat(rating), `${setterSongName}.${interaction.user.id}.rating`);
             } 
 
             if (review != null && review != undefined) {
@@ -253,25 +264,41 @@ module.exports = {
                     if (epCmd == true) {
                         if (rating != null && songReviewObj.no_songs == false) {
                             // Change title
-                            msgEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName} (${rating}/10)`);
+                            if (rating != false) {
+                                msgEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName} (${rating}/10)`);
+                            } else if (rating === false) {
+                                msgEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
+                            }
                         } else if (rating != null && songReviewObj.no_songs == true) {
                             // Change field /10 rating value
                             if (msgEmbed.data.fields != undefined) {
                                 msgEmbed.data.fields[0].value = `**${rating}/10**`;
-                            } else {
+                                if (rating === false) {
+                                    delete msgEmbed.data.fields[0];
+                                }
+                            } else if (rating !== false) {
                                 msgEmbed.addFields({ name: `Rating:`, value: `**${rating}/10**` });
                             }
                         }
 
-                        if (review != null) {
+                        if (review != null && review !== false) {
                             msgEmbed.setDescription(songReviewObj.no_songs == false ? `*${review}*` : `${review}`);
+                        } else if (review === false) {
+                            msgEmbed.setDescription(null);
                         }
                     } else {
-                        if (rating != null && rating != undefined) {
+                        if (rating != null && rating != undefined && rating !== false) {
                             msgEmbed.data.fields = [];
                             msgEmbed.addFields([{ name: `Rating`, value: `**${rating}/10**` }]);
-                        } 
-                        if (review != null && review != undefined) msgEmbed.setDescription(review);
+                        } else if (rating === false) {
+                            msgEmbed.data.fields = [];
+                        }
+
+                        if (review != null && review != undefined && review !== false) {
+                            msgEmbed.setDescription(review);
+                        } else if (review === false) {
+                            msgEmbed.setDescription(null);
+                        }
                     }
 
                     if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: true })}` });
@@ -348,7 +375,7 @@ module.exports = {
 
         } catch (err) {
             let error = err;
-            handle_error(interaction, error);
+            handle_error(interaction, client, error);
         }
     },
 };
