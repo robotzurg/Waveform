@@ -4,7 +4,7 @@ const { handle_error, getEmbedColor } = require('../func');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('reportreview')
+        .setName('report')
         .setDescription('Report inappropriate reviews to Jeffdev (does not guarantee removal).')
         .setDMPermission(false),
     help_desc: `Creates a modal form that allows you to fill out a review report form to send to Jeffdev, Waveform's Developer.`,

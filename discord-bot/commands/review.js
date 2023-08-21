@@ -308,6 +308,11 @@ module.exports = {
         // Send the review embed
         await interaction.editReply({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
 
+        if (db.user_stats.get(interaction.user.id, 'stats.review_num') < 1) {
+            interaction.followUp({ content: '**Important Tip:** If you wish to review or pull up data for an artist with `&` in their name, please use `\\&` in place of the `&` in their name!\n' +
+            'This is because `&` is the character used to separate multiple artists in the argument, and `\\&` helps tell the bot not to do that.', ephemeral: true });
+        }
+
         const filter = i => i.user.id == interaction.user.id;
         const collector = int_channel.createMessageComponentCollector({ filter, time: 300000 });
         let a_collector;
@@ -635,10 +640,12 @@ module.exports = {
 
                             const ep_final_filter = int => int.user.id == interaction.user.id;
                             const msg_filter = m => m.author.id == interaction.user.id;
-                            let ep_final_collector = int_channel.createMessageComponentCollector({ filter: ep_final_filter, time: 120000 });
+                            let ep_final_collector = int_channel.createMessageComponentCollector({ filter: ep_final_filter, time: 300000 });
                             let overallRating, overallReview;
+                            let epReviewData = db.user_stats.get(interaction.user.id, 'current_ep_review');
 
-                            interaction.followUp({ content: `Make sure you click Finalize Review button to finalize your ${ep_type} review, and add/edit an overall rating/review of it if you'd like!`, ephemeral: true });
+                            interaction.followUp({ content: `Please make sure you click the Finalize Review button to finalize your ${ep_type} review (or it will not go through), and add/edit an overall rating/review of it if you'd like!\n` 
+                            + `[Message Link to ${ep_type} Review](https://discord.com/channels/${epReviewData.guild_id}/${epReviewData.channel_id}/${epReviewData.msg_id})`, ephemeral: true });
 
                             ep_final_collector.on('collect', async j => {
                                 switch (j.customId) {
@@ -731,10 +738,45 @@ module.exports = {
                                 
                             });
 
-                            ep_final_collector.on('end', async () => {
+                            ep_final_collector.on('end', async (collected) => {
+                                let result = collected.find(item => item.customId === 'finish_ep_review');
+                                db.user_stats.set(interaction.user.id, false, 'current_ep_review');
+
+                                // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
+                                if (is_mailbox == true && result == undefined) {
+                                    let tracks = [];
+
+                                    temp_mailbox_list = mailbox_list.filter(v => v.display_name == `${origArtistArray.join(' & ')} - ${ep_name}`);
+                                    if (temp_mailbox_list.length != 0) {
+                                        mailbox_data = temp_mailbox_list[0];
+                                        if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
+                                    }
+
+                                    for (let track_uri of mailbox_data.track_uris) {
+                                        tracks.push({ uri: track_uri });
+                                    } 
+                                    
+                                    let playlistId = db.user_stats.get(interaction.user.id, 'mailbox_playlist_id');
+                                    // Ping the user who sent the review, if they have the ping for review config setting
+                                    if (ping_for_review) {
+                                        interaction.channel.send(`<@${mailbox_data.user_who_sent}>`).then(ping_msg => {
+                                            ping_msg.delete();
+                                        });
+                                    }
+
+                                    // Remove from spotify playlist
+                                    spotifyApi.removeTracksFromPlaylist(playlistId, tracks)
+                                    .then(() => {}, function(err) {
+                                        console.log('Something went wrong!', err);
+                                    });
+
+                                    // Remove from local playlist
+                                    mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${ep_name}`);
+                                    db.user_stats.set(interaction.user.id, mailbox_list, `mailbox_list`);
+                                }
+
                                 msg.edit({ components: [] });
                             });
-
                         } else {
                             msg.edit({ embeds: [msgEmbed], components: [] });
                         }
