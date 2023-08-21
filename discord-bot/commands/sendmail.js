@@ -223,12 +223,12 @@ module.exports = {
         } else { // If we have a non-spotify link
 
             if (db.user_stats.get(taggedUser.id, 'mailbox_history').includes(trackLink)) {
-                return interaction.editReply(`\`${taggedMember.displayName}\` has already been sent this song through Waveform Mailbox!`);
+                return interaction.editReply(`\`${taggedMember.displayName}\` has already been sent this through Waveform Mailbox!`);
             }
 
             db.user_stats.push(taggedUser.id, trackLink, 'mailbox_history');
 
-            interaction.editReply(`Sent a non-spotify [track](${trackLink}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
+            interaction.editReply(`Sent a non-spotify [track](${trackLink}) to ${taggedMember.displayName}!\n\n`);
             if (dmMailConfig == true && interaction.user.id != taggedUser.id) { 
                 taggedUser.send({ content: `**You've got mail!** 📬\nSent by **${interaction.member.displayName}**\n${trackLink}` });
             }

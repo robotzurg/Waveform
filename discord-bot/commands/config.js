@@ -22,26 +22,31 @@ module.exports = {
                         {
                             label: 'Mailbox Filter',
                             description: 'Change your Waveform Mailbox filter.',
+                            emoji: '📫',
                             value: 'mail_filter',
                         },
                         {
                             label: 'Mailbox Review Ping',
-                            description: 'Set whether you want to be pinged when your sent song is reviewed in Waveform Mailbox.',
+                            description: 'Be pinged when someone reviews your song mail.',
+                            emoji: '🔔',
                             value: 'review_ping',
                         },
                         {
                             label: 'Mailbox DM',
-                            description: 'Set whether you want to be DM\'d if someone sends you a song through Waveform Mailbox.',
+                            description: 'Be DM\'d when getting new song mail.',
+                            emoji: '📩',
                             value: 'mailbox_dm',
                         },
                         {
                             label: 'Embed Color',
                             description: 'Set the color you would like your embeds to have.',
+                            emoji: '🎨',
                             value: 'embed_color',
                         },
                         {
                             label: 'Star Spotify Playlist',
                             description: 'Setup your starred songs spotify playlist',
+                            emoji: '🌟',
                             value: 'star_playlist',
                         },
                     ),
@@ -138,8 +143,9 @@ module.exports = {
         await interaction.reply({ content: null, embeds: [configEmbed], components: [configMenu] });
 
         let msg_filter = m => m.author.id == interaction.user.id;
+        let int_filter = i => i.user.id == interaction.user.id;
         let msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
-        const collector = interaction.channel.createMessageComponentCollector({ time: 360000 });
+        const collector = interaction.channel.createMessageComponentCollector({ filter: int_filter, time: 360000 });
         await collector.on('collect', async sel => {
             if (sel.customId == 'config') {
 

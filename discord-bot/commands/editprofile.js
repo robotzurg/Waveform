@@ -13,7 +13,7 @@ module.exports = {
             .addStringOption((option) =>
                 option
                     .setName('song_name')
-                    .setDescription('Song name to put in (Full song name!)')
+                    .setDescription('Song name to put in.')
                     .setRequired(true),
             ),
         ) 
@@ -23,7 +23,7 @@ module.exports = {
         .addStringOption((option) =>
             option
                 .setName('artist')
-                .setDescription('Artist name to put in')
+                .setDescription('Artist name to put in.')
                 .setRequired(true),
             ),
         ) 
@@ -39,7 +39,7 @@ module.exports = {
         ),
     help_desc: `Allows you to edit entries on your Waveform profile, such as your favorite artist, favorite song, and favorite genres.\n\n`
     + `The favorite genres can have up to 3 genres put in, separated by \`&\``,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
             
         let split_genres;
@@ -62,7 +62,7 @@ module.exports = {
 
         } catch (err) {
             let error = err;
-            handle_error(interaction, error);
+            handle_error(interaction, client, error);
         }
     },
 };

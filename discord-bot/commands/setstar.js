@@ -101,7 +101,7 @@ module.exports = {
             } else if (star_check == false) {
                 db.reviewDB.set(artistArray[i], true, `${setterSongName}.${interaction.user.id}.starred`);
             } else {
-                handle_error(interaction, `Error in starring process`);
+                handle_error(interaction, client, `Error in starring process`);
             }
 
             // Replace spotify URI in the database (if spotify command, always replace, if manual, only replace if nothing is there)
@@ -193,7 +193,7 @@ module.exports = {
                     }
                     msg.edit({ embeds: [msgEmbed] });   
                 }).catch((err) => {
-                    handle_error(interaction, err);
+                    handle_error(interaction, client, err);
                 });
             }
         }
@@ -231,14 +231,14 @@ module.exports = {
 
                     msg.edit({ embeds: [msgEmbed] });
                 }).catch((err) => {
-                    handle_error(interaction, err);
+                    handle_error(interaction, client, err);
                 });
             } 
         }
 
         } catch (err) {
             let error = err;
-            handle_error(interaction, error);
+            handle_error(interaction, client, error);
         }
     },
 };

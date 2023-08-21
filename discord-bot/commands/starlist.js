@@ -14,7 +14,7 @@ module.exports = {
                 .setRequired(false)),
     help_desc: `View a list of every song a specified server user has starred on Waveform.\n\n` + 
     `You can view another server users list of starred songs using the \`user\` argument, leaving it blank will default to your own list.`,
-	async execute(interaction) {
+	async execute(interaction, client) {
 
         try {
         
@@ -97,7 +97,7 @@ module.exports = {
 
         } catch (err) {
             let error = err;
-            handle_error(interaction, error);
+            handle_error(interaction, client, error);
         }
 	},
 };

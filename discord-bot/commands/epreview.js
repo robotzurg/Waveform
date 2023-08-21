@@ -84,6 +84,7 @@ module.exports = {
             let song_info = await parse_artist_song_data(interaction, artists, ep);
             if (song_info.error != undefined) {
                 await interaction.reply(song_info.error);
+                db.user_stats.set(interaction.user.id, false, 'current_ep_review');
                 return;
             }
 
@@ -278,7 +279,7 @@ module.exports = {
             db.user_stats.set(interaction.user.id, msg.guildId, 'current_ep_review.guild_id');
 
             const filter = i => i.user.id == interaction.user.id;
-            const collector = interaction.channel.createMessageComponentCollector({ filter, time: 10000000 });
+            const collector = interaction.channel.createMessageComponentCollector({ filter, time: 300000 });
             let ra_collector;
             let re_collector;
             let a_collector;
@@ -371,10 +372,15 @@ module.exports = {
                         ra_collector = interaction.channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                         ra_collector.on('collect', async m => {
                             overallRating = m.content;
-                            if (overallRating.includes('/10')) overallRating = overallRating.replace('/10', '');
-                            overallRating = parseFloat(overallRating);
-                            if (isNaN(overallRating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
-                            epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overallRating}/10)`);
+                            if (overallRating == '-') overallRating = false;
+                            if (overallRating !== false) {
+                                if (overallRating.includes('/10')) overallRating = overallRating.replace('/10', '');
+                                overallRating = parseFloat(overallRating);
+                                if (isNaN(overallRating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
+                                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overallRating}/10)`);
+                            } else {
+                                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
+                            }
 
                             row2 = new ActionRowBuilder()
                             .addComponents(
@@ -413,7 +419,12 @@ module.exports = {
                                 overallReview = overallReview.split('\\n').join('\n');
                             }
 
-                            epEmbed.setDescription(`*${overallReview}*`);
+                            if (overallReview == '-') overallReview = false;
+                            if (overallReview !== false) {
+                                epEmbed.setDescription(`*${overallReview}*`);
+                            } else {
+                                epEmbed.setDescription(null);
+                            }
 
                             row2 = new ActionRowBuilder()
                             .addComponents(
@@ -595,22 +606,38 @@ module.exports = {
                         await i.update({ embeds: [epEmbed], components: [] });
 
                         if (epSongs.length != 0) {
-                            await i.followUp({ content: `Here is the order in which you should review the songs on this ${epType}:\n\n**${epSongs.join('\n')}**`, ephemeral: true });
+                            await i.followUp({ content: `Here is the order in which you should review the songs on this ${epType}:\n\n**${epSongs.join('\n')}**\n\n` +
+                            `Note: You can use \`/epdone\` to end the ${epType} review, if you run into issues with buttons or need to restart your review for whatever reason.`, ephemeral: true });
+                        } else if (interaction.options.getSubcommand() == 'manually') {
+                            await i.followUp({ content: `When you are finished with this ${epType} review, type \`/epdone\` to finalize the EP/LP review fully! You can also type this command if you run into any issues and need to restart the ${epType} review.`, ephemeral: true });
                         }
+
+                        // Do it again, cause for some reason it sometimes doesn't remove the buttons properly.
+                        interaction.editReply({ embeds: [epEmbed], components: [] });
                     } break;
                 }
             });
 
-            collector.on('end', async () => {
-                if (a_collector != undefined) a_collector.stop();
-                if (name_collector != undefined) name_collector.stop();
+            collector.on('end', async (collected) => {
+                if (collected.size == 0) {
+                    try {
+                        await interaction.deleteReply();
+                    } catch (err) {
+                        console.log(err);
+                    }
+
+                    db.user_stats.set(interaction.user.id, false, 'current_ep_review');
+                }
+
                 if (ra_collector != undefined) ra_collector.stop();
                 if (re_collector != undefined) re_collector.stop();
+                if (a_collector != undefined) a_collector.stop();
+                if (name_collector != undefined) name_collector.stop();
             });
 
         } catch (err) {
             let error = err;
-            handle_error(interaction, error);
+            handle_error(interaction, client, error);
         }
     },
 };

@@ -22,7 +22,7 @@ module.exports = {
     help_desc: `Displays all ratings you have given to an artists, and what songs you haven't rated from the given artist.\n\n` +
     `Leaving the artist argument blank will pull from your spotify playback to fill in the argument (if logged in to Waveform with Spotify)\n\n` +
     `Putting in a user into the user argument will allow you to view another users ratings of the specified artist, otherwise leaving it blank will default to yourself.`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         try {
 
         let spotifyCheck;
@@ -139,7 +139,7 @@ module.exports = {
             .setAuthor({ name: `All ratings for ${artist} by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png" }) })
             .addFields([
                 { name: `Average Rating`, value: avg, inline: true },
-                { name: `Songs`, value: pagedReviewList[page_num], inline: false },
+                { name: `Music`, value: pagedReviewList[page_num], inline: false },
             ]);
             if (pagedReviewList.length > 1) {
                 ratingListEmbed.setFooter({ text: `Page 1 / ${pagedReviewList.length}` });
@@ -170,7 +170,7 @@ module.exports = {
         } catch (err) {
             console.log(err);
             let error = err;
-            handle_error(interaction, error);
+            handle_error(interaction, client, error);
         }
 	},
 };

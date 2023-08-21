@@ -133,10 +133,9 @@ module.exports = {
         
         // Song Review
         let song_review_guide = [
-            // Page 1
-            'To start with Spotify reviews, make sure you are logged into Spotify on Waveform. To do this, run `/login` and follow the instructions in the message and link to get setup with Spotify on Waveform.\n' +
-            '\n' + 
-            'After you have finished this, you are ready to begin reviewing with Spotify on Waveform! To start, play a song you want to review on spotify (doesn’t matter which platform you are on). After you have done so, type `/review with_spotify`, and you should see something like the below.',
+            "This guide will help you review singles and remixes in Waveform. There are 2 different ways to review, one is through Spotify playback (use `/login` to login to Waveform with Spotify), and the other is through manually entering artist/song information. Images will be in relation to the Spotify version.\n" +
+            "\n" +
+            "To start, play a song you want to review on spotify, if reviewing with spotify. After you have done so, type /review, and select the subcommand most relevant to you and you should see something like the below. If you are manually reviewing, type out the artist and song names, and remixers if applicable in their respective arguments.",
 
             // Page 2
             'Your review can be setup either with a number rating and text review, or just a number rating, or just a text review. The rating argument and review argument are both optional, so all you need to do to leave one out is just leave it blank!\n' +

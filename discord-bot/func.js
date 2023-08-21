@@ -160,7 +160,7 @@ module.exports = {
                     if ((interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') || (subcommand.includes('ep'))
                         || interaction.options.getSubcommandGroup() == 'ep') {
                         if (album_data.body.album_type == 'compilation') {
-                            passesChecks = false;
+                            passesChecks = 'compilation';
                             return;
                         }
 
@@ -484,6 +484,8 @@ module.exports = {
             return { error: 'This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.' };
         } else if (passesChecks == 'too_long') {
             return { error: `This LP contains too many songs, Waveform can currently only review up to a maximum of 25 song long albums.` };
+        } else if (passesChecks == 'compilation') {
+            return { error: `This is a compilation, and compilations cannot be reviewed as EPs/LPs.` };
         }
 
         let setterSongArg = convertToSetterName(songArg);
@@ -661,7 +663,7 @@ module.exports = {
                                     msgEmbed.setThumbnail(new_image);
                                     msg.edit({ content: null, embeds: [msgEmbed] });
                                 }).catch((err) => {
-                                    handle_error(interaction, err);
+                                    handle_error(interaction, client, err);
                                 });
                             }
                     }
@@ -1019,14 +1021,16 @@ module.exports = {
         return imageArray;
     },
 
-    handle_error: function(interaction, err) {
+    handle_error: function(interaction, client, err) {
         interaction.editReply({ content: `Waveform ran into an error. Don't worry, the bot is still online!\nError: \`${err}\``, 
         embeds: [], components: [] }).catch(() => {
             interaction.reply({ content: `Waveform ran into an error. Don't worry, the bot is still online!\nError: \`${err}\``, 
             embeds: [], components: [] });
         });
 
-        let error_channel = interaction.guild.channels.cache.get('933610135719395329');
+        const guild = client.guilds.cache.get('680864893552951306');
+        if (guild == undefined || guild == null || guild == false) return;
+        let error_channel = guild.channels.cache.get('933610135719395329');
         let error = String(err.stack);
         interaction.fetchReply().then(msg => {
             error_channel.send(`Waveform Error!\n**${error}**\nMessage Link with Error: <${msg.url}>`);
@@ -1172,6 +1176,9 @@ module.exports = {
         let starred = reviewObj.starred;
         let rating = reviewObj.rating;
 
+        // The only way it could possibly be false is if it's from old reviews in Hotdog Water server.
+        if (guildId == false) guildId = '680864893552951306';
+
         let userStatsObj = db.user_stats.get(userId, 'stats');
         let guildStatsObj = db.server_settings.get(guildId, 'stats');
         let botStatsObj = db.global_bot.get('stats');
@@ -1179,7 +1186,11 @@ module.exports = {
         let change_num = 1 * (delete_mode == false ? 1 : -1);
 
         /// Update the easy number stats
-        userStatsObj.ratings_list[rating] = userStatsObj.ratings_list[rating] + change_num;
+        if (userStatsObj.ratings_list[rating] != undefined && userStatsObj.ratings_list[rating] != null) {
+            userStatsObj.ratings_list[rating] = userStatsObj.ratings_list[rating] + change_num;
+        } else {
+            userStatsObj.ratings_list[rating] = _.clamp(change_num, 0, 1);
+        }
 
         // Add this user to the list of users who have used Waveform at least once
         if (!botStatsObj.waveform_users.includes(userId)) {
