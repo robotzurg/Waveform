@@ -8,7 +8,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('help')
         .setDescription('Get help with Waveform.')
-        .setDMPermission(false),
+        .setDMPermission(true),
     help_desc: `Get help with all the various Waveform commands, and view guides on how to do song/EP/LP reviews and use Waveform Mailbox.`,
 	async execute(interaction, client) {
 
@@ -51,10 +51,23 @@ module.exports = {
                     .setCustomId('command_help')
                     .setLabel('Commands')
                     .setStyle(ButtonStyle.Secondary),
+            )
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('home')
+                    .setLabel('Home')
+                    .setStyle(ButtonStyle.Danger),
             );
 
+        let embedColor;
+        if (interaction.guildId == null) {
+            embedColor = '#02f8d7';   
+        } else {
+            embedColor = getEmbedColor(interaction.member);
+        }
+
         const helpEmbed = new EmbedBuilder()
-        .setColor(`${getEmbedColor(interaction.member)}`)
+        .setColor(embedColor)
         .setThumbnail(client.user.displayAvatarURL())
         .setTitle(`Waveform Help Desk 🗂️`)
         .setDescription(`Use the buttons below to select through the categories to get help on specific things!\n` +
@@ -191,7 +204,7 @@ module.exports = {
         let sel_guide_images;
 
         const commandEmbed = new EmbedBuilder()
-        .setColor(`${getEmbedColor(interaction.member)}`)
+        .setColor(`${embedColor}`)
         .setThumbnail(client.user.displayAvatarURL())
         .setTitle(`/${commandList[0][0]}`)
         .addFields({ name: `Description`, value: `${commandList[0][1].help_desc}` });
@@ -213,7 +226,8 @@ module.exports = {
         }
 
         interaction.reply({ content: null, embeds: [helpEmbed], components: [guide_select_menu, other_buttons] });
-        const help_collector = interaction.channel.createMessageComponentCollector();
+        let message = await interaction.fetchReply();
+        const help_collector = message.createMessageComponentCollector();
         let guideEmbed, basicsEmbed;
 
         help_collector.on('collect', async i => {
@@ -223,6 +237,11 @@ module.exports = {
             }
             
             switch (sel) {
+                case 'home':
+                    other_buttons.components[0].setDisabled(false);
+                    other_buttons.components[1].setDisabled(false);
+                    i.update({ content: null, embeds: [helpEmbed], components: [guide_select_menu, other_buttons] });
+                break;
                 case 'command_help':
                     other_buttons.components[0].setDisabled(false);
                     other_buttons.components[1].setDisabled(true);
@@ -233,7 +252,7 @@ module.exports = {
                     other_buttons.components[1].setDisabled(false);
 
                     basicsEmbed = new EmbedBuilder()
-                    .setColor(`${getEmbedColor(interaction.member)}`)
+                    .setColor(`${embedColor}`)
                     .setTitle(`Waveform Basics`)
                     .setDescription(basics_guide);
 
@@ -248,7 +267,7 @@ module.exports = {
                     sel_guide_images = song_review_guide_images;
 
                     guideEmbed = new EmbedBuilder()
-                    .setColor(`${getEmbedColor(interaction.member)}`)
+                    .setColor(`${embedColor}`)
                     .setTitle(`🎵 Song Review Guide`)
                     .setDescription(sel_guide_pages[page_num])
                     .setImage(sel_guide_images[page_num])
@@ -265,7 +284,7 @@ module.exports = {
                     sel_guide_images = ep_review_guide_images;
 
                     guideEmbed = new EmbedBuilder()
-                    .setColor(`${getEmbedColor(interaction.member)}`)
+                    .setColor(`${embedColor}`)
                     .setTitle(`🎶 EP/LP Review Guide`)
                     .setDescription(sel_guide_pages[page_num])
                     .setImage(sel_guide_images[page_num])
@@ -282,7 +301,7 @@ module.exports = {
                     sel_guide_images = mailbox_guide_images;
 
                     guideEmbed = new EmbedBuilder()
-                    .setColor(`${getEmbedColor(interaction.member)}`)
+                    .setColor(`${embedColor}`)
                     .setTitle(`📬 Waveform Mailbox Guide`)
                     .setDescription(sel_guide_pages[page_num])
                     .setImage(sel_guide_images[page_num])

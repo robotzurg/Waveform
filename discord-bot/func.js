@@ -259,6 +259,8 @@ module.exports = {
 
                         if (trackList.length <= 1) {
                             passesChecks = 'length';
+                        } else if (trackList.length > 25) {
+                            passesChecks = 'too_long';
                         }
 
                         origArtistArray = album_data.body.artists.map(artist => artist.name);
@@ -480,6 +482,8 @@ module.exports = {
             return { error: 'This track cannot be added to EP/LP reviews, therefore is invalid to be used in relation with EP/LP commands.' };
         } else if (passesChecks == 'length') {
             return { error: 'This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.' };
+        } else if (passesChecks == 'too_long') {
+            return { error: `This LP contains too many songs, Waveform can currently only review up to a maximum of 25 song long albums.` };
         }
 
         let setterSongArg = convertToSetterName(songArg);
@@ -1291,11 +1295,6 @@ module.exports = {
         };
 
         if (starCount >= 3 && inHof == false) {
-            // Needs to be added
-            if (interaction.guild.id == guild_id) {
-                await interaction.channel.send({ content: `🏆 **${origArtistArray.join(' & ')} - ${songName}** has been added to the Hall of Fame for this server!` });
-            }
-            
             db.server_settings.push(guild_id, hallOfFameData, 'hall_of_fame');
         } else if (starCount < 3 && inHof == true) {
             // Needs to be removed
