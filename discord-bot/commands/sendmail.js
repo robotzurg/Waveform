@@ -107,6 +107,11 @@ module.exports = {
                     name = data.name;
                     artists = data.artists.map(artist => artist.name);
                     spotifyData = data;
+
+                    if (!name.includes(' EP') && !name.includes(' LP')) {
+                        if (data.album_type == 'single') name = `${name} EP`;
+                        if (data.album_type == 'album') name = `${name} LP`;
+                    }
                 }).catch((err) => {
                     console.log(err);
                 });

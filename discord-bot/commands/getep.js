@@ -248,8 +248,9 @@ module.exports = {
                         `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}`);
                     }
                 } else {
-                    epEmbed.setDescription(`This ${epType} has no songs in the database and has not been reviewed overall.` +
-                    `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}`);
+                    epEmbed.setDescription(`This ${epType} has no songs in the database.` +
+                    `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}` +
+                    `\n${paged_user_list[page_num].join('\n')}`);
                 }
             }
 
@@ -471,7 +472,9 @@ module.exports = {
                                 `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}` +
                                 `\n${paged_user_list[page_num].join('\n')}`);
                             } else {
-                                epEmbed.setDescription(`This ${epType} has no songs in the database and has not been reviewed overall.`);
+                                epEmbed.setDescription(`This ${epType} has no songs in the database.` +
+                                `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}` +
+                                `\n${paged_user_list[page_num].join('\n')}`);
                             }
                         }
 

@@ -139,7 +139,8 @@ module.exports = {
 
             // Page 2
             'Your review can be setup either with a number rating and text review, or just a number rating, or just a text review. The rating argument and review argument are both optional, so all you need to do to leave one out is just leave it blank!\n' +
-            '\n',
+            '\n' +
+            '(Note: If you are reviewing an artist manually, and they have `&` in their name, replace the `&` in their name with `\\&`, because `&` is the character to separate artists with, and `\\&` is used to avoid that behavior.)',
 
             // Page 3
             'After pressing enter to run the command, you’ll see this set of buttons pop up with your review.\n' +
@@ -152,7 +153,7 @@ module.exports = {
 
         let song_review_guide_images = [
             'https://media.discordapp.net/attachments/1142701807852859443/1142701955702071327/song_review_help_1.png?width=1028&height=428',
-            'https://media.discordapp.net/attachments/1142701807852859443/1142701968402423868/song_review_help_2.png?width=781&height=70',
+            'https://media.discordapp.net/attachments/1142701807852859443/1143271908276715669/image.png?width=1050&height=66',
             'https://media.discordapp.net/attachments/1142701807852859443/1142701984244301845/song_review_help_3.png?width=681&height=497',
         ];
 
