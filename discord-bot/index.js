@@ -262,9 +262,15 @@ client.on('interactionCreate', async interaction => {
         await command.execute(interaction, client);
     } catch (error) {
         await console.error(error);
-        await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true }).catch(() => {
-            interaction.editReply('There was an error while executing this command!');
-        });
+        if (interaction.commandName != 'login') {
+            await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true }).catch(() => {
+                interaction.editReply('There was an error while executing this command!');
+            });
+        } else if (interaction.commandName == 'login') {
+            await interaction.reply({ content: 'Waveform failed to DM you, you must have your DMs open to login to Waveform with Spotify.', ephemeral: true }).catch(() => {
+                interaction.editReply('Waveform failed to DM you, you must have your DMs open to login to Waveform with Spotify.');
+            });
+        }
     }
     
 });
