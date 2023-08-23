@@ -55,8 +55,6 @@ module.exports = {
             let epReviewCount = userStatsObj.ep_review_num;
             let tenCount = userStatsObj.ten_num;
 
-            console.log(reviewCount);
-
             FontLibrary.use("main", ["./fonts/LEMONMILK-Light.otf"]);
             FontLibrary.use("main_med", ["./fonts/LEMONMILK-Medium.otf"]);
             FontLibrary.use("main_reg", ["./fonts/LEMONMILK-Regular.otf"]);

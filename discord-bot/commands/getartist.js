@@ -8,16 +8,29 @@ module.exports = {
         .setName('getartist')
         .setDescription('Get all the songs/EPs/LPs/remixes from an artist.')
         .setDMPermission(false)
-        .addStringOption(option => 
-            option.setName('artist')
-                .setDescription('The name of the artist(s). (DO NOT PUT ANY REMIXERS HERE) (Leave empty to use spotify playback)')
-                .setAutocomplete(true)
-                .setRequired(false)),
+        .addSubcommand(subcommand =>
+            subcommand.setName('server')
+            .setDescription('Get data specific to the server about an artist.')
+            .addStringOption(option => 
+                option.setName('artist')
+                    .setDescription('The name of the artist(s). (Leave empty to use spotify playback)')
+                    .setAutocomplete(true)
+                    .setRequired(false)))
+        .addSubcommand(subcommand =>
+            subcommand.setName('global')
+            .setDescription('Get data specific across the whole bot about an artist.')
+            .addStringOption(option => 
+                option.setName('artist')
+                    .setDescription('The name of the artist(s). (Leave empty to use spotify playback)')
+                    .setAutocomplete(true)
+                    .setRequired(false))),
     help_desc: `Displays all songs, EPs/LPs, Remixes, and other information regarding an artist in Waveform.\n\n` +
+    `You can view a summary view of all data relating to an artist globally by using the \`global\` subcommand, or view data locally using the \`server\` subcommand.\n\n` +
     `Leaving the artist argument blank will pull from your spotify playback to fill in the argument (if logged in to Waveform with Spotify)`,
 	async execute(interaction, client) {
         try {
             let spotifyCheck;
+            let subcommand = interaction.options.getSubcommand();
             let artist = interaction.options.getString('artist');
             
             // Spotify Check
@@ -46,7 +59,12 @@ module.exports = {
             let epKeyArray = songArray.filter(item => item.includes(' LP') || item.includes(' EP'));
             songArray = songArray.filter(item => !item.includes(' LP') && !item.includes(' EP'));
 
-            let reviewNum;
+            const guild = client.guilds.cache.get(interaction.guild.id);
+            let res = await guild.members.fetch();
+            let guildUsers = [...res.keys()];
+
+            let localReviewNum;
+            let globalReviewNum;
             let singleArray = [];
             let pagedSingleArray = [];
             let remixArray = [];
@@ -54,7 +72,8 @@ module.exports = {
             let epArray = [];
             let pagedEpArray = [];
 
-            let rankNumArray = [];
+            let localRankNumArray = [];
+            let globalRankNumArray = [];
             let starNum = 0; // Total number of individual song stars for each song
             let fullStarNum = 0; // Total number of stars
             let star_check = [];
@@ -130,17 +149,40 @@ module.exports = {
                         starNum = 0;
                         let songObj = artistObj[epSongs[ii].replace('[', '_((').replace(']', '))_')];
                         if (epSongs[ii].includes(' Remix)')) songObj = db.reviewDB.get(epSongs[ii].split(' Remix)')[0].split('(').splice(1)[0], `${setterEpSongsII}`);
-                        let reviews = await get_user_reviews(songObj);
-                        reviewNum = reviews.length;
+                        let localReviews, globalReviews;
+                        // Get all users if global, otherwise get only guild specific users if server.
+                        if (subcommand == 'server') {
+                            localReviews = await get_user_reviews(songObj, guildUsers);
+                            globalReviews = [];
+                        } else {
+                            globalReviews = await get_user_reviews(songObj);
+                            localReviews = [];
+                        }
+
+                        localReviewNum = localReviews.length;
+                        globalReviewNum = globalReviews.length;
                         
-                        for (let x = 0; x < reviews.length; x++) {
-                            let rating = songObj[reviews[x]].rating;
-                            let starred = songObj[reviews[x]].starred;
-                            rankNumArray.push(parseFloat(rating));
-                            if (starred == true) { 
-                                starNum++; 
-                                fullStarNum++;
-                                star_check.push(epSongs[ii]);
+                        if (subcommand == 'global') {
+                            for (let x = 0; x < globalReviews.length; x++) {
+                                let rating = songObj[globalReviews[x]].rating;
+                                let starred = songObj[globalReviews[x]].starred;
+                                globalRankNumArray.push(parseFloat(rating));
+                                if (starred == true) { 
+                                    starNum++; 
+                                    fullStarNum++;
+                                    star_check.push(epSongs[ii]);
+                                }
+                            }
+                        } else if (subcommand == 'local') {
+                            for (let x = 0; x < localReviews.length; x++) {
+                                let rating = songObj[localReviews[x]].rating;
+                                let starred = songObj[localReviews[x]].starred;
+                                localRankNumArray.push(parseFloat(rating));
+                                if (starred == true) { 
+                                    starNum++; 
+                                    fullStarNum++;
+                                    star_check.push(epSongs[ii]);
+                                }
                             }
                         }
 
@@ -149,12 +191,19 @@ module.exports = {
                         let collabArray = songObj.collab; // This also doubles as remixer original artists
                         if (epSongs[ii].includes(' Remix)')) collabArray = [];
 
-                        if (remixerKeys.length > 0) {
-                            songDetails = [`\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
+                        let reviewNum, rankNumArray;
+                        reviewNum = subcommand == 'global' ? globalReviewNum : localReviewNum;
+                        rankNumArray = subcommand == 'global' ? globalRankNumArray : localRankNumArray;
+                        console.log(reviewNum, rankNumArray);
+
+                        if (remixerKeys.length > 0 && reviewNum != 0) {
+                            songDetails = [`\`${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : ``}`, `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
                             `${starNum != 0 ? `\`${starNum} ⭐\`` : ''}`];
                             songDetails = songDetails.join(' ');
+                        } else if (reviewNum != 0) {
+                            songDetails = `${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : ``}\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\`${starNum != 0 ? ` \`${starNum} ⭐\`` : ''}`;
                         } else {
-                            songDetails = `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\`${starNum != 0 ? ` \`${starNum} ⭐\`` : ''}`;
+                            songDetails = ``;
                         }
 
                         epData.push([`• ${epSongs[ii]}` + 
@@ -173,17 +222,40 @@ module.exports = {
                     songArray[i] = songArray[i].replace('_((', '[').replace('))_', ']');
                     let setterSongName = convertToSetterName(songArray[i]);
                     const songObj = db.reviewDB.get(artist, `${setterSongName}`);
-                    reviewNum = parseInt(songObj.review_num);
-                    let reviews = await get_user_reviews(songObj);
-                    
-                    for (let ii = 0; ii < reviews.length; ii++) {
-                        let rating = songObj[reviews[ii]].rating;
-                        let starred = songObj[reviews[ii]].starred;
-                        rankNumArray.push(parseFloat(rating));
-                        if (starred == true) { 
-                            starNum++; 
-                            fullStarNum++;
-                            star_check.push(songArray[i]);
+                    let localReviews, globalReviews;
+                    // Get all users if global, otherwise get only guild specific users if server.
+                    if (subcommand == 'server') {
+                        localReviews = await get_user_reviews(songObj, guildUsers);
+                        globalReviews = [];
+                    } else {
+                        globalReviews = await get_user_reviews(songObj);
+                        localReviews = [];
+                    }
+
+                    localReviewNum = localReviews.length;
+                    globalReviewNum = globalReviews.length;
+
+                    if (subcommand == 'global') {
+                        for (let ii = 0; ii < globalReviews.length; ii++) {
+                            let rating = songObj[globalReviews[ii]].rating;
+                            let starred = songObj[globalReviews[ii]].starred;
+                            globalRankNumArray.push(parseFloat(rating));
+                            if (starred == true) { 
+                                starNum++; 
+                                fullStarNum++;
+                                star_check.push(songArray[i]);
+                            }
+                        }
+                    } else {
+                        for (let ii = 0; ii < localReviews.length; ii++) {
+                            let rating = songObj[localReviews[ii]].rating;
+                            let starred = songObj[localReviews[ii]].starred;
+                            localRankNumArray.push(parseFloat(rating));
+                            if (starred == true) { 
+                                starNum++; 
+                                fullStarNum++;
+                                star_check.push(songArray[i]);
+                            }
                         }
                     }
 
@@ -193,12 +265,18 @@ module.exports = {
                     let rmxOgArtistArray = [];
                     if (songArray[i].includes(' Remix)')) rmxOgArtistArray = songObj.collab;
 
-                    if (remixerKeys.length > 0) {
-                        songDetails = [`\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
+                    let reviewNum, rankNumArray;
+                    reviewNum = subcommand == 'global' ? globalReviewNum : localReviewNum;
+                    rankNumArray = subcommand == 'global' ? globalRankNumArray : localRankNumArray;
+
+                    if (remixerKeys.length > 0 && reviewNum != 0) {
+                        songDetails = [`\`${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : ``}`, `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
                         `${starNum != 0 ? `\`${starNum} ⭐\`` : ''}`];
                         songDetails = songDetails.join(' ');
+                    } else if (reviewNum != 0) {
+                        songDetails = `${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : ``}\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\`${starNum != 0 ? ` \`${starNum} ⭐\`` : ''}`;
                     } else {
-                        songDetails = `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\`${starNum != 0 ? ` \`${starNum} ⭐\`` : ''}`;
+                        songDetails = ``;
                     }
 
                     if (songArray[i].includes('Remix')) { // Remixes
@@ -259,12 +337,14 @@ module.exports = {
                     type_buttons.components[2].data.style = ButtonStyle.Success;
                 }
 
+                let rankNumArray = interaction.options.getSubcommand() == 'global' ? globalRankNumArray : localRankNumArray;
+
                 if (rankNumArray.length != 0) { 
                     if (singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) {
                         if (fullStarNum != 0) { // If the artist has stars on any of their songs
-                            artistEmbed.setDescription(`*The average rating of this artist is* ***${Math.round(average(rankNumArray) * 10) / 10}!***\n:star2: **This artist has ${fullStarNum} total stars!** :star2:`);
+                            artistEmbed.setDescription(`*The average ${subcommand == 'global' ? 'global' : 'local'} rating of this artist is* ***${Math.round(average(rankNumArray) * 10) / 10}!***\n:star2: **This artist has ${fullStarNum} total stars!** :star2:`);
                         } else {
-                            artistEmbed.setDescription(`*The average rating of this artist is* ***${Math.round(average(rankNumArray) * 10) / 10}!***`);
+                            artistEmbed.setDescription(`*The average ${subcommand == 'global' ? 'global' : 'local'} rating of this artist is* ***${Math.round(average(rankNumArray) * 10) / 10}!***`);
                         }
 
                         artistEmbed.addFields([{ name: focusedName, value: focusedArray[0].join('\n') }]);
@@ -276,10 +356,12 @@ module.exports = {
                     artistEmbed.setDescription(`No reviewed songs. :(`);
                 }
 
+            console.log(artistEmbed);
+
             if (pages_active[0] == true) {
-                interaction.reply({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
+                await interaction.reply({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
             } else {
-                interaction.reply({ embeds: [artistEmbed], components: [type_buttons] });
+                await interaction.reply({ embeds: [artistEmbed], components: [type_buttons] });
             }
 
             let message = await interaction.fetchReply();

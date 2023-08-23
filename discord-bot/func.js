@@ -58,8 +58,13 @@ module.exports = {
 
         // Filter out the user array to only those in the guild, if this is not false
         if (guild != false) {
-            let res = await guild.members.fetch();
-            let guildUsers = [...res.keys()];
+            let guildUsers;
+            if (!Array.isArray(guild)) {
+                let res = await guild.members.fetch();
+                guildUsers = [...res.keys()];
+            } else {
+                guildUsers = guild;
+            }
             userArray = userArray.filter(e => {
                 return guildUsers.includes(e);
             });
@@ -114,6 +119,7 @@ module.exports = {
         let songArt = false;
         let localReturnObj = {};
         let songUri = false;
+        let notPlaying = false;
         let rmx_delimiter = ' & ';
         if (remixers != null) {
             rmxArtistArray = [remixers.split(' & ')];
@@ -131,7 +137,7 @@ module.exports = {
 
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
                 if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
-                if (data.body.item == undefined) { passesChecks = 'notplaying'; return; }
+                if (data.body.item == undefined) { notPlaying = true; return; }
                 
                 if (data.body.item.is_local == true) { 
                     passesChecks = 'local'; 
@@ -286,6 +292,10 @@ module.exports = {
             if (isPodcast == true) {
                 return { error: 'Podcasts are not supported with `/np`.' };
             }
+
+            if (notPlaying == true) {
+                return { error: 'You cannot use a spotify command without playing something on Spotify. Please double check you are playing a song on Spotify!' };
+            }
         } else {
             if (remixers != null) {
                 songArg = `${songArg} (${remixers} Remix)`;
@@ -299,6 +309,15 @@ module.exports = {
             passesChecks = 'notplaying';
             origArtistArray = [];
             songArg = 'N/A';
+        }
+
+        // If manually pulling up info, make sure that the remixer is in the orig artist array (it gets removed later, but ensures this is a "valid" remix)
+        if (remixers != null) {
+            for (let remixer of rmxArtistArray) {
+                if (!origArtistArray.includes(remixer)) {
+                    origArtistArray.push(remixer);
+                }
+            }
         }
 
         if (songArg.includes('feat.')) {

@@ -50,7 +50,7 @@ module.exports = {
                     .setAutocomplete(true)
                     .setRequired(false))),
     help_desc: `Pulls up all data relating to a song or remix in Waveform, such as all reviews, rating averages, and more.\n\n` +
-    `You can view a summary view of all data relating to a song globally by using the \`server\` subcommand, or view a list of all local server reviews using the \`server\` subcommand.\n\n` +
+    `You can view a summary view of all data relating to a song globally by using the \`global\` subcommand, or view a list of all local server reviews using the \`server\` subcommand.\n\n` +
     `The remixers argument should have the remixer specified if you are trying to pull up a remix, the remixer should be put in the song_name or artists arguments.\n\n` +
     `Leaving the artist, song_name, and remixers arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)`,
 	async execute(interaction, client) {
@@ -85,6 +85,8 @@ module.exports = {
         for (let s of artistSongs) {
             if (s.includes('VIP') && s.includes(songName) && s != songName) songVIP = s;
         }
+
+        console.log(song_info);
 
         songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
         if (songObj == undefined) { return interaction.reply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
@@ -182,7 +184,7 @@ module.exports = {
                 `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
             }        
         } else {
-            songEmbed.setDescription(`${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
+            songEmbed.setDescription(`No Reviews have been made for this song.${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
         }
 
         if (songArt == false) {
