@@ -15,7 +15,7 @@ module.exports = {
         try {
         await interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
-        let songArt, spotifyUrl, yourRating, origArtistArray, artistArray, songName, songDisplayName, isPlaying = true, isPodcast = false, validSong = true;
+        let songArt, spotifyUrl, yourRating, origArtistArray, artistArray, songName, songDisplayName, noSong = false, isPlaying = true, isPodcast = false, validSong = true;
         let setterSongName, song_info;
         let songLength, songCurMs, musicProgressBar = false; // Song length bar variables
         const spotifyApi = await spotify_api_setup(interaction.user.id);
@@ -23,6 +23,7 @@ module.exports = {
         if (spotifyApi == false) return interaction.editReply(`This command requires you to use \`/login\` `);
 
         await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+            if (data.body.item == undefined) { noSong = true; return; }
             if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
             if (data.body.item.is_local == false) {
                 spotifyUrl = data.body.item.external_urls.spotify;
@@ -45,8 +46,6 @@ module.exports = {
                 origArtistArray = song_info.prod_artists;
                 songDisplayName = song_info.display_song_name;
             }
-
-            console.log(song_info);
         });
 
         // Check if a podcast is being played, as we don't support that.
@@ -54,6 +53,10 @@ module.exports = {
             return interaction.editReply('Podcasts are not supported with `/np`.');
         } else if (validSong == false) {
             return interaction.editReply(`This song cannot be parsed by Waveform, therefore cannot be pulled up.`);
+        }
+
+        if (noSong == true) {
+            return interaction.editReply(`You are not currently playing a song on Spotify.`);
         }
 
         if (songArt == false) songArt = interaction.member.avatarURL({ extension: 'png' });
@@ -102,16 +105,15 @@ module.exports = {
                 }
 
                 if (globalRankNumArray.length != 0) { 
-                    npEmbed.setDescription(`\nAvg Global Rating: \`${Math.round(average(globalRankNumArray) * 10) / 10}\`` +
-                    `\nAvg Server Rating: \`${localRankNumArray.length > 0 ? Math.round(average(localRankNumArray) * 10) / 10 : `N/A`}\`` + 
-                    `${localUserArray.length != 0 ? `\nServer Reviews: \`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
-                    `${localStarNum >= 1 ? `\nServer Stars: \`${localStarNum} ⭐\`` : ''}` + 
+                    npEmbed.setDescription(`\nAvg Global Rating: **\`${Math.round(average(globalRankNumArray) * 10) / 10}\`** \`with ${globalUserArray.length} reviews\`` +
+                    `\nAvg Local Rating: **\`${localRankNumArray.length > 0 ? Math.round(average(localRankNumArray) * 10) / 10 : `N/A`}\`** \`with ${globalUserArray.length} reviews\`` + 
+                    `${localStarNum >= 1 ? `\nLocal Stars: \`${localStarNum} ⭐\`` : ''}` + 
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 } else if (globalUserArray.length != 0) {
-                    npEmbed.setDescription(`Server Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
+                    npEmbed.setDescription(`Local Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
                     `\`${localStarNum >= 1 ? `\nLocal Stars: \`${localStarNum} ⭐\`` : ''}` + 
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +

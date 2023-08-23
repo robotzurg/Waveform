@@ -94,15 +94,14 @@ module.exports = {
                 }
 
                 if (globalRankNumArray.length != 0) { 
-                    randomSongEmbed.setDescription(`\nAvg Global Rating: \`${Math.round(average(globalRankNumArray) * 10) / 10}\`` +
-                    `\nAvg Server Rating: \`${localRankNumArray.length > 0 ? Math.round(average(localRankNumArray) * 10) / 10 : `N/A`}\`` + 
-                    `${localUserArray.length != 0 ? `\nServer Reviews: \`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
-                    `${localStarNum >= 1 ? `\nServer Stars: \`${localStarNum} ⭐\`` : ''}` + 
+                    randomSongEmbed.setDescription(`\nAvg Global Rating: **\`${Math.round(average(globalRankNumArray) * 10) / 10}\`** \`with ${globalUserArray.length} reviews\`` +
+                    `\nAvg Local Rating: **\`${localRankNumArray.length > 0 ? Math.round(average(localRankNumArray) * 10) / 10 : `N/A`}\`** \`with ${globalUserArray.length} reviews\`` +
+                    `${localStarNum >= 1 ? `\`Local Stars: \`${localStarNum} ⭐\`` : ''}` + 
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 } else if (globalUserArray.length != 0) {
-                    randomSongEmbed.setDescription(`Server Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
+                    randomSongEmbed.setDescription(`Local Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
                     `\`${localStarNum >= 1 ? `\nLocal Stars: \`${localStarNum} ⭐\`` : ''}` + 
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +

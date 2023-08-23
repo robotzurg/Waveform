@@ -21,12 +21,13 @@ module.exports = {
     help_desc: `Send a song to a users Waveform Mailbox, specified with the user argument.\n\n` + 
     `The songs are usually sent from Spotify (mainly), but you can also send YouTube, Apple Music, and SoundCloud links.\n\n` +
     `Leaving the link argument blank will pull from your currently playing song on spotify.`,
-	async execute(interaction) {
+	async execute(interaction, client) {
         await interaction.deferReply();
         let taggedUser = interaction.options.getUser('user');
         let taggedMember = await interaction.guild.members.fetch(taggedUser.id);
         let spotifyCmdUserApi = await spotify_api_setup(interaction.user.id);
         let spotifyTaggedApi = await spotify_api_setup(taggedUser.id);
+        const guild = client.guilds.cache.get(interaction.guild.id);
 
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
         let trackLink = interaction.options.getString('link');
@@ -183,7 +184,7 @@ module.exports = {
                 const mailEmbed = new EmbedBuilder()
                 .setColor(`${getEmbedColor(interaction.member)}`)
                 .setTitle(`${origArtistArray.join(' & ')} - ${displayName}`)
-                .setDescription(`This music mail was sent to you by <@${interaction.user.id}>!`)
+                .setDescription(`This music mail was sent to you by <@${interaction.user.id}> from the server **${guild.name}**!`)
                 .setThumbnail(songArt);
 
                 interaction.editReply(`Sent [**${origArtistArray.join(' & ')} - ${displayName}**](${url}) to ${taggedMember.displayName}'s Waveform Mailbox!`);
@@ -235,7 +236,7 @@ module.exports = {
 
             interaction.editReply(`Sent a non-spotify [track](${trackLink}) to ${taggedMember.displayName}!\n\n`);
             if (dmMailConfig == true && interaction.user.id != taggedUser.id) { 
-                taggedUser.send({ content: `**You've got mail!** 📬\nSent by **${interaction.member.displayName}**\n${trackLink}` });
+                taggedUser.send({ content: `**You've got mail!** 📬\nSent by **${interaction.member.displayName}** from the server **${guild.name}**\n${trackLink}` });
             }
         }
     },
