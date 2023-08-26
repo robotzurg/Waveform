@@ -14,7 +14,8 @@ const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBit
     GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildPresences, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages], partials: [Partials.Channel, Partials.Message, Partials.Reaction] });
 client.commands = new Discord.Collection();
 client.cooldowns = new Discord.Collection();
-const registerCommands = [];
+const mainCommands = [];
+const adminCommands = [];
 const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
 
 // Place your client and guild ids here
@@ -29,14 +30,11 @@ const devGuildId = "945476095048814652";
 
 for (const file of commandFiles) {
 	const command = require(`./commands/${file}`);
-    if (command.type === undefined) {
-        // Slash Commands
-        client.commands.set(command.data.name, command);
-        registerCommands.push(command.data.toJSON());
+    client.commands.set(command.data.name, command);
+    if (command.data.name.includes('admin')) {
+        adminCommands.push(command.data.toJSON());
     } else {
-        // Context Menu Commands (these have a different structure)
-        client.commands.set(command.name, command);
-        registerCommands.push(command);
+        mainCommands.push(command.data.toJSON());
     }
 }
 
@@ -48,13 +46,13 @@ const rest = new REST({ version: '9' }).setToken(token_dev);
 
         await rest.put(
             Routes.applicationCommands(devClientId),
-            { body: registerCommands },
+            { body: mainCommands },
         );
 
-		// await rest.put(
-		// 	Routes.applicationGuildCommands(devClientId, devGuildId),
-		// 	{ body: registerCommands },
-		// );
+		await rest.put(
+			Routes.applicationGuildCommands(devClientId, devGuildId),
+			{ body: adminCommands },
+		);
 
         // await rest.put(
 		// 	Routes.applicationGuildCommands(devClientId, "784994152189919264"),
