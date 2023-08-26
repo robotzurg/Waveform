@@ -26,7 +26,7 @@ const devClientId = "945476486171865128";
 // eslint-disable-next-line no-unused-vars
 const mainGuildId = '680864893552951306';
 // eslint-disable-next-line no-unused-vars
-const devGuildId = "945476095048814652";
+const devGuildId = "1119885734913003551";
 
 for (const file of commandFiles) {
 	const command = require(`./commands/${file}`);
