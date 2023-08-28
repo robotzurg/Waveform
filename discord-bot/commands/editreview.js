@@ -162,6 +162,7 @@ module.exports = {
         let rating = interaction.options.getString('rating');
         if (rating != null && rating !== '-') {
             if (rating.includes('/10')) rating = rating.replace('/10', '');
+            if (isNaN(rating)) return interaction.reply('Your rating must be a valid number or decimal between 0-10, or `-` to remove a rating.');
         } else if (rating === '-') {
             rating = false;
         }

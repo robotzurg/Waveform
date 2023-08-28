@@ -48,7 +48,16 @@ module.exports = {
                 option.setName('remixers')
                     .setDescription('Remix artists on the song, if any.')
                     .setAutocomplete(true)
-                    .setRequired(false))),
+                    .setRequired(false))
+
+            .addStringOption(option => 
+                option.setName('sort_mode')
+                    .setDescription('The sort mode of the ratings list')
+                    .setRequired(false)
+                    .addChoices(
+                        { name: 'By Rating Value', value: 'rating_value' },
+                        { name: 'By Number of Ratings', value: 'rating_num' },
+                    ))),
     help_desc: `Pulls up all data relating to a song or remix in Waveform, such as all reviews, rating averages, and more.\n\n` +
     `You can view a summary view of all data relating to a song globally by using the \`global\` subcommand, or view a list of all local server reviews using the \`server\` subcommand.\n\n` +
     `The remixers argument should have the remixer specified if you are trying to pull up a remix, the remixer should be put in the song_name or artists arguments.\n\n` +
@@ -57,6 +66,8 @@ module.exports = {
         try {
 
         let subcommand = interaction.options.getSubcommand();
+        let sortMode = interaction.options.getString('sort_mode');
+        if (sortMode == null) sortMode = 'rating_value';
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('song_name');
         let remixers = interaction.options.getString('remixers');
@@ -85,8 +96,6 @@ module.exports = {
         for (let s of artistSongs) {
             if (s.includes('VIP') && s.includes(songName) && s != songName) songVIP = s;
         }
-
-        console.log(song_info);
 
         songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
         if (songObj == undefined) { return interaction.reply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
@@ -271,15 +280,29 @@ module.exports = {
                 }, {});
 
                 ratingList = Object.entries(ratingList);
-                ratingList = ratingList.map(v => {
-                    let temp = v[0];
-                    v[0] = v[1];
-                    v[1] = temp;
-                    return v;
-                });
 
-                ratingList = ratingList.sort((a, b) => b[0] - a[0]);
-                ratingList = ratingList.map(v => `**${v[1]}: ${v[0]}**`);
+                if (sortMode == 'rating_num') {
+                    // Get songs into groups based on number of ratings
+                    const groupedArray = ratingList.reduce((groups, subarray) => {
+                        const [, groupKey] = subarray; // Get the second value of the subarray
+                        if (!groups[groupKey]) {
+                            groups[groupKey] = []; // Initialize the group if it doesn't exist
+                        }
+                        groups[groupKey].push(subarray); // Push the subarray to the corresponding group
+                        return groups;
+                    }, {});
+                    
+                    ratingList = Object.values(groupedArray); // Convert the object of groups into an array of arrays
+                    for (let i = 0; i < ratingList.length; i++) {
+                        ratingList[i] = ratingList[i].sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]));
+                    }
+                    ratingList = ratingList.flat(1);
+
+                    ratingList = ratingList.sort((a, b) => b[1] - a[1]);
+                } else if (sortMode == 'rating_value') {
+                    ratingList = ratingList.sort((a, b) => parseFloat(b[0]) - parseFloat(a[0]));
+                }
+                ratingList = ratingList.map(v => `**${v[0]}:** \`${v[1]}\``);
                 songEmbed.addFields([{ name: 'Ratings:', value: `${ratingList.join('\n')}` }]);
             }
         }

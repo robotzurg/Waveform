@@ -538,13 +538,13 @@ module.exports = {
             if (interaction.commandName != 'review' && interaction.commandName != 'epreview' && interaction.commandName != 'pushtoepreview') {
                 for (let i = 0; i < artistArray.length; i++) {
                     if (!db.reviewDB.has(artistArray[i])) {
-                        return { error: `The artist \`${artistArray[i]}\` is not in the database, therefore this song isn't either.` };
+                        return { error: `The artist \`${artistArray[i]}\` is not in the database. This is either due to no reviews being made of this song, or could be due to an artist renaming themselves on Spotify. If you believe the latter is the case, please use \`/reportsongdata\` to submit a song data edit request.` };
                     }
                 }
 
                 for (let i = 0; i < rmxArtistArray.length; i++) {
                     if (!db.reviewDB.has(rmxArtistArray[i])) {
-                        return { error: `The artist \`${rmxArtistArray[i]}\` is not in the database, therefore this song isn't either.` };
+                        return { error: `The artist \`${rmxArtistArray[i]}\` is not in the database. This is either due to no reviews being made of this song, or could be due to an artist renaming themselves on Spotify. If you believe the latter is the case, please use \`/reportsongdata\` to submit a song data edit request.` };
                     }
                 }
             }
