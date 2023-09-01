@@ -224,7 +224,7 @@ module.exports = {
                     } else {
                         epEmbed.setDescription(`The average overall user rating of this ${epType} is **${Math.round(average(epRankArray) * 10) / 10}!**` + 
                         `\nThe total average rating of all songs on this ${epType} is **${Math.round(average(songRankArray) * 10) / 10}!**` +
-                        `\nThis ${epType} has **${songRankArray.length}** ratings.` +
+                        `\nThis ${epType} has **${epRankArray.length}** ratings.` +
                         `${(starCount == 0 ? `` : `\n:star2: **This ${epType} has ${starCount} star${starCount == 1 ? '' : 's'} globally!** :star2:`)}` +
                         `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}`);
                     }
@@ -243,7 +243,7 @@ module.exports = {
                         `\n${paged_user_list[0].join('\n')}`);
                     } else {
                         epEmbed.setDescription(`The total average rating of all songs on this ${epType} is **${Math.round(average(songRankArray) * 10) / 10}!**` +
-                        `\nThis ${epType} has **${songRankArray.length}** ratings.` +
+                        `\nThis ${epType} has **${epRankArray.length}** ratings.` +
                         `${(starCount == 0 ? `` : `\n:star2: **This ${epType} has ${starCount} star${starCount == 1 ? '' : 's'} globally!** :star2:`)}` +
                         `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}`);
                     }
