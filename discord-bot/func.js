@@ -1108,12 +1108,30 @@ module.exports = {
      * Sets up and returns a spotify web api object for the interaction user.
      * @param {String} user_id The user id to authenticate to the Spotify API.
      */
-    spotify_api_setup:  async function(user_id) {
+    spotify_api_setup:  async function(user_id, first_time = false) {
         const access_token = db.user_stats.get(user_id, 'access_token');
+        const refresh_token = db.user_stats.get(user_id, 'refresh_token');
+
+        if (first_time) {
+            const spotifyApi = new SpotifyWebApi({
+                redirectUri: process.env.SPOTIFY_REDIRECT_URI,
+                clientId: process.env.SPOTIFY_API_ID,
+                clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+            });
+
+            // Refresh access token so we can use API
+            await spotifyApi.setRefreshToken(refresh_token);
+            await spotifyApi.setAccessToken(access_token);
+            await spotifyApi.refreshAccessToken().then(async data => {
+                console.log(data.body["access_token"]);
+                await db.user_stats.set(user_id, data.body["access_token"], 'access_token');
+                await spotifyApi.setAccessToken(data.body["access_token"]);
+            }); 
+            return spotifyApi;
+        }
 
         // If we have an access token for spotify API (therefore can use it)
-        if (access_token != undefined && access_token != false) {
-            const refresh_token = db.user_stats.get(user_id, 'refresh_token');
+        if (access_token != undefined && access_token != false && access_token != 'na') {
             const spotifyApi = new SpotifyWebApi({
                 redirectUri: process.env.SPOTIFY_REDIRECT_URI,
                 clientId: process.env.SPOTIFY_API_ID,
