@@ -125,6 +125,7 @@ module.exports = {
             artists = artists.map(v => v.replace(' & ', ' \\& '));
             let song_info = await parse_artist_song_data(interaction, artists.join(' & '), name);
             if (song_info.error != undefined) {
+                console.log(song_info);
                 await interaction.editReply(song_info.error);
                 passesChecks = false;
                 return;

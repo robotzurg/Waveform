@@ -95,6 +95,7 @@ module.exports = {
             let setterEpName = convertToSetterName(epName);
             let epType = epName.includes(' LP') ? `LP` : `EP`;
             let spotifyUri = song_info.spotify_uri;
+            let currentEpReviewData = song_info.current_ep_review_data;
 
             let art = interaction.options.getString('art');
             if (art == null) art = song_info.art;
@@ -273,10 +274,6 @@ module.exports = {
 
             // Grab message id to put in user_stats and the ep object
             const msg = await interaction.fetchReply();
-
-            db.user_stats.set(interaction.user.id, msg.id, 'current_ep_review.msg_id');
-            db.user_stats.set(interaction.user.id, msg.channelId, 'current_ep_review.channel_id');
-            db.user_stats.set(interaction.user.id, msg.guildId, 'current_ep_review.guild_id');
 
             const filter = i => i.user.id == interaction.user.id;
             const collector = interaction.channel.createMessageComponentCollector({ filter, time: 300000 });
@@ -473,6 +470,7 @@ module.exports = {
                         await i.update({ embeds: [epEmbed], components: [row, row2] });
                     } break;
                     case 'delete': {
+                        db.user_stats.set(interaction.user.id, false, 'current_ep_review');
                         try {
                             await interaction.deleteReply();
                         } catch (err) {
@@ -484,7 +482,6 @@ module.exports = {
                         if (a_collector != undefined) a_collector.stop();
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
-                        db.user_stats.set(interaction.user.id, false, 'current_ep_review');
                     } break;
                     case 'done': {
                         if (ra_collector != undefined) ra_collector.stop();
@@ -492,6 +489,11 @@ module.exports = {
                         if (a_collector != undefined) a_collector.stop();
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
+                        
+                        db.user_stats.set(interaction.user.id, currentEpReviewData, 'current_ep_review');
+                        db.user_stats.set(interaction.user.id, msg.id, 'current_ep_review.msg_id');
+                        db.user_stats.set(interaction.user.id, msg.channelId, 'current_ep_review.channel_id');
+                        db.user_stats.set(interaction.user.id, msg.guildId, 'current_ep_review.guild_id');
 
                         review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, spotifyUri);
                         let timestamp = msg.createdTimestamp;
@@ -573,6 +575,11 @@ module.exports = {
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
 
+                        db.user_stats.set(interaction.user.id, currentEpReviewData, 'current_ep_review');
+                        db.user_stats.set(interaction.user.id, msg.id, 'current_ep_review.msg_id');
+                        db.user_stats.set(interaction.user.id, msg.channelId, 'current_ep_review.channel_id');
+                        db.user_stats.set(interaction.user.id, msg.guildId, 'current_ep_review.guild_id');
+
                         review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, spotifyUri);
                         let timestamp = msg.createdTimestamp;
 
@@ -606,10 +613,10 @@ module.exports = {
                         await i.update({ embeds: [epEmbed], components: [] });
 
                         if (epSongs.length != 0) {
-                            await i.followUp({ content: `Here is the order in which you should review the songs on this ${epType}:\n\n**${epSongs.join('\n')}**\n\n` +
+                            await i.followUp({ content: `Here is the order in which you should review the songs on this ${epType}:\n\n**${epSongs.join('\n')}**\n\nMake sure to use \`/review\` to review these songs, one by one!\n` +
                             `Note: You can use \`/epdone\` to end the ${epType} review, if you run into issues with buttons or need to restart your review for whatever reason.`, ephemeral: true });
                         } else if (interaction.options.getSubcommand() == 'manually') {
-                            await i.followUp({ content: `When you are finished with this ${epType} review, type \`/epdone\` to finalize the EP/LP review fully! You can also type this command if you run into any issues and need to restart the ${epType} review.`, ephemeral: true });
+                            await i.followUp({ content: `Make sure to use \`/review\` to review the ${epType} songs, one by one!\nWhen you are finished with this ${epType} review, type \`/epdone\` to finalize the EP/LP review fully! You can also type this command if you run into any issues and need to restart the ${epType} review.`, ephemeral: true });
                         }
 
                         // Do it again, cause for some reason it sometimes doesn't remove the buttons properly.
