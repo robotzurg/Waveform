@@ -96,6 +96,7 @@ module.exports = {
                     remix_artists: [], 
                     art: 'N/A',
                     spotify_uri: false,
+                    current_ep_review_data: false,
                 };
             }
         }
@@ -121,6 +122,7 @@ module.exports = {
         let songUri = false;
         let notPlaying = false;
         let rmx_delimiter = ' & ';
+        let current_ep_review_data = false;
         if (remixers != null) {
             rmxArtistArray = [remixers.split(' & ')];
             rmxArtistArray = rmxArtistArray.flat(1);
@@ -176,13 +178,13 @@ module.exports = {
                             songArg = songArg.replace('remix', 'Remix'); // Just in case there is lower case remix
                             trackList[i][1] = trackList[i][1].map(v => v.name);
                             rmxArtist = false;
-                            if (songArg.includes('feat.')) {
+                            if (songArg.includes('(feat.')) {
                                 songArg = songArg.split(' (feat. ');
                                 songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
                                 trackList[i][0] = songArg[0];
                             }
                     
-                            if (songArg.includes('ft. ')) {
+                            if (songArg.includes('(ft. ')) {
                                 songArg = songArg.split(' (ft. ');
                                 songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
                                 trackList[i][0] = songArg[0];
@@ -282,7 +284,7 @@ module.exports = {
                         if (songArg.includes(' - LP')) songArg = songArg.replace(' - LP', ' LP');
 
                         if (interaction.commandName == 'epreview') {
-                            db.user_stats.set(interaction.user.id, { msg_id: false, channel_id: false, guild_id: interaction.guild.id, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] }, 'current_ep_review');  
+                            current_ep_review_data = { msg_id: false, channel_id: false, guild_id: interaction.guild.id, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] };
                         }
                     }
                 });
@@ -320,7 +322,7 @@ module.exports = {
             }
         }
 
-        if (songArg.includes('feat.')) {
+        if (songArg.includes('(feat.')) {
             songArg = songArg.split(' (feat. ');
             songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
             songArg[1] = songArg[1].split(')')[0];
@@ -328,7 +330,7 @@ module.exports = {
             songArg = `${songArg[0]}`;
         }
 
-        if (songArg.includes('ft. ')) {
+        if (songArg.includes('(ft. ')) {
             songArg = songArg.split(' (ft. ');
             songArg[0] = `${songArg[0]}${songArg[1].substr(songArg[1].indexOf(')') + 1)}`;
             songArg[1] = songArg[1].split(')')[0];
@@ -509,12 +511,13 @@ module.exports = {
 
         let setterSongArg = convertToSetterName(songArg);
 
-        if (db.user_stats.get(interaction.user.id, 'current_ep_review') == false && interaction.commandName == 'epreview') {
+        if (current_ep_review_data == false && interaction.commandName == 'epreview') {
             if (db.reviewDB.has(artistArray[0]) && db.reviewDB.get(artistArray[0], `${setterSongArg}`) != undefined) trackList = db.reviewDB.get(artistArray[0], `${setterSongArg}`).songs;
             if (!trackList) {
                 trackList = false;
             }
-            db.user_stats.set(interaction.user.id, { msg_id: false, channel_id: false, guild_id: interaction.guild.id, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] }, 'current_ep_review');  
+
+            current_ep_review_data = { msg_id: false, channel_id: false, guild_id: interaction.guild.id, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] };
         }
         
         if (db.user_stats.get(interaction.user.id, 'current_ep_review.ep_name') != undefined) {
@@ -645,6 +648,7 @@ module.exports = {
             remix_artists: rmxArtistArray, 
             art: songArt,
             spotify_uri: songUri,
+            current_ep_review_data: current_ep_review_data,
         };
     },
 

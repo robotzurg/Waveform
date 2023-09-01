@@ -74,18 +74,19 @@ module.exports = {
             let songRankArray = [];
             let rating;
             let epSongArray = epObj.songs == undefined ? [] : epObj.songs;
+            const guild = client.guilds.cache.get(interaction.guild.id);
+            let res = await guild.members.fetch();
+            let guildUsers = [...res.keys()];
 
             const epEmbed = new EmbedBuilder()
                 .setColor(`${getEmbedColor(interaction.member)}`)
                 .setTitle(`${origArtistArray} - ${epName}`)
                 .setThumbnail(ep_art);
 
-                
             let reviewNum;
             // Get all users if global, otherwise get only guild specific users if server.
             if (subcommand == 'server') {
-                const guild = client.guilds.cache.get(interaction.guild.id);
-                reviewNum = await get_user_reviews(epObj, guild);
+                reviewNum = await get_user_reviews(epObj, guildUsers);
             } else {
                 reviewNum = await get_user_reviews(epObj);
             }
@@ -123,8 +124,7 @@ module.exports = {
 
                 // Get all users if global, otherwise get only guild specific users if server.
                 if (subcommand == 'server') {
-                    const guild = client.guilds.cache.get(interaction.guild.id);
-                    reviewNum = await get_user_reviews(epObj, guild);
+                    reviewNum = await get_user_reviews(epObj, guildUsers);
                 } else {
                     reviewNum = await get_user_reviews(epObj);
                 }

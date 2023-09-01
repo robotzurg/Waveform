@@ -88,6 +88,9 @@ module.exports = {
         let remixArray;
         let remixes = [];
         let starCount = 0;
+        const guild = client.guilds.cache.get(interaction.guild.id);
+        let res = await guild.members.fetch();
+        let guildUsers = [...res.keys()];
 
         // See if we have any VIPs
         let artistSongs = Object.keys(db.reviewDB.get(artistArray[0]));
@@ -138,8 +141,7 @@ module.exports = {
         let userArray;
         // Get all users if global, otherwise get only guild specific users if server.
         if (subcommand == 'server') {
-            const guild = client.guilds.cache.get(interaction.guild.id);
-            userArray = await get_user_reviews(songObj, guild);
+            userArray = await get_user_reviews(songObj, guildUsers);
         } else {
             userArray = await get_user_reviews(songObj);
         }

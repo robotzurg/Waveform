@@ -1,7 +1,6 @@
 // TODO:
 // 1. EP/LP confirm database editing
 // 2. Setup adding/removing EP/LP songs at some point
-// 3. Collab remix artist support at some point
 
 const db = require("../db.js");
 const { parse_artist_song_data, get_user_reviews, convertToSetterName, getEmbedColor } = require("../func.js");
@@ -206,11 +205,11 @@ module.exports = {
             editEmbed.setDescription('`Song Information:`');
             editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
             editEmbed.addFields(
-                { name: 'Artists:', value: `${origArtistArray.join('\n')}\n${rmxArtistArray.join('\n')}`, inline: true },
-                { name: 'Vocalists:', value: `N/A`, inline: true },
-                { name: 'Remixers:', value: `${remixers.length != 0 ? remixers.join('\n') : `N/A`}`, inline: true },
-                { name: 'Song Name:', value: `${songName}`, inline: true },
-                { name: 'Song Type:', value: `${songType}`, inline: true },
+                { name: 'Artists:', value: `${origArtistArray.join('\n')}\n${rmxArtistArray.join('\n')}`, inline: true }, // 0
+                { name: 'Vocalists:', value: `N/A`, inline: true }, // 1
+                { name: 'Remixers:', value: `${remixers.length != 0 ? remixers.join('\n') : `N/A`}`, inline: true }, // 2
+                { name: 'Song Name:', value: `${songName}`, inline: true }, // 3
+                { name: 'Song Type:', value: `${songType}`, inline: true }, // 4
             );
             break;
 
@@ -568,7 +567,7 @@ module.exports = {
                     if (sel.customId == 'remixers_remove_sel') {
                         remixers = remixers.filter(v => v != sel.values[0]);
 
-                        editEmbed.data.fields[2].value = remixers.length != 0 ? remixers.join('\n') : 'N/A';
+                        editEmbed.data.fields[1].value = remixers.length != 0 ? remixers.join('\n') : 'N/A';
                         r_select_options = r_select_options.filter(v => v.label != sel.values[0]);
                         remixerRemoveSelect.components[0].setOptions(r_select_options);
                         if (remixers.length == 0) {
@@ -605,7 +604,7 @@ module.exports = {
                             songName = msg.content;
                             setterSongName = convertToSetterName(songName);
                             displaySongName = songName;
-                            editEmbed.data.fields[subCommand == 'song' ? 3 : 1].value = songName;
+                            editEmbed.data.fields[subCommand == 'song' ? 2 : 1].value = songName;
                             editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
                             await i.editReply({ 
                                 content: `**Type in the new name of the ${dataType}. When you are finished, press confirm.**\n` +
