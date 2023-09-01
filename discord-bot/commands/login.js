@@ -23,7 +23,7 @@ module.exports = {
         collector.on('collect', async token => {
             await db.user_stats.set(interaction.user.id, token.content, 'refresh_token');
             await db.user_stats.set(interaction.user.id, 'na', 'access_token');
-            await spotify_api_setup(interaction.user.id);
+            await spotify_api_setup(interaction.user.id, true);
 
             interaction.user.send('✅ Authentication successful! You can now use the Spotify API with Waveform.\nTry out using `/setupmailbox` to setup a waveform spotify mailbox, and check out the usage guides for how to use commands!\n\n' +
             `**For security reasons and because I am unable to delete your message, please delete the message with your token, and don't share this refresh token with ANYONE!**\n` +
