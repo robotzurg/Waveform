@@ -227,7 +227,7 @@ module.exports = {
 
         interaction.reply({ content: null, embeds: [helpEmbed], components: [guide_select_menu, other_buttons] });
         let message = await interaction.fetchReply();
-        const help_collector = message.createMessageComponentCollector();
+        const help_collector = message.createMessageComponentCollector({ time: 600000 });
         let guideEmbed, basicsEmbed;
 
         help_collector.on('collect', async i => {
@@ -342,6 +342,10 @@ module.exports = {
                     }
                     i.update({ embeds: [commandEmbed] });
             }
+
+            help_collector.on('end', async () => {
+                interaction.editReply({ content: null, components: [] });
+            });
         });
     },
 };
