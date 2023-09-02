@@ -40,6 +40,7 @@ module.exports = {
 
                 await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
                     if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
+                    if (data.body.item == undefined) { spotifyCheck = false; return; }
                     artist = data.body.item.artists.map(a => a.name.replace(' & ', ' \\& '))[0];
                     spotifyCheck = true;
                 });
@@ -194,7 +195,6 @@ module.exports = {
                         let reviewNum, rankNumArray;
                         reviewNum = subcommand == 'global' ? globalReviewNum : localReviewNum;
                         rankNumArray = subcommand == 'global' ? globalRankNumArray : localRankNumArray;
-                        console.log(reviewNum, rankNumArray);
 
                         if (remixerKeys.length > 0 && reviewNum != 0) {
                             songDetails = [`\`${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : ``}`, `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
@@ -239,7 +239,9 @@ module.exports = {
                         for (let ii = 0; ii < globalReviews.length; ii++) {
                             let rating = songObj[globalReviews[ii]].rating;
                             let starred = songObj[globalReviews[ii]].starred;
-                            globalRankNumArray.push(parseFloat(rating));
+                            if (!isNaN(parseFloat(rating))) {
+                                globalRankNumArray.push(parseFloat(rating));
+                            }
                             if (starred == true) { 
                                 starNum++; 
                                 fullStarNum++;
@@ -250,7 +252,9 @@ module.exports = {
                         for (let ii = 0; ii < localReviews.length; ii++) {
                             let rating = songObj[localReviews[ii]].rating;
                             let starred = songObj[localReviews[ii]].starred;
-                            localRankNumArray.push(parseFloat(rating));
+                            if (!isNaN(parseFloat(rating))) {
+                                localRankNumArray.push(parseFloat(rating));
+                            }
                             if (starred == true) { 
                                 starNum++; 
                                 fullStarNum++;
@@ -337,6 +341,8 @@ module.exports = {
                     type_buttons.components[2].data.style = ButtonStyle.Success;
                 }
 
+                globalRankNumArray = globalRankNumArray.filter(v => !isNaN(v));
+                localRankNumArray = globalRankNumArray.filter(v => !isNaN(v));
                 let rankNumArray = interaction.options.getSubcommand() == 'global' ? globalRankNumArray : localRankNumArray;
 
                 if (rankNumArray.length != 0) { 
@@ -352,11 +358,17 @@ module.exports = {
                     } else {
                         artistEmbed.setDescription(`No reviewed songs. :(`);
                     }
+                } else if (singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) {
+                    if (fullStarNum != 0) { // If the artist has stars on any of their songs
+                        artistEmbed.setDescription(`:star2: **This artist has ${fullStarNum} total stars!** :star2:`);
+                    }
+
+                    artistEmbed.addFields([{ name: focusedName, value: focusedArray[0].join('\n') }]);
+                    artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
                 } else {
                     artistEmbed.setDescription(`No reviewed songs. :(`);
                 }
 
-            console.log(artistEmbed);
 
             if (pages_active[0] == true) {
                 await interaction.reply({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });

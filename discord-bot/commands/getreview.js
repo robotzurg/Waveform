@@ -69,7 +69,7 @@ module.exports = {
             let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
             if (songObj == undefined) return interaction.reply(`\`${origArtistArray.join(' & ')} - ${displaySongName}\` not found in the database.`);
             let songReviewObj = songObj[taggedUser.id];
-            if (songReviewObj == undefined) return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${displaySongName}\`. *Note that for EP reviews, you need to use \`/getReviewEP\`.*`);
+            if (songReviewObj == undefined) return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${displaySongName}\`. *Note that for EP/LP reviews, you need to use \`/getepreview\`.*`);
 
             let epfrom = songObj.ep;
             let setterEpName = false;

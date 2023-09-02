@@ -247,6 +247,7 @@ client.on('interactionCreate', async interaction => {
     }
 
     let ban_list = db.global_bot.get('ban_list');
+    if (ban_list == undefined) ban_list = [];
     if (ban_list.includes(interaction.user.id)) {
         return interaction.reply(`You have been banned from Waveform. For more information or to appeal your ban, please contact \`jeffdev\` on discord.`);
     }
