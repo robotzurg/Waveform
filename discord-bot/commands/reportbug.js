@@ -20,7 +20,7 @@ module.exports = {
         const commandInput = new TextInputBuilder()
             .setCustomId('cmd')
             .setLabel("What command caused this bug?")
-            .setPlaceholder('Command name + extra arguments used.')
+            .setPlaceholder('Command + arguments used.')
             .setStyle(TextInputStyle.Short);
 
 		const quickDescInput = new TextInputBuilder()
