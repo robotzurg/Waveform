@@ -170,12 +170,12 @@ module.exports = {
                 } else if (sel.values[0] == 'embed_color') {
 
                     await sel.update({ content: 'Type in the new color you\'d like your reviews to have, in the hexcode format!', embeds: [], components: [] });
-
                     await msg_collector.on('collect', async m => { 
                         let hexCheck = new RegExp('^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$');
                         if (hexCheck.test(m.content) == false) {
-                            await interaction.followUp({ ephemeral: true, content: 'Please make sure you use a valid hexcode for the color!' });
-                            await m.delete();
+                            await interaction.followUp({ ephemeral: true, content: 'Invalid hexcode for the color. Please try again.!' });
+                            await interaction.editReply({ content: null, embeds: [configEmbed], components: [configMenu] });
+                            await msg_collector.stop();
                         } else {
                             await db.user_stats.set(interaction.user.id, m.content, 'config.embed_color');
                             config_desc[3] = `**Embed Color:** \`${db.user_stats.get(interaction.user.id, 'config.embed_color')}\``;

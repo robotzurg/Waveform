@@ -1211,7 +1211,6 @@ module.exports = {
     updateStats: async function(interaction, guildId, origArtistArray, artistArray, rmxArtistArray, songName, displaySongName, songObj, ep, delete_mode = false) {
 
         const { arrayEqual } = require('./func.js');
-        return;
         let userId = interaction.user.id;
         let reviewObj = songObj[userId];
         let starred = reviewObj.starred;
@@ -1293,7 +1292,6 @@ module.exports = {
 
     hallOfFameCheck: async function(interaction, client, guild_id, dbArtistArray, origArtistArray, rmxArtistArray, songName) {
         const { get_user_reviews, convertToSetterName } = require('./func.js');
-        return;
         // Check if the song was added to hall of fame
         let setterSongName = convertToSetterName(songName);
         let songObj = db.reviewDB.get(dbArtistArray[0], `${setterSongName}`);
