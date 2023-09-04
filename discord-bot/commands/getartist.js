@@ -223,6 +223,8 @@ module.exports = {
                     let setterSongName = convertToSetterName(songArray[i]);
                     const songObj = db.reviewDB.get(artist, `${setterSongName}`);
                     let localReviews, globalReviews;
+                    localRankNumArray = [];
+                    globalRankNumArray = [];
                     // Get all users if global, otherwise get only guild specific users if server.
                     if (subcommand == 'server') {
                         localReviews = await get_user_reviews(songObj, guildUsers);
@@ -272,6 +274,7 @@ module.exports = {
                     let reviewNum, rankNumArray;
                     reviewNum = subcommand == 'global' ? globalReviewNum : localReviewNum;
                     rankNumArray = subcommand == 'global' ? globalRankNumArray : localRankNumArray;
+                    console.log(rankNumArray);
 
                     if (remixerKeys.length > 0 && reviewNum != 0) {
                         songDetails = [`\`${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : ``}`, `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
@@ -342,7 +345,7 @@ module.exports = {
                 }
 
                 globalRankNumArray = globalRankNumArray.filter(v => !isNaN(v));
-                localRankNumArray = globalRankNumArray.filter(v => !isNaN(v));
+                localRankNumArray = localRankNumArray.filter(v => !isNaN(v));
                 let rankNumArray = interaction.options.getSubcommand() == 'global' ? globalRankNumArray : localRankNumArray;
 
                 if (rankNumArray.length != 0) { 
