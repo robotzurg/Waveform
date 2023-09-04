@@ -116,7 +116,7 @@ module.exports = {
 
             reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ extension: "png" })}` });
 
-            if (rscore != false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rscore}/10**`, inline: true }]);
+            if (rscore !== false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rscore}/10**`, inline: true }]);
             if (rreview != false) reviewEmbed.setDescription(rreview);
 
             let reviewMsgID = songReviewObj.msg_id;

@@ -75,8 +75,9 @@ module.exports = {
             // Check if we have an existing EP/LP review running, and back out immediately if we do.
             if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
                 let epReviewUserData = db.user_stats.get(interaction.user.id, 'current_ep_review');
-                return interaction.reply(`You already have an EP/LP review for ${epReviewUserData.artist_array.join(' & ')} - ${epReviewUserData.ep_name} in progress.\n` + 
-                `Please finish the EP/LP review before starting a new one, or run \`/epdone\` to end it manually.`);
+                let type = epReviewUserData.ep_name.includes(' LP') ? 'LP' : 'EP'; 
+                return interaction.reply(`You already have an ${type} review for ${epReviewUserData.artist_array.join(' & ')} - ${epReviewUserData.ep_name} in progress.\n` + 
+                `Please finish reviewing all songs on the ${type} review before starting a new one, or run \`/epdone\` to manually end the review.`);
             }
 
             let artists = interaction.options.getString('artist');
@@ -613,10 +614,10 @@ module.exports = {
                         await i.update({ embeds: [epEmbed], components: [] });
 
                         if (epSongs.length != 0) {
-                            await i.followUp({ content: `Here is the order in which you should review the songs on this ${epType}:\n\n**${epSongs.join('\n')}**\n\nMake sure to use \`/review\` to review these songs, one by one!\n` +
-                            `Note: You can use \`/epdone\` to end the ${epType} review, if you run into issues with buttons or need to restart your review for whatever reason.`, ephemeral: true });
+                            await i.followUp({ content: `With this button, you must now review each song on this ${epType} in order.\nHere is the order in which you should review the songs on this ${epType}:\n\n**${epSongs.join('\n')}**\n\nMake sure to use \`/review\` to review these songs, one by one!\n` +
+                            `Note: You can use \`/epdone\` to end the ${epType} review, if you run into issues or need to end your review early for whatever reason.\n`, ephemeral: true });
                         } else if (interaction.options.getSubcommand() == 'manually') {
-                            await i.followUp({ content: `Make sure to use \`/review\` to review the ${epType} songs, one by one!\nWhen you are finished with this ${epType} review, type \`/epdone\` to finalize the EP/LP review fully! You can also type this command if you run into any issues and need to restart the ${epType} review.`, ephemeral: true });
+                            await i.followUp({ content: `With this button, you must now review each song on this ${epType} in order.\nMake sure to use \`/review\` to review the ${epType} songs, one by one!\nWhen you are finished with this ${epType} review, type \`/epdone\` to finalize the EP/LP review fully! You can also type this command if you run into any issues and need to restart the ${epType} review.`, ephemeral: true });
                         }
 
                         // Do it again, cause for some reason it sometimes doesn't remove the buttons properly.

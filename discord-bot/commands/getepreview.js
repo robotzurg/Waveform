@@ -166,12 +166,12 @@ module.exports = {
                         if (new Embed(epEmbed.toJSON()).length < 5250) {
                             epEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                             `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
-                            `${rscore != false ? `(${rscore}/10)` : ``}`, 
+                            `${rscore !== false ? `(${rscore}/10)` : ``}`, 
                             value: `${rreview == false ? `*No review written*` : `${rreview}`}` }]);
                         } else {
                             epEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                             `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
-                            `${rscore != false ? `(${rscore}/10)` : ``}`, 
+                            `${rscore !== false ? `(${rscore}/10)` : ``}`, 
                             value: `${rreview == false ? `*No review written*` : `*Review hidden to save space*`}` }]);
                         }
                     }

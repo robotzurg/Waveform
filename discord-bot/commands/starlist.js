@@ -17,8 +17,6 @@ module.exports = {
 	async execute(interaction, client) {
 
         try {
-        
-        await interaction.reply('Loading star list, this takes a moment so please be patient!');
         let user = interaction.options.getUser('user');
 
         if (user == null) user = interaction.user;
@@ -31,6 +29,7 @@ module.exports = {
         }
 
         let starList = db.user_stats.get(user.id, 'stats.star_list');
+        if (starList.length === 0) return interaction.reply('You don\'t currently have any songs starred. To star a song, use `/setstar` or click on the star button when reviewing!\nA star is basically a marker to mark songs you really really like! Use it to mark your top favorite songs!');
         let paged_star_list = _.chunk(starList, 10);
         let page_num = 0;
         const row = new ActionRowBuilder()
@@ -71,10 +70,10 @@ module.exports = {
             .setDescription(paged_star_list[page_num]);
             if (paged_star_list.length > 1) {
                 starCommandEmbed.setFooter({ text: `Page 1 / ${paged_star_list.length} • ${starList.length} stars given` });
-                await interaction.editReply({ content: ` `, embeds: [starCommandEmbed], components: [row] });
+                await interaction.reply({ content: ` `, embeds: [starCommandEmbed], components: [row] });
             } else {
                 starCommandEmbed.setFooter({ text: `${starList.length} stars given` });
-                await interaction.editReply({ content: ` `, embeds: [starCommandEmbed], components: [] });
+                await interaction.reply({ content: ` `, embeds: [starCommandEmbed], components: [] });
             }
         
         if (paged_star_list.length > 1) {
