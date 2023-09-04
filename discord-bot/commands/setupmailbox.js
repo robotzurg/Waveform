@@ -29,7 +29,7 @@ module.exports = {
                 db.user_stats.set(interaction.user.id, true, 'config.mailbox_dm');
                 await interaction.editReply(`Your mailbox has now been setup on Spotify, and \`/sendmail\` can now be used with it!\n` + 
                 `If you need to delete the playlist for whatever reason, make sure you run this command again to setup a new one!\n\n` + 
-                `[explain sending mail here]\n\n` + 
+                `To send mail to users with a mailbox, use \`/sendmail!\` You can find more details on mailboxes as a whole in the Waveform Mailbox help guide.\n\n` + 
                 `**NOTE: DO NOT DELETE THIS PLAYLIST, OR ELSE YOUR MAILBOX WILL NOT WORK PROPERLY!**`);
             }, async function(err) {
                 await interaction.editReply(`Something went wrong with your mailbox creation, you should probably let Jeff know!`);
