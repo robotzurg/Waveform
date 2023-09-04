@@ -338,16 +338,16 @@ module.exports = {
                                     }
                                 }
 
-                                if (no_songs_review == false && (rscore != false && rreview != false)) {
+                                if (no_songs_review == false && (rscore !== false && rreview != false)) {
                                     if (new Embed(epReviewEmbed.toJSON()).length < 5250) {
                                         epReviewEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                                         `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
-                                        `${rscore != false ? `(${rscore}/10)` : ``}`, 
+                                        `${rscore !== false ? `(${rscore}/10)` : ``}`, 
                                         value: `${rreview == false ? `*No review written*` : `${rreview}`}` }]);
                                     } else {
                                         epReviewEmbed.addFields([{ name: `${rstarred == true ? `🌟 ${songName} 🌟` : songName }` + 
                                         `${artistsEmbed.length != 0 ? ` (with ${artistsEmbed}) ` : ' '}` + 
-                                        `${rscore != false ? `(${rscore}/10)` : ``}`, 
+                                        `${rscore !== false ? `(${rscore}/10)` : ``}`, 
                                         value: `${rreview == false ? `*No review written*` : `*Review hidden to save space*`}` }]);
                                     }
                                 }
@@ -365,14 +365,14 @@ module.exports = {
 
                         epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName}` : `🌟 ${origArtistArray.join(' & ')} - ${epName} 🌟`);
 
-                        if (ep_overall_rating != false && ep_overall_review != false) {
+                        if (ep_overall_rating !== false && ep_overall_review != false) {
                             if (no_songs_review == false) {
                                 epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                             } else {
                                 epReviewEmbed.addFields([{ name: `Rating`, value: `**${ep_overall_rating}/10**` }]);
                             }
                             epReviewEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
-                        } else if (ep_overall_rating != false) {
+                        } else if (ep_overall_rating !== false) {
                             if (no_songs_review == false) {
                                 epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                             } else {
