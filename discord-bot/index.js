@@ -184,11 +184,12 @@ client.on('interactionCreate', async interaction => {
             } else if (focused[0].name == 'remixers') {
                 if (db.reviewDB.has(val_artist.split(' & ')[0])) {
                     let valSongSetter = convertToSetterName(val_song);
-                    let artist_remixers = db.reviewDB.get(val_artist.split(' & ')[0], `${valSongSetter}`).remixers;
+                    let artist_remixers = db.reviewDB.get(val_artist.split(' & ')[0], `${valSongSetter}`);
                     if (artist_remixers == undefined) {
                         interaction.respond([]);
                         return;   
                     }
+                    artist_remixers = artist_remixers.remixers;
 
                     artist_remixers = artist_remixers.filter(letter_filter);
                     if (artist_remixers.length > 25) artist_remixers = artist_remixers.slice(artist_remixers.length - 25, artist_remixers.length);
