@@ -256,6 +256,10 @@ module.exports = {
                 description: `${selDisplayName}'s review of the song.`,
                 value: `${userID}`,
             });
+            if (db.reviewDB.get(artistArray[0], `${setterSongName}.${userID}.starred`) == true) {
+                select_options[select_options.length - 1].emoji = '🌟';
+            }
+
         }
 
         select_options.push({

@@ -450,7 +450,7 @@ module.exports = {
                     } break;
                     case 'star': {
                         // If we don't have a 10 rating, the button does nothing.
-                        if (overallRating < 8 && overallRating !== false) return await i.update({ embeds: [epEmbed], components: [row, row2] });
+                        if (overallRating < 7 && overallRating !== false) return await i.update({ embeds: [epEmbed], components: [row, row2] });
 
                         if (starred == false) {
                             if (overallRating !== false) {

@@ -100,7 +100,7 @@ module.exports = {
                 if (userObj.rating == -1) userObj.rating = false;
                 let ratingDisplay = `${(userObj.rating !== false) ? ` \`${userObj.rating}/10\`` : ` \`No Rating\``}`;
 
-                if (userObj.rating !== false && userObj.rating != undefined && !isNaN(userObj.rating)) {
+                if (userObj.rating !== false && userObj.rating !== undefined && !isNaN(userObj.rating)) {
                     epRankArray.push(userObj.rating);
                 } else {
                     userObj.rating = -1;
@@ -195,6 +195,10 @@ module.exports = {
                     description: `${selDisplayName}'s review of the ${epType}.`,
                     value: `${userID}`,
                 });
+
+                if (db.reviewDB.get(artistArray[0], `${setterEpName}.${userID}.starred`) == true) {
+                    select_options[select_options.length - 1].emoji = '🌟';
+                }
             }
 
             select_options.push({
@@ -211,6 +215,7 @@ module.exports = {
                     .setPlaceholder('See other reviews by clicking on me!')
                     .addOptions(select_options),
             );
+
             // If there are ratings of the entire EP/LP overall
             if (epRankArray.length != 0) {
                 // If there are songs attached to the EP/LP
@@ -230,7 +235,8 @@ module.exports = {
                     }
                 } else {
                     epEmbed.setDescription(`*The average overall user rating of this ${epType} is* ***${Math.round(average(epRankArray) * 10) / 10}!***` +
-                    `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}`);
+                    `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}` +
+                    `\n${paged_user_list[0].join('\n')}`);
                 }
             // If there are no ratings of the entire EP/LP overall
             } else {
