@@ -212,8 +212,8 @@ module.exports = {
             }
 
             if (rating != null && rating != undefined) {
-                if (rating < 8 && songReviewObj.starred == true && rating !== false) {
-                    return interaction.reply(`This review has a star on it, so you cannot change the rating to anything under 8.\nRemove the star with \`/setstar\` if you'd like to lower the rating!`);
+                if (rating < 7 && songReviewObj.starred == true && rating !== false) {
+                    return interaction.reply(`This review has a star on it, so you cannot change the rating to anything under 7.\nRemove the star with \`/setstar\` if you'd like to lower the rating!`);
                 }
                 
                 oldrating = songReviewObj.rating;
@@ -345,12 +345,16 @@ module.exports = {
 
                         if (rating != null && rating != undefined) {
                             if (msg_embed_fields[field_num].name.includes('🌟')) {
-                                msg_embed_fields[field_num].name = `🌟 ${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``} (${rating}/10) 🌟`;
+                                msg_embed_fields[field_num].name = `🌟 ${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``}${rating !== false ? ` (${rating}/10)` : ``} 🌟`;
                             } else {
-                                msg_embed_fields[field_num].name = `${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``} (${rating}/10)`;
+                                msg_embed_fields[field_num].name = `${displaySongName}${displayArtists.length != 0 ? ` (with ${displayArtists.join(' & ')})` : ``}${rating !== false ? ` (${rating}/10)` : ``}`;
                             }
                         } 
-                        if (review != null && review != undefined && msg_embed_fields[field_num].value != '*Review hidden to save space*') msg_embed_fields[field_num].value = review;
+                        if (review === false) { 
+                            msg_embed_fields[field_num].value = '*No Review Written*';
+                        } else if (review != null && review != undefined && msg_embed_fields[field_num].value != '*Review hidden to save space*') {
+                            msg_embed_fields[field_num].value = review;
+                        }
 
                         msg.edit({ embeds: [msgEmbed] });
                     }).catch(() => {});
@@ -364,8 +368,8 @@ module.exports = {
         db.global_bot.set('stats', botStatsObj);
 
         await interaction.reply(`Here's what was edited on your review of **${origArtistArray.join(' & ')} - ${displaySongName}**:\n` +
-        `${(oldrating != undefined) ? `\`${oldrating}/10\` changed to \`${rating}/10\`\n` : ``}` +
-        `${(oldreview != undefined) ? `Review was changed to \`${review}\`\n` : ``}` +
+        `${(oldrating != undefined) ? `${oldrating === false ? `\`No Rating\`` : `\`${oldrating}/10\``} changed to ${rating === false ? `\`No Rating\`` : `\`${rating}/10\``}\n` : ``}` +
+        `${(oldreview != undefined) ? `Review was changed to ${review === false ? `\`No Review\`` : `\`${review}\``}\n` : ``}` +
         `${(user_who_sent != null) ? `User Who Sent was changed to \`${user_sent_name.displayName}\`` : ``}`);
 
         const review_msg = await interaction.fetchReply();

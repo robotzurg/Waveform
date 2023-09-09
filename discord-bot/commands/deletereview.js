@@ -51,6 +51,7 @@ module.exports = {
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterSongName = convertToSetterName(songName);
         let songObj = db.reviewDB.get(origArtistArray[0], `${setterSongName}`);
+        if (songObj[userID] == undefined) return interaction.reply('You don\'t have a review of this in Waveform, so there is nothing to delete.');
 
         if (rmxArtistArray.length != 0) {
             artistArray = rmxArtistArray;

@@ -477,8 +477,8 @@ module.exports = {
                     });
                 } break;
                 case 'star': {
-                    // If we don't have a 10 rating, the button does nothing.
-                    if (rating < 8 && rating != false && rating != null) return await i.update({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
+                    // If we don't have a 7 rating or higher, the button does nothing.
+                    if (rating < 7 && rating != false && rating != null) return await i.update({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
 
                     if (starred == false) {
                         reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
