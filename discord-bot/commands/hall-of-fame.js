@@ -18,7 +18,6 @@ module.exports = {
 	async execute(interaction) {
         await interaction.deferReply();
         
-        interaction.guild.id = '680864893552951306';
         let hofList = db.server_settings.get(interaction.guild.id, 'hall_of_fame');
         let subcommand = interaction.options.getSubcommand();
         let listView = (subcommand == 'list_view' ? true : false);
