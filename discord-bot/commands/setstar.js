@@ -70,7 +70,7 @@ module.exports = {
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
         let displaySongName = song_info.display_song_name;
-        let rmxArtistArray = song_info.rmx_artists;
+        let rmxArtistArray = song_info.remix_artists;
         let artistArray = song_info.db_artists;
         let spotifyUri = song_info.spotify_uri;
         let spotifyApi = await spotify_api_setup(interaction.user.id);
@@ -217,6 +217,7 @@ module.exports = {
                             field_num = i;
                         }
                     }
+                    if (field_num === -1) return;
 
                     if (star_check == false) {
                         if (!msg_embed_fields[field_num].name.includes('🌟')) {
