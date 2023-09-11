@@ -139,7 +139,9 @@ module.exports = {
             let spotifyApi;
             // Check if we are in a spotify mailbox
             spotifyApi = await spotify_api_setup(interaction.user.id);
-            if (interaction.options.getSubcommand() == 'manually') spotifyApi = false;
+            if (interaction.options.getSubcommand() == 'manually') {
+                spotifyApi = false;
+            }
             if (mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:album:', '')) && spotifyApi != false) {
                 is_mailbox = true;
             }
@@ -496,7 +498,7 @@ module.exports = {
                         db.user_stats.set(interaction.user.id, msg.channelId, 'current_ep_review.channel_id');
                         db.user_stats.set(interaction.user.id, msg.guildId, 'current_ep_review.guild_id');
 
-                        review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, spotifyUri);
+                        await review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, spotifyUri);
                         let timestamp = msg.createdTimestamp;
 
                         // Set message ids and setup artist images
@@ -506,6 +508,7 @@ module.exports = {
                             db.reviewDB.set(artistArray[j], interaction.guild.id, `${setterEpName}.${interaction.user.id}.guild_id`);
                             db.reviewDB.set(artistArray[j], msg.url, `${setterEpName}.${interaction.user.id}.url`);
                             db.reviewDB.set(artistArray[j], timestamp, `${setterEpName}.${interaction.user.id}.timestamp`);
+                            db.reviewDB.set(artistArray[j], true, `${setterEpName}.${interaction.user.id}.no_songs`);
 
                             // Deal with artist images
                             let cur_img = db.reviewDB.get(artistArray[j], 'pfp_image');
@@ -514,16 +517,12 @@ module.exports = {
                             }
                         }
 
-                        for (let j = 0; j < artistArray.length; j++) {
-                            db.reviewDB.set(artistArray[j], true, `${setterEpName}.${interaction.user.id}.no_songs`);
-                        }
-
-                        if (overallReview != false) epEmbed.setDescription(`${overallReview}`);
-                        if (overallRating !== false) epEmbed.addFields([{ name: `Rating`, value: `**${overallRating}/10**` }]);
+                        if (overallReview != false) await epEmbed.setDescription(`${overallReview}`);
+                        if (overallRating !== false) await epEmbed.addFields([{ name: `Rating`, value: `**${overallRating}/10**` }]);
                         if (starred == false) {
-                            epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
+                            await epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
                         } else {
-                            epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} 🌟`);
+                            await epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} 🌟`);
                         }
 
                         // Fix artwork on all reviews for this song
@@ -581,7 +580,7 @@ module.exports = {
                         db.user_stats.set(interaction.user.id, msg.channelId, 'current_ep_review.channel_id');
                         db.user_stats.set(interaction.user.id, msg.guildId, 'current_ep_review.guild_id');
 
-                        review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, spotifyUri);
+                        await review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, spotifyUri);
                         let timestamp = msg.createdTimestamp;
 
                         let epSongs = await (db.user_stats.get(interaction.user.id, 'current_ep_review.track_list') != false 
@@ -600,17 +599,18 @@ module.exports = {
                             db.reviewDB.set(artistArray[j], msg.guildId, `${setterEpName}.${interaction.user.id}.guild_id`);
                             db.reviewDB.set(artistArray[j], msg.url, `${setterEpName}.${interaction.user.id}.url`);
                             db.reviewDB.set(artistArray[j], timestamp, `${setterEpName}.${interaction.user.id}.timestamp`);
-
+                            db.reviewDB.set(artistArray[j], true, `${setterEpName}.${interaction.user.id}.no_songs`);
+    
                             // Deal with artist images
                             let cur_img = db.reviewDB.get(artistArray[j], 'pfp_image');
                             if (cur_img == undefined || cur_img == false) {
                                 db.reviewDB.set(artistArray[j], artistImgs[j], `pfp_image`); 
                             }
                         }
+                        
 
                         // Update user stats
                         await updateStats(interaction, interaction.guild.id, origArtistArray, artistArray, [], epName, epName, db.reviewDB.get(artistArray[0], `${setterEpName}`), true);
-
                         await i.update({ embeds: [epEmbed], components: [] });
 
                         if (epSongs.length != 0) {

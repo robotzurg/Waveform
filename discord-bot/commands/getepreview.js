@@ -112,14 +112,15 @@ module.exports = {
             }
 
             epEmbed.setAuthor({ name: `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: true })}` });
-
             epEmbed.setThumbnail(ep_art);
+
             if (ep_sent_by != false && ep_sent_by != undefined) {
                 epEmbed.setFooter({ text: `Sent by ${ep_sent_by.username}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
             }
 
             let reviewMsgID = epReviewObj.msg_id;
             let timestamp = epReviewObj.timestamp;
+            console.log(timestamp);
             if (reviewMsgID != false && reviewMsgID != undefined && timestamp == undefined) {
                 let channelsearch = await get_review_channel(client, epReviewObj.guild_id, epReviewObj.channel_id, reviewMsgID);
                 if (channelsearch != undefined) {
@@ -178,7 +179,10 @@ module.exports = {
                 }
 
                 if (no_songs_review == true) {
-                    epEmbed.setFields([]);
+                    incomplete_review = false;
+                    if (epEmbed.data.fields.length > 1) {
+                        epEmbed.setFields([]);
+                    }
                 }
             }
 

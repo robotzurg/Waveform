@@ -880,7 +880,7 @@ module.exports = {
                         rating: overall_rating,
                         review: overall_review,
                         sentby: taggedUser.id,
-                        no_songs: false,
+                        no_songs: true,
                     },
                     art: art,
                     collab: artistArray.filter(word => artistArray[i] != word),
@@ -899,7 +899,7 @@ module.exports = {
                 rating: overall_rating,
                 review: overall_review,
                 sentby: taggedUser.id,
-                no_songs: false,
+                no_songs: true,
             };
 
             if (!db.reviewDB.has(artistArray[i])) { // If the artist DB doesn't exist
@@ -1339,7 +1339,7 @@ module.exports = {
             rmx_artists: rmxArtistArray,
             db_song_name: songName,
             art: songObj.art,
-            rating_avg: _.mean(ratingAvg), 
+            rating_avg: _.mean(ratingAvg).toFixed(2), 
             star_count: starCount,
             user_stars: userStarList,
             song_url: songUrl,

@@ -590,6 +590,10 @@ module.exports = {
                         msgEmbed = EmbedBuilder.from(msg.embeds[0]);
                         epArtists = db.user_stats.get(interaction.user.id, 'current_ep_review.artist_array');
 
+                        for (let epArtist of epArtists) {
+                            db.reviewDB.set(epArtist, false, `${setterEpName}.${interaction.user.id}.no_songs`);
+                        }
+
                         for (let j = 0; j < artistArray.length; j++) {
                             db.reviewDB.set(artistArray[j], ep_name, `${setterSongName}.ep`);
                         }

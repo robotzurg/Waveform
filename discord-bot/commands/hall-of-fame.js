@@ -18,6 +18,7 @@ module.exports = {
 	async execute(interaction) {
         await interaction.deferReply();
         
+        interaction.guild.id = '680864893552951306';
         let hofList = db.server_settings.get(interaction.guild.id, 'hall_of_fame');
         let subcommand = interaction.options.getSubcommand();
         let listView = (subcommand == 'list_view' ? true : false);
@@ -63,6 +64,7 @@ module.exports = {
                 .setDescription(pagedHofList[0].join('\n'))
                 .setFooter({ text: `Page 1 / ${pagedHofList.length}` });
         } else {
+            pagedHofList = hofList;
             hofCommandEmbed = new EmbedBuilder()
                 .setColor(`#ffff00`)
                 .setTitle(`${hofList[0].orig_artists.join(' & ')} - ${hofList[0].db_song_name}`)
@@ -122,6 +124,7 @@ module.exports = {
             }
 
             if (i.customId != 'choose') {
+                console.log(pagedHofList);
                 page_num = _.clamp(page_num, 0, pagedHofList.length - 1);
 
                 if (listView == true) {
