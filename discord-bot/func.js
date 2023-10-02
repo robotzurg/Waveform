@@ -675,7 +675,7 @@ module.exports = {
                     msgstoEdit = msgstoEdit.filter(item => item !== false);
                     
                     if (msgstoEdit.length > 0) { 
-                        for (const item of msgstoEdit) {
+                        for await (const item of msgstoEdit) {
                             let msgtoEdit = item;
                             let channelsearch = await get_review_channel(client, msgtoEdit[0], msgtoEdit[1], msgtoEdit[2]);
                             let msgEmbed;

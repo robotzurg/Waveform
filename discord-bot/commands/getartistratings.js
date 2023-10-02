@@ -81,7 +81,7 @@ module.exports = {
                     if (songObj[taggedUser.id].starred == false) {
                         reviewObj[songArray[i]] = parseFloat(songObj[taggedUser.id].rating);
                     } else {
-                        reviewObj[`🌟 ${songArray[i]}`] = parseFloat(songObj[taggedUser.id].rating) + 1;
+                        reviewObj[`🌟 ${songArray[i]}`] = parseFloat(songObj[taggedUser.id].rating) + 100;
                     }
                 }
             } else {
@@ -96,7 +96,7 @@ module.exports = {
 
         for (let i = 0; i < reviewedArray.length; i++) {
             if (reviewedArray[i][1] > 10) {
-                reviewedArray[i][1] -= 1;
+                reviewedArray[i][1] = reviewedArray[i][1] - 100;
                 avgArray.push(reviewedArray[i][1]);
             } else if (reviewedArray[i][1] == -1) {
                 reviewedArray[i][1] = 'No Rating Given';
