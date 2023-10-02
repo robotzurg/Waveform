@@ -517,24 +517,28 @@ module.exports = {
                             }
                         }
 
-                        if (overallReview != false) await epEmbed.setDescription(`${overallReview}`);
-                        if (overallRating !== false) await epEmbed.addFields([{ name: `Rating`, value: `**${overallRating}/10**` }]);
-                        if (starred == false) {
-                            await epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
+                        // Update user stats
+                        await updateStats(interaction, interaction.guild.id, origArtistArray, artistArray, [], epName, epName, db.reviewDB.get(artistArray[0], `${setterEpName}`), true);
+                        db.user_stats.set(interaction.user.id, false, 'current_ep_review');
+
+                        if (overallReview !== false || overallRating !== false || starred === false) {
+                            if (overallReview != false) await epEmbed.setDescription(`${overallReview}`);
+                            if (overallRating !== false) await epEmbed.addFields([{ name: `Rating`, value: `**${overallRating}/10**` }]);
+                            if (starred == false) {
+                                await epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
+                            } else {
+                                await epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} 🌟`);
+                            }
+                            
+                            await i.update({ embeds: [epEmbed], components: [] });
                         } else {
-                            await epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} 🌟`);
+                            await i.update({ embeds: [epEmbed], components: [] });
                         }
 
-                        // Fix artwork on all reviews for this song
+                        //Fix artwork on all reviews for this song
                         if (art != false && db.reviewDB.has(artistArray[0])) {
                             await update_art(interaction, client, artistArray[0], epName, art);
                         }
-
-                        // Update user stats
-                        await updateStats(interaction, interaction.guild.id, origArtistArray, artistArray, [], epName, epName, db.reviewDB.get(artistArray[0], `${setterEpName}`), true);
-
-                        db.user_stats.set(interaction.user.id, false, 'current_ep_review');
-                        await interaction.editReply({ embeds: [epEmbed], components: [] });
 
                         // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
                         if (is_mailbox == true) {
@@ -565,8 +569,6 @@ module.exports = {
                             }
                             db.user_stats.set(interaction.user.id, mailbox_list, `mailbox_list`);
                         }
-
-                        await interaction.editReply({ embeds: [epEmbed], components: [] });
                     } break;
                     case 'begin': {
                         if (ra_collector != undefined) ra_collector.stop();
@@ -587,11 +589,6 @@ module.exports = {
                         ? db.user_stats.get(interaction.user.id, `current_ep_review.track_list`) : db.reviewDB.get(artistArray[0], `${setterEpName}`).songs);
                         if (epSongs == false || epSongs == undefined) epSongs = [];
 
-                        // Fix artwork on all reviews for this song
-                        if (art != false && db.reviewDB.has(artistArray[0])) {
-                            update_art(interaction, client, artistArray[0], epName, art);
-                        }
-
                         // Set message ids and set artist images
                         for (let j = 0; j < artistArray.length; j++) {
                             db.reviewDB.set(artistArray[j], msg.id, `${setterEpName}.${interaction.user.id}.msg_id`);
@@ -608,10 +605,14 @@ module.exports = {
                             }
                         }
                         
-
                         // Update user stats
                         await updateStats(interaction, interaction.guild.id, origArtistArray, artistArray, [], epName, epName, db.reviewDB.get(artistArray[0], `${setterEpName}`), true);
                         await i.update({ embeds: [epEmbed], components: [] });
+                        
+                        // Fix artwork on all reviews for this song
+                        if (art != false && db.reviewDB.has(artistArray[0])) {
+                            update_art(interaction, client, artistArray[0], epName, art);
+                        }
 
                         if (epSongs.length != 0) {
                             await i.followUp({ content: `With this button, you must now review each song on this ${epType} in order.\nHere is the order in which you should review the songs on this ${epType}:\n\n**${epSongs.join('\n')}**\n\nMake sure to use \`/review\` to review these songs, one by one!\n` +
