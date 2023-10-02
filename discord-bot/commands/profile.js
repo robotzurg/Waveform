@@ -111,7 +111,7 @@ module.exports = {
             ctx.font = `40px main_reg`;
             ctx.fillText('General Stats', stats_x, stats_y);
             ctx.font = `30px main`;
-            ctx.fillText(`Stars: ${starCount}`, stats_x, stats_y + 40);
+            ctx.fillText(`Favorites Given: ${starCount}`, stats_x, stats_y + 40);
             ctx.fillText(`Reviews: ${reviewCount}`, stats_x, stats_y + 80);
             ctx.fillText(`EP/LP Reviews: ${epReviewCount}`, stats_x, stats_y + 120);
             ctx.fillText(`10/10: ${tenCount}`, stats_x, stats_y + 160);

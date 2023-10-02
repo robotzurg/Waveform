@@ -184,7 +184,7 @@ module.exports = {
                 .setCustomId('review').setLabel('Review')
                 .setStyle(ButtonStyle.Primary).setEmoji('📝'),
             new ButtonBuilder()
-                .setCustomId('star')
+                .setCustomId('star').setLabel('Favorite')
                 .setStyle(ButtonStyle.Secondary).setEmoji('🌟'),
         );
 
@@ -477,9 +477,6 @@ module.exports = {
                     });
                 } break;
                 case 'star': {
-                    // If we don't have a 7 rating or higher, the button does nothing.
-                    if (rating < 7 && rating != false && rating != null) return await i.update({ embeds: [reviewEmbed], components: [editButtons, reviewButtons] });
-
                     if (starred == false) {
                         reviewEmbed.setTitle(`🌟 ${origArtistArray.join(' & ')} - ${displaySongName} 🌟`);
                         starred = true;

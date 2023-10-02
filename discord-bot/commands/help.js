@@ -145,7 +145,7 @@ module.exports = {
             // Page 3
             'After pressing enter to run the command, you’ll see this set of buttons pop up with your review.\n' +
             '- The 📝**Rating** and 📝**Review** buttons edit those values.\n' +
-            '- The 🌟 button will give the review a star, giving it an extra accolade for the truly best songs. Can only be done for 7/10s or higher.\n' +
+            '- The 🌟 button will give the review a favorite, giving it an extra accolade for your absolute favorites.\n' +
             '- The **Confirm Review** button is what you press to finish the review.\n' +
             '- The **Delete** button will delete the review entirely.\n' +
             'To finish your review, click the confirm review button. This will finalize your review, publishing it to Waveform!',

@@ -213,7 +213,7 @@ module.exports = {
                     .setStyle(ButtonStyle.Primary).setEmoji('📝'),
                 new ButtonBuilder()
                     .setCustomId('star')
-                    .setStyle(ButtonStyle.Secondary).setEmoji('🌟'),
+                    .setStyle(ButtonStyle.Secondary).setLabel('Favorite').setEmoji('🌟'),
             );
 
 
@@ -451,9 +451,6 @@ module.exports = {
                         });
                     } break;
                     case 'star': {
-                        // If we don't have a 10 rating, the button does nothing.
-                        if (overallRating < 7 && overallRating !== false) return await i.update({ embeds: [epEmbed], components: [row, row2] });
-
                         if (starred == false) {
                             if (overallRating !== false) {
                                 epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} (${overallRating}/10) 🌟`);

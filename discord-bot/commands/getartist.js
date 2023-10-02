@@ -351,7 +351,7 @@ module.exports = {
                 if (rankNumArray.length != 0) { 
                     if (singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) {
                         if (fullStarNum != 0) { // If the artist has stars on any of their songs
-                            artistEmbed.setDescription(`*The average ${subcommand == 'global' ? 'global' : 'local'} rating of this artist is* ***${Math.round(average(rankNumArray) * 10) / 10}!***\n:star2: **This artist has ${fullStarNum} total stars!** :star2:`);
+                            artistEmbed.setDescription(`*The average ${subcommand == 'global' ? 'global' : 'local'} rating of this artist is* ***${Math.round(average(rankNumArray) * 10) / 10}!***\n:star2: **This artist has ${fullStarNum} total favorites!** :star2:`);
                         } else {
                             artistEmbed.setDescription(`*The average ${subcommand == 'global' ? 'global' : 'local'} rating of this artist is* ***${Math.round(average(rankNumArray) * 10) / 10}!***`);
                         }
@@ -363,7 +363,7 @@ module.exports = {
                     }
                 } else if (singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) {
                     if (fullStarNum != 0) { // If the artist has stars on any of their songs
-                        artistEmbed.setDescription(`:star2: **This artist has ${fullStarNum} total stars!** :star2:`);
+                        artistEmbed.setDescription(`:star2: **This artist has ${fullStarNum} total favorites!** :star2:`);
                     }
 
                     artistEmbed.addFields([{ name: focusedName, value: focusedArray[0].join('\n') }]);

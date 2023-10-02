@@ -13,7 +13,7 @@ module.exports = {
         .addSubcommand(subcommand =>
             subcommand.setName('card_view')
                 .setDescription('View the server hall of fame in card view.')),
-    help_desc: 'Pulls up the servers hall of fame, which is compromised of all songs reviewed in the server that have 3 or more stars from server members.\n\n' + 
+    help_desc: 'Pulls up the servers hall of fame, which is compromised of all songs reviewed in the server that have 3 or more favorites from server members.\n\n' + 
     `Can be viewed in a card view (leaving the list_view argument blank), which displays each song one by one in a fancy card view, or can be viewed in a list view using the \`list_view\` argument for a more concise viewing.`,
 	async execute(interaction) {
         await interaction.deferReply();
@@ -67,9 +67,9 @@ module.exports = {
             hofCommandEmbed = new EmbedBuilder()
                 .setColor(`#ffff00`)
                 .setTitle(`${hofList[0].orig_artists.join(' & ')} - ${hofList[0].db_song_name}`)
-                .setDescription(`This song currently has **${hofList[0].star_count}** stars 🌟` + 
+                .setDescription(`This song currently has **${hofList[0].star_count}** favorites 🌟` + 
                 `${hofList[0].song_url == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${hofList[0].song_url})`}`)
-                .addFields({ name: 'Starred Reviews:', value: hofList[0].user_stars.map(v => `🌟 <@${v.id}> \`${v.rating}/10\``).join('\n') })
+                .addFields({ name: 'Favorited Reviews:', value: hofList[0].user_stars.map(v => `🌟 <@${v.id}> \`${v.rating}/10\``).join('\n') })
                 .setImage(hofList[0].art)
                 .setFooter({ text: `Page 1 / ${hofList.length} • Use the middle button to select a page!` });
         }
@@ -110,9 +110,9 @@ module.exports = {
                         hofCommandEmbed = new EmbedBuilder()
                             .setColor(`#ffff00`)
                             .setTitle(`${hofList[page_num].orig_artists.join(' & ')} - ${hofList[page_num].db_song_name}`)
-                            .setDescription(`This song currently has **${hofList[page_num].star_count}** stars 🌟` + 
+                            .setDescription(`This song currently has **${hofList[page_num].star_count}** favorites 🌟` + 
                             `${hofList[page_num].song_url == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${hofList[page_num].song_url})`}`)
-                            .addFields({ name: 'Starred Reviews:', value: hofList[page_num].user_stars.map(v => `🌟 <@${v.id}> \`${v.rating}/10\``).join('\n') })
+                            .addFields({ name: 'Favorited Reviews:', value: hofList[page_num].user_stars.map(v => `🌟 <@${v.id}> \`${v.rating}/10\``).join('\n') })
                             .setImage(hofList[page_num].art)
                             .setFooter({ text: `Page ${page_num + 1} / ${hofList.length} • Use the middle button to select a page!` });
                     }
@@ -137,9 +137,9 @@ module.exports = {
                     hofCommandEmbed = new EmbedBuilder()
                         .setColor(`#ffff00`)
                         .setTitle(`${hofList[page_num].orig_artists.join(' & ')} - ${hofList[page_num].db_song_name}`)
-                        .setDescription(`This song currently has **${hofList[page_num].star_count}** stars 🌟` +
+                        .setDescription(`This song currently has **${hofList[page_num].star_count}** favorites 🌟` +
                         `${hofList[page_num].song_url == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${hofList[page_num].song_url})`}`)
-                        .addFields({ name: 'Starred Reviews:', value: hofList[page_num].user_stars.map(v => `🌟 <@${v.id}> \`${v.rating}/10\``).join('\n') })
+                        .addFields({ name: 'Favorited Reviews:', value: hofList[page_num].user_stars.map(v => `🌟 <@${v.id}> \`${v.rating}/10\``).join('\n') })
                         .setImage(hofList[page_num].art)
                         .setFooter({ text: `Page ${page_num + 1} / ${hofList.length} • Use the middle button to select a page!` });
                 }
