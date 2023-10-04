@@ -1,3 +1,4 @@
+const SpotifyWebApi = require("spotify-web-api-node");
 const db = require("../db.js");
 const { update_art, review_song, handle_error, get_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art, updateStats, getEmbedColor, hallOfFameCheck, convertToSetterName } = require('../func.js');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle, Embed } = require('discord.js');
@@ -72,11 +73,43 @@ module.exports = {
 
             .addStringOption(option => 
                 option.setName('art')
-                    .setDescription('Image link of the song art (put \'s\' here if you want to use your spotify playback.)')
+                    .setDescription('Image link of the song art. Leaving blank will pull from Spotify playback.')
+                    .setRequired(false)))
+
+        .addSubcommand(subcommand =>
+            subcommand.setName('spotify_link')
+            .setDescription('Review a song by entering a spotify link.')
+
+            .addStringOption(option =>
+                option.setName('spotify_link')
+                    .setDescription('Spotify link of the song. Must be an "open.spotify.com" link.')
+                    .setRequired(true)
+                    .setMinLength(15))
+
+            .addStringOption(option => 
+                option.setName('rating')
+                    .setDescription('Rating for the song (1-10, decimals allowed.)')
+                    .setRequired(false)
+                    .setMaxLength(3))
+
+            .addStringOption(option => 
+                option.setName('review')
+                    .setDescription('Your review of the song')
+                    .setRequired(false))
+
+            .addUserOption(option => 
+                option.setName('user_who_sent')
+                    .setDescription('User who sent you this song in Mailbox. Ignore if not a mailbox review.')
+                    .setRequired(false))
+
+            .addStringOption(option => 
+                option.setName('art')
+                    .setDescription('Image link of the song art. Leaving blank will pull from Spotify playback.')
                     .setRequired(false))),
     help_desc: `Create an song/remix review on Waveform. See the "Song Review Guide" button to find out how this works.\n\n`
-    + `The subcommand \`with_spotify\` pulls from your spotify playback to fill in arguments (if logged into Waveform with Spotify)` + 
-    ` while the \`manually\` subcommand allows you to manually type in the song name yourself.`,
+    + `The subcommand \`with_spotify\` pulls from your spotify playback to fill in arguments (if logged into Waveform with Spotify),` + 
+    ` the \`manually\` subcommand allows you to manually type in the song name yourself,` +
+    ` and the \`spotify_link\` subcommand allows you to review by placing in a valid open.spotify.com link.`,
 	async execute(interaction, client) {
         try {
         await interaction.deferReply();
@@ -92,12 +125,61 @@ module.exports = {
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('song_name');
         let rmxArtistArray = interaction.options.getString('remixers');
+        let spotifyUri = false;
+        let songArt = interaction.options.getString('art');
+
+        // Handle spotify link if we have one
+        if (interaction.options.getSubcommand() == 'spotify_link') {
+            // Create the api object with the credentials
+            spotifyApi = new SpotifyWebApi({
+                redirectUri: process.env.SPOTIFY_REDIRECT_URI,
+                clientId: process.env.SPOTIFY_API_ID,
+                clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+            });
+            
+            // Retrieve an access token.
+            await spotifyApi.clientCredentialsGrant().then(
+                function(data) {
+                    // Save the access token so that it's used in future calls
+                    spotifyApi.setAccessToken(data.body['access_token']);
+                },
+                function(err) {
+                    console.log('Something went wrong when retrieving an access token', err);
+                },
+            );
+            let trackLink = interaction.options.getString('spotify_link');
+            if (trackLink.includes('spotify.link')) return interaction.editReply('The link type `spotify.link` is not supported on Waveform. Please use a valid `open.spotify.com` link instead.');
+            let mainId = trackLink.split('/')[4].split('?')[0];
+
+            if (trackLink.includes("track")) {
+                await spotifyApi.getTrack(mainId).then(async data => {
+                    data = data.body;
+                    spotifyUri = `spotify:track:${data.id}`;
+                    songArt = data.album.images[0].url;
+                    song = data.name;
+                    artists = data.artists.map(artist => artist.name);
+                    artists = artists.map(a => {
+                        if (a.includes(' & ')) {
+                            return a.replace(' & ', ' \\& ');
+                        } else {
+                            return a;
+                        }
+                    });
+                    artists = artists.join(' & ');
+                }).catch(() => {
+                    return interaction.editReply('Internal error upon trying to read this spotify link, please try again later.');
+                });
+            } else if (trackLink.includes("album")) {
+                return interaction.editReply('You must use `/epreview` to review an EP/LP, and you have input an EP/LP link. Please input a song link.');
+            }
+        }
 
         let song_info = await parse_artist_song_data(interaction, artists, song, rmxArtistArray);
         if (song_info.error != undefined) {
             await interaction.editReply(song_info.error);
             return;
         }
+        console.log(song_info);
 
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
@@ -106,7 +188,9 @@ module.exports = {
         let allArtistArray = song_info.all_artists; // This is used for grabbing the artist images of every artist involved.
         let displaySongName = song_info.display_song_name;
         let origSongName = song_info.main_song_name;
-        let spotifyUri = song_info.spotify_uri;
+        if (spotifyUri == false) {
+            spotifyUri = song_info.spotify_uri;
+        }
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterSongName = convertToSetterName(songName);
 
@@ -121,7 +205,6 @@ module.exports = {
         if (rating == null) rating = false;
         let review = interaction.options.getString('review');
         if (review == null) review = false;
-        let songArt = interaction.options.getString('art');
         let user_who_sent = interaction.options.getUser('user_who_sent');
         let mailbox_data = false;
         
