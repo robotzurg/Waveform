@@ -31,6 +31,9 @@ module.exports = {
 
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
         let trackLink = interaction.options.getString('link');
+        if (trackLink.includes('spotify.link')) {
+            return interaction.editReply('The type of link `spotify.link` is not supported by Waveform. Please use a valid `open.spotify.com` link instead.');
+        }
         let trackUris = []; 
         let trackDurs = []; // Track durations
         let spotifyData;
@@ -125,7 +128,6 @@ module.exports = {
             artists = artists.map(v => v.replace(' & ', ' \\& '));
             let song_info = await parse_artist_song_data(interaction, artists.join(' & '), name);
             if (song_info.error != undefined) {
-                console.log(song_info);
                 await interaction.editReply(song_info.error);
                 passesChecks = false;
                 return;

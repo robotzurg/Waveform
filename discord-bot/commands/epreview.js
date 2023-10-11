@@ -139,26 +139,29 @@ module.exports = {
             let spotifyApi;
             // Check if we are in a spotify mailbox
             spotifyApi = await spotify_api_setup(interaction.user.id);
-            if (interaction.options.getSubcommand() == 'manually') {
-                spotifyApi = false;
-            }
             if (mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:album:', '')) && spotifyApi != false) {
                 is_mailbox = true;
             }
 
             // If we are in the mailbox and don't specify a user who sent, try to pull it from the mailbox list
-            if (user_who_sent == null && is_mailbox == true) {
+            if (user_who_sent == false && is_mailbox == true) {
                 temp_mailbox_list = mailbox_list.filter(v => v.spotify_id == spotifyUri.replace('spotify:album:', ''));
                 if (temp_mailbox_list.length != 0) {
                     mailbox_data = temp_mailbox_list[0];
-                    await interaction.guild.members.fetch(mailbox_data.user_who_sent).then(() => {
-                        user_who_sent = client.users.cache.get(mailbox_data.user_who_sent);
-                        if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
-                    }).catch(() => {
-                        user_who_sent = null;
+                    if (mailbox_data.user_who_sent != interaction.user.id) {
+                        await interaction.guild.members.fetch(mailbox_data.user_who_sent).then(() => {
+                            user_who_sent = client.users.cache.get(mailbox_data.user_who_sent);
+                            if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
+                        }).catch(() => {
+                            user_who_sent = false;
+                            ping_for_review = false;
+                            is_mailbox = false;
+                        });
+                    } else {
+                        is_mailbox = true;
+                        user_who_sent = false;
                         ping_for_review = false;
-                        is_mailbox = false;
-                    });
+                    }
                 }
             }
 
@@ -213,7 +216,7 @@ module.exports = {
                     .setStyle(ButtonStyle.Primary).setEmoji('📝'),
                 new ButtonBuilder()
                     .setCustomId('star')
-                    .setStyle(ButtonStyle.Secondary).setEmoji('🌟'),
+                    .setStyle(ButtonStyle.Secondary).setLabel('Favorite').setEmoji('🌟'),
             );
 
 
@@ -451,9 +454,6 @@ module.exports = {
                         });
                     } break;
                     case 'star': {
-                        // If we don't have a 10 rating, the button does nothing.
-                        if (overallRating < 7 && overallRating !== false) return await i.update({ embeds: [epEmbed], components: [row, row2] });
-
                         if (starred == false) {
                             if (overallRating !== false) {
                                 epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} (${overallRating}/10) 🌟`);

@@ -23,7 +23,7 @@ module.exports = {
                 { name: 'Number of EP/LPs', value: `${botStats.ep_num}`, inline: true },
                 { name: 'Number of Reviews', value: `${botStats.review_num}`, inline: true },
                 { name: 'Number of EP/LP Reviews', value: `${botStats.ep_review_num}`, inline: true },
-                { name: 'Number of Stars', value: `${botStats.star_num}` },
+                { name: 'Number of Favorites Given', value: `${botStats.star_num}` },
                 { name: 'Number of 10s Given', value: `${botStats.ten_num}` },
                 { name: 'Number of Waveform Users', value: `${botStats.waveform_users.length}`, inline: true },
             )

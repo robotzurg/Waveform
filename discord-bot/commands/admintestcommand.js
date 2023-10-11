@@ -166,7 +166,7 @@ module.exports = {
 
                     if (gottenGlobalData == false) {
                         if (avgRatingList.length >= listReviewNum && !song.includes(' EP') && !song.includes(' LP')) {
-                            topSongsList.push([avgRatingList.length, `${origArtistArray.join(' & ')} - ${song} (Stars: ${avgRatingList.length})`]);
+                            topSongsList.push([avgRatingList.length, `${origArtistArray.join(' & ')} - ${song} (Favs: ${avgRatingList.length})`]);
                         }
                         avgRatingList = [];
                     }

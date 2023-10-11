@@ -4,12 +4,12 @@ const { parse_artist_song_data, handle_error, get_review_channel, spotify_api_se
 
 module.exports = {
 	data: new SlashCommandBuilder()
-		.setName('setstar')
-		.setDescription('Toggle a star on a review you have made.')
+		.setName('setfavorite')
+		.setDescription('Toggle a favorite on a review you have made.')
         .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand.setName('song')
-            .setDescription('Set a star for a song/remix.')
+            .setDescription('Set a favorite for a song/remix.')
             .addStringOption(option => 
                 option.setName('artist')
                     .setDescription('The name of the artist(s).')
@@ -30,7 +30,7 @@ module.exports = {
 
         .addSubcommand(subcommand =>
             subcommand.setName('ep')
-            .setDescription('Set a star for an EP/LP.')
+            .setDescription('Set a favorite for an EP/LP.')
             .addStringOption(option =>
                 option.setName('artist')
                 .setDescription('The name of the artist.')
@@ -43,9 +43,8 @@ module.exports = {
                     .setAutocomplete(true)
                     .setRequired(false))),
         
-    help_desc: `Sets a review you have made to have a star (or removes one, if the review has a star)\n\n` + 
-    `A star is a personal accolade you can give a song, that just signifies you really like a song. It is up to you how you want to use stars.\n\n` + 
-    `It should be noted that reviews can only be starred if they are rated 7/10 or higher, and reviews without a rating can be starred.\n\n` + 
+    help_desc: `Adds a review to your favorites (or removes one, if the review is in your favorites)\n\n` + 
+    `A favorite is a personal accolade you can give a song. It is up to you how you want to use favorites.\n\n` + 
     `Leaving the artist, song_name, and remixers arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)\n\n` + 
     `The remixers argument should have the remixer specified if you are trying to pull up a remix, the remixer should be put in the song_name or artists arguments.`,
 	async execute(interaction, client) {
@@ -86,9 +85,6 @@ module.exports = {
         if (songObj == undefined) return interaction.reply(`${origArtistArray.join(' & ')} - ${displaySongName} not found in database.`);
         let songReviewObj = songObj[interaction.user.id];
         if (songReviewObj == undefined) return interaction.reply(`You haven't reviewed ${origArtistArray.join(' & ')} - ${displaySongName}.`);
-        if (songReviewObj.rating != false) {
-            if (songReviewObj.rating < 7) return interaction.reply(`Stars can only be given to a songs rated 7/10 or higher. They are designed to be used for songs you truly love, as an extra marker.\nYou have not rated **${origArtistArray.join(' & ')} - ${displaySongName}** higher than a 7.`);
-        }
         if (songReviewObj.guild_id == false) songReviewObj.guild_id = '680864893552951306';
         guildStatsObj = db.server_settings.get(songReviewObj.guild_id, 'stats');
 
@@ -114,7 +110,7 @@ module.exports = {
         }
 
         if (star_check == false) {
-            interaction.reply(`Star added to **${origArtistArray.join(' & ')} - ${displaySongName}**!`);
+            interaction.reply(`Favorited **${origArtistArray.join(' & ')} - ${displaySongName}**!`);
 
             userStatsObj.star_num += 1;
             guildStatsObj.star_num += 1;
@@ -141,7 +137,7 @@ module.exports = {
                 });
             }
         } else {
-            interaction.reply(`Unstarred **${origArtistArray.join(' & ')} - ${displaySongName}**.`);
+            interaction.reply(`Un-favorited **${origArtistArray.join(' & ')} - ${displaySongName}**.`);
 
             userStatsObj.star_num -= 1;
             guildStatsObj.star_num -= 1;

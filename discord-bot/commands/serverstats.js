@@ -19,7 +19,7 @@ module.exports = {
             .addFields(
                 { name: 'Number of Reviews', value: `${serverStats.review_num}` },
                 { name: 'Number of EP/LP Reviews', value: `${serverStats.ep_review_num}` },
-                { name: 'Number of Stars', value: `${serverStats.star_num}` },
+                { name: 'Number of Favorites Given', value: `${serverStats.star_num}` },
                 { name: 'Number of 10s Given', value: `${serverStats.ten_num}` },
             )
             .setFooter({ text: 'Check out /hall-of-fame to see the most starred songs in the server!' });

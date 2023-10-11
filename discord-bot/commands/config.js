@@ -44,8 +44,8 @@ module.exports = {
                             value: 'embed_color',
                         },
                         {
-                            label: 'Star Spotify Playlist',
-                            description: 'Setup your starred songs spotify playlist',
+                            label: 'Favs Spotify Playlist',
+                            description: 'Setup your favorited songs spotify playlist',
                             emoji: '🌟',
                             value: 'star_playlist',
                         },
@@ -88,7 +88,7 @@ module.exports = {
         `**Mailbox Review Ping:** \`${config_data.review_ping}\``,
         `**Mailbox DM:** \`${config_data.mailbox_dm}\``,
         `**Embed Color:** \`${config_data.embed_color == false ? 'Role Color' : config_data.embed_color}\``,
-        `**Star Spotify Playlist:** \`${config_data.star_spotify_playlist != false ? 'Setup!' : 'Not Setup.'}\``];
+        `**Favs Spotify Playlist:** \`${config_data.star_spotify_playlist != false ? 'Setup!' : 'Not Setup.'}\``];
 
         let mailFilterSel = new ActionRowBuilder()
             .addComponents(
@@ -202,9 +202,9 @@ module.exports = {
 
                     let starIDList = [];
 
-                    await sel.update({ content: `Setting up your star spotify playlist... (This usually takes up to 1 minute, so please be patient!)\n`
+                    await sel.update({ content: `Setting up your Waveform Favorites spotify playlist... (This usually takes up to 1 minute, so please be patient!)\n`
                     + `Please keep in mind that this playlist generation may not get every song 100%. Feel free to manually change things yourself to fix it!`, embeds: [], components: [] });
-                    await spotifyApi.createPlaylist('Waveform Stars', { 'description': 'This is an auto updated playlist of your Waveform stars, to give you an easier idea of what songs you have starred!', 'public': true })
+                    await spotifyApi.createPlaylist('Waveform Favorites', { 'description': 'This is an auto updated playlist of your Waveform Favorites, to give you an easier idea of what songs you have favorited!', 'public': true })
                     .then(async data => {
                         db.user_stats.set(interaction.user.id, data.body.id, `config.star_spotify_playlist`);
                         let starList = db.user_stats.get(interaction.user.id, `stats.star_list`);
@@ -235,9 +235,9 @@ module.exports = {
                         await spotifyApi.addTracksToPlaylist(db.user_stats.get(interaction.user.id, `config.star_spotify_playlist`), list); 
                     }
                      
-                    config_desc[4] = `**Star Spotify Playlist:** \`Setup!\``;
+                    config_desc[4] = `**Favs Spotify Playlist:** \`Setup!\``;
                     configEmbed.setDescription(config_desc.join('\n'));
-                    await interaction.editReply({ content: `Playlist has been created and starred songs have been added to it.`, embeds: [configEmbed], components: [configMenu] });                
+                    await interaction.editReply({ content: `Playlist has been created and favorited songs have been added to it.`, embeds: [configEmbed], components: [configMenu] });                
                 }
 
             } else if (sel.customId == 'mail_filter_sel') {

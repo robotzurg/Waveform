@@ -212,9 +212,6 @@ module.exports = {
             }
 
             if (rating != null && rating != undefined) {
-                if (rating < 7 && songReviewObj.starred == true && rating !== false) {
-                    return interaction.reply(`This review has a star on it, so you cannot change the rating to anything under 7.\nRemove the star with \`/setstar\` if you'd like to lower the rating!`);
-                }
                 
                 oldrating = songReviewObj.rating;
                 if (userStatsObj.ratings_list[`${oldrating}`] != undefined && !isNaN(parseFloat(oldrating))) {
