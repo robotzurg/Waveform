@@ -31,9 +31,12 @@ module.exports = {
 
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
         let trackLink = interaction.options.getString('link');
-        if (trackLink.includes('spotify.link')) {
-            return interaction.editReply('The type of link `spotify.link` is not supported by Waveform. Please use a valid `open.spotify.com` link instead.');
+        if (trackLink != null) {
+            if (trackLink.includes('spotify.link')) {
+                return interaction.editReply('The type of link `spotify.link` is not supported by Waveform. Please use a valid `open.spotify.com` link instead.');
+            }
         }
+        
         let trackUris = []; 
         let trackDurs = []; // Track durations
         let spotifyData;
