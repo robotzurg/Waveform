@@ -7,10 +7,26 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('viewmail')
         .setDescription('View all songs in your personal Waveform mailbox that you have not reviewed yet.')
-        .setDMPermission(false),
+        .setDMPermission(false)
+        .addUserOption(option => 
+            option.setName('user')
+                .setDescription('User to see mail from. (Optional, Defaults to yourself)')
+                .setRequired(false)),
     help_desc: `View a list of every song you currently have in your mailbox that you have not reviewed yet.`,
 	async execute(interaction, client) {
-        let mail_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
+
+        let user = interaction.options.getUser('user');
+
+        if (user == null) user = interaction.user;
+        let taggedMember;
+
+        if (user != null) {
+            taggedMember = await interaction.guild.members.fetch(user.id);
+        } else {
+            taggedMember = interaction.member;
+        }
+
+        let mail_list = db.user_stats.get(user.id, 'mailbox_list');
         const guild = client.guilds.cache.get(interaction.guild.id);
         let res = await guild.members.fetch();
         let guildUsers = [...res.keys()];
@@ -38,9 +54,9 @@ module.exports = {
         );
 
         const mailEmbed = new EmbedBuilder()
-            .setColor(`${getEmbedColor(interaction.member)}`)
-            .setThumbnail(interaction.user.avatarURL({ extension: "png" }))
-            .setTitle(`${interaction.member.displayName}'s Waveform Spotify Mailbox`)
+            .setColor(`${getEmbedColor(taggedMember)}`)
+            .setThumbnail(user.avatarURL({ extension: "png" }))
+            .setTitle(`${taggedMember.displayName}'s Waveform Spotify Mailbox`)
             .setDescription(paged_mail_list[page_num].join(''));
             if (paged_mail_list.length > 1) {
                 mailEmbed.setFooter({ text: `Page 1 / ${paged_mail_list.length}` });

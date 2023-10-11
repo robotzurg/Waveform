@@ -179,7 +179,6 @@ module.exports = {
             await interaction.editReply(song_info.error);
             return;
         }
-        console.log(song_info);
 
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
@@ -191,12 +190,12 @@ module.exports = {
         if (spotifyUri == false) {
             spotifyUri = song_info.spotify_uri;
         }
+
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
         let setterSongName = convertToSetterName(songName);
 
         // Check if we are in a spotify mailbox
         spotifyApi = await spotify_api_setup(interaction.user.id);
-        if (interaction.options.getSubcommand() == 'manually') spotifyApi = false;
         if (mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:track:', '')) && spotifyApi != false) {
             is_mailbox = true;
         }
@@ -213,14 +212,20 @@ module.exports = {
             temp_mailbox_list = mailbox_list.filter(v => v.spotify_id == spotifyUri.replace('spotify:track:', ''));
             if (temp_mailbox_list.length != 0) {
                 mailbox_data = temp_mailbox_list[0];
-                await interaction.guild.members.fetch(mailbox_data.user_who_sent).then(async user_data => {
-                    user_who_sent = user_data.user; //await client.users.cache.get(mailbox_data.user_who_sent);
-                    if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
-                }).catch(() => {
-                    user_who_sent = null;
+                if (mailbox_data.user_who_sent != interaction.user.id) {
+                    await interaction.guild.members.fetch(mailbox_data.user_who_sent).then(async user_data => {
+                        user_who_sent = user_data.user; //await client.users.cache.get(mailbox_data.user_who_sent);
+                        if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
+                    }).catch(() => {
+                        user_who_sent = false;
+                        ping_for_review = false;
+                        is_mailbox = false;
+                    });
+                } else {
+                    user_who_sent = false;
                     ping_for_review = false;
-                    is_mailbox = false;
-                });
+                    is_mailbox = true;
+                }
             }
         }
 
@@ -240,7 +245,7 @@ module.exports = {
             }
         }
 
-        if (user_who_sent != null) {
+        if (user_who_sent != null && user_who_sent != false) {
             taggedUser = user_who_sent;
             taggedMember = await interaction.guild.members.fetch(taggedUser.id);
         }

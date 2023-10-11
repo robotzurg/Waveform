@@ -274,7 +274,6 @@ module.exports = {
                     let reviewNum, rankNumArray;
                     reviewNum = subcommand == 'global' ? globalReviewNum : localReviewNum;
                     rankNumArray = subcommand == 'global' ? globalRankNumArray : localRankNumArray;
-                    console.log(rankNumArray);
 
                     if (remixerKeys.length > 0 && reviewNum != 0) {
                         songDetails = [`\`${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : ``}`, `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,

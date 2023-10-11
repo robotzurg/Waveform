@@ -127,8 +127,6 @@ module.exports = {
             rmxArtistArray = [remixers.split(' & ')];
             rmxArtistArray = rmxArtistArray.flat(1);
         }
-
-        console.log(origArtistArray, songArg, remixers);
         
         // If we're pulling from Spotify (no arguments given)
         if (origArtistArray == null && songArg == null && remixers == null) {
