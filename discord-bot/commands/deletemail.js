@@ -6,7 +6,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('deletemail')
         .setDescription('Manually remove a song from your mailbox without reviewing it.')
-        .setDMPermission(false)
+        .setDMPermission(true)
         .addStringOption(option => 
             option.setName('artist')
                 .setDescription('The name of the artist(s).')
@@ -41,9 +41,12 @@ module.exports = {
         let spotifyApi = await spotify_api_setup(interaction.user.id);
 
         let mailbox_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
-        let temp_mailbox_list;
+        let temp_mailbox_list = [];
         if (spotifyApi != false) {
             temp_mailbox_list = mailbox_list.filter(v => v.spotify_id == song_info.spotify_uri.replace('spotify:track:', '').replace('spotify:album:', ''));
+            if (temp_mailbox_list.length == 0) {
+                temp_mailbox_list = mailbox_list.filter(v => v.display_name == `${origArtistArray.join(' & ')} - ${displaySongName}`);
+            }
         } else {
             temp_mailbox_list = mailbox_list.filter(v => v.display_name == `${origArtistArray.join(' & ')} - ${displaySongName}`);
         }
@@ -69,9 +72,11 @@ module.exports = {
             // Remove from local playlist
             if (spotifyApi != false) {
                 mailbox_list = mailbox_list.filter(v => v.spotify_id != song_info.spotify_uri.replace('spotify:track:', '').replace('spotify:album:', ''));
+                mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${displaySongName}`);
             } else {
                 mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${displaySongName}`);
             }
+    
             db.user_stats.set(interaction.user.id, mailbox_list, `mailbox_list`);
 
             interaction.reply(`Successfully removed **${origArtistArray.join(' & ')} - ${displaySongName}** from your mailbox.`);

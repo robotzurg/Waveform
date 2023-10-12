@@ -86,7 +86,8 @@ module.exports = {
             rstarred = songReviewObj.starred;
             rurl = songReviewObj.url;
             if (rsentby != false) {
-                usrSentBy = await interaction.guild.members.cache.get(rsentby);              
+                usrSentBy = await interaction.guild.members.cache.get(rsentby);            
+                if (usrSentBy == undefined) rsentby = false;
             }
 
             // If we don't have a single review link, we can check for an EP/LP review link
