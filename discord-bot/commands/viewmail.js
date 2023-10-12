@@ -1,5 +1,5 @@
 const db = require('../db.js');
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle, DMChannel } = require('discord.js');
 const _ = require('lodash');
 const { getEmbedColor } = require('../func.js');
 
@@ -7,7 +7,7 @@ module.exports = {
     data: new SlashCommandBuilder()
         .setName('viewmail')
         .setDescription('View all songs in your personal Waveform mailbox that you have not reviewed yet.')
-        .setDMPermission(false)
+        .setDMPermission(true)
         .addUserOption(option => 
             option.setName('user')
                 .setDescription('User to see mail from. (Optional, Defaults to yourself)')
@@ -16,21 +16,37 @@ module.exports = {
 	async execute(interaction, client) {
 
         let user = interaction.options.getUser('user');
-
-        if (user == null) user = interaction.user;
         let taggedMember;
 
-        if (user != null) {
-            taggedMember = await interaction.guild.members.fetch(user.id);
-        } else {
+        if (user == null) {
+            user = interaction.user;
             taggedMember = interaction.member;
+
+            // Do this for DMChannels
+            if (taggedMember == null) {
+                taggedMember = {
+                    displayName: user.username,
+                    user: {
+                        id: user.id,
+                    },
+                    displayHexColor: '#000000',
+                };
+            }
+        } else {
+            if (interaction.channel instanceof DMChannel) {
+                return interaction.reply('You cannot specify a user in a DM. You can only view your own mailbox list. Please leave the user argument blank, or specify yourself.');
+            }
+            taggedMember = await interaction.guild.members.fetch(user.id);
         }
 
         let mail_list = db.user_stats.get(user.id, 'mailbox_list');
-        const guild = client.guilds.cache.get(interaction.guild.id);
-        let res = await guild.members.fetch();
-        let guildUsers = [...res.keys()];
-        mail_list = mail_list.filter(v => guildUsers.includes(v.user_who_sent));
+
+        if (!(interaction.channel instanceof DMChannel)) {
+            const guild = client.guilds.cache.get(interaction.guild.id);
+            let res = await guild.members.fetch();
+            let guildUsers = [...res.keys()];
+            mail_list = mail_list.filter(v => guildUsers.includes(v.user_who_sent));
+        }
         mail_list = mail_list.map(v => `• [**${v.display_name}**](${v.spotify_url}) sent by <@${v.user_who_sent}>\n`);
 
         if (mail_list == undefined || mail_list == false) {
