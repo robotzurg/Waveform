@@ -93,8 +93,10 @@ module.exports = {
             // If we don't have a single review link, we can check for an EP/LP review link
             if (rurl == false && (epfrom != false && epfrom != undefined)) {
                 let songEPObj = db.reviewDB.get(artistArray[0], `${setterEpName}`);
-                if (songEPObj[interaction.user.id].url != false) {
-                    rurl = songEPObj[interaction.user.id].url;
+                if (songEPObj != undefined) {
+                    if (songEPObj[interaction.user.id].url != false) {
+                        rurl = songEPObj[interaction.user.id].url;
+                    }
                 }
             }
             
