@@ -97,6 +97,7 @@ module.exports = {
         for (let i = 0; i < reviewedArray.length; i++) {
             if (reviewedArray[i][1] > 10) {
                 reviewedArray[i][1] = reviewedArray[i][1] - 100;
+                reviewedArray[i][1] = Math.round(reviewedArray[i][1] * 10) / 10;
                 avgArray.push(reviewedArray[i][1]);
             } else if (reviewedArray[i][1] == -1) {
                 reviewedArray[i][1] = 'No Rating Given';
@@ -107,7 +108,7 @@ module.exports = {
             }
         }
 
-        avg = _.mean(avgArray).toFixed(2);
+        avg = `${Math.round(_.mean(avgArray) * 100) / 100}`;
         if (isNaN(avg)) avg = 'N/A';
 
         let pagedReviewList = _.chunk(reviewedArray, 10);
