@@ -1,6 +1,7 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
 const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art, update_art, updateStats, getEmbedColor, convertToSetterName } = require('../func.js');
+const SpotifyWebApi = require('spotify-web-api-node');
 require('dotenv').config();
 
 module.exports = {
@@ -66,10 +67,42 @@ module.exports = {
             .addUserOption(option => 
                 option.setName('user_who_sent')
                     .setDescription('User who sent you this EP/LP in Mailbox. Ignore if not a mailbox review.')
-                    .setRequired(false))),
+                    .setRequired(false)))
+
+            .addSubcommand(subcommand =>
+                subcommand.setName('spotify_link')
+                .setDescription('Review an EP/LP by entering a spotify link.')
+    
+                .addStringOption(option =>
+                    option.setName('spotify_link')
+                        .setDescription('Spotify link of the EP/LP. Must be an "open.spotify.com" link.')
+                        .setRequired(true)
+                        .setMinLength(15))
+    
+                .addStringOption(option => 
+                    option.setName('overall_rating')
+                        .setDescription('Overall Rating of the EP/LP. Out of 10, decimals allowed. Can be added later.')
+                        .setRequired(false)
+                        .setMaxLength(3))
+        
+                .addStringOption(option => 
+                    option.setName('overall_review')
+                        .setDescription('Overall Review of the EP/LP. Can be added later.')
+                        .setRequired(false))
+    
+                .addUserOption(option => 
+                    option.setName('user_who_sent')
+                        .setDescription('User who sent you this EP/LP in Mailbox. Ignore if not a mailbox review.')
+                        .setRequired(false))
+    
+                .addStringOption(option => 
+                    option.setName('art')
+                        .setDescription('Image link of the EP/LP art. Leaving blank will pull from Spotify.')
+                        .setRequired(false))),
     help_desc: `Start or create an EP/LP (aka album) review on Waveform. See the "EP/LP Review Guide" button to find out how this works.\n\n`
     + `The subcommand \`with_spotify\` pulls from your spotify playback to fill in arguments (if logged into Waveform with Spotify)` + 
-    ` while the \`manually\` subcommand allows you to manually type in the EP/LP name yourself.`,
+    ` while the \`manually\` subcommand allows you to manually type in the EP/LP name yourself.` + 
+    ` and the \`spotify_link\` subcommand allows you to review by placing in a valid open.spotify.com EP/LP link.`,
 	async execute(interaction, client) {
         try {
             // Check if we have an existing EP/LP review running, and back out immediately if we do.
@@ -79,9 +112,57 @@ module.exports = {
                 return interaction.reply(`You already have an ${type} review for ${epReviewUserData.artist_array.join(' & ')} - ${epReviewUserData.ep_name} in progress.\n` + 
                 `Please finish reviewing all songs on the ${type} review before starting a new one, or run \`/epdone\` to manually end the review.`);
             }
-
+            let spotifyUri;
+            let art = interaction.options.getString('art');
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('ep_name');
+
+            // Handle spotify link if we have one
+            if (interaction.options.getSubcommand() == 'spotify_link') {
+                // Create the api object with the credentials
+                let spotifyApi = new SpotifyWebApi({
+                    redirectUri: process.env.SPOTIFY_REDIRECT_URI,
+                    clientId: process.env.SPOTIFY_API_ID,
+                    clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
+                });
+                
+                // Retrieve an access token.
+                await spotifyApi.clientCredentialsGrant().then(
+                    function(data) {
+                        // Save the access token so that it's used in future calls
+                        spotifyApi.setAccessToken(data.body['access_token']);
+                    },
+                    function(err) {
+                        console.log('Something went wrong when retrieving an access token', err);
+                    },
+                );
+                let trackLink = interaction.options.getString('spotify_link');
+                if (trackLink.includes('spotify.link')) return interaction.reply('The link type `spotify.link` is not supported on Waveform. Please use a valid `open.spotify.com` link instead.');
+                let mainId = trackLink.split('/')[4].split('?')[0];
+
+                if (trackLink.includes("album")) {
+                    await spotifyApi.getAlbum(mainId).then(async data => {
+                        data = data.body;
+                        spotifyUri = `spotify:album:${data.id}`;
+                        art = data.images[0].url;
+                        ep = `${data.name} ${data.type == 'album' ? `LP` : `EP`}`;
+                        artists = data.artists.map(artist => artist.name);
+                        artists = artists.map(a => {
+                            if (a.includes(' & ')) {
+                                return a.replace(' & ', ' \\& ');
+                            } else {
+                                return a;
+                            }
+                        });
+                        artists = artists.join(' & ');
+                    }).catch((err) => {
+                        console.log(`failed to read link because of ${err}`);
+                    });
+                } else if (trackLink.includes("track")) {
+                    return interaction.reply('You must use `/review` to review an single/remix, and you have input an EP/LP link. Please input a EP/LP link.');
+                }
+            }
+
             let song_info = await parse_artist_song_data(interaction, artists, ep);
             if (song_info.error != undefined) {
                 await interaction.reply(song_info.error);
@@ -95,10 +176,8 @@ module.exports = {
             // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
             let setterEpName = convertToSetterName(epName);
             let epType = epName.includes(' LP') ? `LP` : `EP`;
-            let spotifyUri = song_info.spotify_uri;
+            spotifyUri = song_info.spotify_uri;
             let currentEpReviewData = song_info.current_ep_review_data;
-
-            let art = interaction.options.getString('art');
             if (art == null) art = song_info.art;
         
             let overallRating = interaction.options.getString('overall_rating');

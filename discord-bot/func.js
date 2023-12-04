@@ -265,7 +265,7 @@ module.exports = {
                             trackList[i] = trackList[i][0];
                         }
 
-                        if (trackList.length <= 1) {
+                        if (trackList.length <= 1 && !(trackList.length == 1 && album_data.body.tracks.items[0].duration_ms >= 1.2e+6)) {
                             passesChecks = 'length';
                         } else if (trackList.length > 25) {
                             passesChecks = 'too_long';
@@ -1052,6 +1052,7 @@ module.exports = {
         });
 
         const guild = client.guilds.cache.get('680864893552951306');
+        console.log(String(err.stack));
         if (guild == undefined || guild == null || guild == false) return;
         let error_channel = guild.channels.cache.get('933610135719395329');
         let error = String(err.stack);

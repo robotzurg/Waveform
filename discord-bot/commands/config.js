@@ -215,7 +215,6 @@ module.exports = {
                                 let pushed = false;
 
                                 for (let result of results) {
-                                    console.log(result.album.artists, starData.orig_artists);
                                     if (result.album.artists.map(v => v.name.toLowerCase()).includes(starData.orig_artists[0].toLowerCase()) && result.name.toLowerCase() == `${starData.db_song_name.toLowerCase()}`) {
                                         starIDList.push(result.uri);
                                         pushed = true;

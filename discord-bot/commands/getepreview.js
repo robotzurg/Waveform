@@ -120,7 +120,6 @@ module.exports = {
 
             let reviewMsgID = epReviewObj.msg_id;
             let timestamp = epReviewObj.timestamp;
-            console.log(timestamp);
             if (reviewMsgID != false && reviewMsgID != undefined && timestamp == undefined) {
                 let channelsearch = await get_review_channel(client, epReviewObj.guild_id, epReviewObj.channel_id, reviewMsgID);
                 if (channelsearch != undefined) {
