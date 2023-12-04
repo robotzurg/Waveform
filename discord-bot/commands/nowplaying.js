@@ -16,6 +16,7 @@ module.exports = {
         await interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
         let songArt, spotifyUrl, spotifyUri, yourRating, origArtistArray, artistArray, songName, songDisplayName, noSong = false, isPlaying = true, isPodcast = false, validSong = true;
+        let albumData;
         let setterSongName, song_info;
         let songLength, songCurMs, musicProgressBar = false; // Song length bar variables
         const spotifyApi = await spotify_api_setup(interaction.user.id);
@@ -25,6 +26,11 @@ module.exports = {
         await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
             if (data.body.item == undefined) { noSong = true; return; }
             if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
+            albumData = data.body.item.album;
+            if ((albumData.total_tracks <= 1 && !(albumData.total_tracks == 1 && data.body.item.duration_ms >= 1.2e+6)) || albumData.total_tracks > 25) {
+                albumData = false;
+            }
+
             if (data.body.item.is_local == false) {
                 spotifyUri = data.body.item.uri;
                 spotifyUrl = data.body.item.external_urls.spotify;
@@ -91,7 +97,6 @@ module.exports = {
                 }
             }
         }
-        console.log(user_who_sent, mailbox_member);
 
         const npEmbed = new EmbedBuilder()
         .setColor(`${getEmbedColor(interaction.member)}`)
@@ -156,42 +161,33 @@ module.exports = {
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 }
 
-                if (songObj.ep != undefined && songObj.ep != false) {
-                    if (db.reviewDB.get(db.reviewDB.get(artistArray[0])[songObj.ep]) != undefined) {
-                        if (db.reviewDB.get(artistArray[0])[songObj.ep].art != false) {
-                            npEmbed.setFooter({ text: `from ${songObj.ep}`, iconURL: db.reviewDB.get(artistArray[0])[songObj.ep].art });
-                        } else {
-                            npEmbed.setFooter({ text: `from ${songObj.ep}` });
-                        }
+                if ((songObj.ep != undefined && songObj.ep != false)) {
+                    let epSongArt = false;
+                    let setterEpName = convertToSetterName(songObj.ep);
+                    if (db.reviewDB.get(artistArray[0], setterEpName) != undefined) {
+                        epSongArt = db.reviewDB.get(artistArray[0], `${setterEpName}.art`);
                     } else if (songName.includes(' Remix)')) {
-                        let epSongArt = db.reviewDB.get(songObj.collab[0], `${songObj.ep}.art`);
-                        if (epSongArt != false) {
-                            npEmbed.setFooter({ text: `from ${songObj.ep}`, iconURL: epSongArt });
-                        } else {
-                            npEmbed.setFooter({ text: `from ${songObj.ep}` });
-                        }
+                        epSongArt = db.reviewDB.get(songObj.collab[0], `${setterEpName}.art`);
                     } 
-                }
 
-                // Replace the earlier footer with a sent mail footer if conditions are met
-                if (is_mailbox == true && mailbox_member != null) {
-                    npEmbed.setFooter({ text: `📬 Sent to you by ${mailbox_member.displayName}`, iconURL: user_who_sent.avatarURL({ extension: "png", dynamic: true }) });
+                    npEmbed.setFooter({ text: `from ${songObj.ep}`, iconURL: epSongArt != false ? epSongArt : null });
                 }
-            } else {
-                npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-                `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
-
-                if (is_mailbox == true && mailbox_member != null) {
-                    npEmbed.setFooter({ text: `📬 Sent to you by ${mailbox_member.displayName}`, iconURL: user_who_sent.avatarURL({ extension: "png", dynamic: true }) });
-                }
+                
             }
-        } else {
-            npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
+        }
+
+        npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
             `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
 
-            if (is_mailbox == true && mailbox_member != null) {
-                npEmbed.setFooter({ text: `📬 Sent to you by ${mailbox_member.displayName}`, iconURL: user_who_sent.avatarURL({ extension: "png", dynamic: true }) });
-            }
+        // Footer stuff
+        if (albumData != false && npEmbed.data.footer == undefined) {
+            npEmbed.setFooter({ text: `from ${albumData.name} ${albumData.album_type == 'album' ? 'LP' : 'EP'}`, iconURL: albumData.images[0].url });
+        }
+
+        if (is_mailbox == true && mailbox_member != null) {
+            let mailboxFooterObj = { text: `📬 Sent to you by ${mailbox_member.displayName}`, iconURL: user_who_sent.avatarURL({ extension: "png", dynamic: true }) };
+            if (npEmbed.data.footer != undefined) mailboxFooterObj.text = `${mailboxFooterObj.text} • ${npEmbed.data.footer.text}`;
+            npEmbed.setFooter(mailboxFooterObj);
         }
         
         interaction.editReply({ embeds: [npEmbed] });

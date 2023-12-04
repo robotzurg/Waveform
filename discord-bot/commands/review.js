@@ -104,7 +104,7 @@ module.exports = {
 
             .addStringOption(option => 
                 option.setName('art')
-                    .setDescription('Image link of the song art. Leaving blank will pull from Spotify playback.')
+                    .setDescription('Image link of the song art. Leaving blank will pull from Spotify.')
                     .setRequired(false))),
     help_desc: `Create an song/remix review on Waveform. See the "Song Review Guide" button to find out how this works.\n\n`
     + `The subcommand \`with_spotify\` pulls from your spotify playback to fill in arguments (if logged into Waveform with Spotify),` + 
