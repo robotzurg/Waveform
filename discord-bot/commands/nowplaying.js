@@ -176,8 +176,10 @@ module.exports = {
             }
         }
 
-        npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-            `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+        if (npEmbed.data.description == undefined) {
+            npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
+                `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+        }
 
         // Footer stuff
         if (albumData != false && npEmbed.data.footer == undefined) {
