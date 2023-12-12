@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { average, get_user_reviews, parse_artist_song_data, sort, handle_error, get_review_channel, getEmbedColor, convertToSetterName } = require('../func.js');
-const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -62,18 +62,25 @@ module.exports = {
     `You can view a summary view of all data relating to a song globally by using the \`global\` subcommand, or view a list of all local server reviews using the \`server\` subcommand.\n\n` +
     `The remixers argument should have the remixer specified if you are trying to pull up a remix, the remixer should be put in the song_name or artists arguments.\n\n` +
     `Leaving the artist, song_name, and remixers arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)`,
-	async execute(interaction, client) {
+	async execute(interaction, client, otherCmdArtists = false, otherCmdSongName = false) {
         try {
-
-        let subcommand = interaction.options.getSubcommand();
+        let subcommand = 'server';
         let sortMode = interaction.options.getString('sort_mode');
         if (sortMode == null) sortMode = 'rating_value';
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('song_name');
+
+        if (interaction.commandName != 'nowplaying' && interaction.commandName != 'randomsong') { 
+            subcommand = interaction.options.getSubcommand();
+        } else {
+            artists = otherCmdArtists.join(' & ');
+            song = otherCmdSongName;
+        }
+        
         let remixers = interaction.options.getString('remixers');
         let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
         if (song_info.error != undefined) {
-            await interaction.reply(song_info.error);
+            await interaction.commandName != 'nowplaying' && interaction.commandName != 'randomsong' ? interaction.reply(song_info.error) : interaction.editReply(song_info.error);
             return;
         }
 
@@ -251,9 +258,11 @@ module.exports = {
                 selDisplayName = taggedMemberSel.displayName;
             }
 
+            let rating = db.reviewDB.get(artistArray[0], `${setterSongName}.${userID}.rating`);
+
             select_options.push({
                 label: `${selDisplayName}`,
-                description: `${selDisplayName}'s review of the song.`,
+                description: rating != false && rating != -1 ? `Rating: ${rating}/10` : `No Rating`,
                 value: `${userID}`,
             });
             if (db.reviewDB.get(artistArray[0], `${setterSongName}.${userID}.starred`) == true) {
@@ -326,11 +335,11 @@ module.exports = {
             components = paged_user_list.length > 1 ? [sel_row, btn_row] : [sel_row];
         }
         
-        await interaction.reply({ embeds: [songEmbed], components: components });
+        await interaction.commandName != 'nowplaying' && interaction.commandName != 'randomsong' ? interaction.reply({ embeds: [songEmbed], components: components }) : interaction.editReply({ embeds: [songEmbed], components: components });
         let message = await interaction.fetchReply();
 
         if (subcommand == 'server') {
-            const collector = message.createMessageComponentCollector({ time: 360000 });
+            const collector = message.createMessageComponentCollector({ time: 360000, componentType: ComponentType.StringSelect });
             collector.on('collect', async i => {
                 if (i.customId == 'select') { // Select Menu
 

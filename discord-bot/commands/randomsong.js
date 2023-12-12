@@ -1,4 +1,4 @@
-const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const db = require('../db.js');
 const { get_user_reviews, handle_error, getEmbedColor, convertToSetterName } = require('../func.js');
 
@@ -7,10 +7,12 @@ module.exports = {
         .setName('randomsong')
         .setDescription('Get a random song from the bot that has been reviewed at least once.')
         .setDMPermission(false),
-    help_desc: `This command will give you a random song from the database, from a random artist, and give you basic information about it, and a spotify link if one exists for it.\n\n` + 
-    `Particularly useful if you want to find something random to listen to or review!`,
+    help_desc: `This command will give you a random song from the database, from a random artist, and give you basic information about it, and a spotify link if one exists for it.\n` +
+    `You can also use the "Reviews" button to see relevant reviews in the server of the song, if there are any.\n\n` +
+    `This is particularly useful if you want to find something random to listen to or review!`,
 	async execute(interaction, client) {
         try {
+        await interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
         let songArt, spotifyUrl, yourRating, origArtistArray, artistArray;
         let setterSongName;
@@ -22,6 +24,7 @@ module.exports = {
         let artistSongs = Object.keys(artistObj);
         artistSongs = artistSongs.filter(v => v !== 'pfp_image');
         let endRandomCheck = false;
+        let songDataExists = false;
         let randomSong, songObj;
         while (!endRandomCheck) {
             randomSong = artistSongs[Math.floor(Math.random() * artistSongs.length)];
@@ -94,6 +97,7 @@ module.exports = {
                 }
 
                 if (globalRankNumArray.length != 0) { 
+                    songDataExists = true;
                     randomSongEmbed.setDescription(`\nAvg Global Rating: **\`${Math.round(average(globalRankNumArray) * 10) / 10}\`** \`with ${globalUserArray.length} reviews\`` +
                     `\nAvg Local Rating: **\`${localRankNumArray.length > 0 ? Math.round(average(localRankNumArray) * 10) / 10 : `N/A`}\`** \`with ${localUserArray.length} reviews\`` +
                     `${localStarNum >= 1 ? `\`Local Favorites: \`${localStarNum} ⭐\`` : ''}` + 
@@ -101,6 +105,7 @@ module.exports = {
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 } else if (globalUserArray.length != 0) {
+                    songDataExists = true;
                     randomSongEmbed.setDescription(`Local Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
                     `\`${localStarNum >= 1 ? `\nLocal Favorites: \`${localStarNum} ⭐\`` : ''}` + 
 
@@ -133,7 +138,35 @@ module.exports = {
             randomSongEmbed.setDescription(`${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
         }
         
-        interaction.reply({ embeds: [randomSongEmbed] });
+
+        // Setup button for getsong data
+        const getSongButton = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('getsong')
+                .setLabel('Reviews')
+                .setStyle(ButtonStyle.Primary),
+        );
+
+        interaction.editReply({ embeds: [randomSongEmbed], components: songDataExists ? [getSongButton] : [] });
+        if (songDataExists) {
+            let message = await interaction.fetchReply();
+            const getSongCollector = message.createMessageComponentCollector({ time: 60000, max: 1 });
+
+            getSongCollector.on('collect', async i => {
+                if (i.customId == 'getsong') {
+                    i.update({ components: [] });
+                    let command = client.commands.get('getsong');
+                    await command.execute(interaction, client, artistArray, randomSong);
+                }
+            });
+
+            getSongCollector.on('end', collected => {
+                if (collected.size == 0) {
+                    interaction.editReply({ embeds: [randomSongEmbed], components: [] });
+                }
+            });
+        }
 
         } catch (err) {
             let error = err;

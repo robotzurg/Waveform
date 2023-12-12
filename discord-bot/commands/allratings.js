@@ -5,7 +5,7 @@ const _ = require('lodash');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('ratingcount')
+        .setName('allratings')
         .setDescription('View a list of all the amount of times a user has given specific number ratings.')
         .setDMPermission(false)
         .addUserOption(option => 
