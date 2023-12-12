@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
-const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art, update_art, updateStats, getEmbedColor, convertToSetterName } = require('../func.js');
+const { handle_error, review_ep, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art, update_art, updateStats, getEmbedColor, convertToSetterName, getTrackList } = require('../func.js');
 const SpotifyWebApi = require('spotify-web-api-node');
 require('dotenv').config();
 
@@ -116,6 +116,8 @@ module.exports = {
             let art = interaction.options.getString('art');
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('ep_name');
+            let trackList = false;
+            let passesChecks = true;
 
             // Handle spotify link if we have one
             if (interaction.options.getSubcommand() == 'spotify_link') {
@@ -155,15 +157,25 @@ module.exports = {
                             }
                         });
                         artists = artists.join(' & ');
+                        trackList = getTrackList(data, artists.split(' & '), []);
+                        passesChecks = trackList[1];
+                        trackList = trackList[0];
                     }).catch((err) => {
                         console.log(`failed to read link because of ${err}`);
                     });
+
+                    if (passesChecks == 'length') {
+                        return interaction.reply('This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.');
+                    } else if (passesChecks == 'too_long') {
+                        return interaction.reply(`This LP contains too many songs, Waveform can currently only review up to a maximum of 25 song long albums.`);
+                    }
+
                 } else if (trackLink.includes("track")) {
                     return interaction.reply('You must use `/review` to review an single/remix, and you have input an EP/LP link. Please input a EP/LP link.');
                 }
             }
 
-            let song_info = await parse_artist_song_data(interaction, artists, ep);
+            let song_info = await parse_artist_song_data(interaction, artists, ep, null, trackList);
             if (song_info.error != undefined) {
                 await interaction.reply(song_info.error);
                 db.user_stats.set(interaction.user.id, false, 'current_ep_review');

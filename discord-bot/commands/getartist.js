@@ -133,6 +133,12 @@ module.exports = {
                     epReviewNum = epReviewNum.filter(x => x != 'songs');
                     epReviewNum = epReviewNum.filter(x => x != 'tags');
 
+                    // Get EP URL if one exists
+                    let epUrl = `https://google.com`;
+                    if (artistObj[setterEpSong].spotify_uri) {
+                        epUrl = `https://open.spotify.com/album/${artistObj[setterEpSong].spotify_uri.replace('spotify:album:', '')}`;
+                    }
+
                     for (let s = 0; s < epReviewNum.length; s++) {
                         if (artistObj[setterEpSong][epReviewNum[s]].starred == true) epStarNum += 1;
                     }
@@ -140,8 +146,8 @@ module.exports = {
                     epReviewNum = epReviewNum.length;
                     let epDetails = `\`${epReviewNum} reviews\`${epStarNum > 0 ? ` \`${epStarNum} ⭐\`` : ``}`;
 
-                    let epData = [`**${epKeyArray[i]}` + 
-                    `${(epCollabArray.length != 0) ? ` (with ${epCollabArray.join(' & ')})` : ``} ${epDetails}**`];
+                    let epData = [`**[${epKeyArray[i]}](${epUrl})` + 
+                    `${(epCollabArray.length != 0) ? ` (with ${epCollabArray.join(' & ')})` : ``}** ${epDetails}`];
                     let epSongs = artistObj[setterEpSong].songs;
                     if (epSongs == undefined) epSongs = [];
 
@@ -162,6 +168,11 @@ module.exports = {
 
                         localReviewNum = localReviews.length;
                         globalReviewNum = globalReviews.length;
+                        
+                        let epSongUrl = 'https://google.com';
+                        if (songObj.spotify_uri) {
+                            epSongUrl = `https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')}`;
+                        }
                         
                         if (subcommand == 'global') {
                             for (let x = 0; x < globalReviews.length; x++) {
@@ -197,8 +208,8 @@ module.exports = {
                         rankNumArray = subcommand == 'global' ? globalRankNumArray : localRankNumArray;
 
                         if (remixerKeys.length > 0 && reviewNum != 0) {
-                            songDetails = [`\`${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : ``}`, `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
-                            `${starNum != 0 ? `\`${starNum} ⭐\`` : ''}`];
+                            songDetails = [`${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : `\``}`, `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``,
+                            `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``, `${starNum != 0 ? `\`${starNum} ⭐\`` : ''}`];
                             songDetails = songDetails.join(' ');
                         } else if (reviewNum != 0) {
                             songDetails = `${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : ``}\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\`${starNum != 0 ? ` \`${starNum} ⭐\`` : ''}`;
@@ -206,12 +217,12 @@ module.exports = {
                             songDetails = ``;
                         }
 
-                        epData.push([`• ${epSongs[ii]}` + 
+                        let listEpSongName = `${epSongs[ii]}`.replace('*', '\\*');
+                        epData.push([`• [${listEpSongName}](${epSongUrl})` + 
                         `${(collabArray.length != 0) ? ` (with ${collabArray.join(' & ')})` : ``}` + 
                         ` ${songDetails}`]);
 
                         removeItemOnce(songArray, epSongs[ii].replace('[', '_((').replace(']', '))_'));
-                        epData[epData.length - 1][0] = epData[epData.length - 1][0].replace('*', '\\*');
                     }
 
                     epArray.push(epData.join('\n'));
@@ -236,6 +247,12 @@ module.exports = {
 
                     localReviewNum = localReviews.length;
                     globalReviewNum = globalReviews.length;
+
+                    // Get song URL if one exists
+                    let songUrl = `https://google.com`;
+                    if (songObj.spotify_uri) {
+                        songUrl = `https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')}`;
+                    }
 
                     if (subcommand == 'global') {
                         for (let ii = 0; ii < globalReviews.length; ii++) {
@@ -276,8 +293,8 @@ module.exports = {
                     rankNumArray = subcommand == 'global' ? globalRankNumArray : localRankNumArray;
 
                     if (remixerKeys.length > 0 && reviewNum != 0) {
-                        songDetails = [`\`${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : ``}`, `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``,
-                        `${starNum != 0 ? `\`${starNum} ⭐\`` : ''}`];
+                        songDetails = [`${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : `\``}`, `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, 
+                        `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``, `${starNum != 0 ? `\`${starNum} ⭐\`` : ''}`];
                         songDetails = songDetails.join(' ');
                     } else if (reviewNum != 0) {
                         songDetails = `${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : ``}\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\`${starNum != 0 ? ` \`${starNum} ⭐\`` : ''}`;
@@ -286,15 +303,15 @@ module.exports = {
                     }
 
                     if (songArray[i].includes('Remix')) { // Remixes
-                        remixArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• ${rmxOgArtistArray.join(' & ')} - ${songArray[i]} ${songDetails}`]);
-                        // Escape character the stars so that they don't italicize the texts
-                        remixArray[remixArray.length - 1][1] = remixArray[remixArray.length - 1][1].replace('*', '\\*');
+                        let listSongName = `${rmxOgArtistArray.join(' & ')} - ${songArray[i]}`.replace('*', '\\*');
+                        listSongName = `**${listSongName}**`;
+                        remixArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• [${listSongName}](${songUrl}) ${songDetails}`]);
                     } else { // Singles
-                        singleArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• ${songArray[i]}` + 
+                        let listSongName = `${songArray[i]}`.replace('*', '\\*');
+                        listSongName = `**${listSongName}**`;
+                        singleArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• [${listSongName}](${songUrl})` + 
                         `${(collabArray.length != 0) ? ` (with ${collabArray.join(' & ')})` : ``}` + 
                         ` ${songDetails}`]);
-                        // Escape character the stars so that they don't italicize the text
-                        singleArray[singleArray.length - 1][1] = singleArray[singleArray.length - 1][1].replace('*', '\\*');
                     }
                 }
 

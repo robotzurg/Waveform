@@ -1,4 +1,4 @@
-const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
+const { EmbedBuilder, SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const db = require('../db.js');
 const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data, getEmbedColor, convertToSetterName } = require('../func.js');
 const ms_format = require('format-duration');
@@ -9,13 +9,15 @@ module.exports = {
         .setName('nowplaying')
         .setDescription('Display your currently playing song on Spotify.')
         .setDMPermission(false),
-    help_desc: `If logged into Waveform with Spotify, this command will display your currently playing song, and some basic data in Waveform about the song, if any exists.\n\n` + 
+    help_desc: `If logged into Waveform with Spotify, this command will display your currently playing song, and some basic data in Waveform about the song, if any exists.\n` +
+    `You can also use the "Reviews" button to see relevant reviews in the server of the song, if there are any.\n\n` + 
     `This requires /login to be successfully run before it can be used, and can only be used with Spotify.`,
 	async execute(interaction, client) {
         try {
         await interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
         let songArt, spotifyUrl, spotifyUri, yourRating, origArtistArray, artistArray, songName, songDisplayName, noSong = false, isPlaying = true, isPodcast = false, validSong = true;
+        let songDataExists = false;
         let albumData;
         let setterSongName, song_info;
         let songLength, songCurMs, musicProgressBar = false; // Song length bar variables
@@ -26,7 +28,8 @@ module.exports = {
         await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
             if (data.body.item == undefined) { noSong = true; return; }
             if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
-            albumData = data.body.item.album;
+            albumData = data.body.item.album;  
+
             if ((albumData.total_tracks <= 1 && !(albumData.total_tracks == 1 && data.body.item.duration_ms >= 1.2e+6)) || albumData.total_tracks > 25) {
                 albumData = false;
             }
@@ -142,6 +145,7 @@ module.exports = {
                 }
 
                 if (globalRankNumArray.length != 0) { 
+                    songDataExists = true;
                     npEmbed.setDescription(`\nAvg Global Rating: **\`${Math.round(average(globalRankNumArray) * 10) / 10}\`** \`with ${globalUserArray.length} reviews\`` +
                     `\nAvg Local Rating: **\`${localRankNumArray.length > 0 ? Math.round(average(localRankNumArray) * 10) / 10 : `N/A`}\`** \`with ${localUserArray.length} reviews\`` + 
                     `${localStarNum >= 1 ? `\nLocal Favorites: \`${localStarNum} ⭐\`` : ''}` + 
@@ -150,6 +154,7 @@ module.exports = {
                     `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 } else if (globalUserArray.length != 0) {
+                    songDataExists = true;
                     npEmbed.setDescription(`Local Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
                     `\`${localStarNum >= 1 ? `\nLocal Favorites: \`${localStarNum} ⭐\`` : ''}` + 
 
@@ -183,7 +188,7 @@ module.exports = {
 
         // Footer stuff
         if (albumData != false && npEmbed.data.footer == undefined) {
-            npEmbed.setFooter({ text: `from ${albumData.name} ${albumData.album_type == 'album' ? 'LP' : 'EP'}`, iconURL: albumData.images[0].url });
+            npEmbed.setFooter({ text: `from ${albumData.name} ${albumData.name.includes(' LP') && albumData.name.includes(' EP') ? albumData.album_type == 'album' ? 'LP' : 'EP' : ``}`, iconURL: albumData.images[0].url });
         }
 
         if (is_mailbox == true && mailbox_member != null) {
@@ -192,7 +197,34 @@ module.exports = {
             npEmbed.setFooter(mailboxFooterObj);
         }
         
-        interaction.editReply({ embeds: [npEmbed] });
+        // Setup button for getsong data
+        const getSongButton = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('getsong')
+                .setLabel('Reviews')
+                .setStyle(ButtonStyle.Primary),
+        );
+
+        interaction.editReply({ embeds: [npEmbed], components: songDataExists ? [getSongButton] : [] });
+        if (songDataExists) {
+            let message = await interaction.fetchReply();
+            const getSongCollector = message.createMessageComponentCollector({ time: 60000, max: 1 });
+
+            getSongCollector.on('collect', async i => {
+                if (i.customId == 'getsong') {
+                    i.update({ components: [] });
+                    let command = client.commands.get('getsong');
+                    await command.execute(interaction, client, artistArray, songName);
+                }
+            });
+
+            getSongCollector.on('end', collected => {
+                if (collected.size == 0) {
+                    interaction.editReply({ embeds: [npEmbed], components: [] });
+                }
+            });
+        }
 
         } catch (err) {
             let error = err;

@@ -39,7 +39,7 @@ module.exports = {
                     .setRequired(false))),
     help_desc: `Pulls up all data relating to an EP/LP in Waveform, such as all reviews, rating averages, and more.\n\n` +
     `You can view a summary view of all data relating to an EP/LP globally by using the \`server\` subcommand, or view a list of all local server reviews using the \`server\` subcommand.\n\n` +
-    `You can also view individual server users EP/LP reviews with the drop down menu.\n\n` +
+    `You can also view individual server users EP/LP review with the drop down menu.\n\n` +
     `Leaving the artist and ep_name arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)`,
 	async execute(interaction, client) {
         try {
@@ -190,9 +190,11 @@ module.exports = {
                     selDisplayName = taggedMemberSel.displayName;
                 }
 
+                let selRating = db.reviewDB.get(artistArray[0], `${setterEpName}.${userID}.rating`);
+
                 select_options.push({
                     label: `${selDisplayName}`,
-                    description: `${selDisplayName}'s review of the ${epType}.`,
+                    description: selRating != false && selRating != -1 ? `Overall Rating: ${selRating}/10` : `No Overall Rating`,
                     value: `${userID}`,
                 });
 
