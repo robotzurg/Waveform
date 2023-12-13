@@ -145,18 +145,22 @@ module.exports = {
                 }
 
                 if (globalRankNumArray.length != 0) { 
-                    songDataExists = true;
+                    if (localRankNumArray.length > 0) {
+                        songDataExists = true;
+                    }
                     npEmbed.setDescription(`\nAvg Global Rating: **\`${Math.round(average(globalRankNumArray) * 10) / 10}\`** \`with ${globalUserArray.length} reviews\`` +
-                    `\nAvg Local Rating: **\`${localRankNumArray.length > 0 ? Math.round(average(localRankNumArray) * 10) / 10 : `N/A`}\`** \`with ${localUserArray.length} reviews\`` + 
-                    `${localStarNum >= 1 ? `\nLocal Favorites: \`${localStarNum} ⭐\`` : ''}` + 
+                    `\nAvg Local Rating: **\`${localRankNumArray.length > 0 ? Math.round(average(localRankNumArray) * 10) / 10 : `N/A`}\`** \`with ${localUserArray.length} reviews` +
+                    `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + 
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 } else if (globalUserArray.length != 0) {
-                    songDataExists = true;
-                    npEmbed.setDescription(`Local Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
-                    `\`${localStarNum >= 1 ? `\nLocal Favorites: \`${localStarNum} ⭐\`` : ''}` + 
+                    if (localUserArray.length > 0) {
+                        songDataExists = true;
+                    }
+                    npEmbed.setDescription(`Local Reviews: \`${localUserArray.length != 0 ? `${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : `No Reviews`}` + 
+                    `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + 
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
@@ -202,7 +206,7 @@ module.exports = {
         .addComponents(
             new ButtonBuilder()
                 .setCustomId('getsong')
-                .setLabel('Reviews')
+                .setLabel('See Reviews')
                 .setStyle(ButtonStyle.Primary),
         );
 
@@ -213,7 +217,7 @@ module.exports = {
 
             getSongCollector.on('collect', async i => {
                 if (i.customId == 'getsong') {
-                    i.update({ components: [] });
+                    i.update({ content: null });
                     let command = client.commands.get('getsong');
                     await command.execute(interaction, client, artistArray, songName);
                 }
