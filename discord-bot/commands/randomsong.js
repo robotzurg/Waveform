@@ -12,7 +12,9 @@ module.exports = {
     `This is particularly useful if you want to find something random to listen to or review!`,
 	async execute(interaction, client) {
         try {
-        await interaction.deferReply();
+        if (!interaction.deferred && !interaction.replied) {
+            await interaction.deferReply();
+        }
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
         let songArt, spotifyUrl, yourRating, origArtistArray, artistArray;
         let setterSongName;
@@ -26,14 +28,21 @@ module.exports = {
         let endRandomCheck = false;
         let songDataExists = false;
         let randomSong, songObj;
+        // Randomly check for song, rerolling the artist every time
         while (!endRandomCheck) {
             randomSong = artistSongs[Math.floor(Math.random() * artistSongs.length)];
             setterSongName = convertToSetterName(randomSong);
             songObj = db.reviewDB.get(randomArtist, `${setterSongName}`);
-            let userArray = get_user_reviews(songObj);
+            let userArray = await get_user_reviews(songObj);
             if (userArray.length != 0 && !randomSong.includes(' EP') && !randomSong.includes(' LP')) {
                 endRandomCheck = true;
+                break;
             }
+
+            randomArtist = db.reviewDB.randomKey();
+            artistObj = db.reviewDB.get(randomArtist);
+            artistSongs = Object.keys(artistObj);
+            artistSongs = artistSongs.filter(v => v !== 'pfp_image');
         }
 
         if (randomSong.includes(' Remix)')) {
@@ -97,22 +106,28 @@ module.exports = {
                 }
 
                 if (globalRankNumArray.length != 0) { 
-                    songDataExists = true;
+                    if (localRankNumArray.length > 0) {
+                        songDataExists = true;
+                    }
                     randomSongEmbed.setDescription(`\nAvg Global Rating: **\`${Math.round(average(globalRankNumArray) * 10) / 10}\`** \`with ${globalUserArray.length} reviews\`` +
-                    `\nAvg Local Rating: **\`${localRankNumArray.length > 0 ? Math.round(average(localRankNumArray) * 10) / 10 : `N/A`}\`** \`with ${localUserArray.length} reviews\`` +
-                    `${localStarNum >= 1 ? `\`Local Favorites: \`${localStarNum} ⭐\`` : ''}` + 
+                    `\nAvg Local Rating: **\`${localRankNumArray.length > 0 ? Math.round(average(localRankNumArray) * 10) / 10 : `N/A`}\`** \`with ${localUserArray.length} reviews` +
+                    `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + 
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 } else if (globalUserArray.length != 0) {
-                    songDataExists = true;
-                    randomSongEmbed.setDescription(`Local Reviews: ${localUserArray.length != 0 ? `\`${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : ``}` + 
-                    `\`${localStarNum >= 1 ? `\nLocal Favorites: \`${localStarNum} ⭐\`` : ''}` + 
+                    if (localUserArray.length > 0) {
+                        songDataExists = true;
+                    }
+                    randomSongEmbed.setDescription(`Local Reviews: \`${localUserArray.length != 0 ? `${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : `No Reviews`}` + 
+                    `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + 
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 } else {
-                    randomSongEmbed.setDescription(`${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+                    if (spotifyUrl == 'N/A') {
+                        randomSongEmbed.setDescription(`<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
+                    }
                 }
 
                 if (songObj.ep != undefined && songObj.ep != false) {
@@ -140,33 +155,44 @@ module.exports = {
         
 
         // Setup button for getsong data
-        const getSongButton = new ActionRowBuilder()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId('getsong')
-                .setLabel('Reviews')
-                .setStyle(ButtonStyle.Primary),
-        );
+        const randomButtons = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('reroll')
+                    .setLabel('Get New Song')
+                    .setStyle(ButtonStyle.Primary),
+            );
 
-        interaction.editReply({ embeds: [randomSongEmbed], components: songDataExists ? [getSongButton] : [] });
         if (songDataExists) {
-            let message = await interaction.fetchReply();
-            const getSongCollector = message.createMessageComponentCollector({ time: 60000, max: 1 });
-
-            getSongCollector.on('collect', async i => {
-                if (i.customId == 'getsong') {
-                    i.update({ components: [] });
-                    let command = client.commands.get('getsong');
-                    await command.execute(interaction, client, artistArray, randomSong);
-                }
-            });
-
-            getSongCollector.on('end', collected => {
-                if (collected.size == 0) {
-                    interaction.editReply({ embeds: [randomSongEmbed], components: [] });
-                }
-            });
+            randomButtons.addComponents(
+                new ButtonBuilder()
+                    .setCustomId('getsong')
+                    .setLabel('See Reviews')
+                    .setStyle(ButtonStyle.Secondary),
+            );
         }
+
+        interaction.editReply({ embeds: [randomSongEmbed], components: [randomButtons] });
+        let message = await interaction.fetchReply();
+        const getSongCollector = message.createMessageComponentCollector({ idle: 60000, max: 1 });
+
+        getSongCollector.on('collect', async i => {
+            if (i.customId == 'getsong') {
+                i.update({ content: null });
+                let command = client.commands.get('getsong');
+                await command.execute(interaction, client, artistArray, randomSong);
+            } else {
+                i.update({ content: null });
+                let command = client.commands.get('randomsong');
+                await command.execute(interaction, client);
+            }
+        });
+
+        getSongCollector.on('end', collected => {
+            if (collected.size == 0) {
+                interaction.editReply({ embeds: [randomSongEmbed], components: [] });
+            }
+        });
 
         } catch (err) {
             let error = err;

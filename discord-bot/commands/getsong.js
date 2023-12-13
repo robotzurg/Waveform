@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { average, get_user_reviews, parse_artist_song_data, sort, handle_error, get_review_channel, getEmbedColor, convertToSetterName } = require('../func.js');
-const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -286,6 +286,8 @@ module.exports = {
                 .addOptions(select_options),
         );
         
+        let components = [sel_row];
+        
         if (subcommand == 'server') {
             if (userArray.length != 0) songEmbed.addFields([{ name: 'Reviews:', value: paged_user_list[0].join('\n') }]);
         } else {
@@ -330,16 +332,28 @@ module.exports = {
             songEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_user_list.length}` });
         }
 
-        let components = null;
         if (subcommand == 'server') {
-            components = paged_user_list.length > 1 ? [sel_row, btn_row] : [sel_row];
+            if (paged_user_list.length > 1) components.push(btn_row);
+        }
+        
+        if (interaction.commandName == 'randomsong') {
+            // Setup back button for random song
+            let backButton = new ActionRowBuilder()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId('random_back')
+                    .setLabel('Back')
+                    .setStyle(ButtonStyle.Danger),
+            );
+            components.push(backButton);
         }
         
         await interaction.commandName != 'nowplaying' && interaction.commandName != 'randomsong' ? interaction.reply({ embeds: [songEmbed], components: components }) : interaction.editReply({ embeds: [songEmbed], components: components });
         let message = await interaction.fetchReply();
+        let noIdleReset = false;
 
         if (subcommand == 'server') {
-            const collector = message.createMessageComponentCollector({ time: 360000, componentType: ComponentType.StringSelect });
+            const collector = message.createMessageComponentCollector({ time: 360000 });
             collector.on('collect', async i => {
                 if (i.customId == 'select') { // Select Menu
 
@@ -426,7 +440,7 @@ module.exports = {
                         await i.update({ content: `[View Review Message](${url})`, embeds: [reviewEmbed], components: components });
                     }
 
-                } else {
+                } else if (i.customId == 'left' || i.customId == 'right') {
                     (i.customId == 'left') ? page_num -= 1 : page_num += 1;
                     page_num = _.clamp(page_num, 0, paged_user_list.length - 1);
 
@@ -469,11 +483,19 @@ module.exports = {
                     components = [sel_row, btn_row];
 
                     i.update({ embeds: [songEmbed], components: components });
+                } else if (i.customId == 'random_back') {
+                    i.update({ components: [] });
+                    let command = client.commands.get('randomsong');
+                    await command.execute(interaction, client);
+                    noIdleReset = true;
+                    await collector.stop();
                 }
             });
 
             collector.on('end', async () => {
-                interaction.editReply({ content: ` `, embeds: [songEmbed], components: [] });
+                if (noIdleReset == false) {
+                    interaction.editReply({ content: ` `, embeds: [songEmbed], components: [] });
+                }
             });
         }
 
