@@ -207,6 +207,7 @@ client.on('interactionCreate', async interaction => {
 
     if (!db.user_stats.has(interaction.user.id)) {
         db.user_stats.set(interaction.user.id, {
+            lfm_username: false,
             access_token: "na",
             refresh_token: false,
             current_ep_review: false,
@@ -278,6 +279,7 @@ client.on('interactionCreate', async interaction => {
 client.on('guildMemberAdd', async (member) => {
     if (!db.user_stats.has(member.user.id)) {
         db.user_stats.set(member.user.id, {
+            lfm_username: false,
             access_token: "na",
             refresh_token: false,
             current_ep_review: false,
