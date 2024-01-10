@@ -218,6 +218,7 @@ client.on('interactionCreate', async interaction => {
             mailbox_list: [],
             mailbox_playlist_id: false,
             mailbox_history: [],
+            mailbox_blocklist: [],
             config: {
                 mail_filter: { // Filter settings for what type of songs you want to be sent, all default to true
                     sp: true, // Spotify
@@ -290,6 +291,7 @@ client.on('guildMemberAdd', async (member) => {
             mailbox_list: [],
             mailbox_playlist_id: false,
             mailbox_history: [],
+            mailbox_blocklist: [],
             config: {
                 mail_filter: { // Filter settings for what type of songs you want to be sent, all default to true
                     sp: true, // Spotify

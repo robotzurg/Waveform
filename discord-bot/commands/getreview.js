@@ -1,6 +1,6 @@
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const db = require("../db.js");
-const { parse_artist_song_data, handle_error, get_review_channel, getEmbedColor, convertToSetterName } = require('../func.js');
+const { parse_artist_song_data, handle_error, get_review_channel, getEmbedColor, convertToSetterName, lfm_api_setup } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -43,7 +43,7 @@ module.exports = {
                 await interaction.reply(song_info.error);
                 return;
             }
-        
+
             let origArtistArray = song_info.prod_artists;
             let songName = song_info.song_name;
             let setterSongName = convertToSetterName(songName);
@@ -58,6 +58,10 @@ module.exports = {
             } else {
                 taggedMember = await interaction.guild.members.fetch(taggedUser.id);
             }
+
+            // Last.fm
+            let lfmApi = await lfm_api_setup(taggedUser.id);
+            let lfmScrobbles = false;
 
             let rreview;
             let rscore;
@@ -78,6 +82,13 @@ module.exports = {
             }
             if (db.reviewDB.get(artistArray[0], `${setterEpName}`) == undefined) epfrom = false; 
             let songArt = songObj.art;
+
+            // Check last.fm
+            if (lfmApi != false) {
+                let lfmUsername = db.user_stats.get(taggedUser.id, 'lfm_username');
+                let lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0], track: songName, username: lfmUsername });
+                lfmScrobbles = lfmTrackData.userplaycount;
+            }
 
             rreview = songReviewObj.review;
             if (rreview == '-') rreview = false;
@@ -119,7 +130,7 @@ module.exports = {
 
             reviewEmbed.setAuthor({ name: `${taggedMember.displayName}'s review`, iconURL: `${taggedUser.avatarURL({ extension: "png" })}` });
 
-            if (rscore !== false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rscore}/10**`, inline: true }]);
+            if (rscore !== false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rscore}/10**`, inline: true }/*, { name: 'Scrobbles: ', value: '**0**', inline: true }*/]);
             if (rreview != false) reviewEmbed.setDescription(rreview);
 
             let reviewMsgID = songReviewObj.msg_id;
@@ -138,9 +149,11 @@ module.exports = {
             reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ extension: "png" }) : songArt);
 
             if (rsentby != false) {
-                reviewEmbed.setFooter({ text: `Sent by ${usrSentBy.displayName}`, iconURL: `${usrSentBy.user.avatarURL({ extension: "png" })}` });
+                reviewEmbed.setFooter({ text: `Sent by ${usrSentBy.displayName}${lfmScrobbles != false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: `${usrSentBy.user.avatarURL({ extension: "png" })}` });
             } else if (epfrom != undefined && epfrom != false) {
-                reviewEmbed.setFooter({ text: `from ${epfrom}`, iconURL: db.reviewDB.get(artistArray[0], `${setterEpName}`).art });
+                reviewEmbed.setFooter({ text: `from ${epfrom}${lfmScrobbles != false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: db.reviewDB.get(artistArray[0], `${setterEpName}`).art });
+            } else if (lfmScrobbles != false) {
+                reviewEmbed.setFooter({ text: `Scrobbles: ${lfmScrobbles}` });
             }
 
             if ((rurl == undefined && rtimestamp == undefined) || rurl == false) {

@@ -3,6 +3,7 @@ const db = require('../db.js');
 const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data, getEmbedColor, convertToSetterName, lfm_api_setup } = require('../func.js');
 const ms_format = require('format-duration');
 const progressbar = require('string-progressbar');
+const _ = require('lodash');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,7 +12,8 @@ module.exports = {
         .setDMPermission(false),
     help_desc: `If logged into Waveform with Spotify, this command will display your currently playing song, and some basic data in Waveform about the song, if any exists.\n` +
     `You can also use the "Reviews" button to see relevant reviews in the server of the song, if there are any.\n\n` + 
-    `This requires /login to be successfully run before it can be used, and can only be used with Spotify.`,
+    `This requires /login to be successfully run before it can be used, and can only be used with Spotify.\n` + 
+    `You can also view your song scrobbles on Last.fm, if you are logged into Last.fm on Waveform.`,
 	async execute(interaction, client) {
         try {
         await interaction.deferReply();
@@ -30,7 +32,6 @@ module.exports = {
             let currentlyPlaying = recentSongs.track[0];
             let lfmUsername = db.user_stats.get(interaction.user.id, 'lfm_username');
             lfmTrackData = await lfmApi.track_getInfo({ artist: currentlyPlaying.artist['#text'], track: currentlyPlaying.name, username: lfmUsername });
-            console.log(lfmTrackData);
         }
 
         if (spotifyApi == false) return interaction.editReply(`This command requires you to use \`/login\` `);
@@ -51,13 +52,9 @@ module.exports = {
                 spotifyUrl = false;
                 songArt = false;
                 albumData = false;
-                if (lfmTrackData != false) {
-                    console.log(lfmTrackData);
-                    if (lfmTrackData.album.image != undefined) {
-                        songArt = lfmTrackData.album.image[3]['#text'];
-                    }
-                }
+                lfmTrackData = false;
             }
+
             songLength = data.body.item.duration_ms;
             songCurMs = data.body.progress_ms;
             musicProgressBar = progressbar.splitBar(songLength / 1000, songCurMs / 1000, 12)[0];
@@ -117,6 +114,14 @@ module.exports = {
                     });
                 }
             }
+        }
+
+        if (lfmTrackData != false && lfmTrackData != undefined) { 
+            if (!_.lowerCase(lfmTrackData.name).includes(_.lowerCase(songName)) && !_.lowerCase(lfmTrackData.name).includes(_.lowerCase(songDisplayName))) {
+                lfmTrackData = false;
+            }
+        } else {
+            lfmTrackData = false;
         }
 
         const npEmbed = new EmbedBuilder()

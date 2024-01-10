@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { average, get_user_reviews, handle_error, get_review_channel, parse_artist_song_data, sort, getEmbedColor, convertToSetterName } = require('../func.js');
+const { average, get_user_reviews, handle_error, get_review_channel, parse_artist_song_data, sort, getEmbedColor, convertToSetterName, lfm_api_setup } = require('../func.js');
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, Embed, ButtonBuilder, ButtonStyle } = require('discord.js');
 const _ = require('lodash');
 
@@ -288,6 +288,10 @@ module.exports = {
                         });
                         taggedUser = await client.users.fetch(i.values[0]);
 
+                        // Last.fm
+                        let lfmApi = await lfm_api_setup(taggedUser.id);
+                        let lfmScrobbles = false;
+
                         if (taggedMember == undefined) {
                             displayName = taggedUser.username;
                         } else {
@@ -312,6 +316,19 @@ module.exports = {
 
                         if (ep_sent_by != undefined && ep_sent_by != false && taggedMember != undefined) {
                             ep_sent_by = await client.users.fetch(ep_sent_by);
+                        }
+
+                        // Check last.fm
+                        if (lfmApi != false) {
+                            let lfmUsername = db.user_stats.get(taggedUser.id, 'lfm_username');
+                            let lfmAlbumData = await lfmApi.album_getInfo({ artist: origArtistArray[0], album: epName.replace(' LP', '').replace(' EP', ''), username: lfmUsername });
+                            if (lfmAlbumData.success == false) {
+                                lfmAlbumData = await lfmApi.album_getInfo({ artist: origArtistArray[0], album: epName, username: lfmUsername });
+                                lfmScrobbles = lfmAlbumData.userplaycount;
+                            } else {
+                                lfmScrobbles = lfmAlbumData.userplaycount;
+                            }
+                            if (lfmScrobbles == undefined) lfmScrobbles = false;
                         }
 
                         const epReviewEmbed = new EmbedBuilder();
@@ -398,7 +415,9 @@ module.exports = {
 
                         epReviewEmbed.setThumbnail(ep_art);
                         if (ep_sent_by != false && ep_sent_by != undefined) {
-                            epReviewEmbed.setFooter({ text: `Sent by ${ep_sent_by.username}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
+                            epReviewEmbed.setFooter({ text: `Sent by ${ep_sent_by.username}${lfmScrobbles != false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
+                        } else if (lfmScrobbles != false) {
+                            epReviewEmbed.setFooter({ text: `Scrobbles: ${lfmScrobbles}` });
                         }
 
                         let reviewMsgID = epReviewObj.msg_id;

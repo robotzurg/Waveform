@@ -3,6 +3,7 @@ const { SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 const db = require('../db.js');
 const { spotify_api_setup } = require('../func.js');
+const lastfm = require('lastfm-njs');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -19,9 +20,9 @@ module.exports = {
                     option.setName('username')
                         .setDescription('Your Last.fm username (case sensitive!)')
                         .setRequired(true))),
-    help_desc: `Connect your Spotify account to Waveform, unlocking the main features of the bot such as using your spotify playback in place of arguments, Waveform Mailbox functionality, and more.\n\n` +
-    `In order for this command to work, Waveform must be able to DM you, so please ensure you allow it to do so!\n\n` + 
-    `This command only needs to be run one time for you to stay logged in, unless your password gets changed or you make a new Spotify account.`,
+    help_desc: `Connect your Spotify or Last.fm account to Waveform, unlocking the main features of the bot such as using your spotify playback in place of arguments, Waveform Mailbox functionality, and more.\n\n` +
+    `In order for the Spotify version of this command to work, Waveform must be able to DM you, so please ensure you allow it to do so!\n\n` + 
+    `This command only needs to be run one time for you to stay logged in, unless your password gets changed or you make a new Spotify account, or for Last.fm, if you change your username.`,
 	async execute(interaction) {
         let loginType = interaction.options.getSubcommand();
         
@@ -52,8 +53,22 @@ module.exports = {
             });
         } else {
             let lfmUsername = interaction.options.getString('username');
-            db.user_stats.set(interaction.user.id, lfmUsername, 'lfm_username');
-            interaction.reply(`Connected the Last.fm account \`${lfmUsername}\` to Waveform!`);
+
+            let lfm = new lastfm.default({
+                apiKey: process.env.LAST_FM_API_KEY,
+                apiSecret: process.env.LAST_FM_API_SECRET,
+                username: lfmUsername,
+            });
+
+            let lfmUserData = await lfm.user_getInfo({ user: lfmUsername });
+            if (lfmUserData.success != false) {
+                db.user_stats.set(interaction.user.id, lfmUsername, 'lfm_username');
+                interaction.reply(`Connected the Last.fm account \`${lfmUsername}\` to Waveform!`);
+            } else {
+                interaction.reply(`The user \`${lfmUsername}\` was not found on Last.fm. Please try again.`);
+            }
+
+            
         }
 
     },
