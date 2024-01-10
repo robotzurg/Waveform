@@ -26,12 +26,16 @@ module.exports = {
         const spotifyApi = await spotify_api_setup(interaction.user.id);
         let lfmApi = await lfm_api_setup(interaction.user.id);
         let lfmTrackData = false;
+        let lfmUsername = db.user_stats.get(interaction.user.id, 'lfm_username');
 
         if (lfmApi != false) {
             let recentSongs = await lfmApi.user_getRecentTracks({ limit: 1 });
-            let currentlyPlaying = recentSongs.track[0];
-            let lfmUsername = db.user_stats.get(interaction.user.id, 'lfm_username');
-            lfmTrackData = await lfmApi.track_getInfo({ artist: currentlyPlaying.artist['#text'], track: currentlyPlaying.name, username: lfmUsername });
+            if (recentSongs.success) {
+                if (recentSongs.track.length != 0) {
+                    let currentlyPlaying = recentSongs.track[0];
+                    lfmTrackData = await lfmApi.track_getInfo({ artist: currentlyPlaying.artist['#text'], track: currentlyPlaying.name, username: lfmUsername });
+                }
+            }
         }
 
         if (spotifyApi == false) return interaction.editReply(`This command requires you to use \`/login\` `);
@@ -118,7 +122,11 @@ module.exports = {
 
         if (lfmTrackData != false && lfmTrackData != undefined) { 
             if (!_.lowerCase(lfmTrackData.name).includes(_.lowerCase(songName)) && !_.lowerCase(lfmTrackData.name).includes(_.lowerCase(songDisplayName))) {
-                lfmTrackData = false;
+                lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0], track: songName, username: lfmUsername });
+                console.log(lfmTrackData);
+                if (lfmTrackData.success == false) {
+                    lfmTrackData = false;
+                }
             }
         } else {
             lfmTrackData = false;
