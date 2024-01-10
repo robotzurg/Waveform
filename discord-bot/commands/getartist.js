@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
-const { average, get_user_reviews, sort, removeItemOnce, handle_error, spotify_api_setup, getEmbedColor, convertToSetterName } = require('../func.js');
+const { average, get_user_reviews, sort, removeItemOnce, handle_error, spotify_api_setup, getEmbedColor, convertToSetterName, lfm_api_setup } = require('../func.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -32,6 +32,8 @@ module.exports = {
             let spotifyCheck;
             let subcommand = interaction.options.getSubcommand();
             let artist = interaction.options.getString('artist');
+            let lfmApi = await lfm_api_setup(interaction.user.id);
+            let lfmScrobbles = false;
             
             // Spotify Check
             if (artist == null) {
@@ -113,129 +115,58 @@ module.exports = {
                     .setEmoji('➡️'),
             );
 
+            // Check last.fm
+            if (lfmApi != false) {
+                let lfmUsername = db.user_stats.get(interaction.user.id, 'lfm_username');
+                let lfmArtistData = await lfmApi.artist_getInfo({ artist: artist, username: lfmUsername });
+                lfmScrobbles = lfmArtistData.stats.userplaycount;
+            }
+
             const artistEmbed = new EmbedBuilder()
                 .setColor(`${getEmbedColor(interaction.member)}`)
                 .setTitle(`${artist}'s reviewed tracks`);
-                if (artistImage != false && artistImage != undefined) {
-                    artistEmbed.setThumbnail(artistImage);
+                
+            if (artistImage != false && artistImage != undefined) {
+                artistEmbed.setThumbnail(artistImage);
+            }
+
+            // Handle EP/LP songs
+            for (let i = 0; i < epKeyArray.length; i++) {
+                let setterEpSong = epKeyArray[i].replace('[', '_((').replace(']', '))_');
+                let epCollabArray = artistObj[setterEpSong].collab;
+                if (epCollabArray == undefined || epCollabArray == false) epCollabArray = [];
+                let epStarNum = 0;
+                let epReviewNum = Object.keys(artistObj[setterEpSong]);
+
+                epReviewNum = epReviewNum.filter(x => x != 'art');
+                epReviewNum = epReviewNum.filter(x => x != 'collab');
+                epReviewNum = epReviewNum.filter(x => x != 'songs');
+                epReviewNum = epReviewNum.filter(x => x != 'tags');
+
+                // Get EP URL if one exists
+                let epUrl = `https://google.com`;
+                if (artistObj[setterEpSong].spotify_uri) {
+                    epUrl = `https://open.spotify.com/album/${artistObj[setterEpSong].spotify_uri.replace('spotify:album:', '')}`;
                 }
 
-                // Handle EP/LP songs
-                for (let i = 0; i < epKeyArray.length; i++) {
-                    let setterEpSong = epKeyArray[i].replace('[', '_((').replace(']', '))_');
-                    let epCollabArray = artistObj[setterEpSong].collab;
-                    if (epCollabArray == undefined || epCollabArray == false) epCollabArray = [];
-                    let epStarNum = 0;
-                    let epReviewNum = Object.keys(artistObj[setterEpSong]);
-
-                    epReviewNum = epReviewNum.filter(x => x != 'art');
-                    epReviewNum = epReviewNum.filter(x => x != 'collab');
-                    epReviewNum = epReviewNum.filter(x => x != 'songs');
-                    epReviewNum = epReviewNum.filter(x => x != 'tags');
-
-                    // Get EP URL if one exists
-                    let epUrl = `https://google.com`;
-                    if (artistObj[setterEpSong].spotify_uri) {
-                        epUrl = `https://open.spotify.com/album/${artistObj[setterEpSong].spotify_uri.replace('spotify:album:', '')}`;
-                    }
-
-                    for (let s = 0; s < epReviewNum.length; s++) {
-                        if (artistObj[setterEpSong][epReviewNum[s]].starred == true) epStarNum += 1;
-                    }
-
-                    epReviewNum = epReviewNum.length;
-                    let epDetails = `\`${epReviewNum} reviews\`${epStarNum > 0 ? ` \`${epStarNum} ⭐\`` : ``}`;
-
-                    let epData = [`**[${epKeyArray[i]}](${epUrl})` + 
-                    `${(epCollabArray.length != 0) ? ` (with ${epCollabArray.join(' & ')})` : ``}** ${epDetails}`];
-                    let epSongs = artistObj[setterEpSong].songs;
-                    if (epSongs == undefined) epSongs = [];
-
-                    for (let ii = 0; ii < epSongs.length; ii++) {
-                        let setterEpSongsII = convertToSetterName(epSongs[ii]);
-                        starNum = 0;
-                        let songObj = artistObj[epSongs[ii].replace('[', '_((').replace(']', '))_')];
-                        if (epSongs[ii].includes(' Remix)')) songObj = db.reviewDB.get(epSongs[ii].split(' Remix)')[0].split('(').splice(1)[0], `${setterEpSongsII}`);
-                        let localReviews, globalReviews;
-                        // Get all users if global, otherwise get only guild specific users if server.
-                        if (subcommand == 'server') {
-                            localReviews = await get_user_reviews(songObj, guildUsers);
-                            globalReviews = [];
-                        } else {
-                            globalReviews = await get_user_reviews(songObj);
-                            localReviews = [];
-                        }
-
-                        localReviewNum = localReviews.length;
-                        globalReviewNum = globalReviews.length;
-                        
-                        let epSongUrl = 'https://google.com';
-                        if (songObj.spotify_uri) {
-                            epSongUrl = `https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')}`;
-                        }
-                        
-                        if (subcommand == 'global') {
-                            for (let x = 0; x < globalReviews.length; x++) {
-                                let rating = songObj[globalReviews[x]].rating;
-                                let starred = songObj[globalReviews[x]].starred;
-                                globalRankNumArray.push(parseFloat(rating));
-                                if (starred == true) { 
-                                    starNum++; 
-                                    fullStarNum++;
-                                    star_check.push(epSongs[ii]);
-                                }
-                            }
-                        } else if (subcommand == 'local') {
-                            for (let x = 0; x < localReviews.length; x++) {
-                                let rating = songObj[localReviews[x]].rating;
-                                let starred = songObj[localReviews[x]].starred;
-                                localRankNumArray.push(parseFloat(rating));
-                                if (starred == true) { 
-                                    starNum++; 
-                                    fullStarNum++;
-                                    star_check.push(epSongs[ii]);
-                                }
-                            }
-                        }
-
-                        let songDetails;
-                        let remixerKeys = songObj.remixers;
-                        let collabArray = songObj.collab; // This also doubles as remixer original artists
-                        if (epSongs[ii].includes(' Remix)')) collabArray = [];
-
-                        let reviewNum, rankNumArray;
-                        reviewNum = subcommand == 'global' ? globalReviewNum : localReviewNum;
-                        rankNumArray = subcommand == 'global' ? globalRankNumArray : localRankNumArray;
-
-                        if (remixerKeys.length > 0 && reviewNum != 0) {
-                            songDetails = [`${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : `\``}`, `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``,
-                            `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``, `${starNum != 0 ? `\`${starNum} ⭐\`` : ''}`];
-                            songDetails = songDetails.join(' ');
-                        } else if (reviewNum != 0) {
-                            songDetails = `${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : ``}\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\`${starNum != 0 ? ` \`${starNum} ⭐\`` : ''}`;
-                        } else {
-                            songDetails = ``;
-                        }
-
-                        let listEpSongName = `${epSongs[ii]}`.replace('*', '\\*');
-                        epData.push([`• [${listEpSongName}](${epSongUrl})` + 
-                        `${(collabArray.length != 0) ? ` (with ${collabArray.join(' & ')})` : ``}` + 
-                        ` ${songDetails}`]);
-
-                        removeItemOnce(songArray, epSongs[ii].replace('[', '_((').replace(']', '))_'));
-                    }
-
-                    epArray.push(epData.join('\n'));
+                for (let s = 0; s < epReviewNum.length; s++) {
+                    if (artistObj[setterEpSong][epReviewNum[s]].starred == true) epStarNum += 1;
                 }
 
-                for (let i = 0; i < songArray.length; i++) {
+                epReviewNum = epReviewNum.length;
+                let epDetails = `\`${epReviewNum} reviews\`${epStarNum > 0 ? ` \`${epStarNum} ⭐\`` : ``}`;
+
+                let epData = [`**[${epKeyArray[i]}](${epUrl})` + 
+                `${(epCollabArray.length != 0) ? ` (with ${epCollabArray.join(' & ')})` : ``}** ${epDetails}`];
+                let epSongs = artistObj[setterEpSong].songs;
+                if (epSongs == undefined) epSongs = [];
+
+                for (let ii = 0; ii < epSongs.length; ii++) {
+                    let setterEpSongsII = convertToSetterName(epSongs[ii]);
                     starNum = 0;
-                    songArray[i] = songArray[i].replace('_((', '[').replace('))_', ']');
-                    let setterSongName = convertToSetterName(songArray[i]);
-                    const songObj = db.reviewDB.get(artist, `${setterSongName}`);
+                    let songObj = artistObj[epSongs[ii].replace('[', '_((').replace(']', '))_')];
+                    if (epSongs[ii].includes(' Remix)')) songObj = db.reviewDB.get(epSongs[ii].split(' Remix)')[0].split('(').splice(1)[0], `${setterEpSongsII}`);
                     let localReviews, globalReviews;
-                    localRankNumArray = [];
-                    globalRankNumArray = [];
                     // Get all users if global, otherwise get only guild specific users if server.
                     if (subcommand == 'server') {
                         localReviews = await get_user_reviews(songObj, guildUsers);
@@ -247,37 +178,32 @@ module.exports = {
 
                     localReviewNum = localReviews.length;
                     globalReviewNum = globalReviews.length;
-
-                    // Get song URL if one exists
-                    let songUrl = `https://google.com`;
+                    
+                    let epSongUrl = 'https://google.com';
                     if (songObj.spotify_uri) {
-                        songUrl = `https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')}`;
+                        epSongUrl = `https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')}`;
                     }
-
+                    
                     if (subcommand == 'global') {
-                        for (let ii = 0; ii < globalReviews.length; ii++) {
-                            let rating = songObj[globalReviews[ii]].rating;
-                            let starred = songObj[globalReviews[ii]].starred;
-                            if (!isNaN(parseFloat(rating))) {
-                                globalRankNumArray.push(parseFloat(rating));
-                            }
+                        for (let x = 0; x < globalReviews.length; x++) {
+                            let rating = songObj[globalReviews[x]].rating;
+                            let starred = songObj[globalReviews[x]].starred;
+                            globalRankNumArray.push(parseFloat(rating));
                             if (starred == true) { 
                                 starNum++; 
                                 fullStarNum++;
-                                star_check.push(songArray[i]);
+                                star_check.push(epSongs[ii]);
                             }
                         }
-                    } else {
-                        for (let ii = 0; ii < localReviews.length; ii++) {
-                            let rating = songObj[localReviews[ii]].rating;
-                            let starred = songObj[localReviews[ii]].starred;
-                            if (!isNaN(parseFloat(rating))) {
-                                localRankNumArray.push(parseFloat(rating));
-                            }
+                    } else if (subcommand == 'local') {
+                        for (let x = 0; x < localReviews.length; x++) {
+                            let rating = songObj[localReviews[x]].rating;
+                            let starred = songObj[localReviews[x]].starred;
+                            localRankNumArray.push(parseFloat(rating));
                             if (starred == true) { 
                                 starNum++; 
                                 fullStarNum++;
-                                star_check.push(songArray[i]);
+                                star_check.push(epSongs[ii]);
                             }
                         }
                     }
@@ -285,15 +211,14 @@ module.exports = {
                     let songDetails;
                     let remixerKeys = songObj.remixers;
                     let collabArray = songObj.collab; // This also doubles as remixer original artists
-                    let rmxOgArtistArray = [];
-                    if (songArray[i].includes(' Remix)')) rmxOgArtistArray = songObj.collab;
+                    if (epSongs[ii].includes(' Remix)')) collabArray = [];
 
                     let reviewNum, rankNumArray;
                     reviewNum = subcommand == 'global' ? globalReviewNum : localReviewNum;
                     rankNumArray = subcommand == 'global' ? globalRankNumArray : localRankNumArray;
 
                     if (remixerKeys.length > 0 && reviewNum != 0) {
-                        songDetails = [`${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : `\``}`, `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, 
+                        songDetails = [`${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : `\``}`, `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``,
                         `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``, `${starNum != 0 ? `\`${starNum} ⭐\`` : ''}`];
                         songDetails = songDetails.join(' ');
                     } else if (reviewNum != 0) {
@@ -302,153 +227,234 @@ module.exports = {
                         songDetails = ``;
                     }
 
-                    if (songArray[i].includes('Remix')) { // Remixes
-                        let listSongName = `${rmxOgArtistArray.join(' & ')} - ${songArray[i]}`.replace('*', '\\*');
-                        listSongName = `**${listSongName}**`;
-                        remixArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• [${listSongName}](${songUrl}) ${songDetails}`]);
-                    } else { // Singles
-                        let listSongName = `${songArray[i]}`.replace('*', '\\*');
-                        listSongName = `**${listSongName}**`;
-                        singleArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• [${listSongName}](${songUrl})` + 
-                        `${(collabArray.length != 0) ? ` (with ${collabArray.join(' & ')})` : ``}` + 
-                        ` ${songDetails}`]);
-                    }
+                    let listEpSongName = `${epSongs[ii]}`.replace('*', '\\*');
+                    epData.push([`• [${listEpSongName}](${epSongUrl})` + 
+                    `${(collabArray.length != 0) ? ` (with ${collabArray.join(' & ')})` : ``}` + 
+                    ` ${songDetails}`]);
+
+                    removeItemOnce(songArray, epSongs[ii].replace('[', '_((').replace(']', '))_'));
                 }
 
-                if (singleArray.length != 0) {
-                    singleArray = sort(singleArray);
-                    pagedSingleArray = _.chunk(singleArray, 10);
-                    if (pagedSingleArray.length > 1) {
-                        pages_active[0] = true;
-                    }
-
-                } else {
-                    type_buttons.components[0].setDisabled(true);
-                }
-
-                if (epArray.length != 0) {
-                    pagedEpArray = _.chunk(epArray, 1);
-                    if (pagedEpArray.length > 1) {
-                        pages_active[1] = true;
-                    }
-                } else {
-                    type_buttons.components[1].setDisabled(true);
-                }
-                
-                if (remixArray.length != 0) {
-                    remixArray = sort(remixArray);
-                    pagedRemixArray = _.chunk(remixArray, 10);
-                    if (pagedRemixArray.length > 1) {
-                        pages_active[2] = true;
-                    }
-                } else {
-                    type_buttons.components[2].setDisabled(true);
-                }
-
-                // These if loops are an easy way to determine which to show upon startup, if the singles are first it'll end the if else stuff early, vice versa with the others.
-                if (singleArray.length != 0) {
-                    focusedName = 'Singles';
-                    focusedArray = pagedSingleArray;
-                    type_buttons.components[0].data.style = ButtonStyle.Success;
-                } else if (epArray.length != 0) {
-                    focusedName = 'EP/LPs';
-                    focusedArray = pagedEpArray;
-                    type_buttons.components[1].data.style = ButtonStyle.Success;
-                } else if (remixArray.length != 0) {
-                    focusedName = 'Remixes';
-                    focusedArray = pagedRemixArray;
-                    type_buttons.components[2].data.style = ButtonStyle.Success;
-                }
-
-                globalRankNumArray = globalRankNumArray.filter(v => !isNaN(v));
-                localRankNumArray = localRankNumArray.filter(v => !isNaN(v));
-                let rankNumArray = interaction.options.getSubcommand() == 'global' ? globalRankNumArray : localRankNumArray;
-
-                if (rankNumArray.length != 0) { 
-                    if (singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) {
-                        if (fullStarNum != 0) { // If the artist has stars on any of their songs
-                            artistEmbed.setDescription(`*The average ${subcommand == 'global' ? 'global' : 'local'} rating of this artist is* ***${Math.round(average(rankNumArray) * 10) / 10}!***\n:star2: **This artist has ${fullStarNum} total favorites!** :star2:`);
-                        } else {
-                            artistEmbed.setDescription(`*The average ${subcommand == 'global' ? 'global' : 'local'} rating of this artist is* ***${Math.round(average(rankNumArray) * 10) / 10}!***`);
-                        }
-
-                        artistEmbed.addFields([{ name: focusedName, value: focusedArray[0].join('\n') }]);
-                        artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
-                    } else {
-                        artistEmbed.setDescription(`No reviewed songs. :(`);
-                    }
-                } else if (singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) {
-                    if (fullStarNum != 0) { // If the artist has stars on any of their songs
-                        artistEmbed.setDescription(`:star2: **This artist has ${fullStarNum} total favorites!** :star2:`);
-                    }
-
-                    artistEmbed.addFields([{ name: focusedName, value: focusedArray[0].join('\n') }]);
-                    artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
-                } else {
-                    artistEmbed.setDescription(`No reviewed songs. :(`);
-                }
-
-
-            if (pages_active[0] == true) {
-                await interaction.reply({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
-            } else {
-                await interaction.reply({ embeds: [artistEmbed], components: [type_buttons] });
+                epArray.push(epData.join('\n'));
             }
 
-            let message = await interaction.fetchReply();
-            let do_arrows = false;
-            
-            const collector = message.createMessageComponentCollector({ time: 360000 });
-
-            collector.on('collect', async i => {
-                do_arrows = false;
-
-                switch (i.customId) {
-                    case 'left': page_num -= 1; do_arrows = true; break;
-                    case 'right': page_num += 1; do_arrows = true; break;
-                    case 'singles':
-                        focusedArray = pagedSingleArray;
-                        focusedName = "Singles";
-                        type_buttons.components[0].data.style = ButtonStyle.Success;
-                        type_buttons.components[1].data.style = ButtonStyle.Secondary;
-                        type_buttons.components[2].data.style = ButtonStyle.Secondary;
-                        if (pages_active[0] == true) do_arrows = true;
-                        page_num = 0; break;
-                    case 'ep':
-                        focusedArray = pagedEpArray;
-                        focusedName = "EPs/LPs";
-                        type_buttons.components[0].data.style = ButtonStyle.Secondary;
-                        type_buttons.components[1].data.style = ButtonStyle.Success;
-                        type_buttons.components[2].data.style = ButtonStyle.Secondary;
-                        if (pages_active[1] == true) do_arrows = true;
-                        page_num = 0; break;
-                    case 'remixes':
-                        focusedArray = pagedRemixArray;
-                        focusedName = "Remixes";
-                        type_buttons.components[0].data.style = ButtonStyle.Secondary;
-                        type_buttons.components[1].data.style = ButtonStyle.Secondary;
-                        type_buttons.components[2].data.style = ButtonStyle.Success;
-                        if (pages_active[2] == true) do_arrows = true;
-                        page_num = 0; break;
-                }
-
-                page_num = _.clamp(page_num, 0, focusedArray.length - 1);
-                artistEmbed.data.fields[0].name = focusedName;
-                artistEmbed.data.fields[0].value = focusedArray[page_num].join('\n');
-                artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
-
-                if (do_arrows == false) { 
-                    artistEmbed.footer = null;
-                    i.update({ embeds: [artistEmbed], components: [type_buttons] });
+            for (let i = 0; i < songArray.length; i++) {
+                starNum = 0;
+                songArray[i] = songArray[i].replace('_((', '[').replace('))_', ']');
+                let setterSongName = convertToSetterName(songArray[i]);
+                const songObj = db.reviewDB.get(artist, `${setterSongName}`);
+                let localReviews, globalReviews;
+                localRankNumArray = [];
+                globalRankNumArray = [];
+                // Get all users if global, otherwise get only guild specific users if server.
+                if (subcommand == 'server') {
+                    localReviews = await get_user_reviews(songObj, guildUsers);
+                    globalReviews = [];
                 } else {
-                    i.update({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
+                    globalReviews = await get_user_reviews(songObj);
+                    localReviews = [];
                 }
 
-            });
+                localReviewNum = localReviews.length;
+                globalReviewNum = globalReviews.length;
 
-            collector.on('end', async () => {
-                interaction.editReply({ embeds: [artistEmbed], components: [] });
-            });
+                // Get song URL if one exists
+                let songUrl = `https://google.com`;
+                if (songObj.spotify_uri) {
+                    songUrl = `https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')}`;
+                }
+
+                if (subcommand == 'global') {
+                    for (let ii = 0; ii < globalReviews.length; ii++) {
+                        let rating = songObj[globalReviews[ii]].rating;
+                        let starred = songObj[globalReviews[ii]].starred;
+                        if (!isNaN(parseFloat(rating))) {
+                            globalRankNumArray.push(parseFloat(rating));
+                        }
+                        if (starred == true) { 
+                            starNum++; 
+                            fullStarNum++;
+                            star_check.push(songArray[i]);
+                        }
+                    }
+                } else {
+                    for (let ii = 0; ii < localReviews.length; ii++) {
+                        let rating = songObj[localReviews[ii]].rating;
+                        let starred = songObj[localReviews[ii]].starred;
+                        if (!isNaN(parseFloat(rating))) {
+                            localRankNumArray.push(parseFloat(rating));
+                        }
+                        if (starred == true) { 
+                            starNum++; 
+                            fullStarNum++;
+                            star_check.push(songArray[i]);
+                        }
+                    }
+                }
+
+                let songDetails;
+                let remixerKeys = songObj.remixers;
+                let collabArray = songObj.collab; // This also doubles as remixer original artists
+                let rmxOgArtistArray = [];
+                if (songArray[i].includes(' Remix)')) rmxOgArtistArray = songObj.collab;
+
+                let reviewNum, rankNumArray;
+                reviewNum = subcommand == 'global' ? globalReviewNum : localReviewNum;
+                rankNumArray = subcommand == 'global' ? globalRankNumArray : localRankNumArray;
+
+                if (remixerKeys.length > 0 && reviewNum != 0) {
+                    songDetails = [`${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : `\``}`, `\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\``, 
+                    `\`${remixerKeys.length} remix${remixerKeys.length > 1 ? 'es' : ''}\``, `${starNum != 0 ? `\`${starNum} ⭐\`` : ''}`];
+                    songDetails = songDetails.join(' ');
+                } else if (reviewNum != 0) {
+                    songDetails = `${rankNumArray.length != 0 ? `\`${Math.round(average(rankNumArray) * 10) / 10} avg\` ` : ``}\`${reviewNum} review${reviewNum > 1 || reviewNum == 0 ? 's' : ''}\`${starNum != 0 ? ` \`${starNum} ⭐\`` : ''}`;
+                } else {
+                    songDetails = ``;
+                }
+
+                if (songArray[i].includes('Remix')) { // Remixes
+                    let listSongName = `${rmxOgArtistArray.join(' & ')} - ${songArray[i]}`.replace('*', '\\*');
+                    listSongName = `**${listSongName}**`;
+                    remixArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• [${listSongName}](${songUrl}) ${songDetails}`]);
+                } else { // Singles
+                    let listSongName = `${songArray[i]}`.replace('*', '\\*');
+                    listSongName = `**${listSongName}**`;
+                    singleArray.push([(star_check.includes(songArray[i])) ? (99999 + starNum) : reviewNum, `• [${listSongName}](${songUrl})` + 
+                    `${(collabArray.length != 0) ? ` (with ${collabArray.join(' & ')})` : ``}` + 
+                    ` ${songDetails}`]);
+                }
+            }
+
+            if (singleArray.length != 0) {
+                singleArray = sort(singleArray);
+                pagedSingleArray = _.chunk(singleArray, 10);
+                if (pagedSingleArray.length > 1) {
+                    pages_active[0] = true;
+                }
+
+            } else {
+                type_buttons.components[0].setDisabled(true);
+            }
+
+            if (epArray.length != 0) {
+                pagedEpArray = _.chunk(epArray, 1);
+                if (pagedEpArray.length > 1) {
+                    pages_active[1] = true;
+                }
+            } else {
+                type_buttons.components[1].setDisabled(true);
+            }
+            
+            if (remixArray.length != 0) {
+                remixArray = sort(remixArray);
+                pagedRemixArray = _.chunk(remixArray, 10);
+                if (pagedRemixArray.length > 1) {
+                    pages_active[2] = true;
+                }
+            } else {
+                type_buttons.components[2].setDisabled(true);
+            }
+
+            // These if loops are an easy way to determine which to show upon startup, if the singles are first it'll end the if else stuff early, vice versa with the others.
+            if (singleArray.length != 0) {
+                focusedName = 'Singles';
+                focusedArray = pagedSingleArray;
+                type_buttons.components[0].data.style = ButtonStyle.Success;
+            } else if (epArray.length != 0) {
+                focusedName = 'EP/LPs';
+                focusedArray = pagedEpArray;
+                type_buttons.components[1].data.style = ButtonStyle.Success;
+            } else if (remixArray.length != 0) {
+                focusedName = 'Remixes';
+                focusedArray = pagedRemixArray;
+                type_buttons.components[2].data.style = ButtonStyle.Success;
+            }
+
+            globalRankNumArray = globalRankNumArray.filter(v => !isNaN(v));
+            localRankNumArray = localRankNumArray.filter(v => !isNaN(v));
+            let rankNumArray = interaction.options.getSubcommand() == 'global' ? globalRankNumArray : localRankNumArray;
+            let artistEmbedDesc = `${lfmScrobbles != false ? `*You have* ***${lfmScrobbles}*** *scrobbles on ${artist}!*` : ``}` +
+            `${singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0 ? `\n*The average ${subcommand == 'global' ? 'global' : 'local'} rating of ${artist} is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` : `No reviewed songs. :(`}` + 
+            `${fullStarNum != 0 ? `\n:star2: **${artist} has ${fullStarNum} total favorites in this server!** :star2:` : ``}`;
+
+            if (rankNumArray.length != 0) { 
+                artistEmbed.setDescription(artistEmbedDesc);
+                if (singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) {
+                    artistEmbed.addFields([{ name: focusedName, value: focusedArray[0].join('\n') }]);
+                    artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
+                }
+            } else if (singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) {
+                if (fullStarNum != 0) { // If the artist has stars on any of their songs
+                    artistEmbed.setDescription(artistEmbedDesc);
+                }
+
+                artistEmbed.addFields([{ name: focusedName, value: focusedArray[0].join('\n') }]);
+                artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
+            } else {
+                artistEmbed.setDescription(artistEmbedDesc);
+            }
+
+
+        if (pages_active[0] == true) {
+            await interaction.reply({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
+        } else {
+            await interaction.reply({ embeds: [artistEmbed], components: [type_buttons] });
+        }
+
+        let message = await interaction.fetchReply();
+        let do_arrows = false;
+        
+        const collector = message.createMessageComponentCollector({ time: 360000 });
+
+        collector.on('collect', async i => {
+            do_arrows = false;
+
+            switch (i.customId) {
+                case 'left': page_num -= 1; do_arrows = true; break;
+                case 'right': page_num += 1; do_arrows = true; break;
+                case 'singles':
+                    focusedArray = pagedSingleArray;
+                    focusedName = "Singles";
+                    type_buttons.components[0].data.style = ButtonStyle.Success;
+                    type_buttons.components[1].data.style = ButtonStyle.Secondary;
+                    type_buttons.components[2].data.style = ButtonStyle.Secondary;
+                    if (pages_active[0] == true) do_arrows = true;
+                    page_num = 0; break;
+                case 'ep':
+                    focusedArray = pagedEpArray;
+                    focusedName = "EPs/LPs";
+                    type_buttons.components[0].data.style = ButtonStyle.Secondary;
+                    type_buttons.components[1].data.style = ButtonStyle.Success;
+                    type_buttons.components[2].data.style = ButtonStyle.Secondary;
+                    if (pages_active[1] == true) do_arrows = true;
+                    page_num = 0; break;
+                case 'remixes':
+                    focusedArray = pagedRemixArray;
+                    focusedName = "Remixes";
+                    type_buttons.components[0].data.style = ButtonStyle.Secondary;
+                    type_buttons.components[1].data.style = ButtonStyle.Secondary;
+                    type_buttons.components[2].data.style = ButtonStyle.Success;
+                    if (pages_active[2] == true) do_arrows = true;
+                    page_num = 0; break;
+            }
+
+            page_num = _.clamp(page_num, 0, focusedArray.length - 1);
+            artistEmbed.data.fields[0].name = focusedName;
+            artistEmbed.data.fields[0].value = focusedArray[page_num].join('\n');
+            artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
+
+            if (do_arrows == false) { 
+                artistEmbed.footer = null;
+                i.update({ embeds: [artistEmbed], components: [type_buttons] });
+            } else {
+                i.update({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
+            }
+
+        });
+
+        collector.on('end', async () => {
+            interaction.editReply({ embeds: [artistEmbed], components: [] });
+        });
         } catch (err) {
             console.log(err);
             let error = err;

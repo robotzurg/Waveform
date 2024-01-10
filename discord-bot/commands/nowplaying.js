@@ -1,8 +1,9 @@
 const { EmbedBuilder, SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const db = require('../db.js');
-const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data, getEmbedColor, convertToSetterName } = require('../func.js');
+const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data, getEmbedColor, convertToSetterName, lfm_api_setup } = require('../func.js');
 const ms_format = require('format-duration');
 const progressbar = require('string-progressbar');
+const _ = require('lodash');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -11,7 +12,8 @@ module.exports = {
         .setDMPermission(false),
     help_desc: `If logged into Waveform with Spotify, this command will display your currently playing song, and some basic data in Waveform about the song, if any exists.\n` +
     `You can also use the "Reviews" button to see relevant reviews in the server of the song, if there are any.\n\n` + 
-    `This requires /login to be successfully run before it can be used, and can only be used with Spotify.`,
+    `This requires /login to be successfully run before it can be used, and can only be used with Spotify.\n` + 
+    `You can also view your song scrobbles on Last.fm, if you are logged into Last.fm on Waveform.`,
 	async execute(interaction, client) {
         try {
         await interaction.deferReply();
@@ -22,9 +24,17 @@ module.exports = {
         let setterSongName, song_info;
         let songLength, songCurMs, musicProgressBar = false; // Song length bar variables
         const spotifyApi = await spotify_api_setup(interaction.user.id);
-        
-        if (spotifyApi == false) return interaction.editReply(`This command requires you to use \`/login\` `);
+        let lfmApi = await lfm_api_setup(interaction.user.id);
+        let lfmTrackData = false;
 
+        if (lfmApi != false) {
+            let recentSongs = await lfmApi.user_getRecentTracks({ limit: 1 });
+            let currentlyPlaying = recentSongs.track[0];
+            let lfmUsername = db.user_stats.get(interaction.user.id, 'lfm_username');
+            lfmTrackData = await lfmApi.track_getInfo({ artist: currentlyPlaying.artist['#text'], track: currentlyPlaying.name, username: lfmUsername });
+        }
+
+        if (spotifyApi == false) return interaction.editReply(`This command requires you to use \`/login\` `);
         await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
             if (data.body.item == undefined) { noSong = true; return; }
             if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
@@ -39,9 +49,12 @@ module.exports = {
                 spotifyUrl = data.body.item.external_urls.spotify;
                 songArt = data.body.item.album.images[0].url;
             } else {
-                spotifyUrl = 'N/A';
+                spotifyUrl = false;
                 songArt = false;
+                albumData = false;
+                lfmTrackData = false;
             }
+
             songLength = data.body.item.duration_ms;
             songCurMs = data.body.progress_ms;
             musicProgressBar = progressbar.splitBar(songLength / 1000, songCurMs / 1000, 12)[0];
@@ -79,8 +92,10 @@ module.exports = {
         let mailbox_data = false;
         let mailbox_member = null;
 
-        if (mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:track:', ''))) {
-            is_mailbox = true;
+        if (spotifyUri != false && spotifyUri != undefined) {
+            if (mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:track:', ''))) {
+                is_mailbox = true;
+            }
         }
         
         // If we are in the mailbox and don't specify a user who sent, try to pull it from the mailbox list
@@ -101,11 +116,23 @@ module.exports = {
             }
         }
 
+        if (lfmTrackData != false && lfmTrackData != undefined) { 
+            if (!_.lowerCase(lfmTrackData.name).includes(_.lowerCase(songName)) && !_.lowerCase(lfmTrackData.name).includes(_.lowerCase(songDisplayName))) {
+                lfmTrackData = false;
+            }
+        } else {
+            lfmTrackData = false;
+        }
+
         const npEmbed = new EmbedBuilder()
         .setColor(`${getEmbedColor(interaction.member)}`)
         .setTitle(`${origArtistArray.join(' & ')} - ${songDisplayName}`)
         .setAuthor({ name: `${interaction.member.displayName}'s ${isPlaying ? `current song` : `last song played`}`, iconURL: `${interaction.user.avatarURL({ extension: "png", dynamic: true })}` })
         .setThumbnail(songArt);
+
+        let extraEmbedData = `${lfmTrackData != false ? `\nScrobbles: \`${lfmTrackData.userplaycount}\`` : ``}` +
+        `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
+        `${spotifyUrl == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`;
 
         if (db.reviewDB.has(artistArray[0])) {
             let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
@@ -144,30 +171,26 @@ module.exports = {
                     localUserArray[i] = [rating, `${localUserArray[i]} \`${rating}\``];
                 }
 
+                extraEmbedData = `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
+                `${lfmTrackData != false ? `\nScrobbles: \`${lfmTrackData.userplaycount}\`` : ``}` +
+                `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
+                `${spotifyUrl == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`;
+
                 if (globalRankNumArray.length != 0) { 
                     if (localRankNumArray.length > 0) {
                         songDataExists = true;
                     }
                     npEmbed.setDescription(`\nAvg Global Rating: **\`${Math.round(average(globalRankNumArray) * 10) / 10}\`** \`with ${globalUserArray.length} reviews\`` +
                     `\nAvg Local Rating: **\`${localRankNumArray.length > 0 ? Math.round(average(localRankNumArray) * 10) / 10 : `N/A`}\`** \`with ${localUserArray.length} reviews` +
-                    `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + 
-
-                    `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
-                    `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+                    `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + extraEmbedData);
                 } else if (globalUserArray.length != 0) {
                     if (localUserArray.length > 0) {
                         songDataExists = true;
                     }
                     npEmbed.setDescription(`Local Reviews: \`${localUserArray.length != 0 ? `${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : `No Reviews`}` + 
-                    `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + 
-
-                    `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
-                    `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+                    `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + extraEmbedData);
                 } else {
-                    npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+                    npEmbed.setDescription(extraEmbedData);
                 }
 
                 if ((songObj.ep != undefined && songObj.ep != false)) {
@@ -186,8 +209,7 @@ module.exports = {
         }
 
         if (npEmbed.data.description == undefined) {
-            npEmbed.setDescription(`${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-                `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+            npEmbed.setDescription(extraEmbedData);
         }
 
         // Footer stuff

@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { EmbedBuilder, SlashCommandBuilder, Embed } = require('discord.js');
-const { handle_error, get_review_channel, parse_artist_song_data, getEmbedColor, convertToSetterName } = require('../func.js');
+const { handle_error, get_review_channel, parse_artist_song_data, getEmbedColor, convertToSetterName, lfm_api_setup } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -22,6 +22,11 @@ module.exports = {
         .addUserOption(option => 
             option.setName('user')
                 .setDescription('User who made the review. Defaults to yourself.')
+                .setRequired(false))
+
+        .addBooleanOption(option => 
+            option.setName('show_songs')
+                .setDescription('Show the individual song reviews on the EP/LP review. Defaults to false on LPs, and true on EPs.')
                 .setRequired(false)),
     help_desc: `Pulls up an individual server users EP/LP review.\n\n` +
     `Leaving the artist and ep_name arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)\n\n` +
@@ -52,6 +57,10 @@ module.exports = {
                 taggedUser = interaction.user;
                 taggedMember = interaction.member;
             }
+
+            // Last.fm
+            let lfmApi = await lfm_api_setup(taggedUser.id);
+            let lfmScrobbles = false;
 
             if (!epName.includes(' EP') && !epName.includes(' LP')) epName = `${epName} EP`;
 
@@ -89,6 +98,27 @@ module.exports = {
                 ep_sent_by = await client.users.fetch(ep_sent_by);
             }
 
+            // Check if we want to show song reviews, if it has song reviews.
+            let songReviewCheck = interaction.options.getBoolean('show_songs');
+            if (no_songs_review == false) {
+                // If show_songs is not specified, do the defaults.
+                // Otherwise, set it to whatever the user set it to.
+                songReviewCheck == null ? no_songs_review = (epType == 'LP') : no_songs_review = songReviewCheck;
+            }
+
+            // Check last.fm
+            if (lfmApi != false) {
+                let lfmUsername = db.user_stats.get(taggedUser.id, 'lfm_username');
+                let lfmAlbumData = await lfmApi.album_getInfo({ artist: origArtistArray[0], album: epName.replace(' LP', '').replace(' EP', ''), username: lfmUsername });
+                if (lfmAlbumData.success == false) {
+                    lfmAlbumData = await lfmApi.album_getInfo({ artist: origArtistArray[0], album: epName, username: lfmUsername });
+                    lfmScrobbles = lfmAlbumData.userplaycount;
+                } else {
+                    lfmScrobbles = lfmAlbumData.userplaycount;
+                }
+                if (lfmScrobbles == undefined) lfmScrobbles = false;
+            }
+
             const epEmbed = new EmbedBuilder();
             
             epEmbed.setColor(`${getEmbedColor(interaction.member)}`);
@@ -115,7 +145,9 @@ module.exports = {
             epEmbed.setThumbnail(ep_art);
 
             if (ep_sent_by != false && ep_sent_by != undefined) {
-                epEmbed.setFooter({ text: `Sent by ${ep_sent_by.username}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
+                epEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}${lfmScrobbles != false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
+            } else if (lfmScrobbles != false) {
+                epEmbed.setFooter({ text: `Scrobbles: ${lfmScrobbles}` });
             }
 
             let reviewMsgID = epReviewObj.msg_id;

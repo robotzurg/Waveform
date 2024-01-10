@@ -202,6 +202,7 @@ client.on('interactionCreate', async interaction => {
 
     if (!db.user_stats.has(interaction.user.id)) {
         db.user_stats.set(interaction.user.id, {
+            lfm_username: false,
             access_token: "na",
             refresh_token: false,
             current_ep_review: false,
@@ -212,6 +213,7 @@ client.on('interactionCreate', async interaction => {
             mailbox_list: [],
             mailbox_playlist_id: false,
             mailbox_history: [],
+            mailbox_blocklist: [],
             config: {
                 mail_filter: { // Filter settings for what type of songs you want to be sent, all default to true
                     sp: true, // Spotify
@@ -273,6 +275,7 @@ client.on('interactionCreate', async interaction => {
 client.on('guildMemberAdd', async (member) => {
     if (!db.user_stats.has(member.user.id)) {
         db.user_stats.set(member.user.id, {
+            lfm_username: false,
             access_token: "na",
             refresh_token: false,
             current_ep_review: false,
@@ -283,6 +286,7 @@ client.on('guildMemberAdd', async (member) => {
             mailbox_list: [],
             mailbox_playlist_id: false,
             mailbox_history: [],
+            mailbox_blocklist: [],
             config: {
                 mail_filter: { // Filter settings for what type of songs you want to be sent, all default to true
                     sp: true, // Spotify

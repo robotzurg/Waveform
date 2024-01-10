@@ -1,7 +1,7 @@
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 const db = require('../db.js');
-const { spotify_api_setup, parse_artist_song_data, getEmbedColor } = require('../func.js');
+const { spotify_api_setup, parse_artist_song_data, getEmbedColor, lfm_api_setup } = require('../func.js');
 const _ = require('lodash');
 const SpotifyWebApi = require('spotify-web-api-node');
 
@@ -17,23 +17,31 @@ module.exports = {
         .addStringOption(option => 
             option.setName('link')
                 .setDescription('Link to the song you would like to send to the mailbox.')
-                .setRequired(false)),
+                .setRequired(false))
+        .addStringOption(option => 
+            option.setName('force')
+                .setDescription('Force send a song to a users mailbox, even if they have scrobbles on Last.fm.')
+                .setRequired(false)
+                .addChoices({ name: 'yes', value: 'yes' })),
     help_desc: `Send a song to a users Waveform Mailbox, specified with the user argument.\n\n` + 
     `The songs are usually sent from Spotify (mainly), but you can also send YouTube, Apple Music, and SoundCloud links.\n\n` +
-    `Leaving the link argument blank will pull from your currently playing song on spotify.`,
+    `Leaving the link argument blank will pull from your currently playing song on spotify.\n` + 
+    `Using the force argument will allow you to send a song regardless of if they have scrobbles or not on last.fm. This does not have any effect if they've been sent the song through Waveform.`,
 	async execute(interaction, client) {
-        await interaction.deferReply();
         let taggedUser = interaction.options.getUser('user');
         let taggedMember = await interaction.guild.members.fetch(taggedUser.id);
         let spotifyCmdUserApi = await spotify_api_setup(interaction.user.id);
         let spotifyTaggedApi = await spotify_api_setup(taggedUser.id);
+        let lfmApi = await lfm_api_setup(interaction.user.id);
+        let lfmForce = interaction.options.getString('force');
+
         const guild = client.guilds.cache.get(interaction.guild.id);
 
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
         let trackLink = interaction.options.getString('link');
         if (trackLink != null) {
             if (trackLink.includes('spotify.link')) {
-                return interaction.editReply('The type of link `spotify.link` is not supported by Waveform. Please use a valid `open.spotify.com` link instead.');
+                return interaction.reply('The type of link `spotify.link` is not supported by Waveform. Please use a valid `open.spotify.com` link instead.');
             }
         }
         
@@ -47,10 +55,17 @@ module.exports = {
         let mainId; // The main ID of the spotify link (the album URI or the main track URI)
         let linkType = 'sp';
         let mailFilter = db.user_stats.get(taggedUser.id, 'config.mail_filter');
+        let mailBlocklist = db.user_stats.get(taggedUser.id, 'mailbox_blocklist');
+        if (mailBlocklist == undefined) mailBlocklist = [];
         let dmMailConfig = db.user_stats.get(taggedUser.id, 'config.mailbox_dm');
         if (dmMailConfig == undefined) dmMailConfig = true;
         let spotifyCheck = false;
         let passesChecks = true;
+
+        if (mailBlocklist.includes(interaction.user.id)) {
+            return interaction.reply({ content: 'You\'ve been blocked by this user, so you are unable to send them any music through Waveform Mailbox.', ephemeral: true });
+        }
+        await interaction.deferReply();
 
         // Pull from spotify playback if trackLink is null
         if (trackLink == null && spotifyCmdUserApi != false) {
@@ -62,10 +77,10 @@ module.exports = {
 
             // Check if a podcast is being played, as we don't support that.
             if (spotifyCheck == false) {
-                return interaction.reply('Spotify playback not detected. Please start playing a song on spotify before using this command in this way!');
+                return interaction.editReply('Spotify playback not detected. Please start playing a song on spotify before using this command in this way!');
             }
         } else if (spotifyCmdUserApi == false && trackLink == null) {
-            return interaction.reply(`You are not logged into spotify with Waveform, so you must specify a track link in the link argument or use \`/login\` to use this command in this way!`);
+            return interaction.editReply(`You are not logged into spotify with Waveform, so you must specify a track link in the link argument or use \`/login\` to use this command in this way!`);
         }
 
         // Check if we are in a spotify link, and if not, what kind of link we have
@@ -181,7 +196,18 @@ module.exports = {
         if (linkType.includes('sp')) {
             if (passesChecks == false) return;
             if (db.user_stats.get(taggedUser.id, 'mailbox_history').includes(mainId)) {
-                return interaction.editReply(`\`${taggedMember.displayName}\` has already been sent **${origArtistArray.join(' & ')} - ${displayName}** through Waveform Mailbox!`);
+                return interaction.editReply(`**${taggedMember.displayName}** has already been sent **${origArtistArray.join(' & ')} - ${displayName}** through Waveform Mailbox!`);
+            }
+
+            if (lfmApi != false) {
+                let lfmUsername = db.user_stats.get(taggedUser.id, 'lfm_username');
+                if (lfmUsername != undefined && lfmUsername != false) {
+                    let lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0], track: name, username: lfmUsername });
+                    if (lfmTrackData.userplaycount != 0 && lfmForce == null) {
+                        return interaction.editReply(`**${taggedMember.displayName}** has already heard **${origArtistArray.join(' & ')} - ${displayName}**, with \`${lfmTrackData.userplaycount}\` scrobbles on Last.fm, so this song was not sent.\n` + 
+                        `(If you would like to send the song anyways, use the \`force\` argument to bypass this warning.)`);
+                    }
+                }
             }
 
             // Add tracks to the mailbox playlist

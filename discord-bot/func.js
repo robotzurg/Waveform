@@ -3,6 +3,7 @@ const { EmbedBuilder } = require('discord.js');
 const db = require("./db.js");
 const _ = require('lodash');
 const SpotifyWebApi = require('spotify-web-api-node');
+const lastfm = require("lastfm-njs");
 
 // TODO: ADD FUNCTION HEADERS/DEFS FOR ALL OF THESE!!!
 
@@ -140,18 +141,24 @@ module.exports = {
                 if (data.body.item == undefined) { notPlaying = true; return; }
                 
                 if (data.body.item.is_local == true) { 
-                    passesChecks = 'local'; 
-                    localReturnObj = {
-                        prod_artists: data.body.item.artists[0].name.split(' & '), 
-                        song_name: data.body.item.name, // Song name with remixers in the name
-                        main_song_name: data.body.item.name, // Song Name without remixers in the name
-                        display_song_name: data.body.item.name, // Song name with remixers and features in the name
-                        db_artists: data.body.item.artists[0].name.split(' & '), 
-                        all_artists: data.body.item.artists[0].name.split(' & '),
-                        remix_artists: [], 
-                        art: false,
-                        spotify_uri: false,
-                    };
+                    origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
+                    songArg = data.body.item.name;
+                    songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
+                    songArg = songArg.replace('remix', 'Remix'); // Just in case there is lower case remix
+                    songArt = false;
+                    songUri = false;
+                    rmxArtistArray = [];
+                    // localReturnObj = {
+                    //     prod_artists: data.body.item.artists[0].name.split(' & '), 
+                    //     song_name: data.body.item.name, // Song name with remixers in the name
+                    //     main_song_name: data.body.item.name, // Song Name without remixers in the name
+                    //     display_song_name: data.body.item.name, // Song name with remixers and features in the name
+                    //     db_artists: data.body.item.artists[0].name.split(' & '), 
+                    //     all_artists: data.body.item.artists[0].name.split(' & '),
+                    //     remix_artists: [], 
+                    //     art: false,
+                    //     spotify_uri: false,
+                    // };
                     return; 
                 } 
 
@@ -394,12 +401,12 @@ module.exports = {
             passesChecks = false;
         }
 
-        if (passesChecks == 'notplaying') {
-            return { error: 'You are not currently playing a song on Spotify.' };
-        }
-
         if (passesChecks == 'local') {
             return localReturnObj;
+        }
+        
+        if (passesChecks == 'notplaying') {
+            return { error: 'You are not currently playing a song on Spotify.' };
         }
 
         if (passesChecks == false) {
@@ -1394,5 +1401,18 @@ module.exports = {
         }
 
         return [trackList, passesChecks];
+    },
+
+    lfm_api_setup: async function(userId) {
+        let lfmUser = db.user_stats.get(userId, 'lfm_username');
+        if (lfmUser == false || lfmUser == undefined) return false;
+
+        let lfm = new lastfm.default({
+            apiKey: process.env.LAST_FM_API_KEY,
+            apiSecret: process.env.LAST_FM_API_SECRET,
+            username: lfmUser,
+        });
+
+        return lfm;
     },
 };
