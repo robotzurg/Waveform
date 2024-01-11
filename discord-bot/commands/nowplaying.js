@@ -29,6 +29,7 @@ module.exports = {
         let lfmUsername = db.user_stats.get(interaction.user.id, 'lfm_username');
 
         if (lfmApi != false) {
+            console.log(await lfmApi.user_getWeeklyAlbumChart({ username: lfmUsername, from: '1673359544', to: '1704895544' }));
             let recentSongs = await lfmApi.user_getRecentTracks({ limit: 1 });
             if (recentSongs.success) {
                 if (recentSongs.track.length != 0) {
@@ -123,7 +124,6 @@ module.exports = {
         if (lfmTrackData != false && lfmTrackData != undefined) { 
             if (!_.lowerCase(lfmTrackData.name).includes(_.lowerCase(songName)) && !_.lowerCase(lfmTrackData.name).includes(_.lowerCase(songDisplayName))) {
                 lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0], track: songName, username: lfmUsername });
-                console.log(lfmTrackData);
                 if (lfmTrackData.success == false) {
                     lfmTrackData = false;
                 }
