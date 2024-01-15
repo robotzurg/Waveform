@@ -1,6 +1,6 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle } = require('discord.js');
 const db = require("../db.js");
-const { average, get_user_reviews, sort, removeItemOnce, handle_error, spotify_api_setup, getEmbedColor, convertToSetterName, lfm_api_setup } = require('../func.js');
+const { average, get_user_reviews, sort, removeItemOnce, handle_error, spotify_api_setup, getEmbedColor, convertToSetterName, lfm_api_setup, getLfmUsers } = require('../func.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -15,7 +15,12 @@ module.exports = {
                 option.setName('artist')
                     .setDescription('The name of the artist(s). (Leave empty to use spotify playback)')
                     .setAutocomplete(true)
-                    .setRequired(false)))
+                    .setRequired(false))
+            .addStringOption(option =>
+                option.setName('hide_scrobbles')
+                    .setDescription('Hide the overall server scrobble count. (Makes the command run quicker)')
+                    .setRequired(false)
+                    .addChoices({ name: 'yes', value: 'yes' })))
         .addSubcommand(subcommand =>
             subcommand.setName('global')
             .setDescription('Get data specific across the whole bot about an artist.')
@@ -26,19 +31,25 @@ module.exports = {
                     .setRequired(false))),
     help_desc: `Displays all songs, EPs/LPs, Remixes, and other information regarding an artist in Waveform.\n\n` +
     `You can view a summary view of all data relating to an artist globally by using the \`global\` subcommand, or view data locally using the \`server\` subcommand.\n\n` +
+    `This command will by default show a last.fm scrobble count for everyone in the server logged into last.fm, which makes the command take a little bit longer to run, but this can be turned off by using the \`hide_scrobbles\` argument.\n\n` +
     `Leaving the artist argument blank will pull from your spotify playback to fill in the argument (if logged in to Waveform with Spotify)`,
 	async execute(interaction, client) {
         try {
+            if (!interaction.deferred && !interaction.replied) await interaction.deferReply();
+            interaction.editReply('Loading artist data...');
             let spotifyCheck;
             let subcommand = interaction.options.getSubcommand();
             let artist = interaction.options.getString('artist');
+            let scrobbleHide = interaction.options.getString('hide_scrobbles');
+            let lfmUsers = getLfmUsers();
             let lfmApi = await lfm_api_setup(interaction.user.id);
             let lfmScrobbles = false;
+            let lfmServerScrobbles = false;
             
             // Spotify Check
             if (artist == null) {
                 const spotifyApi = await spotify_api_setup(interaction.user.id);
-                if (spotifyApi == false) return interaction.reply(`This subcommand requires you to use \`/login\` `);
+                if (spotifyApi == false) return interaction.editReply(`This subcommand requires you to use \`/login\` `);
 
                 await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
                     if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
@@ -49,11 +60,11 @@ module.exports = {
             }
 
             if (spotifyCheck == false) {
-                return interaction.reply('Spotify playback not detected, please type in the artist name manually or play a song!');
+                return interaction.editReply('Spotify playback not detected, please type in the artist name manually or play a song!');
             }
 
             const artistObj = db.reviewDB.get(artist);
-            if (artistObj == undefined) return interaction.reply(`\`${artist}\` not found in the database.`);
+            if (artistObj == undefined) return interaction.editReply(`\`${artist}\` not found in the database.`);
             let artistImage = artistObj.pfp_image;
             let songArray = Object.keys(artistObj);
             songArray = songArray.map(v => v = v.replace('_((', '[').replace('))_', ']'));
@@ -122,9 +133,19 @@ module.exports = {
                 lfmScrobbles = lfmArtistData.stats.userplaycount;
             }
 
+            // Get server scrobbles
+            if (lfmUsers.length != 0 && subcommand != 'global' && scrobbleHide != 'yes') {
+                lfmServerScrobbles = 0;
+                if (lfmApi == false) lfmApi = lfm_api_setup(lfmUsers[0].user_id);
+                for (let u of lfmUsers) {
+                    let lfmArtistData = await lfmApi.artist_getInfo({ artist: artist, username: u.lfm_username });
+                    lfmServerScrobbles += parseInt(lfmArtistData.stats.userplaycount);
+                }
+            }
+
             const artistEmbed = new EmbedBuilder()
                 .setColor(`${getEmbedColor(interaction.member)}`)
-                .setTitle(`${artist}'s reviewed tracks`);
+                .setTitle(`${artist}`);
                 
             if (artistImage != false && artistImage != undefined) {
                 artistEmbed.setThumbnail(artistImage);
@@ -373,8 +394,9 @@ module.exports = {
             globalRankNumArray = globalRankNumArray.filter(v => !isNaN(v));
             localRankNumArray = localRankNumArray.filter(v => !isNaN(v));
             let rankNumArray = interaction.options.getSubcommand() == 'global' ? globalRankNumArray : localRankNumArray;
-            let artistEmbedDesc = `${lfmScrobbles != false ? `*You have* ***${lfmScrobbles}*** *scrobbles on ${artist}!*` : ``}` +
-            `${singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0 ? `\n*The average ${subcommand == 'global' ? 'global' : 'local'} rating of ${artist} is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` : `No reviewed songs. :(`}` + 
+            let artistEmbedDesc = `${lfmScrobbles !== false ? `*You have* ***${lfmScrobbles}*** *scrobbles on ${artist}!*` : ``}` +
+            `${lfmServerScrobbles != false && subcommand != 'global' ? `\n*This server has* ***${lfmServerScrobbles}*** *scrobbles on ${artist}!*` : ``}` +
+            `${(singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) && rankNumArray.length != 0 ? `\n*The average ${subcommand == 'global' ? 'global' : 'local'} rating of ${artist} is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` : `No reviewed songs. :(`}` + 
             `${fullStarNum != 0 ? `\n:star2: **${artist} has ${fullStarNum} total favorites in this server!** :star2:` : ``}`;
 
             if (rankNumArray.length != 0) { 
@@ -396,9 +418,9 @@ module.exports = {
 
 
         if (pages_active[0] == true) {
-            await interaction.reply({ embeds: [artistEmbed], components: [type_buttons, page_arrows] });
+            await interaction.editReply({ content: null, embeds: [artistEmbed], components: [type_buttons, page_arrows] });
         } else {
-            await interaction.reply({ embeds: [artistEmbed], components: [type_buttons] });
+            await interaction.editReply({ content: null, embeds: [artistEmbed], components: [type_buttons] });
         }
 
         let message = await interaction.fetchReply();

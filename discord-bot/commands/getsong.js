@@ -1,5 +1,5 @@
 const db = require("../db.js");
-const { average, get_user_reviews, parse_artist_song_data, sort, handle_error, get_review_channel, getEmbedColor, convertToSetterName, lfm_api_setup } = require('../func.js');
+const { average, get_user_reviews, parse_artist_song_data, sort, handle_error, get_review_channel, getEmbedColor, convertToSetterName, lfm_api_setup, getLfmUsers } = require('../func.js');
 const { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, SlashCommandBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const _ = require('lodash');
 
@@ -27,7 +27,18 @@ module.exports = {
                 option.setName('remixers')
                     .setDescription('Remix artists on the song, if any.')
                     .setAutocomplete(true)
-                    .setRequired(false)))
+                    .setRequired(false))
+
+            .addStringOption(option =>
+                option.setName('scrobbles')
+                    .setDescription('Set what scrobble data to view. (defaults to Reviewer Scrobbles)')
+                    .setRequired(false)
+                    .addChoices(
+                        { name: 'None', value: 'none' },
+                        { name: 'User Scrobbles', value: 'user' },
+                        { name: 'Reviewer Scrobbles', value: 'reviewers' },
+                        { name: 'Server Scrobbles', value: 'server' },
+                    )))
 
         .addSubcommand(subcommand =>
             subcommand.setName('global')
@@ -58,33 +69,45 @@ module.exports = {
                         { name: 'By Rating Value', value: 'rating_value' },
                         { name: 'By Number of Ratings', value: 'rating_num' },
                     ))),
-    help_desc: `Pulls up all data relating to a song or remix in Waveform, such as all reviews, rating averages, and more.\n\n` +
+    help_desc: `Pulls up all data relating to a song or remix in Waveform, such as all reviews, rating averages, last.fm scrobble counts and more.\n\n` +
     `You can view a summary view of all data relating to a song globally by using the \`global\` subcommand, or view a list of all local server reviews using the \`server\` subcommand.\n\n` +
     `The remixers argument should have the remixer specified if you are trying to pull up a remix, the remixer should be put in the song_name or artists arguments.\n\n` +
+    `You can view specific scrobble counts for the song using the \`scrobble\` argument, with the options being None (no scrobbles data shown), \`User Scrobbles\` (only your scrobbles), \`Reviewer Scrobbles\` (only scrobbles of reviewers), or \`Server Scrobbles\` (scrobbles of everyone in the server)\n` +
+    `The default scrobble view is \`Reviewer Scrobbles\`. \`Server Scrobbles\` will make the command take a little bit longer to run.\n\n` +
     `Leaving the artist, song_name, and remixers arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)`,
 	async execute(interaction, client, otherCmdArtists = false, otherCmdSongName = false) {
         try {
+        if (!interaction.deferred && !interaction.replied) await interaction.deferReply();
+        await interaction.editReply('Loading song data...');
         let subcommand = 'server';
         let sortMode = interaction.options.getString('sort_mode');
         if (sortMode == null) sortMode = 'rating_value';
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('song_name');
+        let lfmApi = await lfm_api_setup(interaction.user.id);
+        let lfmUsers = getLfmUsers();
+        // lfmUsers = [];
+        let lfmScrobbleSetting = interaction.options.getString('scrobbles');
+        if (lfmScrobbleSetting == 'none') lfmApi = false;
+        let lfmUserScrobbles = {};
 
         if (interaction.commandName != 'nowplaying' && interaction.commandName != 'randomsong') { 
             subcommand = interaction.options.getSubcommand();
         } else {
             artists = otherCmdArtists.join(' & ');
             song = otherCmdSongName;
+            lfmScrobbleSetting = 'reviewers';
         }
         
         let remixers = interaction.options.getString('remixers');
         let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
         if (song_info.error != undefined) {
-            await interaction.commandName != 'nowplaying' && interaction.commandName != 'randomsong' ? interaction.reply(song_info.error) : interaction.editReply(song_info.error);
+            interaction.editReply(song_info.error);
             return;
         }
 
         let origArtistArray = song_info.prod_artists;
+        let lfmPrimArtist = origArtistArray[0];
         let songName = song_info.song_name;
         let setterSongName = convertToSetterName(songName);
         let artistArray = song_info.db_artists;
@@ -99,6 +122,28 @@ module.exports = {
         let res = await guild.members.fetch();
         let guildUsers = [...res.keys()];
 
+        // Check last.fm info
+        if (lfmScrobbleSetting == null && subcommand == 'server') lfmScrobbleSetting = 'reviewers';
+        let lfmScrobbles = false;
+        let lfmServerScrobbles = false;
+        if (lfmScrobbleSetting != null && lfmApi != false) {
+            let lfmUsername = db.user_stats.get(interaction.user.id, 'lfm_username');
+            let lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0], track: songName, username: lfmUsername });
+            if (lfmTrackData.success == false) {
+                for (let artist of origArtistArray) {
+                    lfmTrackData = await lfmApi.track_getInfo({ artist: artist, track: songName, username: lfmUsername });
+                    if (lfmTrackData.success) {
+                        lfmPrimArtist = artist;
+                        break;
+                    }
+                }
+            }
+            if (lfmTrackData.success) {
+                lfmScrobbles = lfmTrackData.userplaycount;
+                if (lfmScrobbleSetting != null && lfmScrobbleSetting != 'user') lfmUserScrobbles[interaction.user.id] = { user_id: interaction.user.id, lfm_username: lfmUsername, scrobbles: lfmScrobbles };
+            }
+        }
+
         // See if we have any VIPs
         let artistSongs = Object.keys(db.reviewDB.get(artistArray[0]));
         artistSongs = artistSongs.map(v => v = v.replace('_((', '[').replace('))_', ']'));
@@ -108,7 +153,7 @@ module.exports = {
         }
 
         songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
-        if (songObj == undefined) { return interaction.reply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
+        if (songObj == undefined) { return interaction.editReply(`The requested song \`${origArtistArray.join(' & ')} - ${songName}\` does not exist.` + 
         `\nUse \`/getArtist\` to get a full list of this artist's songs.`); }
 
         songEP = songObj.ep;
@@ -190,9 +235,26 @@ module.exports = {
             }
         }
 
+        // Server collection scrobbles
+        if (lfmScrobbleSetting == 'reviewers' || lfmScrobbleSetting == 'server') {
+            lfmServerScrobbles = lfmScrobbles === false ? 0 : parseInt(lfmScrobbles);
+            if (lfmApi == false) lfmApi = lfm_api_setup(lfmUsers[0].user_id);
+
+            let tempIDList = userIDList.map(v => v[1]);
+            if (lfmScrobbleSetting == 'reviewers') lfmUsers = lfmUsers.filter(v => tempIDList.includes(v.user_id) && v.user_id != interaction.user.id);
+            for (let u of lfmUsers) {
+                let lfmTrackData = await lfmApi.track_getInfo({ artist: lfmPrimArtist, track: songName, username: u.lfm_username });
+                lfmServerScrobbles += parseInt(lfmTrackData.userplaycount);
+                u.scrobbles = lfmTrackData.userplaycount;
+                lfmUserScrobbles[u.user_id] = u;
+            }
+        }
+
         if (rankNumArray.length != 0) {
             if (subcommand == 'server') {
-                songEmbed.setDescription(`*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` + 
+                songEmbed.setDescription(`${lfmScrobbles !== false ? `*You have* ***${lfmScrobbles}*** *scrobbles on this song!*` : ``}` +
+                `${lfmServerScrobbles !== false ? `\n${lfmScrobbleSetting == 'reviewers' ? `*Reviewers overall have*` : `*This server has*`} ***${lfmServerScrobbles}*** *scrobbles on this song!*` : ``}` +
+                `\n*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` + 
                 `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} favorite${starCount == 1 ? '' : 's'}!** :star2:`)}` + 
                 `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
             } else {
@@ -234,6 +296,9 @@ module.exports = {
         if (subcommand != 'global') {
             for (let i = 0; i < userArray.length; i++) {
                 userArray[i] = `**${i + 1}.** `.concat(userArray[i]);
+                if ((lfmUserScrobbles[userIDList[i]]) != undefined) {
+                    userArray[i] += ` \`${lfmUserScrobbles[userIDList[i]].scrobbles} 🎵\``;
+                }
             }
         }
 
@@ -286,7 +351,7 @@ module.exports = {
                 .addOptions(select_options),
         );
         
-        let components = [sel_row];
+        let components = subcommand == 'global' ? [] : [sel_row];
         
         if (subcommand == 'server') {
             if (userArray.length != 0) songEmbed.addFields([{ name: 'Reviews:', value: paged_user_list[0].join('\n') }]);
@@ -348,7 +413,7 @@ module.exports = {
             components.push(backButton);
         }
         
-        await interaction.commandName != 'nowplaying' && interaction.commandName != 'randomsong' ? interaction.reply({ embeds: [songEmbed], components: components }) : interaction.editReply({ embeds: [songEmbed], components: components });
+        await interaction.editReply({ content: null, embeds: [songEmbed], components: components });
         let message = await interaction.fetchReply();
         let noIdleReset = false;
 
@@ -362,13 +427,13 @@ module.exports = {
                     }
 
                     // Last.fm
-                    let lfmApi = await lfm_api_setup(i.values[0]);
-                    let lfmScrobbles = false;
+                    lfmApi = await lfm_api_setup(i.values[0]);
+                    lfmScrobbles = false;
 
                     if (lfmApi != false) {
                         let lfmUsername = db.user_stats.get(i.values[0], 'lfm_username');
-                        let lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0], track: songName, username: lfmUsername });
-                        lfmScrobbles = lfmTrackData.userplaycount;
+                        let lfmTrackData = await lfmApi.track_getInfo({ artist: lfmPrimArtist, track: songName, username: lfmUsername });
+                        if (lfmTrackData.success) lfmScrobbles = lfmTrackData.userplaycount;
                     }
                         
                     let taggedUser, taggedMember, displayName;
@@ -426,10 +491,10 @@ module.exports = {
                     reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ extension: "png" }) : songArt);
 
                     if (sentby != false) {
-                        reviewEmbed.setFooter({ text: `Sent by ${sentbyDisplayName}${lfmScrobbles != false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: `${sentbyIconURL}` });
+                        reviewEmbed.setFooter({ text: `Sent by ${sentbyDisplayName}${lfmScrobbles !== false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: `${sentbyIconURL}` });
                     } else if (songEP != undefined && songEP != false) {
-                        reviewEmbed.setFooter({ text: `from ${songEP}${lfmScrobbles != false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: db.reviewDB.get(artistArray[0], `${setterSongEP}.art`) });
-                    } else if (lfmScrobbles != false) {
+                        reviewEmbed.setFooter({ text: `from ${songEP}${lfmScrobbles !== false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: db.reviewDB.get(artistArray[0], `${setterSongEP}.art`) });
+                    } else if (lfmScrobbles !== false) {
                         reviewEmbed.setFooter({ text: `Scrobbles: ${lfmScrobbles}` });
                     }
 

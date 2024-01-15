@@ -219,7 +219,7 @@ module.exports = {
                             lfmScrobbles = lfmAlbumData.userplaycount;
                         }
 
-                        if (lfmScrobbles != 0 && lfmForce == null) {
+                        if (lfmScrobbles !== 0 && lfmForce == null) {
                             return interaction.editReply(`**${taggedMember.displayName}** has already heard **${origArtistArray.join(' & ')} - ${displayName}**, with \`${lfmScrobbles}\` scrobbles on Last.fm, so this ${linkType == 'sp_ep' ? 'EP' : 'LP'} was not sent.\n` + 
                             `(If you would like to send the ${linkType == 'sp_ep' ? 'EP' : 'LP'} anyways, use the \`force\` argument to bypass this warning.)`);
                         }

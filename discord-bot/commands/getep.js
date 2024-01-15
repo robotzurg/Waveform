@@ -415,8 +415,8 @@ module.exports = {
 
                         epReviewEmbed.setThumbnail(ep_art);
                         if (ep_sent_by != false && ep_sent_by != undefined) {
-                            epReviewEmbed.setFooter({ text: `Sent by ${ep_sent_by.username}${lfmScrobbles != false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
-                        } else if (lfmScrobbles != false) {
+                            epReviewEmbed.setFooter({ text: `Sent by ${ep_sent_by.username}${lfmScrobbles !== false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
+                        } else if (lfmScrobbles !== false) {
                             epReviewEmbed.setFooter({ text: `Scrobbles: ${lfmScrobbles}` });
                         }
 
