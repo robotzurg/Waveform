@@ -40,6 +40,15 @@ module.exports = {
                         { name: 'Server Scrobbles', value: 'server' },
                     )))
 
+            // .addStringOption(option => 
+            //     option.setName('sort_mode')
+            //         .setDescription('The sort mode of the ratings list')
+            //         .setRequired(false)
+            //         .addChoices(
+            //             { name: 'By Rating', value: 'rating_value' },
+            //             { name: 'By Scrobbles', value: 'scrobble' },
+            //         )))
+
         .addSubcommand(subcommand =>
             subcommand.setName('global')
             .setDescription('Get data specific across the whole bot about a song.')
@@ -324,10 +333,14 @@ module.exports = {
             }
 
             let rating = db.reviewDB.get(artistArray[0], `${setterSongName}.${userID}.rating`);
+            let selDesc = rating != false && rating != -1 ? `Rating: ${rating}/10` : `No Rating`;
+            if ((lfmUserScrobbles[userID]) != undefined) {
+                selDesc += ` • ${lfmUserScrobbles[userID].scrobbles} scrobbles`;
+            }
 
             select_options.push({
                 label: `${selDisplayName}`,
-                description: rating != false && rating != -1 ? `Rating: ${rating}/10` : `No Rating`,
+                description: selDesc,
                 value: `${userID}`,
             });
             if (db.reviewDB.get(artistArray[0], `${setterSongName}.${userID}.starred`) == true) {
@@ -468,8 +481,14 @@ module.exports = {
 
                     if (sentby != false && taggedUser != undefined) {
                         sentby = await client.users.fetch(sentby);
+                        let sentByMember;
+                        sentByMember = await interaction.guild.members.fetch(sentby).catch(sentByMember = undefined);
                         sentbyIconURL = sentby.avatarURL({ extension: 'png' });
-                        sentbyDisplayName = sentby.username;
+                        if (sentByMember == undefined) {
+                            sentbyDisplayName = sentby.username;
+                        } else {
+                            sentbyDisplayName = sentByMember.displayName;
+                        }
                     }
 
                     const reviewEmbed = new EmbedBuilder();
