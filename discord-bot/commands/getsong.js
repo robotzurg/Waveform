@@ -297,7 +297,7 @@ module.exports = {
             for (let i = 0; i < userArray.length; i++) {
                 userArray[i] = `**${i + 1}.** `.concat(userArray[i]);
                 if ((lfmUserScrobbles[userIDList[i]]) != undefined) {
-                    userArray[i] += ` \`${lfmUserScrobbles[userIDList[i]].scrobbles} 🎵\``;
+                    userArray[i] += ` \`${lfmUserScrobbles[userIDList[i]].scrobbles} scrobbles\``;
                 }
             }
         }
