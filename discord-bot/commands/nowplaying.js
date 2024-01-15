@@ -246,7 +246,7 @@ module.exports = {
 
             getSongCollector.on('collect', async i => {
                 if (i.customId == 'getsong') {
-                    i.update({ content: 'Loading song data...', embeds: [] });
+                    await i.update({ content: 'Loading song data...', embeds: [], components: [] });
                     let command = client.commands.get('getsong');
                     await command.execute(interaction, client, artistArray, songName);
                 }
