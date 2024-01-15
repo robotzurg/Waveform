@@ -414,8 +414,16 @@ module.exports = {
                         epReviewEmbed.setAuthor({ name: `${displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: true })}` });
 
                         epReviewEmbed.setThumbnail(ep_art);
+                        let sentbyDisplayName;
                         if (ep_sent_by != false && ep_sent_by != undefined) {
-                            epReviewEmbed.setFooter({ text: `Sent by ${ep_sent_by.username}${lfmScrobbles !== false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
+                            let sentByMember;
+                            sentByMember = await interaction.guild.members.fetch(epReviewObj.sentby).catch(sentByMember = undefined);
+                            if (sentByMember == undefined) {
+                                sentbyDisplayName = ep_sent_by.username;
+                            } else {
+                                sentbyDisplayName = sentByMember.displayName;
+                            }
+                            epReviewEmbed.setFooter({ text: `Sent by ${sentbyDisplayName}${lfmScrobbles !== false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
                         } else if (lfmScrobbles !== false) {
                             epReviewEmbed.setFooter({ text: `Scrobbles: ${lfmScrobbles}` });
                         }
