@@ -1403,8 +1403,8 @@ module.exports = {
         return [trackList, passesChecks];
     },
 
-    lfm_api_setup: async function(userId) {
-        let lfmUser = db.user_stats.get(userId, 'lfm_username');
+    lfm_api_setup: async function(userId, lfmUser = false) {
+        if (lfmUser == false) lfmUser = db.user_stats.get(userId, 'lfm_username');
         if (lfmUser == false || lfmUser == undefined) return false;
 
         let lfm = new lastfm.default({
@@ -1414,5 +1414,18 @@ module.exports = {
         });
 
         return lfm;
+    },
+
+    getLfmUsers: function() {
+        let userArray = db.user_stats.keyArray();
+        let output = [];
+        for (let user of userArray) {
+            let userData = db.user_stats.get(user);
+            if (userData.lfm_username != false && userData.lfm_username != undefined) {
+                output.push({ user_id: user, lfm_username: userData.lfm_username });
+            }
+        }
+
+        return output;
     },
 };

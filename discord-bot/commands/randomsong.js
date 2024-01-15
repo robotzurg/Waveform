@@ -1,6 +1,6 @@
 const { EmbedBuilder, SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const db = require('../db.js');
-const { get_user_reviews, handle_error, getEmbedColor, convertToSetterName } = require('../func.js');
+const { get_user_reviews, handle_error, getEmbedColor, convertToSetterName, lfm_api_setup } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -17,7 +17,10 @@ module.exports = {
         }
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
         let songArt, spotifyUrl, yourRating, origArtistArray, artistArray;
-        let setterSongName;
+        let setterSongName;               
+        // Last.fm
+        let lfmApi = await lfm_api_setup(interaction.user.id);
+        let lfmScrobbles = false;
 
         if (songArt == false) songArt = interaction.member.avatarURL({ extension: 'png' });
 
@@ -82,7 +85,21 @@ module.exports = {
 
                 // Global
                 for (let i = 0; i < globalUserArray.length; i++) {
-                    if (globalUserArray[i] == `${interaction.user.id}`) yourRating = songObj[globalUserArray[i]].rating;
+                    if (globalUserArray[i] == `${interaction.user.id}`) {
+                        yourRating = songObj[globalUserArray[i]].rating;
+
+                        if (lfmApi != false) {
+                            let lfmUsername = db.user_stats.get(interaction.user.id, 'lfm_username');
+                            let lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0], track: randomSong, username: lfmUsername });
+                            if (lfmTrackData.success == false) {
+                                for (let artist of origArtistArray) {
+                                    lfmTrackData = await lfmApi.track_getInfo({ artist: artist, track: randomSong, username: lfmUsername });
+                                    if (lfmTrackData.success) break;
+                                }
+                            }
+                            if (lfmTrackData.success) lfmScrobbles = lfmTrackData.userplaycount;
+                        }
+                    }
                     let rating;
                     rating = songObj[globalUserArray[i]].rating;
                     
@@ -114,6 +131,7 @@ module.exports = {
                     `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + 
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
+                    `${(lfmScrobbles !== false) ? `\nScrobbles: \`${lfmScrobbles}\`` : ''}` +
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
                 } else if (globalUserArray.length != 0) {
                     if (localUserArray.length > 0) {
@@ -178,7 +196,7 @@ module.exports = {
 
         getSongCollector.on('collect', async i => {
             if (i.customId == 'getsong') {
-                i.update({ content: null });
+                i.update({ content: 'Loading song data...', embeds: [] });
                 let command = client.commands.get('getsong');
                 await command.execute(interaction, client, artistArray, randomSong);
             } else {

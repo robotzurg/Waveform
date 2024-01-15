@@ -29,7 +29,6 @@ module.exports = {
         let lfmUsername = db.user_stats.get(interaction.user.id, 'lfm_username');
 
         if (lfmApi != false) {
-            console.log(await lfmApi.user_getWeeklyAlbumChart({ username: lfmUsername, from: '1673359544', to: '1704895544' }));
             let recentSongs = await lfmApi.user_getRecentTracks({ limit: 1 });
             if (recentSongs.success) {
                 if (recentSongs.track.length != 0) {
