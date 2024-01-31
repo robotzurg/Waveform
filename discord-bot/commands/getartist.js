@@ -136,8 +136,12 @@ module.exports = {
             // Get server scrobbles
             if (lfmUsers.length != 0 && subcommand != 'global' && scrobbleHide != 'yes') {
                 lfmServerScrobbles = 0;
-                if (lfmApi == false) lfmApi = lfm_api_setup(lfmUsers[0].user_id);
+                if (lfmApi == false) lfmApi = await lfm_api_setup(lfmUsers[0].user_id);
                 for (let u of lfmUsers) {
+                    if (lfmApi == false) { 
+                        lfmApi = await lfm_api_setup(u.user_id);
+                        continue;
+                    }
                     let lfmArtistData = await lfmApi.artist_getInfo({ artist: artist, username: u.lfm_username });
                     lfmServerScrobbles += parseInt(lfmArtistData.stats.userplaycount);
                 }

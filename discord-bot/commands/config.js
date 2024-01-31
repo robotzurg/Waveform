@@ -12,46 +12,6 @@ module.exports = {
     `For configuring a spotify account, look at the /login command.`,
 	async execute(interaction) {
 
-        // Main Configuration Select Menu
-        let configMenu = new ActionRowBuilder()
-            .addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId('config')
-                    .setPlaceholder('Change your main Waveform configs.')
-                    .addOptions(
-                        {
-                            label: 'Mailbox Filter',
-                            description: 'Change your Waveform Mailbox filter.',
-                            emoji: '📫',
-                            value: 'mail_filter',
-                        },
-                        {
-                            label: 'Mailbox Review Ping',
-                            description: 'Be pinged when someone reviews your song mail.',
-                            emoji: '🔔',
-                            value: 'review_ping',
-                        },
-                        {
-                            label: 'Mailbox DM',
-                            description: 'Be DM\'d when getting new song mail.',
-                            emoji: '📩',
-                            value: 'mailbox_dm',
-                        },
-                        {
-                            label: 'Embed Color',
-                            description: 'Set the color you would like your embeds to have.',
-                            emoji: '🎨',
-                            value: 'embed_color',
-                        },
-                        {
-                            label: 'Favs Spotify Playlist',
-                            description: 'Setup your favorited songs spotify playlist',
-                            emoji: '🌟',
-                            value: 'star_playlist',
-                        },
-                    ),
-            );
-
         let user_profile = db.user_stats.get(interaction.user.id);
         let config_data = user_profile.config;
         if (config_data.star_spotify_playlist == undefined) {
@@ -67,6 +27,56 @@ module.exports = {
         if (config_data.embed_color == undefined) {
             config_data.embed_color = false;
         }
+
+        if (config_data.display_scrobbles == undefined) {
+            config_data.display_scrobbles = true;
+        }
+
+        // Main Configuration Select Menu
+        let configMenu = new ActionRowBuilder()
+            .addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId('config')
+                    .setPlaceholder('Change your main Waveform configs.')
+                    .addOptions(
+                        {
+                            label: 'Mailbox Filter',
+                            description: 'Change your Waveform Mailbox filter.',
+                            emoji: '📫',
+                            value: 'mail_filter',
+                        },
+                        {
+                            label: `Mailbox Review Ping`,
+                            description: 'Be pinged when someone reviews your song mail.',
+                            emoji: '🔔',
+                            value: 'review_ping',
+                        },
+                        {
+                            label: `Mailbox DM`,
+                            description: 'Be DM\'d when getting new song mail.',
+                            emoji: '📩',
+                            value: 'mailbox_dm',
+                        },
+                        {
+                            label: `Embed Color`,
+                            description: 'Set the color you would like your embeds to have.',
+                            emoji: '🎨',
+                            value: 'embed_color',
+                        },
+                        {
+                            label: `Favs Spotify Playlist`,
+                            description: 'Setup your favorited songs spotify playlist',
+                            emoji: '🌟',
+                            value: 'star_playlist',
+                        },
+                        {
+                            label: `Display Scrobbles`,
+                            description: 'Show your scrobbles publically.',
+                            emoji: '🎵',
+                            value: 'display_scrobbles',
+                        },
+                    ),
+            );
 
         db.user_stats.set(interaction.user.id, config_data, `config`);
 
@@ -88,7 +98,8 @@ module.exports = {
         `**Mailbox Review Ping:** \`${config_data.review_ping}\``,
         `**Mailbox DM:** \`${config_data.mailbox_dm}\``,
         `**Embed Color:** \`${config_data.embed_color == false ? 'Role Color' : config_data.embed_color}\``,
-        `**Favs Spotify Playlist:** \`${config_data.star_spotify_playlist != false ? 'Setup!' : 'Not Setup.'}\``];
+        `**Favs Spotify Playlist:** \`${config_data.star_spotify_playlist != false ? 'Setup!' : 'Not Setup.'}\``,
+        `**Display Scrobbles Publically:** \`${config_data.display_scrobbles}\``];
 
         let mailFilterSel = new ActionRowBuilder()
             .addComponents(
@@ -163,6 +174,14 @@ module.exports = {
 
                     await db.user_stats.set(interaction.user.id, !(user_profile.config.mailbox_dm), 'config.mailbox_dm');
                     config_desc[2] = `**Mailbox DM:** \`${db.user_stats.get(interaction.user.id, 'config.mailbox_dm')}\``;
+                    user_profile = db.user_stats.get(interaction.user.id);
+                    configEmbed.setDescription(config_desc.join('\n'));
+                    await sel.update({ content: null, embeds: [configEmbed], components: [configMenu] });
+
+                } else if (sel.values[0] == 'display_scrobbles') {
+
+                    await db.user_stats.set(interaction.user.id, !(user_profile.config.display_scrobbles), 'config.display_scrobbles');
+                    config_desc[5] = `**Display Scrobbles Publically:** \`${db.user_stats.get(interaction.user.id, 'config.display_scrobbles')}\``;
                     user_profile = db.user_stats.get(interaction.user.id);
                     configEmbed.setDescription(config_desc.join('\n'));
                     await sel.update({ content: null, embeds: [configEmbed], components: [configMenu] });

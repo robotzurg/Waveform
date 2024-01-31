@@ -209,20 +209,7 @@ module.exports = {
                             return interaction.editReply(`**${taggedMember.displayName}** has already heard **${origArtistArray.join(' & ')} - ${displayName}**, with \`${lfmTrackData.userplaycount}\` scrobbles on Last.fm, so this song was not sent.\n` + 
                             `(If you would like to send the song anyways, use the \`force\` argument to bypass this warning.)`);
                         }
-                    } else {
-                        let lfmAlbumData = await lfmApi.album_getInfo({ artist: origArtistArray[0], album: name.replace(' LP', '').replace(' EP', ''), username: lfmUsername });
-                        let lfmScrobbles = 0;
-                        if (lfmAlbumData.success == false) {
-                            lfmAlbumData = await lfmApi.album_getInfo({ artist: origArtistArray[0], album: name, username: lfmUsername });
-                            lfmScrobbles = lfmAlbumData.userplaycount;
-                        } else {
-                            lfmScrobbles = lfmAlbumData.userplaycount;
-                        }
 
-                        if (lfmScrobbles !== 0 && lfmForce == null) {
-                            return interaction.editReply(`**${taggedMember.displayName}** has already heard **${origArtistArray.join(' & ')} - ${displayName}**, with \`${lfmScrobbles}\` scrobbles on Last.fm, so this ${linkType == 'sp_ep' ? 'EP' : 'LP'} was not sent.\n` + 
-                            `(If you would like to send the ${linkType == 'sp_ep' ? 'EP' : 'LP'} anyways, use the \`force\` argument to bypass this warning.)`);
-                        }
                     }
                 }
             }

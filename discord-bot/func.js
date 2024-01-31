@@ -1405,6 +1405,7 @@ module.exports = {
 
     lfm_api_setup: async function(userId, lfmUser = false) {
         if (lfmUser == false) lfmUser = db.user_stats.get(userId, 'lfm_username');
+        if (db.user_stats.get(userId, 'config.display_scrobbles') == false || db.user_stats.get(userId, 'config.display_scrobbles') == undefined) lfmUser = false;
         if (lfmUser == false || lfmUser == undefined) return false;
 
         let lfm = new lastfm.default({
