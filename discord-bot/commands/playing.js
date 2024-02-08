@@ -47,7 +47,7 @@ module.exports = {
                         if (reviewData.rating != false) ratingData = `**Rating:** \`${reviewData.rating}/10${reviewData.starred ? `⭐\`` : `\``}`;
                     }
                 }
-                playList.push(`- <@${member}>: **${origArtistArray.join(' & ')} - ${songDisplayName}**\n${ratingData}`);
+                playList.push(`- <@${member}>: **${origArtistArray.join(' & ')} - ${songDisplayName}**${ratingData != `` ? `\n${ratingData}` : ``}`);
             }
         }
 
