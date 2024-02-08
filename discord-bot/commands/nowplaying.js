@@ -200,7 +200,7 @@ module.exports = {
                 extraEmbedData = `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                 `${lfmTrackData != false ? `\nScrobbles: \`${lfmTrackData.userplaycount}\`` : ``}` +
                 `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-                `${spotifyUrl == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`;
+                `${spotifyUrl == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}` +
                 `${lfmUrl == false ? `` : `\n<:lastfm:1204990903278895154> [Last.fm](${lfmUrl})`}`;
 
                 if (globalRankNumArray.length != 0) { 
