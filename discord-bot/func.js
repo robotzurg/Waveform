@@ -957,14 +957,23 @@ module.exports = {
     },
 
     handle_error: function(interaction, client, err) {
-        interaction.editReply({ content: `Waveform ran into an error. Don't worry, the bot is still online!\nError: \`${err}\``, 
-        embeds: [], components: [] }).catch(() => {
-            interaction.reply({ content: `Waveform ran into an error. Don't worry, the bot is still online!\nError: \`${err}\``, 
-            embeds: [], components: [] });
-        });
+        let strErr = `${err}`;
+        if (strErr.toLowerCase().includes('webapiregularerror') || strErr.toLowerCase().includes('webapierror')) {
+            interaction.editReply({ content: `The Spotify Web API is currently down or having issues, which means that Spotify functions are temporarily unavailable. This usually only lasts a couple minutes, so try again in just a bit!`, 
+            embeds: [], components: [] }).catch(() => {
+                interaction.reply({ content: `The Spotify Web API is currently down or having issues, which means that Spotify functions are temporarily unavailable. This usually only lasts a couple minutes, so try again in just a bit!`, 
+                embeds: [], components: [] });
+            }); 
+        } else {
+            interaction.editReply({ content: `Waveform ran into an error. Don't worry, the bot is still online!\nError: \`${err}\``, 
+            embeds: [], components: [] }).catch(() => {
+                interaction.reply({ content: `Waveform ran into an error. Don't worry, the bot is still online!\nError: \`${err}\``, 
+                embeds: [], components: [] });
+            });
+        }
 
         const guild = client.guilds.cache.get('680864893552951306');
-        console.log(String(err.stack));
+        console.log(err.stack);
         if (guild == undefined || guild == null || guild == false) return;
         let error_channel = guild.channels.cache.get('933610135719395329');
         let error = String(err.stack);
@@ -1394,7 +1403,7 @@ module.exports = {
             trackList[i] = trackList[i][0];
         }
 
-        if (trackList.length <= 1 && !(trackList.length == 1 && data.body.tracks.items[0].duration_ms >= 1.2e+6)) {
+        if (trackList.length <= 1 && !(trackList.length == 1 && data.tracks.items[0].duration_ms >= 1.2e+6)) {
             passesChecks = 'length';
         } else if (trackList.length > 25) {
             passesChecks = 'too_long';

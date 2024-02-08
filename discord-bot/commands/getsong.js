@@ -95,7 +95,6 @@ module.exports = {
         let song = interaction.options.getString('song_name');
         let lfmApi = await lfm_api_setup(interaction.user.id);
         let lfmUsers = getLfmUsers();
-        // lfmUsers = [];
         let lfmScrobbleSetting = interaction.options.getString('scrobbles');
         if (lfmScrobbleSetting == 'none') lfmApi = false;
         let lfmUserScrobbles = {};

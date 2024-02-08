@@ -8,62 +8,80 @@ const _ = require('lodash');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('nowplaying')
-        .setDescription('Display your currently playing song on Spotify.')
+        .setDescription('Display your currently playing song.')
         .setDMPermission(false),
-    help_desc: `If logged into Waveform with Spotify, this command will display your currently playing song, and some basic data in Waveform about the song, if any exists.\n` +
+    help_desc: `If logged into Waveform with Spotify or Last.fm, this command will display your currently playing song, and some basic data in Waveform about the song, if any exists.\n` +
     `You can also use the "Reviews" button to see relevant reviews in the server of the song, if there are any.\n\n` + 
-    `This requires /login to be successfully run before it can be used, and can only be used with Spotify.\n` + 
+    `This requires /login to be successfully run before it can be used, and can only be used with Spotify or Last.fm.\n` + 
     `You can also view your song scrobbles on Last.fm, if you are logged into Last.fm on Waveform.`,
 	async execute(interaction, client) {
         try {
         await interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
-        let songArt, spotifyUrl, spotifyUri, yourRating, origArtistArray, artistArray, songName, songDisplayName, noSong = false, isPlaying = true, isPodcast = false, validSong = true;
+        let songArt, spotifyUrl = false, spotifyUri, yourRating, origArtistArray, artistArray, songName, songDisplayName, noSong = false, isPlaying = true, isPodcast = false, validSong = true;
         let songDataExists = false;
-        let albumData;
+        let albumData = false;
         let setterSongName, song_info;
         let songLength, songCurMs, musicProgressBar = false; // Song length bar variables
-        const spotifyApi = await spotify_api_setup(interaction.user.id);
+        let spotifyApi = await spotify_api_setup(interaction.user.id);
         let lfmApi = await lfm_api_setup(interaction.user.id);
         let lfmTrackData = false;
         let lfmUsername = db.user_stats.get(interaction.user.id, 'lfm_username');
+        let lfmUrl = false;
+        let lfmRecentSongs;
 
         if (lfmApi != false) {
-            let recentSongs = await lfmApi.user_getRecentTracks({ limit: 1 });
-            if (recentSongs.success) {
-                if (recentSongs.track.length != 0) {
-                    let currentlyPlaying = recentSongs.track[0];
-                    lfmTrackData = await lfmApi.track_getInfo({ artist: currentlyPlaying.artist['#text'], track: currentlyPlaying.name, username: lfmUsername });
+            lfmRecentSongs = await lfmApi.user_getRecentTracks({ limit: 1 });
+            if (lfmRecentSongs.success) {
+                if (lfmRecentSongs.track.length != 0) {
+                    lfmUrl = lfmRecentSongs.track[0].url;
+                    lfmTrackData = await lfmApi.track_getInfo({ artist: lfmRecentSongs.track[0].artist['#text'], track: lfmRecentSongs.track[0].name, username: lfmUsername });
                 }
             }
         }
 
-        if (spotifyApi == false) return interaction.editReply(`This command requires you to use \`/login\` `);
-        await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
-            if (data.body.item == undefined) { noSong = true; return; }
-            if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
-            albumData = data.body.item.album;  
+        if (spotifyApi != false) {
+            await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+                if (data.body.item == undefined) { noSong = true; return; }
+                if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
+                albumData = data.body.item.album;  
 
-            if ((albumData.total_tracks <= 1 && !(albumData.total_tracks == 1 && data.body.item.duration_ms >= 1.2e+6)) || albumData.total_tracks > 25) {
-                albumData = false;
-            }
+                if ((albumData.total_tracks <= 1 && !(albumData.total_tracks == 1 && data.body.item.duration_ms >= 1.2e+6)) || albumData.total_tracks > 25) {
+                    albumData = false;
+                }
 
-            if (data.body.item.is_local == false) {
-                spotifyUri = data.body.item.uri;
-                spotifyUrl = data.body.item.external_urls.spotify;
-                songArt = data.body.item.album.images[0].url;
-            } else {
-                spotifyUrl = false;
-                songArt = false;
-                albumData = false;
-                lfmTrackData = false;
-            }
+                if (data.body.item.is_local == false) {
+                    spotifyUri = data.body.item.uri;
+                    spotifyUrl = data.body.item.external_urls.spotify;
+                    songArt = data.body.item.album.images[0].url;
+                } else {
+                    spotifyUrl = false;
+                    songArt = false;
+                    albumData = false;
+                    lfmTrackData = false;
+                }
 
-            songLength = data.body.item.duration_ms;
-            songCurMs = data.body.progress_ms;
-            musicProgressBar = progressbar.splitBar(songLength / 1000, songCurMs / 1000, 12)[0];
-            isPlaying = data.body.is_playing;
-            song_info = await parse_artist_song_data(interaction);
+                songLength = data.body.item.duration_ms;
+                songCurMs = data.body.progress_ms;
+                musicProgressBar = progressbar.splitBar(songLength / 1000, songCurMs / 1000, 12)[0];
+                isPlaying = data.body.is_playing;
+                song_info = await parse_artist_song_data(interaction);
+                if (song_info.error != undefined) {
+                    validSong = false;
+                } else {
+                    songName = song_info.song_name;
+                    setterSongName = convertToSetterName(songName);
+                    artistArray = song_info.db_artists;
+                    origArtistArray = song_info.prod_artists;
+                    songDisplayName = song_info.display_song_name;
+                }
+            });
+        } else {
+            if (lfmApi == false) return interaction.editReply('This command requires you to use `/login`, and log in to either Spotify or Last.fm.');
+            lfmUrl = lfmTrackData.url;
+            songArt = lfmRecentSongs.track[0].image[3]['#text'];
+
+            song_info = await parse_artist_song_data(interaction, lfmRecentSongs.track[0].artist['#text'], lfmRecentSongs.track[0].name);
             if (song_info.error != undefined) {
                 validSong = false;
             } else {
@@ -73,7 +91,7 @@ module.exports = {
                 origArtistArray = song_info.prod_artists;
                 songDisplayName = song_info.display_song_name;
             }
-        });
+        }
 
         // Check if a podcast is being played, as we don't support that.
         if (isPodcast == true) {
@@ -139,7 +157,8 @@ module.exports = {
 
         let extraEmbedData = `${lfmTrackData != false ? `\nScrobbles: \`${lfmTrackData.userplaycount}\`` : ``}` +
         `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-        `${spotifyUrl == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`;
+        `${spotifyUrl == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}` +
+        `${lfmUrl == false ? `` : `\n<:lastfm:1204990903278895154> [Last.fm](${lfmUrl})`}`;
 
         if (db.reviewDB.has(artistArray[0])) {
             let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
@@ -182,6 +201,7 @@ module.exports = {
                 `${lfmTrackData != false ? `\nScrobbles: \`${lfmTrackData.userplaycount}\`` : ``}` +
                 `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                 `${spotifyUrl == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`;
+                `${lfmUrl == false ? `` : `\n<:lastfm:1204990903278895154> [Last.fm](${lfmUrl})`}`;
 
                 if (globalRankNumArray.length != 0) { 
                     if (localRankNumArray.length > 0) {

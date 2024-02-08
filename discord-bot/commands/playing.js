@@ -2,7 +2,7 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 require('dotenv').config();
 const db = require('../db.js');
-const { spotify_api_setup } = require('../func.js');
+const { spotify_api_setup, convertToSetterName } = require('../func.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -36,7 +36,15 @@ module.exports = {
             });
 
             if (skip == false) {
-                playList.push(`<@${member}>: **${origArtistArray} - ${songDisplayName}**`);
+                let ratingData = ``;
+                let dbSongName = convertToSetterName(songDisplayName);
+                if (db.reviewDB.has(origArtistArray[0])) {
+                    let reviewData = db.reviewDB.get(origArtistArray[0], `${dbSongName}.${interaction.user.id}`);
+                    if (reviewData != undefined) {
+                        if (reviewData.rating != false) ratingData = `**Rating:** \`${reviewData.rating}/10${reviewData.starred ? `⭐\`` : `\``}`;
+                    }
+                }
+                playList.push(`- <@${member}>: **${origArtistArray.join(' & ')} - ${songDisplayName}**\n${ratingData}`);
             }
         }
 
@@ -53,8 +61,6 @@ module.exports = {
                 .setStyle(ButtonStyle.Primary)
                 .setEmoji('➡️'),
         );
-
-        console.log(pagedPlayList);
 
         const playListEmbed = new EmbedBuilder()
             .setThumbnail(interaction.guild.iconURL({ extension: 'png' }))

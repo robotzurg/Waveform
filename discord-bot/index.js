@@ -231,6 +231,7 @@ client.on('interactionCreate', async interaction => {
                 review_ping: false, // If you want to get pinged for a review if you are tagged as a user who sent it (default: false)
                 star_spotify_playlist: false, // If you have a star spotify playlist setup (default: false)
                 mailbox_dm: true, // If you want to be DM'd when you receive a mailbox send (default: true)
+                mailbox_channel: false, // Mailbox channel to be sent music in (default: false, aka no channel)
                 embed_color: false, // Embed color for review embeds (default: false)
                 display_scrobbles: true, // Display scrobble counts on Waveform (default: true)
             },
@@ -306,6 +307,9 @@ client.on('guildMemberAdd', async (member) => {
                 review_ping: false, // If you want to get pinged for a review if you are tagged as a user who sent it (default: false)
                 star_spotify_playlist: false, // If you have a star spotify playlist setup (default: false)
                 mailbox_dm: true, // If you want to be DM'd when you receive a mailbox send (default: true)
+                mailbox_channel: false, // Mailbox channel to be sent music in (default: false, aka no channel)
+                embed_color: false, // Embed color for review embeds (default: false)
+                display_scrobbles: true, // Display scrobble counts on Waveform (default: true)
             },
             stats: {
                 // These 2 were removed due to speed issues with my current hardware.
