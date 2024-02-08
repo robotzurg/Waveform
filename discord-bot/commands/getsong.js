@@ -95,7 +95,6 @@ module.exports = {
         let song = interaction.options.getString('song_name');
         let lfmApi = await lfm_api_setup(interaction.user.id);
         let lfmUsers = getLfmUsers();
-        // lfmUsers = [];
         let lfmScrobbleSetting = interaction.options.getString('scrobbles');
         if (lfmScrobbleSetting == 'none') lfmApi = false;
         let lfmUserScrobbles = {};
@@ -247,11 +246,15 @@ module.exports = {
         // Server collection scrobbles
         if (lfmScrobbleSetting == 'reviewers' || lfmScrobbleSetting == 'server') {
             lfmServerScrobbles = lfmScrobbles === false ? 0 : parseInt(lfmScrobbles);
-            if (lfmApi == false) lfmApi = lfm_api_setup(lfmUsers[0].user_id);
+            if (lfmApi == false) lfmApi = await lfm_api_setup(lfmUsers[0].user_id);
 
             let tempIDList = userIDList.map(v => v[1]);
             if (lfmScrobbleSetting == 'reviewers') lfmUsers = lfmUsers.filter(v => tempIDList.includes(v.user_id) && v.user_id != interaction.user.id);
             for (let u of lfmUsers) {
+                if (lfmApi == false) { 
+                    lfmApi = await lfm_api_setup(u.user_id);
+                    continue;
+                }
                 let lfmTrackData = await lfmApi.track_getInfo({ artist: lfmPrimArtist, track: songName, username: u.lfm_username });
                 lfmServerScrobbles += parseInt(lfmTrackData.userplaycount);
                 u.scrobbles = lfmTrackData.userplaycount;

@@ -12,46 +12,6 @@ module.exports = {
     `For configuring a spotify account, look at the /login command.`,
 	async execute(interaction) {
 
-        // Main Configuration Select Menu
-        let configMenu = new ActionRowBuilder()
-            .addComponents(
-                new StringSelectMenuBuilder()
-                    .setCustomId('config')
-                    .setPlaceholder('Change your main Waveform configs.')
-                    .addOptions(
-                        {
-                            label: 'Mailbox Filter',
-                            description: 'Change your Waveform Mailbox filter.',
-                            emoji: '📫',
-                            value: 'mail_filter',
-                        },
-                        {
-                            label: 'Mailbox Review Ping',
-                            description: 'Be pinged when someone reviews your song mail.',
-                            emoji: '🔔',
-                            value: 'review_ping',
-                        },
-                        {
-                            label: 'Mailbox DM',
-                            description: 'Be DM\'d when getting new song mail.',
-                            emoji: '📩',
-                            value: 'mailbox_dm',
-                        },
-                        {
-                            label: 'Embed Color',
-                            description: 'Set the color you would like your embeds to have.',
-                            emoji: '🎨',
-                            value: 'embed_color',
-                        },
-                        {
-                            label: 'Favs Spotify Playlist',
-                            description: 'Setup your favorited songs spotify playlist',
-                            emoji: '🌟',
-                            value: 'star_playlist',
-                        },
-                    ),
-            );
-
         let user_profile = db.user_stats.get(interaction.user.id);
         let config_data = user_profile.config;
         if (config_data.star_spotify_playlist == undefined) {
@@ -67,6 +27,60 @@ module.exports = {
         if (config_data.embed_color == undefined) {
             config_data.embed_color = false;
         }
+
+        if (config_data.display_scrobbles == undefined) {
+            config_data.display_scrobbles = true;
+        }
+
+        if (config_data.mailbox_channel == undefined) {
+            config_data.mailbox_channel = false;
+        }
+
+        // Main Configuration Select Menu
+        let configMenu = new ActionRowBuilder()
+            .addComponents(
+                new StringSelectMenuBuilder()
+                    .setCustomId('config')
+                    .setPlaceholder('Change your main Waveform configs.')
+                    .addOptions(
+                        {
+                            label: 'Mailbox Filter',
+                            description: 'Change your Waveform Mailbox filter.',
+                            emoji: '📫',
+                            value: 'mail_filter',
+                        },
+                        {
+                            label: `Mailbox Review Ping`,
+                            description: 'Be pinged when someone reviews your song mail.',
+                            emoji: '🔔',
+                            value: 'review_ping',
+                        },
+                        {
+                            label: `Mailbox DM`,
+                            description: 'Be DM\'d when getting new song mail.',
+                            emoji: '📩',
+                            value: 'mailbox_dm',
+                        },
+                        {
+                            label: `Embed Color`,
+                            description: 'Set the color you would like your embeds to have.',
+                            emoji: '🎨',
+                            value: 'embed_color',
+                        },
+                        {
+                            label: `Favs Spotify Playlist`,
+                            description: 'Setup your favorited songs spotify playlist',
+                            emoji: '🌟',
+                            value: 'star_playlist',
+                        },
+                        {
+                            label: `Display Scrobbles`,
+                            description: 'Show your scrobbles publically.',
+                            emoji: '🎵',
+                            value: 'display_scrobbles',
+                        },
+                    ),
+            );
 
         db.user_stats.set(interaction.user.id, config_data, `config`);
 
@@ -85,10 +99,11 @@ module.exports = {
             v = v.join(': ');
             return v;
         }).join('\n')}\n`,
-        `**Mailbox Review Ping:** \`${config_data.review_ping}\``,
-        `**Mailbox DM:** \`${config_data.mailbox_dm}\``,
+        `**Mailbox Review Ping:** ${config_data.review_ping ? '✅' : '❌'}`,
+        `**Mailbox DM:** ${config_data.mailbox_dm ? '✅' : '❌'}`,
         `**Embed Color:** \`${config_data.embed_color == false ? 'Role Color' : config_data.embed_color}\``,
-        `**Favs Spotify Playlist:** \`${config_data.star_spotify_playlist != false ? 'Setup!' : 'Not Setup.'}\``];
+        `**Favs Spotify Playlist:** \`${config_data.star_spotify_playlist != false ? 'Setup!' : 'Not Setup.'}\``,
+        `**Display Scrobbles Publically:** ${config_data.display_scrobbles ? '✅' : '❌'}`];
 
         let mailFilterSel = new ActionRowBuilder()
             .addComponents(
@@ -100,37 +115,31 @@ module.exports = {
                             label: 'Apple Music',
                             description: `Toggle filter of songs from Apple Music.`,
                             value: 'apple',
-                            emoji: '<:applelogo:1083272391381225542>',
                         },
                         {
                             label: 'SoundCloud',
                             description: 'Toggle filter of songs from SoundCloud.',
                             value: 'sc',
-                            emoji: '<:soundcloud:1083272493072142337>',
                         },
                         {
                             label: 'Spotify Singles',
                             description: 'Toggle filter of singles/remixes from Spotify.',
                             value: 'sp',
-                            emoji: '<:spotify:961509676053323806>',
                         },
                         {
                             label: 'Spotify EPs',
                             description: 'Toggle filter of EPs from Spotify.',
                             value: 'sp_ep',
-                            emoji: '<:spotify:961509676053323806>',
                         },
                         {
                             label: 'Spotify LPs',
                             description: 'Toggle filter of LPs from Spotify.',
                             value: 'sp_lp',
-                            emoji: '<:spotify:961509676053323806>',
                         },
                         {
                             label: 'YouTube',
                             description: 'Toggle filter of songs from YouTube.',
                             value: 'yt',
-                            emoji: '<:youtube:1083272437489221783>',
                         },
                     ),
             );
@@ -154,7 +163,7 @@ module.exports = {
                 } else if (sel.values[0] == 'review_ping') {
 
                     await db.user_stats.set(interaction.user.id, !(user_profile.config.review_ping), 'config.review_ping');
-                    config_desc[1] = `**Mailbox Review Ping:** \`${db.user_stats.get(interaction.user.id, 'config.review_ping')}\``;
+                    config_desc[1] = `**Mailbox Review Ping:** ${db.user_stats.get(interaction.user.id, 'config.review_ping') ? '✅' : `❌`}`;
                     user_profile = db.user_stats.get(interaction.user.id);
                     configEmbed.setDescription(config_desc.join('\n'));
                     await sel.update({ content: null, embeds: [configEmbed], components: [configMenu] });
@@ -162,13 +171,13 @@ module.exports = {
                 } else if (sel.values[0] == 'mailbox_dm') {
 
                     await db.user_stats.set(interaction.user.id, !(user_profile.config.mailbox_dm), 'config.mailbox_dm');
-                    config_desc[2] = `**Mailbox DM:** \`${db.user_stats.get(interaction.user.id, 'config.mailbox_dm')}\``;
+                    config_desc[2] = `**Mailbox DM:** ${db.user_stats.get(interaction.user.id, 'config.mailbox_dm') ? '✅' : `❌`}`;
                     user_profile = db.user_stats.get(interaction.user.id);
                     configEmbed.setDescription(config_desc.join('\n'));
                     await sel.update({ content: null, embeds: [configEmbed], components: [configMenu] });
 
                 } else if (sel.values[0] == 'embed_color') {
-
+                    msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
                     await sel.update({ content: 'Type in the new color you\'d like your reviews to have, in the hexcode format!', embeds: [], components: [] });
                     await msg_collector.on('collect', async m => { 
                         let hexCheck = new RegExp('^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$');
@@ -178,20 +187,20 @@ module.exports = {
                             await msg_collector.stop();
                         } else {
                             await db.user_stats.set(interaction.user.id, m.content, 'config.embed_color');
+                            configEmbed.setColor(m.content);
                             config_desc[3] = `**Embed Color:** \`${db.user_stats.get(interaction.user.id, 'config.embed_color')}\``;
                             user_profile = db.user_stats.get(interaction.user.id);
                             configEmbed.setDescription(config_desc.join('\n'));
                             await interaction.editReply({ content: null, embeds: [configEmbed], components: [configMenu] });
                             await m.delete();
+                            await msg_collector.stop();
                         }
                     });
 
                     await msg_collector.on('end', async () => {
                         await interaction.editReply({ content: null, embeds: [configEmbed], components: [configMenu] });
                         await msg_collector.stop();
-                    });
-
-                    
+                    }); 
 
                 } else if (sel.values[0] == 'star_playlist') {
                     const spotifyApi = await spotify_api_setup(interaction.user.id);
@@ -237,6 +246,14 @@ module.exports = {
                     config_desc[4] = `**Favs Spotify Playlist:** \`Setup!\``;
                     configEmbed.setDescription(config_desc.join('\n'));
                     await interaction.editReply({ content: `Playlist has been created and favorited songs have been added to it.`, embeds: [configEmbed], components: [configMenu] });                
+                } else if (sel.values[0] == 'display_scrobbles') {
+
+                    await db.user_stats.set(interaction.user.id, !(user_profile.config.display_scrobbles), 'config.display_scrobbles');
+                    config_desc[5] = `**Display Scrobbles Publically:** ${db.user_stats.get(interaction.user.id, 'config.display_scrobbles') ? '✅' : '❌'}`;
+                    user_profile = db.user_stats.get(interaction.user.id);
+                    configEmbed.setDescription(config_desc.join('\n'));
+                    await sel.update({ content: null, embeds: [configEmbed], components: [configMenu] });
+
                 }
 
             } else if (sel.customId == 'mail_filter_sel') {
