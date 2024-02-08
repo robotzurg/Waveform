@@ -22,7 +22,8 @@ module.exports = {
             skip = false;
             let origArtistArray, songDisplayName;
             if (!db.user_stats.has(member)) continue;
-            let spotifyApi = await spotify_api_setup(member).catch(() => {
+            let spotifyApi = false;
+            spotifyApi = await spotify_api_setup(member).catch(() => {
                 spotifyApi = false;
             });
             if (spotifyApi == false) continue;
