@@ -13,7 +13,7 @@ module.exports = {
         .addUserOption(option => 
             option.setName('user')
                 .setDescription('User whose mailbox you would like to send a song to. Leave blank if in a mailbox channel!')
-                .setRequired(false))
+                .setRequired(true))
         .addStringOption(option => 
             option.setName('link')
                 .setDescription('Link to the song you would like to send to the mailbox.')
