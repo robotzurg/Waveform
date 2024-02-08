@@ -26,7 +26,7 @@ module.exports = {
             spotifyApi = await spotify_api_setup(member).catch(() => {
                 spotifyApi = false;
             });
-            if (spotifyApi == false) continue;
+            if (spotifyApi == false || spotifyApi == undefined) continue;
 
             await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
                 if (data.body.item == undefined) { skip = true; return; }
