@@ -88,7 +88,7 @@ module.exports = {
                     }
                 }
                 if (lfmScrobbles != false) extraData += `\n**Scrobbles:** \`${lfmScrobbles}\``;
-                playList.push(`- ${platform == 'lastfm' ? `<:lastfm:1204990903278895154>` : `<:spotify:961509676053323806>`} <@${member}>: [**${origArtistArray.join(' & ')} - ${songDisplayName}**](${songUrl})${extraData != `` ? `${extraData}` : ``}`);
+                playList.push(`- ${platform == 'lastfm' ? `<:lastfm:1204990903278895154>` : `<:spotify:961509676053323806>`} <@${member}>: [**${origArtistArray.join(' & ')} - ${songDisplayName}**](${songUrl})${extraData != `` ? `${extraData}` : ``}\n`);
             }
         }
 
