@@ -93,7 +93,7 @@ module.exports = {
         }
 
         if (playList.length == 0) {
-            return interaction.editReply('Nobody is currently playing any music on Spotiy or Last.fm in this server.');
+            return interaction.editReply('Nobody is currently playing any music on Spotify or Last.fm in this server.');
         }
 
         let pagedPlayList = _.chunk(playList, 10);
