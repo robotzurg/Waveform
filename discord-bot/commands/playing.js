@@ -2,7 +2,7 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 require('dotenv').config();
 const db = require('../db.js');
-const { spotify_api_setup, convertToSetterName } = require('../func.js');
+const { spotify_api_setup, convertToSetterName, lfm_api_setup } = require('../func.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -21,34 +21,79 @@ module.exports = {
         for (let member of memberList) {
             skip = false;
             let origArtistArray, songDisplayName;
+            let lfmTrackData;
             if (!db.user_stats.has(member)) continue;
+            // Last.fm login
+            let lfmApi = await lfm_api_setup(member);
+            let lfmScrobbles = false;
+            let lfmUsername = db.user_stats.get(member, 'lfm_username');
+            // Spotify login
             let spotifyApi = false;
             spotifyApi = await spotify_api_setup(member).catch(() => {
                 spotifyApi = false;
             });
-            if (spotifyApi == false || spotifyApi == undefined) continue;
+            let songUrl = 'https://www.google.com';
+            let platform = 'spotify';
 
-            await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
-                if (data.body.item == undefined) { skip = true; return; }
-                if (data.body.currently_playing_type == 'episode') { skip = true; return; }
-                let isPlaying = data.body.is_playing;
-                if (!isPlaying) { skip = true; return; }
+            if (spotifyApi != false && spotifyApi != undefined) {
+                await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+                    if (data.body.item == undefined) { skip = true; return; }
+                    if (data.body.currently_playing_type == 'episode') { skip = true; return; }
+                    let isPlaying = data.body.is_playing;
+                    if (!isPlaying) { skip = true; return; }
+                    
+                    origArtistArray = data.body.item.artists.map(v => v.name);
+                    songDisplayName = data.body.item.name;
+                    songUrl = data.body.item.external_urls.spotify;
+                });
+            } else if (lfmApi != false && origArtistArray == undefined) {
+                let lfmRecentSongs = await lfmApi.user_getRecentTracks({ limit: 1 });
+                if (lfmRecentSongs.success) {
+                    if (lfmRecentSongs.track.length != 0) {
+                        songUrl = lfmRecentSongs.track[0].url;
+                        lfmTrackData = await lfmApi.track_getInfo({ artist: lfmRecentSongs.track[0].artist['#text'], track: lfmRecentSongs.track[0].name, username: lfmUsername });
+                    }
+                }
 
-                origArtistArray = data.body.item.artists.map(v => v.name);
-                songDisplayName = data.body.item.name;
-            });
+                if (lfmRecentSongs.track[0]['@attr'] != false && lfmRecentSongs.track[0]['@attr'] != undefined) {
+                    if (lfmRecentSongs.track[0]['@attr'].nowplaying != 'true') {
+                        skip = true;
+                    }
+                } else {
+                    skip = true;
+                }
+                 
+                origArtistArray = [lfmRecentSongs.track[0].artist['#text']];
+                songDisplayName = lfmRecentSongs.track[0].name;
+                platform = 'lastfm';
+            } else {
+                skip = true;
+            }
 
             if (skip == false) {
-                let ratingData = ``;
+
+                // Check last.fm
+                if (lfmApi != false) {
+                    if (lfmTrackData == undefined) lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0], track: songDisplayName, username: lfmUsername });
+                    lfmScrobbles = lfmTrackData.userplaycount;
+                    if (lfmScrobbles == undefined) lfmScrobbles = false;
+                }
+
+                let extraData = ``;
                 let dbSongName = convertToSetterName(songDisplayName);
                 if (db.reviewDB.has(origArtistArray[0])) {
                     let reviewData = db.reviewDB.get(origArtistArray[0], `${dbSongName}.${interaction.user.id}`);
                     if (reviewData != undefined) {
-                        if (reviewData.rating != false) ratingData = `**Rating:** \`${reviewData.rating}/10${reviewData.starred ? `⭐\`` : `\``}`;
+                        if (reviewData.rating != false) extraData = `\n**Rating:** \`${reviewData.rating}/10${reviewData.starred ? `⭐\`` : `\``}`;
                     }
                 }
-                playList.push(`- <@${member}>: **${origArtistArray.join(' & ')} - ${songDisplayName}**${ratingData != `` ? `\n${ratingData}` : ``}`);
+                if (lfmScrobbles != false) extraData += `\n**Scrobbles:** \`${lfmScrobbles}\``;
+                playList.push(`- ${platform == 'lastfm' ? `<:lastfm:1204990903278895154>` : `<:spotify:961509676053323806>`} <@${member}>: [**${origArtistArray.join(' & ')} - ${songDisplayName}**](${songUrl})${extraData != `` ? `${extraData}` : ``}`);
             }
+        }
+
+        if (playList.length == 0) {
+            return interaction.editReply('Nobody is currently playing any music on Spotiy or Last.fm in this server.');
         }
 
         let pagedPlayList = _.chunk(playList, 10);

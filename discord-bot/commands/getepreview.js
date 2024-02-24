@@ -103,7 +103,7 @@ module.exports = {
             if (no_songs_review == false) {
                 // If show_songs is not specified, do the defaults.
                 // Otherwise, set it to whatever the user set it to.
-                songReviewCheck == null ? no_songs_review = (epType == 'LP') : no_songs_review = songReviewCheck;
+                songReviewCheck == null ? no_songs_review = (epType == 'LP') : no_songs_review = !songReviewCheck;
             }
 
             // Check last.fm
