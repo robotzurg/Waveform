@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { parse_artist_song_data, handle_error, get_review_channel, convertToSetterName } = require("../func.js");
+const { parse_artist_song_data, handle_error, get_review_channel, convertToSetterName, getEmbedColor } = require("../func.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -188,6 +188,8 @@ module.exports = {
         let oldreview;
         let user_sent_name;
         let songObj;
+        let songArt;
+        let msgEmbed;
         let songReviewObj;
         let userStatsObj = db.user_stats.get(interaction.user.id, 'stats');
         let guildStatsObj;
@@ -238,7 +240,7 @@ module.exports = {
             } 
 
             if (review != null && review != undefined) {
-                oldreview = songReviewObj.rating;
+                oldreview = songReviewObj.review;
                 db.reviewDB.set(artistArray[i], review, `${setterSongName}.${interaction.user.id}.review`);
             }
 
@@ -256,8 +258,8 @@ module.exports = {
         if (reviewMsgID != false) {
             let channelsearch = await get_review_channel(client, reviewGuildID, reviewChannelID, reviewMsgID);
             if (channelsearch != undefined) {
-                channelsearch.messages.fetch(`${reviewMsgID}`).then(msg => {
-                    let msgEmbed = EmbedBuilder.from(msg.embeds[0]);
+                await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
+                    msgEmbed = EmbedBuilder.from(msg.embeds[0]);
 
                     if (epCmd == true) {
                         if (rating != null && songReviewObj.no_songs == false) {
@@ -301,7 +303,7 @@ module.exports = {
 
                     if (user_who_sent != null && user_who_sent != undefined) msgEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: true })}` });
 
-                    msg.edit({ embeds: [msgEmbed] });
+                    await msg.edit({ embeds: [msgEmbed] });
                 });
             }
         }
@@ -330,8 +332,8 @@ module.exports = {
                 let displayArtists = origArtistArray.filter(v => v != primArtist);
                 let channelsearch = await get_review_channel(client, epMsgGuild, epMsgChannel, epMsgToEdit);
                 if (channelsearch != undefined) {
-                    channelsearch.messages.fetch(`${epMsgToEdit}`).then(msg => {
-                        let msgEmbed = EmbedBuilder.from(msg.embeds[0]);
+                    channelsearch.messages.fetch(`${epMsgToEdit}`).then(async msg => {
+                        msgEmbed = EmbedBuilder.from(msg.embeds[0]);
                         let msg_embed_fields = msgEmbed.data.fields;
                         let field_num = -1;
                         for (let i = 0; i < msg_embed_fields.length; i++) {
@@ -364,15 +366,30 @@ module.exports = {
         db.server_settings.set(songReviewObj.guild_id, guildStatsObj, 'stats');
         db.global_bot.set('stats', botStatsObj);
 
-        await interaction.reply(`Here's what was edited on your review of **${origArtistArray.join(' & ')} - ${displaySongName}**:\n` +
-        `${(oldrating != undefined) ? `${oldrating === false ? `\`No Rating\`` : `\`${oldrating}/10\``} changed to ${rating === false ? `\`No Rating\`` : `\`${rating}/10\``}\n` : ``}` +
-        `${(oldreview != undefined) ? `Review was changed to ${review === false ? `\`No Review\`` : `\`${review}\``}\n` : ``}` +
-        `${(user_who_sent != null) ? `User Who Sent was changed to \`${user_sent_name.displayName}\`` : ``}`);
+        if ((oldrating != undefined && oldrating != rating) || (oldreview != undefined && oldreview != review) || user_who_sent != null) {
 
-        const review_msg = await interaction.fetchReply();
-        let timestamp = review_msg.createdTimestamp;
-        for (let i = 0; i < artistArray.length; i++) {
-            db.reviewDB.set(artistArray[i], timestamp, `${setterSongName}.${interaction.user.id}.timestamp`);
+            let channelsearch = await get_review_channel(client, reviewGuildID, reviewChannelID, reviewMsgID);
+            if (channelsearch != undefined && epCmd == false) {
+                await channelsearch.messages.fetch(`${reviewMsgID}`).then(async msg => {
+                    msgEmbed = [msg.embeds[0]];
+                }).catch(() => msgEmbed = []);
+            } else {
+                msgEmbed = [];
+            }
+
+            await interaction.reply({ content: `**Changes made to your \`${origArtistArray.join(' & ')} - ${displaySongName}\` review:**\n` +
+            `${(oldrating != undefined && oldrating != rating) ? `- ${oldrating === false ? `\`No Rating\`` : `\`${oldrating}/10\``} changed to ${rating === false ? `\`No Rating\`` : `\`${rating}/10\``}\n` : ``}` +
+            `${(oldreview != undefined && oldreview != review) ? `- Review was changed to ${review === false ? `\`No Review\`` : `\`${review}\``}\n` : ``}` +
+            `${(user_who_sent != null) ? `- User Who Sent was changed to \`${user_sent_name.displayName}\`\n` : ``}` +
+            `${msgEmbed.length != 0 ? `**Edited Review**` : ``}`, embeds: msgEmbed });
+            
+            const review_msg = await interaction.fetchReply();
+            let timestamp = review_msg.createdTimestamp;
+            for (let i = 0; i < artistArray.length; i++) {
+                db.reviewDB.set(artistArray[i], timestamp, `${setterSongName}.${interaction.user.id}.timestamp`);
+            }
+        } else {
+            await interaction.reply(`Nothing on the review was changed.`);
         }
 
         } catch (err) {

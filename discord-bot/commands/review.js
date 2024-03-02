@@ -401,7 +401,7 @@ module.exports = {
             'This is because `&` is the character used to separate multiple artists in the argument, and `\\&` helps tell the bot not to do that.', ephemeral: true });
         }
 
-        const filter = i => i.user.id == interaction.user.id;
+        const filter = i => i.user.id == interaction.user.id && i.message.interaction.user.id == i.user.id;
         const collector = int_channel.createMessageComponentCollector({ filter, time: 300000 });
         let a_collector;
         let s_collector;
@@ -727,7 +727,7 @@ module.exports = {
                         if (ep_songs[ep_songs.length - 1] == songName) {
                             msg.edit({ embeds: [msgEmbed], components: ep_last_song_rows });
 
-                            const ep_final_filter = int => int.user.id == interaction.user.id;
+                            const ep_final_filter = int => int.user.id == interaction.user.id && int.message.interaction.user.id == int.user.id;
                             const msg_filter = m => m.author.id == interaction.user.id;
                             let ep_final_collector = int_channel.createMessageComponentCollector({ filter: ep_final_filter, time: 300000 });
                             let overallRating, overallReview;
