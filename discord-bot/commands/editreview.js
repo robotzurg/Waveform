@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { parse_artist_song_data, handle_error, get_review_channel, convertToSetterName, getEmbedColor } = require("../func.js");
+const { parse_artist_song_data, handle_error, get_review_channel, convertToSetterName } = require("../func.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -188,7 +188,6 @@ module.exports = {
         let oldreview;
         let user_sent_name;
         let songObj;
-        let songArt;
         let msgEmbed;
         let songReviewObj;
         let userStatsObj = db.user_stats.get(interaction.user.id, 'stats');
