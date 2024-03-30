@@ -136,16 +136,18 @@ module.exports = {
         let lfmServerScrobbles = false;
         if (lfmScrobbleSetting != null && lfmApi != false) {
             let lfmUsername = db.user_stats.get(interaction.user.id, 'lfm_username');
-            let lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0], track: songName, username: lfmUsername });
+            let lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0].replace('\\&', '&'), track: songName, username: lfmUsername });
             if (lfmTrackData.success == false) {
                 for (let artist of origArtistArray) {
-                    lfmTrackData = await lfmApi.track_getInfo({ artist: artist, track: songName, username: lfmUsername });
+                    lfmTrackData = await lfmApi.track_getInfo({ artist: artist.replace('\\&', '&'), track: songName, username: lfmUsername });
                     if (lfmTrackData.success) {
                         lfmPrimArtist = artist;
                         break;
                     }
                 }
             }
+
+            console.log(lfmTrackData);
             if (lfmTrackData.success) {
                 lfmScrobbles = lfmTrackData.userplaycount;
                 if (lfmScrobbleSetting != null && lfmScrobbleSetting != 'user') lfmUserScrobbles[interaction.user.id] = { user_id: interaction.user.id, lfm_username: lfmUsername, scrobbles: lfmScrobbles };
@@ -255,7 +257,7 @@ module.exports = {
                     lfmApi = await lfm_api_setup(u.user_id);
                     continue;
                 }
-                let lfmTrackData = await lfmApi.track_getInfo({ artist: lfmPrimArtist, track: songName, username: u.lfm_username });
+                let lfmTrackData = await lfmApi.track_getInfo({ artist: lfmPrimArtist.replace('\\&', '&'), track: songName, username: u.lfm_username });
                 lfmServerScrobbles += parseInt(lfmTrackData.userplaycount);
                 u.scrobbles = lfmTrackData.userplaycount;
                 lfmUserScrobbles[u.user_id] = u;
@@ -448,7 +450,7 @@ module.exports = {
 
                     if (lfmApi != false) {
                         let lfmUsername = db.user_stats.get(i.values[0], 'lfm_username');
-                        let lfmTrackData = await lfmApi.track_getInfo({ artist: lfmPrimArtist, track: songName, username: lfmUsername });
+                        let lfmTrackData = await lfmApi.track_getInfo({ artist: lfmPrimArtist.replace('\\&', '&'), track: songName, username: lfmUsername });
                         if (lfmTrackData.success) lfmScrobbles = lfmTrackData.userplaycount;
                     }
                         

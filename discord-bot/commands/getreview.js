@@ -86,7 +86,7 @@ module.exports = {
             // Check last.fm
             if (lfmApi != false) {
                 let lfmUsername = db.user_stats.get(taggedUser.id, 'lfm_username');
-                let lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0], track: songName, username: lfmUsername });
+                let lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0].replace('\\&', '&'), track: songName, username: lfmUsername });
                 lfmScrobbles = lfmTrackData.userplaycount;
             }
 

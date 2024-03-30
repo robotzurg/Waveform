@@ -194,7 +194,6 @@ module.exports = {
         }
 
         if (linkType.includes('sp')) {
-            console.log(linkType);
             if (passesChecks == false) return;
             if (db.user_stats.get(taggedUser.id, 'mailbox_history').includes(mainId)) {
                 return interaction.editReply(`**${taggedMember.displayName}** has already been sent **${origArtistArray.join(' & ')} - ${displayName}** through Waveform Mailbox!`);
@@ -204,7 +203,7 @@ module.exports = {
                 let lfmUsername = db.user_stats.get(taggedUser.id, 'lfm_username');
                 if (lfmUsername != undefined && lfmUsername != false) {
                     if (linkType != 'sp_ep' && linkType != 'sp_lp') {
-                        let lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0], track: name, username: lfmUsername });
+                        let lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0].replace('\\&', '&'), track: name, username: lfmUsername });
                         if (lfmTrackData.userplaycount != 0 && lfmForce == null && lfmTrackData.userplaycount != undefined) {
                             return interaction.editReply(`**${taggedMember.displayName}** has already heard **${origArtistArray.join(' & ')} - ${displayName}**, with \`${lfmTrackData.userplaycount}\` scrobbles on Last.fm, so this song was not sent.\n` + 
                             `(If you would like to send the song anyways, use the \`force\` argument to bypass this warning.)`);
