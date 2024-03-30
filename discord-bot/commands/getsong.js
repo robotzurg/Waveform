@@ -147,7 +147,6 @@ module.exports = {
                 }
             }
 
-            console.log(lfmTrackData);
             if (lfmTrackData.success) {
                 lfmScrobbles = lfmTrackData.userplaycount;
                 if (lfmScrobbleSetting != null && lfmScrobbleSetting != 'user') lfmUserScrobbles[interaction.user.id] = { user_id: interaction.user.id, lfm_username: lfmUsername, scrobbles: lfmScrobbles };
