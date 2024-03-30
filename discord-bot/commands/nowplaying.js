@@ -140,7 +140,7 @@ module.exports = {
 
         if (lfmTrackData != false && lfmTrackData != undefined) { 
             if (!_.lowerCase(lfmTrackData.name).includes(_.lowerCase(songName)) && !_.lowerCase(lfmTrackData.name).includes(_.lowerCase(songDisplayName))) {
-                lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0], track: songName, username: lfmUsername });
+                lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0].replace('\\&', '&'), track: songName, username: lfmUsername });
                 if (lfmTrackData.success == false) {
                     lfmTrackData = false;
                 }
@@ -170,6 +170,7 @@ module.exports = {
                 let globalRankNumArray = [];
                 let localRankNumArray = [];
                 let localStarNum = 0;
+                let globalStarNum = 0;
                 let yourStar = '';
 
                 // Global
@@ -177,6 +178,9 @@ module.exports = {
                     if (globalUserArray[i] == `${interaction.user.id}`) yourRating = songObj[globalUserArray[i]].rating;
                     let rating;
                     rating = songObj[globalUserArray[i]].rating;
+                    if (songObj[globalUserArray[i]].starred == true) {
+                        globalStarNum++;
+                    }
                     
                     if (rating !== false) globalRankNumArray.push(parseFloat(rating));
                     globalUserArray[i] = [rating, `${globalUserArray[i]} \`${rating}\``];
@@ -207,7 +211,8 @@ module.exports = {
                     if (localRankNumArray.length > 0) {
                         songDataExists = true;
                     }
-                    npEmbed.setDescription(`\nAvg Global Rating: **\`${Math.round(average(globalRankNumArray) * 10) / 10}\`** \`with ${globalUserArray.length} reviews\`` +
+                    npEmbed.setDescription(`\nAvg Global Rating: **\`${Math.round(average(globalRankNumArray) * 10) / 10}\`** \`with ${globalUserArray.length} reviews` +
+                    `${globalStarNum >= 1 ? ` and ${globalStarNum} ⭐\`` : '`'}` +
                     `\nAvg Local Rating: **\`${localRankNumArray.length > 0 ? Math.round(average(localRankNumArray) * 10) / 10 : `N/A`}\`** \`with ${localUserArray.length} reviews` +
                     `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + extraEmbedData);
                 } else if (globalUserArray.length != 0) {

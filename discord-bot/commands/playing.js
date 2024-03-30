@@ -74,7 +74,7 @@ module.exports = {
 
                 // Check last.fm
                 if (lfmApi != false) {
-                    if (lfmTrackData == undefined) lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0], track: songDisplayName, username: lfmUsername });
+                    if (lfmTrackData == undefined) lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0].replace('\\&', '&'), track: songDisplayName, username: lfmUsername });
                     lfmScrobbles = lfmTrackData.userplaycount;
                     if (lfmScrobbles == undefined) lfmScrobbles = false;
                 }

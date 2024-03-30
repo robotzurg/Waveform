@@ -75,7 +75,7 @@ module.exports = {
     },
 
     parse_artist_song_data: async function(interaction, artists = null, song = null, remixers = null, trackList = false) {
-        const { spotify_api_setup, getProperRemixers, convertToSetterName, getTrackList } = require('./func.js');
+        const { spotify_api_setup, getProperRemixers, convertToSetterName, getTrackList, lfm_api_setup } = require('./func.js');
 
         // If we are in the /editdata artist command and put in a manual name entry, run this a little differently
         let subcommand;
@@ -127,80 +127,85 @@ module.exports = {
             rmxArtistArray = rmxArtistArray.flat(1);
         }
         
-        // If we're pulling from Spotify (no arguments given)
+        // If we're pulling from Spotify or Last.fm (no arguments given)
         if (origArtistArray == null && songArg == null && remixers == null) {
-            const spotifyApi = await spotify_api_setup(interaction.user.id);
+            let spotifyApi = await spotify_api_setup(interaction.user.id);
+            spotifyApi = false;
             let isPodcast = false;
-        
-            if (spotifyApi == false) {
-                return { error: 'You must use `/login` to use Spotify related features!' };
-            }
 
-            await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
-                if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
-                if (data.body.item == undefined) { notPlaying = true; return; }
-                
-                if (data.body.item.is_local == true) { 
+            let lfmApi = await lfm_api_setup(interaction.user.id);
+            if (interaction.commandName.includes('review') && interaction.commandName != 'getreview' && interaction.commandName != 'getepreview') lfmApi = false;
+            let lfmRecentSongs;
+            
+            if (spotifyApi == false && lfmApi == false) {
+                return { error: 'You must use `/login` to use Spotify/Last.fm related features!' };
+            } else if (spotifyApi != false) {
+                await spotifyApi.getMyCurrentPlayingTrack().then(async data => {
+                    if (data.body.currently_playing_type == 'episode') { isPodcast = true; return; }
+                    if (data.body.item == undefined) { notPlaying = true; return; }
+                    
+                    if (data.body.item.is_local == true) { 
+                        origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
+                        songArg = data.body.item.name;
+                        songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
+                        songArg = songArg.replace('remix', 'Remix'); // Just in case there is lower case remix
+                        songArt = false;
+                        songUri = false;
+                        rmxArtistArray = [];
+                        return; 
+                    } 
+
                     origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
                     songArg = data.body.item.name;
                     songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
                     songArg = songArg.replace('remix', 'Remix'); // Just in case there is lower case remix
-                    songArt = false;
-                    songUri = false;
-                    rmxArtistArray = [];
-                    // localReturnObj = {
-                    //     prod_artists: data.body.item.artists[0].name.split(' & '), 
-                    //     song_name: data.body.item.name, // Song name with remixers in the name
-                    //     main_song_name: data.body.item.name, // Song Name without remixers in the name
-                    //     display_song_name: data.body.item.name, // Song name with remixers and features in the name
-                    //     db_artists: data.body.item.artists[0].name.split(' & '), 
-                    //     all_artists: data.body.item.artists[0].name.split(' & '),
-                    //     remix_artists: [], 
-                    //     art: false,
-                    //     spotify_uri: false,
-                    // };
-                    return; 
-                } 
+                    songArt = data.body.item.album.images[0].url;
+                    songUri = data.body.item.uri;
+                    await spotifyApi.getAlbum(data.body.item.album.id)
+                    .then(async album_data => {
+                        if ((interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') || (subcommand.includes('ep'))
+                            || interaction.options.getSubcommandGroup() == 'ep') {
+                            if (album_data.body.album_type == 'compilation') {
+                                passesChecks = 'compilation';
+                                return;
+                            }
 
-                origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
-                songArg = data.body.item.name;
-                songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
-                songArg = songArg.replace('remix', 'Remix'); // Just in case there is lower case remix
-                songArt = data.body.item.album.images[0].url;
-                songUri = data.body.item.uri;
-                await spotifyApi.getAlbum(data.body.item.album.id)
-                .then(async album_data => {
-                    if ((interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') || (subcommand.includes('ep'))
-                        || interaction.options.getSubcommandGroup() == 'ep') {
-                        if (album_data.body.album_type == 'compilation') {
-                            passesChecks = 'compilation';
-                            return;
+                            if (trackList == false) {
+                                trackList = getTrackList(album_data.body, origArtistArray, rmxArtistArray);
+                                passesChecks = trackList[1];
+                                trackList = trackList[0];
+                            }
+
+                            origArtistArray = album_data.body.artists.map(artist => artist.name);
+                            songArg = album_data.body.name;
+                            songUri = album_data.body.uri;
+                            if (album_data.body.album_type == 'single' && !songArg.includes(' EP')) {
+                                songArg = `${songArg} EP`;
+                            } else if (album_data.body.album_type == 'album' && !songArg.includes(' LP')) {
+                                songArg = `${songArg} LP`;
+                            }
+
+                            if (songArg.includes(' - EP')) songArg = songArg.replace(' - EP', ' EP');
+                            if (songArg.includes(' - LP')) songArg = songArg.replace(' - LP', ' LP');
+
+                            if (interaction.commandName == 'epreview') {
+                                current_ep_review_data = { msg_id: false, channel_id: false, guild_id: interaction.guild.id, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] };
+                            }
                         }
-
-                        if (trackList == false) {
-                            trackList = getTrackList(album_data.body, origArtistArray, rmxArtistArray);
-                            passesChecks = trackList[1];
-                            trackList = trackList[0];
-                        }
-
-                        origArtistArray = album_data.body.artists.map(artist => artist.name);
-                        songArg = album_data.body.name;
-                        songUri = album_data.body.uri;
-                        if (album_data.body.album_type == 'single' && !songArg.includes(' EP')) {
-                            songArg = `${songArg} EP`;
-                        } else if (album_data.body.album_type == 'album' && !songArg.includes(' LP')) {
-                            songArg = `${songArg} LP`;
-                        }
-
-                        if (songArg.includes(' - EP')) songArg = songArg.replace(' - EP', ' EP');
-                        if (songArg.includes(' - LP')) songArg = songArg.replace(' - LP', ' LP');
-
-                        if (interaction.commandName == 'epreview') {
-                            current_ep_review_data = { msg_id: false, channel_id: false, guild_id: interaction.guild.id, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] };
+                    });
+                }); 
+            } else {
+                if (lfmApi != false) {
+                    lfmRecentSongs = await lfmApi.user_getRecentTracks({ limit: 1 });
+                    if (lfmRecentSongs.success) {
+                        if (lfmRecentSongs.track.length != 0) {
+                            origArtistArray = [lfmRecentSongs.track[0].artist['#text']];
+                            origArtistArray = origArtistArray.map(v => v.replace('&', '\\&'));
+                            songArg = lfmRecentSongs.track[0].name;
                         }
                     }
-                });
-            });  
+                }
+            } 
 
             // Check if a podcast is being played, as we don't support that.
             if (isPodcast == true) {
@@ -415,8 +420,6 @@ module.exports = {
             return { error: 'This track cannot be added to EP/LP reviews, therefore is invalid to be used in relation with EP/LP commands.' };
         } else if (passesChecks == 'length') {
             return { error: 'This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.' };
-        } else if (passesChecks == 'too_long') {
-            return { error: `This LP contains too many songs, Waveform can currently only review up to a maximum of 25 song long albums.` };
         } else if (passesChecks == 'compilation') {
             return { error: `This is a compilation, and compilations cannot be reviewed as EPs/LPs.` };
         }
@@ -561,6 +564,7 @@ module.exports = {
             art: songArt,
             spotify_uri: songUri,
             current_ep_review_data: current_ep_review_data,
+            passes_checks: passesChecks,
         };
     },
 

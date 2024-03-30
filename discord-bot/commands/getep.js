@@ -163,15 +163,16 @@ module.exports = {
 
                 // Get all users if global, otherwise get only guild specific users if server.
                 if (subcommand == 'server') {
-                    reviewNum = await get_user_reviews(epObj, guildUsers);
+                    reviewNum = await get_user_reviews(songObj, guildUsers);
                 } else {
-                    reviewNum = await get_user_reviews(epObj);
+                    reviewNum = await get_user_reviews(songObj);
                 }
 
                 rankNumArray = [];
                 let star_num = 0;
 
                 for (let ii = 0; ii < reviewNum.length; ii++) {
+                    console.log(songObj, reviewNum[ii]);
                     rating = songObj[reviewNum[ii]].rating;
                     if (songObj[reviewNum[ii]].starred == true) {
                         star_num++;

@@ -166,8 +166,6 @@ module.exports = {
 
                     if (passesChecks == 'length') {
                         return interaction.reply('This is not on an EP/LP, this is a single. As such, you cannot use this with EP/LP reviews.');
-                    } else if (passesChecks == 'too_long') {
-                        return interaction.reply(`This LP contains too many songs, Waveform can currently only review up to a maximum of 25 song long albums.`);
                     }
 
                 } else if (trackLink.includes("track")) {
@@ -191,6 +189,7 @@ module.exports = {
             spotifyUri = song_info.spotify_uri;
             let currentEpReviewData = song_info.current_ep_review_data;
             if (art == null) art = song_info.art;
+            let epPassesChecks = song_info.passes_checks;
         
             let overallRating = interaction.options.getString('overall_rating');
             if (overallRating == null) {
@@ -662,6 +661,9 @@ module.exports = {
                         }
                     } break;
                     case 'begin': {
+                        if (epPassesChecks == "too_long") {
+                            return interaction.followUp({ content: 'You cannot review this album with individual song reviews, as it has more than 25 songs in it. You can only review this with an overall rating/review.', ephemeral: true });
+                        }
                         if (ra_collector != undefined) ra_collector.stop();
                         if (re_collector != undefined) re_collector.stop();
                         if (a_collector != undefined) a_collector.stop();
