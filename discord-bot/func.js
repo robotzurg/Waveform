@@ -130,7 +130,6 @@ module.exports = {
         // If we're pulling from Spotify or Last.fm (no arguments given)
         if (origArtistArray == null && songArg == null && remixers == null) {
             let spotifyApi = await spotify_api_setup(interaction.user.id);
-            spotifyApi = false;
             let isPodcast = false;
 
             let lfmApi = await lfm_api_setup(interaction.user.id);
