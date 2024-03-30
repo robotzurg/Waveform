@@ -172,7 +172,6 @@ module.exports = {
                 let star_num = 0;
 
                 for (let ii = 0; ii < reviewNum.length; ii++) {
-                    console.log(songObj, reviewNum[ii]);
                     rating = songObj[reviewNum[ii]].rating;
                     if (songObj[reviewNum[ii]].starred == true) {
                         star_num++;
