@@ -18,6 +18,10 @@ module.exports = {
             option.setName('link')
                 .setDescription('Link to the song you would like to send to the mailbox.')
                 .setRequired(false))
+        .addBooleanOption(option => 
+            option.setName('album')
+                .setDescription('Send the EP/LP you are currently listening to on Spotify, instead of the song.')
+                .setRequired(false))
         .addStringOption(option => 
             option.setName('force')
                 .setDescription('Force send a song to a users mailbox, even if they have scrobbles on Last.fm.')
@@ -61,6 +65,7 @@ module.exports = {
         if (dmMailConfig == undefined) dmMailConfig = true;
         let spotifyCheck = false;
         let passesChecks = true;
+        let albumArg = interaction.options.getBoolean('album');
 
         if (mailBlocklist.includes(interaction.user.id)) {
             return interaction.reply({ content: 'You\'ve been blocked by this user, so you are unable to send them any music through Waveform Mailbox.', ephemeral: true });
@@ -71,7 +76,7 @@ module.exports = {
         if (trackLink == null && spotifyCmdUserApi != false) {
             await spotifyCmdUserApi.getMyCurrentPlayingTrack().then(async data => {
                 if (data.body.currently_playing_type == 'episode') { spotifyCheck = false; return; }
-                trackLink = data.body.item.external_urls.spotify;
+                trackLink = (albumArg ? data.body.item.album.external_urls.spotify : data.body.item.external_urls.spotify);
                 spotifyCheck = true;
             });
 
@@ -256,6 +261,7 @@ module.exports = {
 
                 // Add the spotify ID to mailbox history if we have one
                 if (mainId != false) {
+                    console.log(mainId);
                     db.user_stats.push(taggedUser.id, mainId, 'mailbox_history');
                 }
             }).catch(() => {

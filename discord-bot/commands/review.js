@@ -1,6 +1,6 @@
 const SpotifyWebApi = require("spotify-web-api-node");
 const db = require("../db.js");
-const { update_art, review_song, handle_error, get_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art, updateStats, getEmbedColor, hallOfFameCheck, convertToSetterName } = require('../func.js');
+const { update_art, review_song, handle_error, get_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art, updateStats, getEmbedColor, convertToSetterName } = require('../func.js');
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, SlashCommandBuilder, ButtonStyle, Embed } = require('discord.js');
 require('dotenv').config();
 
@@ -901,9 +901,6 @@ module.exports = {
                     // Update user stats
                     await updateStats(interaction, interaction.guild.id, origArtistArray, artistArray, rmxArtistArray, songName, displaySongName, db.reviewDB.get(artistArray[0], `${songName}`), false);
 
-                    // Update hall of fame
-                    await hallOfFameCheck(interaction, client, interaction.guild.id, artistArray, origArtistArray, songName, displaySongName);
-
                 } break;
                 case 'done': { // Send the review to the database
                     await i.update({ content: null, embeds: [reviewEmbed], components: [] });
@@ -951,9 +948,6 @@ module.exports = {
 
                     // Update user stats
                     await updateStats(interaction, interaction.guild.id, origArtistArray, artistArray, rmxArtistArray, songName, displaySongName, db.reviewDB.get(artistArray[0], `${songName}`), false);
-
-                    // Update hall of fame
-                    await hallOfFameCheck(interaction, client, interaction.guild.id, artistArray, origArtistArray, songName, displaySongName);
 
                     // If this is a mailbox review, attempt to remove the song from the mailbox spotify playlist
                     if (is_mailbox == true) {
