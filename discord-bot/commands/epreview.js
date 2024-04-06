@@ -179,12 +179,30 @@ module.exports = {
                 db.user_stats.set(interaction.user.id, false, 'current_ep_review');
                 return;
             }
+            
 
             let origArtistArray = song_info.prod_artists;
             let epName = song_info.song_name;
+            let setterEpName = convertToSetterName(epName);
+
+            if (!epName.includes(' EP') && !epName.includes(' LP')) {
+                let setterEPTest = convertToSetterName(`${epName} EP`);
+                let setterLPTest = convertToSetterName(`${epName} LP`);
+                if (db.reviewDB.has(origArtistArray[0])) {
+                    if (db.reviewDB.get(origArtistArray[0], setterEPTest)) {
+                        ep = `${epName} EP`;
+                        song_info = await parse_artist_song_data(interaction, artists, ep, null, trackList);
+                    } else if (db.reviewDB.get(origArtistArray[0], setterLPTest)) {
+                        ep = `${epName} LP`;
+                        song_info = await parse_artist_song_data(interaction, artists, ep, null, trackList);
+                    }
+                    origArtistArray = song_info.prod_artists;
+                    epName = song_info.song_name;
+                }
+            }
+
             let artistArray = song_info.db_artists;
             // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
-            let setterEpName = convertToSetterName(epName);
             let epType = epName.includes(' LP') ? `LP` : `EP`;
             spotifyUri = song_info.spotify_uri;
             let currentEpReviewData = song_info.current_ep_review_data;
@@ -229,13 +247,14 @@ module.exports = {
             let spotifyApi;
             // Check if we are in a spotify mailbox
             spotifyApi = await spotify_api_setup(interaction.user.id);
-            if (mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:album:', '')) && spotifyApi != false) {
+            if ((mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:album:', '')) || mailbox_list.some(v => v.db_song_name == epName)) && spotifyApi != false) {
                 is_mailbox = true;
             }
 
             // If we are in the mailbox and don't specify a user who sent, try to pull it from the mailbox list
             if (user_who_sent == false && is_mailbox == true) {
                 temp_mailbox_list = mailbox_list.filter(v => v.spotify_id == spotifyUri.replace('spotify:album:', ''));
+                if (temp_mailbox_list.length == 0) temp_mailbox_list = mailbox_list.filter(v => v.db_song_name == epName);
                 if (temp_mailbox_list.length != 0) {
                     mailbox_data = temp_mailbox_list[0];
                     if (mailbox_data.user_who_sent != interaction.user.id) {
@@ -644,6 +663,7 @@ module.exports = {
                                     ping_msg.delete();
                                 });
                             }
+
 
                             // Remove from spotify playlist
                             spotifyApi.removeTracksFromPlaylist(playlistId, tracks)

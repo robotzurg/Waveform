@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { parse_artist_song_data, handle_error, get_review_channel, spotify_api_setup, hallOfFameCheck, convertToSetterName, arrayEqual } = require('../func.js');
+const { parse_artist_song_data, handle_error, get_review_channel, spotify_api_setup, convertToSetterName, arrayEqual } = require('../func.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -156,11 +156,6 @@ module.exports = {
                     console.log('Something went wrong!', err);
                 });
             }
-        }
-
-        // Run stuff with hall of fame
-        if (!songName.includes(' EP') && !songName.includes(' LP')) {
-            await hallOfFameCheck(interaction, client, songReviewObj.guild_id, artistArray, origArtistArray, songName, displaySongName);
         }
 
         db.user_stats.set(interaction.user.id, userStatsObj, 'stats');

@@ -335,7 +335,6 @@ client.on('guildCreate', async (guild) => {
                 review_num: 0, // Number of reviews done in the server
                 ep_review_num: 0, // Number of EP/LP reviews done in the server
             },
-            hall_of_fame: [],
         });
     }
 

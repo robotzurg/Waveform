@@ -152,3 +152,86 @@ module.exports = {
         });
     },
 };
+
+
+// // Func.js functions for hall of fame
+// async function hallOfFameCheck(interaction, client, guild_id, dbArtistArray, origArtistArray, rmxArtistArray, songName) {
+//     const { get_user_reviews, convertToSetterName } = require('./func.js');
+//     // Check if the song was added to hall of fame
+//     let setterSongName = convertToSetterName(songName);
+//     let songObj = db.reviewDB.get(dbArtistArray[0], `${setterSongName}`);
+//     if (songObj == undefined) {
+//         return [false, {}];
+//     }
+
+//     let guild = client.guilds.cache.get(guild_id);
+//     let userReviews = await get_user_reviews(songObj, guild);
+//     let songUrl = songObj.spotify_uri;
+//     if (songUrl == undefined || songUrl == false) {
+//         songUrl = 'https://www.google.com';
+//     } else {
+//         songUrl = `https://open.spotify.com/track/${songUrl.replace('spotify:track:', '')}`;
+//     }
+
+//     let starCount = 0;
+//     let ratingAvg = [];
+//     let userStarList = [];
+//     let userRevObj;
+//     for (let userRev of userReviews) {
+//         userRevObj = songObj[userRev];
+
+//         //if (userRevObj.guild_id != guild_id) continue;
+//         if (userRevObj.rating != false) ratingAvg.push(parseInt(userRevObj.rating));
+//         if (userRevObj.starred == true) {
+//             starCount += 1;
+//             userStarList.push({ id: userRev, rating: parseInt(userRevObj.rating) });
+//         }
+//     }
+
+//     // Check to see if its already in hall of fame
+//     let hallOfFameServerList = db.server_settings.get(guild_id, 'hall_of_fame');
+//     let inHof = false;
+//     for (let hofData of hallOfFameServerList) {
+//         if (`${hofData.orig_artists.join(' & ')} - ${hofData.db_song_name}` == `${origArtistArray.join(' & ')} - ${songName}`) {
+//             inHof = true;
+//             break;
+//         }
+//     }
+
+//     let hallOfFameData = { 
+//         db_artists: dbArtistArray,
+//         orig_artists: origArtistArray,
+//         rmx_artists: rmxArtistArray,
+//         db_song_name: songName,
+//         art: songObj.art,
+//         rating_avg: _.mean(ratingAvg).toFixed(2), 
+//         star_count: starCount,
+//         user_stars: userStarList,
+//         song_url: songUrl,
+//     };
+
+//     if (starCount >= 3 && inHof == false) {
+//         db.server_settings.push(guild_id, hallOfFameData, 'hall_of_fame');
+//     } else if (starCount < 3 && inHof == true) {
+//         // Needs to be removed
+//         for (let hofData of hallOfFameServerList) {
+//             if (hofData.db_song_name == hallOfFameData.db_song_name) {
+//                 hallOfFameServerList = hallOfFameServerList.filter(v => {
+//                     v.db_song_name == hallOfFameData.db_song_name;
+//                 });
+//                 break;
+//             }
+//         }
+        
+//         db.server_settings.set(guild_id, hallOfFameServerList, 'hall_of_fame');
+//     } else if (starCount >= 3 && inHof == true) { 
+//         // Need to update the user list
+//         for (let i = 0; i < hallOfFameServerList.length; i++) {
+//             if (hallOfFameServerList[i].db_song_name == hallOfFameData.db_song_name) {
+//                 hallOfFameServerList[i] = hallOfFameData;
+//             }
+//         }
+
+//         db.server_settings.set(guild_id, hallOfFameServerList, 'hall_of_fame');
+//     }
+// };

@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder } = require('discord.js');
-const { get_user_reviews, handle_error, hallOfFameCheck, convertToSetterName, getProperRemixers } = require("../func.js");
+const { get_user_reviews, handle_error, convertToSetterName, getProperRemixers } = require("../func.js");
 const _ = require('lodash');
 
 module.exports = {
@@ -36,8 +36,6 @@ module.exports = {
         let avgRatingList = [];
         let topSongsList = [];
         let listReviewNum = 1;
-
-        db.server_settings.set('680864893552951306', [], 'hall_of_fame');
 
         const ARTISTARRAY = db.reviewDB.keyArray();
         const WAVEFORMUSERARRAY = db.user_stats.keyArray();
@@ -114,10 +112,6 @@ module.exports = {
                         } else {
                             globalSongCount += 1;
                         }
-                    }
-
-                    if (gottenGlobalData == false) {
-                        await hallOfFameCheck(interaction, client, '680864893552951306', allArtists, origArtistArray, rmxArtistArray, song);
                     }
 
                     for (let k = 0; k < userArray.length; k++) {
