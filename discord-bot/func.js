@@ -4,6 +4,7 @@ const db = require("./db.js");
 const _ = require('lodash');
 const SpotifyWebApi = require('spotify-web-api-node');
 const lastfm = require("lastfm-njs");
+const { DatabaseQuery } = require('./enums.js');
 
 // TODO: ADD FUNCTION HEADERS/DEFS FOR ALL OF THESE!!!
 
@@ -1359,5 +1360,100 @@ module.exports = {
         }
 
         return output;
+    },
+    
+    /**
+     * Loop through the database, using specific queries to get specific return data. 
+     * By default this does the "GlobalAllAlbums" query with an ascending sort, if no options or query are passed in.
+     * @param {String} queryType Query type, see DatabaseQuery for an enum of the query types
+     * @param {Object} options Default: {sort = 'asc', rating = false, user = false, guild = false} should be adjusted based on queryType necessities.
+     * @returns A list of the query result 
+     */
+    queryReviewDatabase: async function(queryType = DatabaseQuery.GlobalAllAlbums, options = { sort: 'asc', rating: false, user: false, guild: false }) {
+        const { convertToSetterName, get_user_reviews, getProperRemixers } = require('./func.js');
+
+        const ARTISTARRAY = db.reviewDB.keyArray();
+        let songSkip = [];
+        let resultList = [];
+        let optionsUser = options.user || false;
+        let optionsSort = options.sort || 'asc';
+        let optionsGuild = options.guild || false;
+        let optionsRating = options.rating || false;
+        let allAlbumQueries = [DatabaseQuery.GlobalAllAlbums, DatabaseQuery.ServerAllAlbums, DatabaseQuery.UserAllAlbums];
+        let allEPQueries = [DatabaseQuery.GlobalAllEPs, DatabaseQuery.ServerAllEPs, DatabaseQuery.UserAllEPs];
+
+        for (let artist of ARTISTARRAY) {
+            let songArray = Object.keys(db.reviewDB.get(artist));
+            songArray = songArray.map(v => v = v.replace('_((', '[').replace('))_', ']'));
+            songArray = songArray.filter(v => v != 'pfp_image');
+
+            for (let song of songArray) {
+                let setterSongName = convertToSetterName(song);
+                let songObj = db.reviewDB.get(artist, `${setterSongName}`);
+                let userArray = [];
+                if (songObj != null && songObj != undefined) {
+                    userArray = await get_user_reviews(songObj);
+                } else {
+                    userArray = [];
+                }
+
+                if (songSkip.includes(`${artist} - ${song}`)) continue;
+
+                let otherArtists = [artist, songObj.collab].flat(1);
+                let allArtists = otherArtists.map(v => {
+                    if (v == undefined) {
+                        return [];
+                    }
+                    return v;
+                });
+                allArtists = allArtists.flat(1);
+
+                let origArtistArray = allArtists;
+                let rmxArtistArray = [];
+
+                // Handle remixes we encounter
+                if (song.includes(' Remix)')) {
+                    let temp = song.split(' Remix)')[0].split('(');
+                    let rmxArtist = temp[temp.length - 1];
+        
+                    // Input validation
+                    rmxArtist = rmxArtist.replace(' VIP', '');
+                    rmxArtistArray = rmxArtist.split(' & ');
+
+                    // Fix the remix artist array if needed
+                    if (rmxArtistArray.length != 0) {
+                        temp = getProperRemixers(origArtistArray, rmxArtistArray);
+                        if (!_.isEqual(temp, rmxArtistArray)) {
+                            rmxArtistArray = temp;
+                        }
+                    }
+
+                    for (rmxArtist of rmxArtistArray) {
+                        origArtistArray = origArtistArray.filter(v => !v.includes(rmxArtist));
+                    }
+                    allArtists = rmxArtistArray;
+                }
+
+                let resultDataObj = { origArtistArray: origArtistArray, allArtists, name: song, dataObj: songObj };
+
+                if (song.includes(' LP') && allAlbumQueries.includes(queryType)) {
+                    resultList.push(resultDataObj);
+                } else if (song.includes(' EP') && allEPQueries.includes(queryType)) {
+                    resultList.push(resultDataObj);
+                }
+
+                // for (let k = 0; k < userArray.length; k++) {
+                //     let userData = songObj[userArray[k]];
+                // }
+
+                for (let v = 0; v < allArtists.length; v++) {
+                    if (!songSkip.includes(`${allArtists[v]} - ${song}`)) {
+                        songSkip.push(`${allArtists[v]} - ${song}`);
+                    }
+                }
+            }
+        }
+
+        return resultList;
     },
 };
