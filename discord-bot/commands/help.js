@@ -227,7 +227,7 @@ module.exports = {
 
         interaction.reply({ content: null, embeds: [helpEmbed], components: [guide_select_menu, other_buttons] });
         let message = await interaction.fetchReply();
-        const help_collector = message.createMessageComponentCollector({ time: 600000 });
+        const help_collector = message.createMessageComponentCollector({ idle: 360000 });
         let guideEmbed, basicsEmbed;
 
         help_collector.on('collect', async i => {

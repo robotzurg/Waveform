@@ -430,7 +430,7 @@ module.exports = {
         let message = await interaction.fetchReply();
         let do_arrows = false;
         
-        const collector = message.createMessageComponentCollector({ time: 360000 });
+        const collector = message.createMessageComponentCollector({ idle: 120000 });
 
         collector.on('collect', async i => {
             do_arrows = false;

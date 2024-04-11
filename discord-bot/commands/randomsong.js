@@ -137,7 +137,7 @@ module.exports = {
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${(lfmScrobbles !== false) ? `\nScrobbles: \`${lfmScrobbles}\`` : ''}` +
-                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}`);
                 } else if (globalUserArray.length != 0) {
                     if (localUserArray.length > 0) {
                         songDataExists = true;
@@ -146,10 +146,10 @@ module.exports = {
                     `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + 
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
-                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}`);
                 } else {
                     if (spotifyUrl == 'N/A') {
-                        randomSongEmbed.setDescription(`<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
+                        randomSongEmbed.setDescription(`<:spotify:899365299814559784> [Spotify](${spotifyUrl})`);
                     }
                 }
 
@@ -170,10 +170,10 @@ module.exports = {
                     } 
                 }
             } else {
-                randomSongEmbed.setDescription(`${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+                randomSongEmbed.setDescription(`${spotifyUrl == 'N/A' ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}`);
             }
         } else {
-            randomSongEmbed.setDescription(`${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+            randomSongEmbed.setDescription(`${spotifyUrl == 'N/A' ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}`);
         }
         
 

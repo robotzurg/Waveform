@@ -152,7 +152,7 @@ module.exports = {
         if (pagedReviewList.length > 1) {
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ time: 360000 });
+            const collector = message.createMessageComponentCollector({ idle: 120000 });
 
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;

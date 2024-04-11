@@ -68,7 +68,7 @@ module.exports = {
                 .setColor(`#ffff00`)
                 .setTitle(`${hofList[0].orig_artists.join(' & ')} - ${hofList[0].db_song_name}`)
                 .setDescription(`This song currently has **${hofList[0].star_count}** favorites 🌟` + 
-                `${hofList[0].song_url == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${hofList[0].song_url})`}`)
+                `${hofList[0].song_url == false ? `` : `\n<:spotify:899365299814559784> [Spotify](${hofList[0].song_url})`}`)
                 .addFields({ name: 'Favorited Reviews:', value: hofList[0].user_stars.map(v => `🌟 <@${v.id}> \`${v.rating}/10\``).join('\n') })
                 .setImage(hofList[0].art)
                 .setFooter({ text: `Page 1 / ${hofList.length} • Use the middle button to select a page!` });
@@ -77,7 +77,7 @@ module.exports = {
         interaction.editReply({ content: null, embeds: [hofCommandEmbed], components:[row] });
 
         let message = await interaction.fetchReply();
-        const collector = message.createMessageComponentCollector({ time: 360000 });
+        const collector = message.createMessageComponentCollector({ idle: 120000 });
 
         collector.on('collect', async i => {
             if (i.customId == 'left') { 
@@ -111,7 +111,7 @@ module.exports = {
                             .setColor(`#ffff00`)
                             .setTitle(`${hofList[page_num].orig_artists.join(' & ')} - ${hofList[page_num].db_song_name}`)
                             .setDescription(`This song currently has **${hofList[page_num].star_count}** favorites 🌟` + 
-                            `${hofList[page_num].song_url == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${hofList[page_num].song_url})`}`)
+                            `${hofList[page_num].song_url == false ? `` : `\n<:spotify:899365299814559784> [Spotify](${hofList[page_num].song_url})`}`)
                             .addFields({ name: 'Favorited Reviews:', value: hofList[page_num].user_stars.map(v => `🌟 <@${v.id}> \`${v.rating}/10\``).join('\n') })
                             .setImage(hofList[page_num].art)
                             .setFooter({ text: `Page ${page_num + 1} / ${hofList.length} • Use the middle button to select a page!` });
@@ -137,7 +137,7 @@ module.exports = {
                         .setColor(`#ffff00`)
                         .setTitle(`${hofList[page_num].orig_artists.join(' & ')} - ${hofList[page_num].db_song_name}`)
                         .setDescription(`This song currently has **${hofList[page_num].star_count}** favorites 🌟` +
-                        `${hofList[page_num].song_url == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${hofList[page_num].song_url})`}`)
+                        `${hofList[page_num].song_url == false ? `` : `\n<:spotify:899365299814559784> [Spotify](${hofList[page_num].song_url})`}`)
                         .addFields({ name: 'Favorited Reviews:', value: hofList[page_num].user_stars.map(v => `🌟 <@${v.id}> \`${v.rating}/10\``).join('\n') })
                         .setImage(hofList[page_num].art)
                         .setFooter({ text: `Page ${page_num + 1} / ${hofList.length} • Use the middle button to select a page!` });

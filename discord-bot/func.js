@@ -1369,18 +1369,26 @@ module.exports = {
      * @param {Object} options Default: {sort = 'asc', rating = false, user = false, guild = false} should be adjusted based on queryType necessities.
      * @returns A list of the query result 
      */
-    queryReviewDatabase: async function(queryType = DatabaseQuery.GlobalAllAlbums, options = { sort: 'asc', rating: false, user: false, guild: false }) {
+    queryReviewDatabase: async function(queryType = DatabaseQuery.GlobalAllAlbums, options = { sort: 'asc', rating: false, user_id: false, guild_id: false, no_remix: false }) {
         const { convertToSetterName, get_user_reviews, getProperRemixers } = require('./func.js');
 
         const ARTISTARRAY = db.reviewDB.keyArray();
         let songSkip = [];
         let resultList = [];
-        let optionsUser = options.user || false;
+        let optionsUser = options.user_id || false;
         let optionsSort = options.sort || 'asc';
-        let optionsGuild = options.guild || false;
+        let optionsNoRemix = options.no_remix || false;
+
+        //let optionsGuild = options.guild_id || false;
         let optionsRating = options.rating || false;
+        let allSongQueries = [DatabaseQuery.GlobalAllSongs, DatabaseQuery.ServerAllSongs, DatabaseQuery.UserAllSongs];
+        let allSpecSongQueries = [DatabaseQuery.GlobalSpecRatingAlbums, DatabaseQuery.ServerSpecRatingSongs, DatabaseQuery.UserSpecRatingSongs];
+        let allRemixQueries = [DatabaseQuery.GlobalAllRemixes, DatabaseQuery.ServerAllRemixes, DatabaseQuery.UserAllRemixes];
+        let allSpecRemixQueries = [DatabaseQuery.GlobalSpecRatingRemixes, DatabaseQuery.ServerSpecRatingRemixes, DatabaseQuery.UserSpecRatingRemixes];
         let allAlbumQueries = [DatabaseQuery.GlobalAllAlbums, DatabaseQuery.ServerAllAlbums, DatabaseQuery.UserAllAlbums];
+        let allSpecAlbumQueries = [DatabaseQuery.GlobalSpecRatingAlbums, DatabaseQuery.ServerSpecRatingAlbums, DatabaseQuery.UserSpecRatingAlbums];
         let allEPQueries = [DatabaseQuery.GlobalAllEPs, DatabaseQuery.ServerAllEPs, DatabaseQuery.UserAllEPs];
+        let allSpecEPQueries = [DatabaseQuery.GlobalSpecRatingEPs, DatabaseQuery.ServerSpecRatingEPs, DatabaseQuery.UserSpecRatingEPs];
 
         for (let artist of ARTISTARRAY) {
             let songArray = Object.keys(db.reviewDB.get(artist));
@@ -1391,10 +1399,15 @@ module.exports = {
                 let setterSongName = convertToSetterName(song);
                 let songObj = db.reviewDB.get(artist, `${setterSongName}`);
                 let userArray = [];
+                let isRemix = false;
                 if (songObj != null && songObj != undefined) {
                     userArray = await get_user_reviews(songObj);
                 } else {
                     userArray = [];
+                }
+
+                if (optionsUser != false && queryType.includes('user')) {
+                    userArray = userArray.filter(v => v == optionsUser);
                 }
 
                 if (songSkip.includes(`${artist} - ${song}`)) continue;
@@ -1412,7 +1425,7 @@ module.exports = {
                 let rmxArtistArray = [];
 
                 // Handle remixes we encounter
-                if (song.includes(' Remix)')) {
+                if (song.includes(' Remix)') && optionsNoRemix == false) {
                     let temp = song.split(' Remix)')[0].split('(');
                     let rmxArtist = temp[temp.length - 1];
         
@@ -1432,19 +1445,35 @@ module.exports = {
                         origArtistArray = origArtistArray.filter(v => !v.includes(rmxArtist));
                     }
                     allArtists = rmxArtistArray;
+                    isRemix = true;
+                } else if (song.includes(' Remix)') && optionsNoRemix == true) {
+                    continue;
                 }
 
                 let resultDataObj = { origArtistArray: origArtistArray, allArtists, name: song, dataObj: songObj };
+                for (let k = 0; k < userArray.length; k++) {
+                    let userData = songObj[userArray[k]];
 
-                if (song.includes(' LP') && allAlbumQueries.includes(queryType)) {
-                    resultList.push(resultDataObj);
-                } else if (song.includes(' EP') && allEPQueries.includes(queryType)) {
-                    resultList.push(resultDataObj);
+                    if (song.includes(' LP') && allAlbumQueries.includes(queryType)) {
+                        resultList.push(resultDataObj); break;
+                    } else if (song.includes(' EP') && allEPQueries.includes(queryType)) {
+                        resultList.push(resultDataObj); break;
+                    } else if (isRemix == true && allRemixQueries.includes(queryType)) {
+                        resultList.push(resultDataObj); break;
+                    } else if (allSongQueries.includes(queryType) && !song.includes(' EP') && !song.includes(' LP')) {
+                        resultList.push(resultDataObj); break;
+
+                    // Specific rating   
+                    } else if (song.includes(' LP') && allSpecAlbumQueries.includes(queryType)) {
+                        if (parseFloat(userData.rating) === parseFloat(optionsRating)) resultList.push(resultDataObj); break;
+                    } else if (song.includes(' EP') && allSpecEPQueries.includes(queryType)) {
+                        if (parseFloat(userData.rating) === parseFloat(optionsRating)) resultList.push(resultDataObj); break;
+                    } else if (isRemix == true && allSpecRemixQueries.includes(queryType) && !song.includes(' EP') && !song.includes(' LP')) {
+                        if (parseFloat(userData.rating) === parseFloat(optionsRating)) resultList.push(resultDataObj); break;
+                    } else if (allSpecSongQueries.includes(queryType) && !song.includes(' EP') && !song.includes(' LP')) {
+                        if (parseFloat(userData.rating) === parseFloat(optionsRating)) resultList.push(resultDataObj); break;
+                    }
                 }
-
-                // for (let k = 0; k < userArray.length; k++) {
-                //     let userData = songObj[userArray[k]];
-                // }
 
                 for (let v = 0; v < allArtists.length; v++) {
                     if (!songSkip.includes(`${allArtists[v]} - ${song}`)) {
@@ -1454,6 +1483,94 @@ module.exports = {
             }
         }
 
+        if (queryType.includes('user')) {
+            if (optionsSort == 'asc') {
+                resultList.sort((a, b) => {
+                    let a_userData = a.dataObj[optionsUser];
+                    let b_userData = b.dataObj[optionsUser];
+                    return (parseFloat(b_userData.rating !== false ? b_userData.rating : -1) * (b_userData.starred == true ? 100 : 1)) - (parseFloat(a_userData.rating !== false ? a_userData.rating : -1) * (a_userData.starred == true ? 100 : 1));
+                });
+            } else if (optionsSort == 'dsc') {
+                resultList.sort((a, b) => {
+                    let a_userData = a.dataObj[optionsUser];
+                    let b_userData = b.dataObj[optionsUser];
+                    return parseFloat(a_userData.rating !== false ? a_userData.rating : -1) - parseFloat(b_userData.rating !== false ? b_userData.rating : -1);
+                });
+            } else if (optionsSort == 'recent') {
+                resultList.sort((a, b) => {
+                    let a_timestamp = a.dataObj[optionsUser].timestamp;
+                    let b_timestamp = b.dataObj[optionsUser].timestamp;
+
+                    if (a_timestamp === undefined && b_timestamp === undefined) return 0;
+                    if (a_timestamp === undefined) return 1;
+                    if (b_timestamp === undefined) return -1;
+
+                    return b_timestamp - a_timestamp;
+                });
+            }
+        }
+
         return resultList;
+    },
+
+    /**
+     * Attempts to retrieve the Spotify and Last.fm URL of a song based off of purely name.
+     * May not always result in the correct URL, but it'll usually be close.
+     * Gives a basic google link if it can't find anything
+     * @param {Array} artistArray The array of artists involved in the song
+     * @param {String} musicName The name of the piece of music
+     * @param {Object} spotifyApi Spotify API object to use for query
+     * @returns An object structured like this: {lastfm_url: lfm_url, spotify_url: sp_url}
+     */
+    getMusicUrl: async function(artistArray, musicName, spotifyApi = false) {
+        const { spotify_api_setup } = require('./func.js');
+
+        if (spotifyApi == false) {
+            spotifyApi = await spotify_api_setup('122568101995872256');
+        }
+
+        let search = musicName;
+        let songData;
+        search = musicName.replace(' EP', '');
+        search = search.replace(' LP', '');
+        let song = `${artistArray[0]} ${search}`;
+
+        await spotifyApi.searchTracks(song).then(function(data) {  
+            let results = data.body.tracks.items;
+            songData = data.body.tracks.items[0];
+            for (let i = 0; i < results.length; i++) {
+                if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].album.name.toLowerCase()}` == `${song.toLowerCase()}`) {
+                    songData = results[i];
+                    break;
+                } else if (`${results[i].album.artists.map(v => v.name)[0].toLowerCase()} ${results[i].name.toLowerCase()}` == `${song.toLowerCase()}`) {
+                    songData = results[i];
+                }
+            }
+        });
+
+        if (songData === false) {
+            return { lastfm_url: 'https://www.google.com', spotify_url: 'https://www.google.com', spotify_uri: false };
+        } else {
+            return { lastfm_url: 'https://www.google.com', spotify_url: songData.external_urls.spotify, spotify_uri: songData.uri };
+        }
+    },
+
+    spotifyUritoURL: async function(spotifyUri, origArtistArray = false, musicName = false) {
+        const { getMusicUrl } = require('./func.js');
+        if (spotifyUri == undefined || spotifyUri == false || spotifyUri == null) {
+            if (origArtistArray === false || musicName === false) {
+                return 'https://www.google.com';
+            } else {
+                let musicUrl = await getMusicUrl(origArtistArray, musicName);
+                console.log(musicUrl);
+                return musicUrl.spotify_url;
+            }
+        } else if (spotifyUri.includes('track')) {
+            return `https://open.spotify.com/track/${spotifyUri.replace('spotify:track:', '')}`;
+        } else if (spotifyUri.includes('album')) {
+            return `https://open.spotify.com/album/${spotifyUri.replace('spotify:album:', '')}`;
+        } else {
+            return 'https://www.google.com';
+        }
     },
 };

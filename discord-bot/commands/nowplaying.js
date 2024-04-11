@@ -1,6 +1,6 @@
 const { EmbedBuilder, SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const db = require('../db.js');
-const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data, getEmbedColor, convertToSetterName, lfm_api_setup } = require('../func.js');
+const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data, getEmbedColor, convertToSetterName, lfm_api_setup, getMusicUrl } = require('../func.js');
 const ms_format = require('format-duration');
 const progressbar = require('string-progressbar');
 const _ = require('lodash');
@@ -149,6 +149,8 @@ module.exports = {
             lfmTrackData = false;
         }
 
+        getMusicUrl(origArtistArray, songName);
+
         const npEmbed = new EmbedBuilder()
         .setColor(`${getEmbedColor(interaction.member)}`)
         .setTitle(`${origArtistArray.join(' & ')} - ${songDisplayName}`)
@@ -157,8 +159,8 @@ module.exports = {
 
         let extraEmbedData = `${lfmTrackData != false ? `\nScrobbles: \`${lfmTrackData.userplaycount}\`` : ``}` +
         `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-        `${spotifyUrl == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}` +
-        `${lfmUrl == false ? `` : `\n<:lastfm:1204990903278895154> [Last.fm](${lfmUrl})`}`;
+        `${spotifyUrl == false ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}` +
+        `${lfmUrl == false ? `` : `\n<:lastfm:1227869050084921375> [Last.fm](${lfmUrl})`}`;
 
         if (db.reviewDB.has(artistArray[0])) {
             let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
@@ -204,8 +206,8 @@ module.exports = {
                 extraEmbedData = `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                 `${lfmTrackData != false ? `\nScrobbles: \`${lfmTrackData.userplaycount}\`` : ``}` +
                 `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-                `${spotifyUrl == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}` +
-                `${lfmUrl == false ? `` : `\n<:lastfm:1204990903278895154> [Last.fm](${lfmUrl})`}`;
+                `${spotifyUrl == false ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}` +
+                `${lfmUrl == false ? `` : `\n<:lastfm:1227869050084921375> [Last.fm](${lfmUrl})`}`;
 
                 if (globalRankNumArray.length != 0) { 
                     if (localRankNumArray.length > 0) {

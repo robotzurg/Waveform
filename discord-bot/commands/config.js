@@ -154,7 +154,7 @@ module.exports = {
         let msg_filter = m => m.author.id == interaction.user.id;
         let int_filter = i => i.user.id == interaction.user.id;
         let msg_collector = interaction.channel.createMessageCollector({ filter: msg_filter, time: 720000 });
-        const collector = interaction.channel.createMessageComponentCollector({ filter: int_filter, time: 360000 });
+        const collector = interaction.channel.createMessageComponentCollector({ filter: int_filter, idle: 120000 });
         await collector.on('collect', async sel => {
             if (sel.customId == 'config') {
 

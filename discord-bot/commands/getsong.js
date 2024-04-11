@@ -269,15 +269,15 @@ module.exports = {
                 `${lfmServerScrobbles !== false ? `\n${lfmScrobbleSetting == 'reviewers' ? `*Reviewers overall have*` : `*This server has*`} ***${lfmServerScrobbles}*** *scrobbles on this song!*` : ``}` +
                 `\n*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` + 
                 `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} favorite${starCount == 1 ? '' : 's'}!** :star2:`)}` + 
-                `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
+                `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:899365299814559784> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
             } else {
                 songEmbed.setDescription(`The average rating of this song globally is **${Math.round(average(rankNumArray) * 10) / 10}!**` + 
                 `\nThis song has **${rankNumArray.length}** ratings.` +
                 `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} favorite${starCount == 1 ? '' : 's'} globally!** :star2:`)}` + 
-                `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
+                `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:899365299814559784> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
             }        
         } else {
-            songEmbed.setDescription(`No Reviews have been made for this song.${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
+            songEmbed.setDescription(`No Reviews have been made for this song.${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:899365299814559784> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
         }
 
         if (songArt == false) {
@@ -435,7 +435,7 @@ module.exports = {
         let noIdleReset = false;
 
         if (subcommand == 'server') {
-            const collector = message.createMessageComponentCollector({ time: 360000 });
+            const collector = message.createMessageComponentCollector({ idle: 120000 });
             collector.on('collect', async i => {
                 if (i.customId == 'select') { // Select Menu
 

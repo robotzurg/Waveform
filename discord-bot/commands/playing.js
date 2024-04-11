@@ -88,7 +88,7 @@ module.exports = {
                     }
                 }
                 if (lfmScrobbles != false) extraData += `\n**Scrobbles:** \`${lfmScrobbles}\``;
-                playList.push(`- ${platform == 'lastfm' ? `<:lastfm:1204990903278895154>` : `<:spotify:961509676053323806>`} <@${member}>: [**${origArtistArray.join(' & ')} - ${songDisplayName}**](${songUrl})${extraData != `` ? `${extraData}` : ``}\n`);
+                playList.push(`- ${platform == 'lastfm' ? `<:lastfm:1227869050084921375>` : `<:spotify:899365299814559784>`} <@${member}>: [**${origArtistArray.join(' & ')} - ${songDisplayName}**](${songUrl})${extraData != `` ? `${extraData}` : ``}\n`);
             }
         }
 
@@ -124,7 +124,7 @@ module.exports = {
         if (pagedPlayList.length > 1) {
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ time: 360000 });
+            const collector = message.createMessageComponentCollector({ idle: 120000 });
 
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;
