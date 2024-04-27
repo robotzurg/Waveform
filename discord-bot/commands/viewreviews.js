@@ -24,7 +24,7 @@ module.exports = {
                         { name: 'Descending', value: 'dsc' },
                         { name: 'Recently Reviewed', value: 'recent' }, // TODO: NOT DONE
                         { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
-                        { name: 'Alphabetical Song', value: 'alpha_music' }, // TODO: NOT DONE
+                        { name: 'Alphabetical Songgg', value: 'alpha_music' }, // TODO: NOT DONE
                     ))
     
             .addUserOption(option => 
