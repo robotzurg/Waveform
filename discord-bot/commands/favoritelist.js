@@ -29,7 +29,7 @@ module.exports = {
         }
 
         let starList = db.user_stats.get(user.id, 'stats.star_list');
-        if (starList.length === 0) return interaction.reply('You don\'t currently have any songs favorited. To favorite a song, use `/setfavorite` or click on the star button when reviewing!\nA favorite is basically a marker to mark songs you really really like! Use it to mark your top favorite songs!');
+        if (starList.length === 0) return interaction.reply('You don\'t currently have any songs favorited. To favorite a song, use `/setfavorite` or click on the favorite button when reviewing!\nA favorite is basically a marker to mark songs you really really like! Use it to mark your top favorite songs!');
         let paged_star_list = _.chunk(starList, 10);
         let page_num = 0;
         const row = new ActionRowBuilder()

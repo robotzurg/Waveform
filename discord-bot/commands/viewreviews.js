@@ -17,12 +17,14 @@ module.exports = {
 
             .addStringOption(option => 
                 option.setName('sort')
-                    .setDescription('Sort reviews by ascending rating, descending rating, or by recently reviewed (default ascending)')
+                    .setDescription('Sort reviews by ascending rating, descending rating, recently reviewed, or alpha (default ascending)')
                     .setRequired(false)
                     .addChoices(
                         { name: 'Ascending', value: 'asc' },
                         { name: 'Descending', value: 'dsc' },
-                        { name: 'Recently Reviewed', value: 'recent' },
+                        { name: 'Recently Reviewed', value: 'recent' }, // TODO: NOT DONE
+                        { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
+                        { name: 'Alphabetical Song', value: 'alpha_music' }, // TODO: NOT DONE
                     ))
     
             .addUserOption(option => 
@@ -45,12 +47,14 @@ module.exports = {
                     
             .addStringOption(option => 
                 option.setName('sort')
-                    .setDescription('Sort reviews by ascending rating, descending rating, or by recently reviewed (default ascending)')
+                    .setDescription('Sort reviews by ascending rating, descending rating, recently reviewed, or alpha (default ascending)')
                     .setRequired(false)
                     .addChoices(
                         { name: 'Ascending', value: 'asc' },
                         { name: 'Descending', value: 'dsc' },
-                        { name: 'Recently Reviewed', value: 'recent' },
+                        { name: 'Recently Reviewed', value: 'recent' }, // TODO: NOT DONE
+                        { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
+                        { name: 'Alphabetical Remix', value: 'alpha_music' }, // TODO: NOT DONE
                     ))
 
             .addUserOption(option => 
@@ -69,12 +73,14 @@ module.exports = {
 
             .addStringOption(option => 
                 option.setName('sort')
-                    .setDescription('Sort reviews by ascending rating, descending rating, or by recently reviewed (default ascending)')
+                    .setDescription('Sort reviews by ascending rating, descending rating, recently reviewed, or alpha (default ascending)')
                     .setRequired(false)
                     .addChoices(
                         { name: 'Ascending', value: 'asc' },
                         { name: 'Descending', value: 'dsc' },
-                        { name: 'Recently Reviewed', value: 'recent' },
+                        { name: 'Recently Reviewed', value: 'recent' }, // TODO: NOT DONE
+                        { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
+                        { name: 'Alphabetical EP', value: 'alpha_music' }, // TODO: NOT DONE
                     ))
             
             .addUserOption(option => 
@@ -92,12 +98,14 @@ module.exports = {
 
             .addStringOption(option => 
                 option.setName('sort')
-                    .setDescription('Sort reviews by ascending rating, descending rating, or by recently reviewed (default ascending)')
+                    .setDescription('Sort reviews by ascending rating, descending rating, recently reviewed, or alpha (default ascending)')
                     .setRequired(false)
                     .addChoices(
                         { name: 'Ascending Rating', value: 'asc' },
                         { name: 'Descending Rating', value: 'dsc' },
-                        { name: 'Recently Reviewed', value: 'recent' },
+                        { name: 'Recently Reviewed', value: 'recent' }, // TODO: NOT DONE
+                        { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
+                        { name: 'Alphabetical Album', value: 'alpha_music' }, // TODO: NOT DONE
                     ))
 
             .addUserOption(option => 
@@ -106,7 +114,7 @@ module.exports = {
                     .setRequired(false)))
 
         .setDMPermission(false),
-    help_desc: `Placeholder, will get text soon`,
+    help_desc: `View all the reviews you've made in the database, with various filters.`,
 	async execute(interaction, client) {
         try {
 
@@ -130,12 +138,13 @@ module.exports = {
             queryNoRemix = interaction.options.getBoolean('no_remixes');
             if (queryNoRemix == null) queryNoRemix = false;
         }
+        let queryTitle;
         
         switch (queryRequest) {
-            case 'song': queryRequest = (queryRating !== false ? DatabaseQuery.UserSpecRatingSongs : DatabaseQuery.UserAllSongs); break;
-            case 'remix': queryRequest = (queryRating !== false ? DatabaseQuery.UserSpecRatingRemixes : DatabaseQuery.UserAllRemixes); break;
-            case 'ep': queryRequest = (queryRating !== false ? DatabaseQuery.UserSpecRatingEPs : DatabaseQuery.UserAllEPs); break;
-            case 'album': queryRequest = (queryRating !== false ? DatabaseQuery.UserSpecRatingAlbums : DatabaseQuery.UserAllAlbums); break;
+            case 'song': queryRequest = (queryRating !== false ? DatabaseQuery.UserSpecRatingSongs : DatabaseQuery.UserAllSongs); queryTitle = 'Song Reviews'; break;
+            case 'remix': queryRequest = (queryRating !== false ? DatabaseQuery.UserSpecRatingRemixes : DatabaseQuery.UserAllRemixes); queryTitle = 'Remix Reviews'; break;
+            case 'ep': queryRequest = (queryRating !== false ? DatabaseQuery.UserSpecRatingEPs : DatabaseQuery.UserAllEPs); queryTitle = 'EP Reviews'; break;
+            case 'album': queryRequest = (queryRating !== false ? DatabaseQuery.UserSpecRatingAlbums : DatabaseQuery.UserAllAlbums); queryTitle = 'Album Reviews'; break;
         }
 
         let resultList = await queryReviewDatabase(queryRequest, { sort: sortMode, rating: queryRating, user_id: queryUser, guild: interaction.guild.id, no_remix: queryNoRemix });
@@ -155,6 +164,10 @@ module.exports = {
                 .setStyle(ButtonStyle.Primary)
                 .setEmoji('⬅️'),
             new ButtonBuilder()
+                .setCustomId('choose')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('📝'),
+            new ButtonBuilder()
                 .setCustomId('right')
                 .setStyle(ButtonStyle.Primary)
                 .setEmoji('➡️'),
@@ -168,7 +181,7 @@ module.exports = {
         // }));
 
         const reviewListEmbed = new EmbedBuilder()
-            .setTitle(`Results for Query ${queryRequest}${queryRating !== false ? ` with rating ${queryRating}/10` : ``}`)
+            .setTitle(`${queryTitle}${queryRating !== false ? ` with rating ${queryRating}/10` : ``}`)
             .setDescription(paged_review_list[page_num].join('\n'));
             if (paged_review_list.length > 1) {
                 reviewListEmbed.setFooter({ text: `Page 1 / ${paged_review_list.length} • ${resultList.length} results` });
@@ -183,18 +196,47 @@ module.exports = {
             const collector = message.createMessageComponentCollector({ idle: 120000 });
 
             collector.on('collect', async i => {
-                (i.customId == 'left') ? page_num -= 1 : page_num += 1;
-                page_num = _.clamp(page_num, 0, paged_review_list.length - 1);
+                if (i.customId == 'left') {
+                    page_num -= 1;
+                } else if (i.customId == 'right') {
+                    page_num += 1;
+                } else { // If its the choose your own page customId
+                    const filter = m => m.author.id == interaction.user.id;
+                    let pagenum_collector = interaction.channel.createMessageCollector({ filter: filter, max: 1, time: 60000 });
+                    i.update({ content: `Type in what page number you'd like to jump to, from 1-${paged_review_list.length}`, embeds: [], components: [] });
+    
+                    pagenum_collector.on('collect', async m => {
+                        let num = m.content;
+                        if (isNaN(num)) num = 1;
+                        page_num = parseInt(num) - 1;
+                        page_num = _.clamp(page_num, 0, paged_review_list.length - 1);
 
-                // formattedReviewListPage = await Promise.all(paged_review_list[page_num].map(async v => {
-                //     let userRating = v.dataObj[queryUser].rating;
-                //     let songUrl = await spotifyUritoURL(v.dataObj.spotify_uri, v.origArtistArray, v.name);
-                //     return `-${v.dataObj[queryUser].starred === true ? ' ⭐' : ``} [${v.origArtistArray.join(' & ')} - ${v.name}](${songUrl})** (${userRating === false ? `No Rating` : `${userRating}/10`})**`;
-                // }));
+                        // formattedReviewListPage = await Promise.all(paged_review_list[page_num].map(async v => {
+                        //     let userRating = v.dataObj[queryUser].rating;
+                        //     let songUrl = await spotifyUritoURL(v.dataObj.spotify_uri, v.origArtistArray, v.name);
+                        //     return `-${v.dataObj[queryUser].starred === true ? ' ⭐' : ``} [${v.origArtistArray.join(' & ')} - ${v.name}](${songUrl})** (${userRating === false ? `No Rating` : `${userRating}/10`})**`;
+                        // }));
+    
+                        reviewListEmbed.setDescription(paged_review_list[page_num].join('\n'));
+                        reviewListEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_review_list.length} • ${resultList.length} results` });
+                        m.delete();
+                        interaction.editReply({ content: null, embeds: [reviewListEmbed], components: [row] });
+                    });
+                }
+    
+                if (i.customId != 'choose') {
+                    page_num = _.clamp(page_num, 0, paged_review_list.length - 1);
 
-                reviewListEmbed.setDescription(paged_review_list[page_num].join('\n'));
-                reviewListEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_review_list.length} • ${resultList.length} results` });
-                await i.update({ content: null, embeds: [reviewListEmbed] });
+                    // formattedReviewListPage = await Promise.all(paged_review_list[page_num].map(async v => {
+                    //     let userRating = v.dataObj[queryUser].rating;
+                    //     let songUrl = await spotifyUritoURL(v.dataObj.spotify_uri, v.origArtistArray, v.name);
+                    //     return `-${v.dataObj[queryUser].starred === true ? ' ⭐' : ``} [${v.origArtistArray.join(' & ')} - ${v.name}](${songUrl})** (${userRating === false ? `No Rating` : `${userRating}/10`})**`;
+                    // }));
+    
+                    reviewListEmbed.setDescription(paged_review_list[page_num].join('\n'));
+                    reviewListEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_review_list.length} • ${resultList.length} results` });
+                    await i.update({ content: null, embeds: [reviewListEmbed] });
+                }
             });
 
             collector.on('end', async () => {

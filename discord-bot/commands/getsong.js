@@ -246,11 +246,11 @@ module.exports = {
 
         // Server collection scrobbles
         if (lfmScrobbleSetting == 'reviewers' || lfmScrobbleSetting == 'server') {
-            lfmServerScrobbles = lfmScrobbles === false ? 0 : parseInt(lfmScrobbles);
+            lfmServerScrobbles = 0;
             if (lfmApi == false) lfmApi = await lfm_api_setup(lfmUsers[0].user_id);
 
             let tempIDList = userIDList.map(v => v[1]);
-            if (lfmScrobbleSetting == 'reviewers') lfmUsers = lfmUsers.filter(v => tempIDList.includes(v.user_id) && v.user_id != interaction.user.id);
+            if (lfmScrobbleSetting == 'reviewers') lfmUsers = lfmUsers.filter(v => tempIDList.includes(v.user_id));
             for (let u of lfmUsers) {
                 if (lfmApi == false) { 
                     lfmApi = await lfm_api_setup(u.user_id);
