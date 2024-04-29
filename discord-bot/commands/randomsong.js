@@ -10,7 +10,7 @@ module.exports = {
     help_desc: `This command will give you a random song from the database, from a random artist, and give you basic information about it, and a spotify link if one exists for it.\n` +
     `You can also use the "Reviews" button to see relevant reviews in the server of the song, if there are any.\n\n` +
     `This is particularly useful if you want to find something random to listen to or review!`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
         if (!interaction.deferred && !interaction.replied) {
             await interaction.deferReply();
@@ -203,11 +203,11 @@ module.exports = {
             if (i.customId == 'getsong') {
                 i.update({ content: 'Loading song data...', embeds: [] });
                 let command = client.commands.get('getsong');
-                await command.execute(interaction, client, artistArray, randomSong);
+                await command.execute(interaction, client, serverConfig, artistArray, randomSong);
             } else {
                 i.update({ content: null });
                 let command = client.commands.get('randomsong');
-                await command.execute(interaction, client);
+                await command.execute(interaction, client, serverConfig);
             }
         });
 

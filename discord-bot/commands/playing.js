@@ -11,7 +11,7 @@ module.exports = {
         .setDescription('View currently playing songs on Spotify by Waveform users.')
         .setDMPermission(false),
     help_desc: `View the currently playing songs of any Spotify users on Waveform in this Discord Server.`,
-	async execute(interaction) {
+	async execute(interaction, client, serverConfig) {
         interaction.deferReply();
         const members = await interaction.guild.members.fetch();
         let memberList = members.map(v => v.user.id);
@@ -84,6 +84,7 @@ module.exports = {
                 if (db.reviewDB.has(origArtistArray[0])) {
                     let reviewData = db.reviewDB.get(origArtistArray[0], `${dbSongName}.${interaction.user.id}`);
                     if (reviewData != undefined) {
+                        if (serverConfig.disable_ratings === true) reviewData.rating = false;
                         if (reviewData.rating != false) extraData = `\n**Rating:** \`${reviewData.rating}/10${reviewData.starred ? `⭐\`` : `\``}`;
                     }
                 }

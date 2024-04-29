@@ -33,7 +33,7 @@ module.exports = {
     `You can view a summary view of all data relating to an artist globally by using the \`global\` subcommand, or view data locally using the \`server\` subcommand.\n\n` +
     `This command will by default show a last.fm scrobble count for everyone in the server logged into last.fm, which makes the command take a little bit longer to run, but this can be turned off by using the \`hide_scrobbles\` argument.\n\n` +
     `Leaving the artist argument blank will pull from your spotify playback to fill in the argument (if logged in to Waveform with Spotify)`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
             if (!interaction.deferred && !interaction.replied) await interaction.deferReply();
             interaction.editReply('Loading artist data...');
@@ -323,6 +323,11 @@ module.exports = {
                 let rmxOgArtistArray = [];
                 if (songArray[i].includes(' Remix)')) rmxOgArtistArray = songObj.collab;
 
+                if (serverConfig.disable_ratings === true) {
+                    globalRankNumArray = [];
+                    localRankNumArray = [];
+                }
+
                 let reviewNum, rankNumArray;
                 reviewNum = subcommand == 'global' ? globalReviewNum : localReviewNum;
                 rankNumArray = subcommand == 'global' ? globalRankNumArray : localRankNumArray;
@@ -400,7 +405,7 @@ module.exports = {
             let rankNumArray = interaction.options.getSubcommand() == 'global' ? globalRankNumArray : localRankNumArray;
             let artistEmbedDesc = `${lfmScrobbles !== false ? `*You have* ***${lfmScrobbles}*** *scrobbles on ${artist}!*` : ``}` +
             `${lfmServerScrobbles != false && subcommand != 'global' ? `\n*This server has* ***${lfmServerScrobbles}*** *scrobbles on ${artist}!*` : ``}` +
-            `${(singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) && rankNumArray.length != 0 ? `\n*The average ${subcommand == 'global' ? 'global' : 'local'} rating of ${artist} is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` : `No reviewed songs. :(`}` + 
+            `${(singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) && rankNumArray.length != 0 ? `\n*The average ${subcommand == 'global' ? 'global' : 'local'} rating of ${artist} is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` : ``}` + 
             `${fullStarNum != 0 ? `\n:star2: **${artist} has ${fullStarNum} total favorites in this server!** :star2:` : ``}`;
 
             if (rankNumArray.length != 0) { 
@@ -410,10 +415,7 @@ module.exports = {
                     artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
                 }
             } else if (singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) {
-                if (fullStarNum != 0) { // If the artist has stars on any of their songs
-                    artistEmbed.setDescription(artistEmbedDesc);
-                }
-
+                artistEmbed.setDescription(artistEmbedDesc);
                 artistEmbed.addFields([{ name: focusedName, value: focusedArray[0].join('\n') }]);
                 artistEmbed.setFooter({ text: `Page ${page_num + 1} / ${focusedArray.length}` });
             } else {

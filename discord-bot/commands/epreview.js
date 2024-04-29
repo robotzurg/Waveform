@@ -103,7 +103,7 @@ module.exports = {
     + `The subcommand \`with_spotify\` pulls from your spotify playback to fill in arguments (if logged into Waveform with Spotify)` + 
     ` while the \`manually\` subcommand allows you to manually type in the EP/LP name yourself.` + 
     ` and the \`spotify_link\` subcommand allows you to review by placing in a valid open.spotify.com EP/LP link.`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
             // Check if we have an existing EP/LP review running, and back out immediately if we do.
             if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
@@ -218,6 +218,11 @@ module.exports = {
                 if (isNaN(overallRating)) return interaction.reply('The rating you put in is not valid, please make sure you put in an integer or decimal rating!');
             }
 
+            
+            if (serverConfig.disable_ratings === true) {
+                overallRating = false;
+            }
+
             let overallReview = interaction.options.getString('overall_review');
             if (overallReview == null) overallReview = false;
             if (overallReview != false) {
@@ -316,10 +321,15 @@ module.exports = {
                 );
             }
 
+            if (serverConfig.disable_ratings === false) {
+                row.addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('rating').setLabel('Rating')
+                        .setStyle(ButtonStyle.Primary).setEmoji('📝'),
+                );
+            }
+
             row.addComponents(
-                new ButtonBuilder()
-                    .setCustomId('rating').setLabel('Rating')
-                    .setStyle(ButtonStyle.Primary).setEmoji('📝'),
                 new ButtonBuilder()
                     .setCustomId('review').setLabel('Review')
                     .setStyle(ButtonStyle.Primary).setEmoji('📝'),
@@ -327,7 +337,6 @@ module.exports = {
                     .setCustomId('star')
                     .setStyle(ButtonStyle.Secondary).setLabel('Favorite').setEmoji('🌟'),
             );
-
 
             // Setup bottom row
             if (overallRating == false && overallReview == false) {

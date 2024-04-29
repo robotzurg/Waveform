@@ -13,8 +13,11 @@ module.exports = {
                 .setDescription('User whose list you want to see. Defaults to yourself.')
                 .setRequired(false)),
     help_desc: `Gets a full list of every rating a specified user has given, and how many times they have given that rating.`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
+        if (serverConfig.disable_ratings === true) {
+            return interaction.reply('This command has been disabled due to the rating system being disabled on this server.\nFor more information, please contact your servers admins.');
+        }
 
         await interaction.deferReply();
 

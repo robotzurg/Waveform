@@ -127,7 +127,7 @@ module.exports = {
     `Can be used for all types of reviews, using either the "song" subcommand for songs/remixes, or the "ep" command for EPs/LPs/Albums.\n\n` + 
     `Using the \`with_spotify\` subcommand will pull from your spotify playback to fill in arguments (if logged into Waveform with Spotify), ` + 
     `while the \`manually\` subcommand will allow you to type in the arguments manually.`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
 
         let epCmd = false;
@@ -166,6 +166,11 @@ module.exports = {
         } else if (rating === '-') {
             rating = false;
         }
+        
+        // Disable ratings check
+        if (serverConfig.disable_ratings === true) {
+            rating = null;
+        }
 
         let review = interaction.options.getString('review');
         // Handle new lines
@@ -194,7 +199,12 @@ module.exports = {
         let guildStatsObj;
         let botStatsObj = db.global_bot.get('stats');
 
-        if (rating == null && review == null && user_who_sent == null) return interaction.reply('You must supply either a rating change, a review change, or a user_who_sent change.');
+        // This gets an extra message if the disable ratings setting is enabled.
+        if (rating == null && review == null && user_who_sent == null) {
+            return interaction.reply('You must supply either a rating change, a review change, or a user_who_sent change.' + 
+            `${serverConfig.disable_ratings ? `\n**Note: Your server admins have disabled ratings for the bot in this server, so you cannot edit your rating here.**` : ``}`);
+        }
+
         if (user_who_sent != null && user_who_sent != undefined) {
             taggedMember = await interaction.guild.members.fetch(user_who_sent);
             taggedUser = taggedMember.user;

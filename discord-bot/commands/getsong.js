@@ -84,7 +84,7 @@ module.exports = {
     `You can view specific scrobble counts for the song using the \`scrobble\` argument, with the options being None (no scrobbles data shown), \`User Scrobbles\` (only your scrobbles), \`Reviewer Scrobbles\` (only scrobbles of reviewers), or \`Server Scrobbles\` (scrobbles of everyone in the server)\n` +
     `The default scrobble view is \`Reviewer Scrobbles\`. \`Server Scrobbles\` will make the command take a little bit longer to run.\n\n` +
     `Leaving the artist, song_name, and remixers arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)`,
-	async execute(interaction, client, otherCmdArtists = false, otherCmdSongName = false) {
+	async execute(interaction, client, serverConfig, otherCmdArtists = false, otherCmdSongName = false) {
         try {
         if (!interaction.deferred && !interaction.replied) await interaction.deferReply();
         await interaction.editReply('Loading song data...');

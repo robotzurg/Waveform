@@ -14,7 +14,7 @@ module.exports = {
     `You can also use the "Reviews" button to see relevant reviews in the server of the song, if there are any.\n\n` + 
     `This requires /login to be successfully run before it can be used, and can only be used with Spotify or Last.fm.\n` + 
     `You can also view your song scrobbles on Last.fm, if you are logged into Last.fm on Waveform.`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
         await interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
@@ -203,6 +203,12 @@ module.exports = {
                     localUserArray[i] = [rating, `${localUserArray[i]} \`${rating}\``];
                 }
 
+                if (serverConfig.disable_ratings === true) {
+                    localRankNumArray = [];
+                    globalRankNumArray = [];
+                    yourRating = false;
+                }
+
                 extraEmbedData = `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                 `${lfmTrackData != false ? `\nScrobbles: \`${lfmTrackData.userplaycount}\`` : ``}` +
                 `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
@@ -221,8 +227,9 @@ module.exports = {
                     if (localUserArray.length > 0) {
                         songDataExists = true;
                     }
+                    
                     npEmbed.setDescription(`Local Reviews: \`${localUserArray.length != 0 ? `${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : `No Reviews`}` + 
-                    `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + extraEmbedData);
+                    `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : ''}` + extraEmbedData);
                 } else {
                     npEmbed.setDescription(extraEmbedData);
                 }
@@ -275,7 +282,7 @@ module.exports = {
                 if (i.customId == 'getsong') {
                     await i.update({ content: 'Loading song data...', embeds: [], components: [] });
                     let command = client.commands.get('getsong');
-                    await command.execute(interaction, client, artistArray, songName);
+                    await command.execute(interaction, client, serverConfig, artistArray, songName);
                 }
             });
 

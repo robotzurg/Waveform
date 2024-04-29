@@ -2,8 +2,8 @@
 const { SlashCommandBuilder } = require('discord.js');
 require('dotenv').config();
 const db = require('../db.js');
-const { spotify_api_setup } = require('../func.js');
 const lastfm = require('lastfm-njs');
+const { spotify_api_setup } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -51,6 +51,7 @@ module.exports = {
                     interaction.editReply('Login was unsuccessful due to timeout. Please run `/login` again.');
                 }
             });
+
         } else {
             let lfmUsername = interaction.options.getString('username');
 
