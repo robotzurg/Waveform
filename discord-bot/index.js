@@ -306,8 +306,6 @@ client.on('guildCreate', async (guild) => {
             },
         });
     }
-
-
 });
 
 // login to Discord

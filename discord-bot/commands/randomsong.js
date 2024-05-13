@@ -106,6 +106,11 @@ module.exports = {
                     if (songObj[globalUserArray[i]].starred == true) {
                         globalStarNum++;
                     }
+
+                    if (serverConfig.disable_ratings === true) {
+                        yourRating = false;
+                        rating = false;
+                    }
                     
                     if (rating !== false) globalRankNumArray.push(parseFloat(rating));
                     globalUserArray[i] = [rating, `${globalUserArray[i]} \`${rating}\``];
@@ -120,6 +125,11 @@ module.exports = {
                         if (localUserArray[i] == `${interaction.user.id}`) {
                             yourStar = '⭐'; //Added to the end of your rating tab
                         }
+                    }
+
+                    if (serverConfig.disable_ratings === true) {
+                        yourRating = false;
+                        rating = false;
                     }
                     
                     if (rating !== false) localRankNumArray.push(parseFloat(rating));
