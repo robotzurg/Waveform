@@ -1037,6 +1037,7 @@ module.exports = {
      * @param {String} user_id The user id to authenticate to the Spotify API.
      */
     spotify_api_setup:  async function(user_id, first_time = false) {
+        if (!db.user_stats.has(user_id)) return false;
         const access_token = db.user_stats.get(user_id, 'access_token');
         const refresh_token = db.user_stats.get(user_id, 'refresh_token');
 

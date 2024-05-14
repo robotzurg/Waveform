@@ -1,6 +1,6 @@
 const { EmbedBuilder, SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const db = require('../db.js');
-const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data, getEmbedColor, convertToSetterName, lfm_api_setup, getMusicUrl } = require('../func.js');
+const { get_user_reviews, handle_error, spotify_api_setup, parse_artist_song_data, getEmbedColor, convertToSetterName, lfm_api_setup } = require('../func.js');
 const ms_format = require('format-duration');
 const progressbar = require('string-progressbar');
 const _ = require('lodash');
@@ -113,26 +113,44 @@ module.exports = {
         let user_who_sent = false;
         let mailbox_data = false;
         let mailbox_member = null;
+        let mailbox_text = ``;
+        let mailbox_iconUrl = null;
 
         if (spotifyUri != false && spotifyUri != undefined) {
-            if (mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:track:', ''))) {
+            if (mailbox_list.some(v => {
+                if (v.track_uris.length == 1) {
+                    return v.spotify_id == spotifyUri.replace('spotify:track:', '');
+                } else {
+                    return v.track_uris.includes(spotifyUri);
+                }
+            })) {
                 is_mailbox = true;
             }
         }
         
         // If we are in the mailbox and don't specify a user who sent, try to pull it from the mailbox list
         if (is_mailbox == true) {
-            temp_mailbox_list = mailbox_list.filter(v => v.spotify_id == spotifyUri.replace('spotify:track:', ''));
+            temp_mailbox_list = mailbox_list.filter(v => {
+                if (v.track_uris.length == 1) {
+                    return v.spotify_id == spotifyUri.replace('spotify:track:', '');
+                } else {
+                    return v.track_uris.includes(spotifyUri);
+                }
+            });
+
             if (temp_mailbox_list.length != 0) {
                 mailbox_data = temp_mailbox_list[0];
                 if (mailbox_data.user_who_sent != interaction.user.id) {
                     await interaction.guild.members.fetch(mailbox_data.user_who_sent).then(async user_data => {
                         user_who_sent = user_data.user;
                         mailbox_member = user_data;
+                        mailbox_text = `📬 Sent to you by ${mailbox_member.displayName}`;
+                        mailbox_iconUrl = user_who_sent.avatarURL({ extension: "png", dynamic: true });
                     }).catch(() => {
                         user_who_sent = false;
-                        is_mailbox = false;
+                        is_mailbox = true;
                         mailbox_member = null;
+                        mailbox_text = `📬 This song is in your mailbox!`;
                     });
                 }
             }
@@ -149,7 +167,7 @@ module.exports = {
             lfmTrackData = false;
         }
 
-        getMusicUrl(origArtistArray, songName);
+        //getMusicUrl(origArtistArray, songName);
 
         const npEmbed = new EmbedBuilder()
         .setColor(`${getEmbedColor(interaction.member)}`)
@@ -258,8 +276,8 @@ module.exports = {
             npEmbed.setFooter({ text: `from ${albumData.name} ${albumData.name.includes(' LP') && albumData.name.includes(' EP') ? albumData.album_type == 'album' ? 'LP' : 'EP' : ``}`, iconURL: albumData.images[0].url });
         }
 
-        if (is_mailbox == true && mailbox_member != null) {
-            let mailboxFooterObj = { text: `📬 Sent to you by ${mailbox_member.displayName}`, iconURL: user_who_sent.avatarURL({ extension: "png", dynamic: true }) };
+        if (is_mailbox == true) {
+            let mailboxFooterObj = { text: mailbox_text, iconURL: mailbox_iconUrl };
             if (npEmbed.data.footer != undefined) mailboxFooterObj.text = `${mailboxFooterObj.text} • ${npEmbed.data.footer.text}`;
             npEmbed.setFooter(mailboxFooterObj);
         }

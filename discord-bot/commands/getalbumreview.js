@@ -4,8 +4,8 @@ const { handle_error, get_review_channel, parse_artist_song_data, getEmbedColor,
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('getepreview')
-        .setDescription('Get an EP/LP review from a user.')
+        .setName('getalbumreview')
+        .setDescription('Get an album or EP review from a user.')
         .setDMPermission(false)
         .addStringOption(option => 
             option.setName('artist')
@@ -14,8 +14,8 @@ module.exports = {
                 .setRequired(false))
 
         .addStringOption(option => 
-            option.setName('ep_name')
-                .setDescription('The name of the EP/LP.')
+            option.setName('album_name')
+                .setDescription('The name of the album or EP.')
                 .setAutocomplete(true)
                 .setRequired(false))
             
@@ -29,13 +29,13 @@ module.exports = {
                 .setDescription('Show the individual song reviews on the EP/LP review. Defaults to false on LPs, and true on EPs.')
                 .setRequired(false)),
     help_desc: `Pulls up an individual server users EP/LP review.\n\n` +
-    `Leaving the artist and ep_name arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)\n\n` +
+    `Leaving the artist and album_name arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)\n\n` +
     `Putting in a user into the user argument will allow you to view another users ratings of the specified artist, otherwise leaving it blank will default to yourself.`,
 	async execute(interaction, client, serverConfig) {
 
         try {
             let artists = interaction.options.getString('artist');
-            let ep = interaction.options.getString('ep_name');
+            let ep = interaction.options.getString('album_name');
             let song_info = await parse_artist_song_data(interaction, artists, ep);
             if (song_info.error != undefined) {
                 await interaction.reply(song_info.error);

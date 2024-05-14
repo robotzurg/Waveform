@@ -1,5 +1,5 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
-const { handle_error, queryReviewDatabase, spotifyUritoURL } = require("../func.js");
+const { handle_error, queryReviewDatabase, spotifyUritoURL, getEmbedColor } = require("../func.js");
 const { DatabaseQuery } = require('../enums.js');
 const _ = require('lodash');
 
@@ -23,8 +23,8 @@ module.exports = {
                         { name: 'Ascending', value: 'asc' },
                         { name: 'Descending', value: 'dsc' },
                         { name: 'Recently Reviewed', value: 'recent' }, // TODO: NOT DONE
-                        { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
-                        { name: 'Alphabetical Song', value: 'alpha_music' }, // TODO: NOT DONE
+                        // { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
+                        // { name: 'Alphabetical Song', value: 'alpha_music' }, // TODO: NOT DONE
                     ))
     
             .addUserOption(option => 
@@ -52,9 +52,9 @@ module.exports = {
                     .addChoices(
                         { name: 'Ascending', value: 'asc' },
                         { name: 'Descending', value: 'dsc' },
-                        { name: 'Recently Reviewed', value: 'recent' }, // TODO: NOT DONE
-                        { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
-                        { name: 'Alphabetical Remix', value: 'alpha_music' }, // TODO: NOT DONE
+                        { name: 'Recently Reviewed', value: 'recent' }, 
+                        // { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
+                        // { name: 'Alphabetical Remix', value: 'alpha_music' }, // TODO: NOT DONE
                     ))
 
             .addUserOption(option => 
@@ -78,9 +78,9 @@ module.exports = {
                     .addChoices(
                         { name: 'Ascending', value: 'asc' },
                         { name: 'Descending', value: 'dsc' },
-                        { name: 'Recently Reviewed', value: 'recent' }, // TODO: NOT DONE
-                        { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
-                        { name: 'Alphabetical EP', value: 'alpha_music' }, // TODO: NOT DONE
+                        { name: 'Recently Reviewed', value: 'recent' },
+                        // { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
+                        // { name: 'Alphabetical EP', value: 'alpha_music' }, // TODO: NOT DONE
                     ))
             
             .addUserOption(option => 
@@ -103,9 +103,9 @@ module.exports = {
                     .addChoices(
                         { name: 'Ascending Rating', value: 'asc' },
                         { name: 'Descending Rating', value: 'dsc' },
-                        { name: 'Recently Reviewed', value: 'recent' }, // TODO: NOT DONE
-                        { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
-                        { name: 'Alphabetical Album', value: 'alpha_music' }, // TODO: NOT DONE
+                        { name: 'Recently Reviewed', value: 'recent' },
+                        // { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
+                        // { name: 'Alphabetical Album', value: 'alpha_music' }, // TODO: NOT DONE
                     ))
 
             .addUserOption(option => 
@@ -114,7 +114,7 @@ module.exports = {
                     .setRequired(false)))
 
         .setDMPermission(false),
-    help_desc: `View all the reviews you've made in the database, with various filters.`,
+    help_desc: `View all the reviews you've made in the database, with various filters and arguments (To be added to later with a better help description).`,
 	async execute(interaction, client) {
         try {
 
@@ -128,11 +128,14 @@ module.exports = {
         let queryRating = interaction.options.getString('rating');
         if (queryRating == null || isNaN(queryRating)) queryRating = false;
         let queryUser = interaction.options.getUser('user');
+        let queryMember;
         if (queryUser == null) {
-            queryUser = interaction.user.id;
+            queryUser = interaction.user;
+            queryMember = interaction.member;
         } else {
-            queryUser = queryUser.id;
+            queryMember = await interaction.guild.members.fetch(queryUser.id);
         }
+
         let queryNoRemix = false;
         if (queryRequest == 'song') {
             queryNoRemix = interaction.options.getBoolean('no_remixes');
@@ -147,18 +150,29 @@ module.exports = {
             case 'album': queryRequest = (queryRating !== false ? DatabaseQuery.UserSpecRatingAlbums : DatabaseQuery.UserAllAlbums); queryTitle = 'Album Reviews'; break;
         }
 
-        let resultList = await queryReviewDatabase(queryRequest, { sort: sortMode, rating: queryRating, user_id: queryUser, guild: interaction.guild.id, no_remix: queryNoRemix });
+        let sortFooterText = ``;
+        switch (sortMode) {
+            case 'asc': sortFooterText = 'Sorting by Ascending Rating'; break;
+            case 'dsc': sortFooterText = 'Sorting by Descending Rating'; break;
+            case 'recent': sortFooterText = 'Sorting by Recent Reviews'; break;
+        }
+
+        let resultList = await queryReviewDatabase(queryRequest, { sort: sortMode, rating: queryRating, user_id: queryUser.id, guild: interaction.guild.id, no_remix: queryNoRemix });
 
         resultList = await Promise.all(resultList.map(async v => {
-            let userRating = v.dataObj[queryUser].rating;
+            let userRating = v.dataObj[queryUser.id].rating;
             let songUrl = await spotifyUritoURL(v.dataObj.spotify_uri);
-            return `-${v.dataObj[queryUser].starred === true ? ' ⭐' : ``} [${v.origArtistArray.join(' & ')} - ${v.name}](${songUrl})** (${userRating === false ? `No Rating` : `${userRating}/10`})**`;
+            return `-${v.dataObj[queryUser.id].starred === true ? ' ⭐' : ``} [${v.origArtistArray.join(' & ')} - ${v.name}](${songUrl})\n**Rating**: \`${userRating === false ? `No Rating` : `${userRating}/10`}\``;
         }));
 
         let paged_review_list = _.chunk(resultList, 10);
         let page_num = 0;
         const row = new ActionRowBuilder()
         .addComponents(
+            new ButtonBuilder()
+                .setCustomId('far_left')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('⏪'),
             new ButtonBuilder()
                 .setCustomId('left')
                 .setStyle(ButtonStyle.Primary)
@@ -171,6 +185,10 @@ module.exports = {
                 .setCustomId('right')
                 .setStyle(ButtonStyle.Primary)
                 .setEmoji('➡️'),
+            new ButtonBuilder()
+                .setCustomId('far_right')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('⏩'),
         );
 
         // let formattedReviewListPage = await Promise.all(paged_review_list[page_num].map(async v => {
@@ -181,10 +199,12 @@ module.exports = {
         // }));
 
         const reviewListEmbed = new EmbedBuilder()
-            .setTitle(`${queryTitle}${queryRating !== false ? ` with rating ${queryRating}/10` : ``}`)
-            .setDescription(paged_review_list[page_num].join('\n'));
+            .setColor(getEmbedColor(queryMember))
+            .setTitle(`Waveform ${queryTitle}${queryRating !== false ? ` with rating ${queryRating}/10` : ``}`)
+            .setDescription(paged_review_list[page_num].join('\n'))
+            .setThumbnail(queryUser.avatarURL({ extension: "png" }));
             if (paged_review_list.length > 1) {
-                reviewListEmbed.setFooter({ text: `Page 1 / ${paged_review_list.length} • ${resultList.length} results` });
+                reviewListEmbed.setFooter({ text: `Page 1 / ${paged_review_list.length} • ${resultList.length} results • ${sortFooterText}\nClick the page button to jump to a page.` });
                 await interaction.editReply({ content: null, embeds: [reviewListEmbed], components: [row] });
             } else {
                 reviewListEmbed.setFooter({ text: `${resultList.length} results` });
@@ -196,10 +216,10 @@ module.exports = {
             const collector = message.createMessageComponentCollector({ idle: 120000 });
 
             collector.on('collect', async i => {
-                if (i.customId == 'left') {
-                    page_num -= 1;
-                } else if (i.customId == 'right') {
-                    page_num += 1;
+                if (i.customId == 'left' || i.customId == 'far_left') {
+                    page_num -= i.customId == 'left' ? 1 : 5;
+                } else if (i.customId == 'right' || i.customId == 'far_right') {
+                    page_num += i.customId == 'right' ? 1 : 5;
                 } else { // If its the choose your own page customId
                     const filter = m => m.author.id == interaction.user.id;
                     let pagenum_collector = interaction.channel.createMessageCollector({ filter: filter, max: 1, time: 60000 });
@@ -218,7 +238,7 @@ module.exports = {
                         // }));
     
                         reviewListEmbed.setDescription(paged_review_list[page_num].join('\n'));
-                        reviewListEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_review_list.length} • ${resultList.length} results` });
+                        reviewListEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_review_list.length} • ${resultList.length} results • ${sortFooterText}\nClick the page button to jump to a page.` });
                         m.delete();
                         interaction.editReply({ content: null, embeds: [reviewListEmbed], components: [row] });
                     });
@@ -234,7 +254,7 @@ module.exports = {
                     // }));
     
                     reviewListEmbed.setDescription(paged_review_list[page_num].join('\n'));
-                    reviewListEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_review_list.length} • ${resultList.length} results` });
+                    reviewListEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_review_list.length} • ${resultList.length} results • ${sortFooterText}\nClick the page button to jump to a page.` });
                     await i.update({ content: null, embeds: [reviewListEmbed] });
                 }
             });

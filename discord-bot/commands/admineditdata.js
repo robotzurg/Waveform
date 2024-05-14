@@ -52,8 +52,8 @@ module.exports = {
                     .setAutocomplete(true)
                     .setRequired(false))
             .addStringOption(option => 
-                option.setName('ep_name')
-                    .setDescription('The name of the EP/LP.')
+                option.setName('album_name')
+                    .setDescription('The name of the album or EP.')
                     .setAutocomplete(true)
                     .setRequired(false)))
         .addSubcommand(subcommand =>

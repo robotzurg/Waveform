@@ -5,8 +5,8 @@ const _ = require('lodash');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('getep')
-        .setDescription('Get data about an EP/LP.')
+        .setName('getalbum')
+        .setDescription('Get data about an album or EP.')
         .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand.setName('server')
@@ -18,8 +18,8 @@ module.exports = {
                     .setRequired(false))
 
             .addStringOption(option => 
-                option.setName('ep_name')
-                    .setDescription('The name of the EP.')
+                option.setName('album_name')
+                    .setDescription('The name of the album or EP.')
                     .setAutocomplete(true)
                     .setRequired(false))
 
@@ -44,20 +44,20 @@ module.exports = {
                     .setRequired(false))
     
             .addStringOption(option => 
-                option.setName('ep_name')
-                    .setDescription('The name of the EP.')
+                option.setName('album_name')
+                    .setDescription('The name of the album or EP.')
                     .setAutocomplete(true)
                     .setRequired(false))),
     help_desc: `Pulls up all data relating to an EP/LP in Waveform, such as all reviews, rating averages, and more.\n\n` +
     `You can view a summary view of all data relating to an EP/LP globally by using the \`server\` subcommand, or view a list of all local server reviews using the \`server\` subcommand.\n\n` +
     `You can also view individual server users EP/LP review with the drop down menu.\n\n` +
-    `Leaving the artist and ep_name arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)`,
+    `Leaving the artist and album_name arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)`,
 	async execute(interaction, client, serverConfig) {
         try {
 
             let subcommand = interaction.options.getSubcommand();
             let artists = interaction.options.getString('artist');
-            let ep = interaction.options.getString('ep_name');
+            let ep = interaction.options.getString('album_name');
             let song_info = await parse_artist_song_data(interaction, artists, ep);
             if (song_info.error != undefined) {
                 await interaction.reply(song_info.error);

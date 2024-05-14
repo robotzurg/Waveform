@@ -3,8 +3,8 @@ const { SlashCommandBuilder } = require('discord.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('pushtoepreview')
-        .setDescription('Push an existing review to an EP/LP review.')
+        .setName('pushtoalbumreview')
+        .setDescription('Push an existing song review to an album or EP review.')
         .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand.setName('with_spotify')
@@ -28,7 +28,7 @@ module.exports = {
 
             .addStringOption(option => 
                 option.setName('remixers')
-                    .setDescription('Put remixers here, if you reviewing a remix of the original song. (NOT IN ARTISTS ARGUMENT)')
+                    .setDescription('Put remixers here, if you reviewing a remix of the original song.')
                     .setAutocomplete(true)
                     .setRequired(false))),
     help_desc: `Push an existing song review you've made in the database into an ongoing EP/LP review. See the "EP/LP Review Guide" button to find out how this works.\n\n`

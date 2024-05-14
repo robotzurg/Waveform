@@ -70,11 +70,11 @@ module.exports = {
                         .setRequired(false))))
 
         .addSubcommandGroup(group =>
-            group.setName('ep')
-            .setDescription('Edit an EP/LP review you have made.')
+            group.setName('album')
+            .setDescription('Edit an album or EP review you have made.')
             .addSubcommand(subcommand => 
                 subcommand.setName('with_spotify')
-                .setDescription('Edit/add data to an EP/LP review with spotify playback data.')
+                .setDescription('Edit/add data to an album or EP review with spotify playback data.')
 
                 .addStringOption(option => 
                     option.setName('rating')
@@ -103,8 +103,8 @@ module.exports = {
                     .setRequired(true))
     
             .addStringOption(option => 
-                option.setName('ep_name')
-                    .setDescription('The EP/LP name.')
+                option.setName('album_name')
+                    .setDescription('The album or EP name.')
                     .setAutocomplete(true)
                     .setRequired(true))
 
@@ -131,7 +131,7 @@ module.exports = {
         try {
 
         let epCmd = false;
-        if (interaction.options.getSubcommandGroup() == 'ep') {
+        if (interaction.options.getSubcommandGroup() == 'album') {
             epCmd = true;
         }
             
@@ -142,7 +142,7 @@ module.exports = {
         }
         
         if (epCmd == true) {
-            song = interaction.options.getString('ep_name');
+            song = interaction.options.getString('album_name');
         }
         
         let remixers = interaction.options.getString('remixers');

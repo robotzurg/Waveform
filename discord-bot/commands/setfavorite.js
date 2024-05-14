@@ -29,8 +29,8 @@ module.exports = {
                     .setRequired(false)))
 
         .addSubcommand(subcommand =>
-            subcommand.setName('ep')
-            .setDescription('Set a favorite for an EP/LP.')
+            subcommand.setName('album')
+            .setDescription('Set a favorite for an album or EP.')
             .addStringOption(option =>
                 option.setName('artist')
                 .setDescription('The name of the artist.')
@@ -38,8 +38,8 @@ module.exports = {
                 .setRequired(false))
 
             .addStringOption(option => 
-                option.setName('ep_name')
-                    .setDescription('The name of the song/remix.')
+                option.setName('album_name')
+                    .setDescription('The name of the album or EP.')
                     .setAutocomplete(true)
                     .setRequired(false))),
         
@@ -56,7 +56,7 @@ module.exports = {
         if (subcommand == 'song') {
             song = interaction.options.getString('song_name');
         } else {
-            song = interaction.options.getString('ep_name');
+            song = interaction.options.getString('album_name');
         }
 
         let remixers = interaction.options.getString('remixers');
