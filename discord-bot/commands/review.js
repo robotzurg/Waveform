@@ -170,7 +170,7 @@ module.exports = {
                     return interaction.editReply('Internal error upon trying to read this spotify link, please try again later.');
                 });
             } else if (trackLink.includes("album")) {
-                return interaction.editReply('You must use `/epreview` to review an EP/LP, and you have input an EP/LP link. Please input a song link.');
+                return interaction.editReply('You must use `/albumreview` to review an EP/LP, and you have input an EP/LP link. Please input a song link.');
             }
         }
 
