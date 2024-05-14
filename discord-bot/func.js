@@ -190,7 +190,7 @@ module.exports = {
                             if (songArg.includes(' - EP')) songArg = songArg.replace(' - EP', ' EP');
                             if (songArg.includes(' - LP')) songArg = songArg.replace(' - LP', ' LP');
 
-                            if (interaction.commandName == 'epreview') {
+                            if (interaction.commandName == 'albumreview') {
                                 current_ep_review_data = { msg_id: false, channel_id: false, guild_id: interaction.guild.id, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] };
                             }
                         }
@@ -428,7 +428,7 @@ module.exports = {
 
         let setterSongArg = convertToSetterName(songArg);
 
-        if (current_ep_review_data == false && interaction.commandName == 'epreview') {
+        if (current_ep_review_data == false && interaction.commandName == 'albumreview') {
             if (db.reviewDB.has(artistArray[0]) && db.reviewDB.get(artistArray[0], `${setterSongArg}`) != undefined && trackList == false) trackList = db.reviewDB.get(artistArray[0], `${setterSongArg}`).songs;
             if (trackList == undefined || trackList == null) {
                 trackList = false;
@@ -455,7 +455,7 @@ module.exports = {
      
         if (interaction.commandName != 'nowplaying' && !interaction.commandName.includes('mail')) {
             // Check if all the artists exist (don't check this if we're pulling data for /review or /epreview)
-            if (interaction.commandName != 'review' && interaction.commandName != 'epreview' && interaction.commandName != 'pushtoepreview') {
+            if (interaction.commandName != 'review' && interaction.commandName != 'albumreview' && interaction.commandName != 'pushtoalbumreview') {
                 for (let i = 0; i < artistArray.length; i++) {
                     if (!db.reviewDB.has(artistArray[i])) {
                         return { error: `The artist \`${artistArray[i]}\` is not in the database. This is either due to no reviews being made of this song, or could be due to an artist renaming themselves on Spotify. If you believe the latter is the case, please use \`/reportsongdata\` to submit a song data edit request.` };

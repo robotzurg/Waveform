@@ -125,7 +125,7 @@ module.exports = {
         // TL;DR guide
         let basics_guide = "To use Waveform, the main commands you need to know are:\n" +
         "- `/review`, which allows you to review a song or remix\n" +
-        "- `/epreview`, which allows you to review an EP/LP\n" +
+        "- `/albumreview`, which allows you to review an EP/LP\n" +
         "- `/editreview`, which allows you to edit a review\n" +
         "As well as the get and set commands, which are self explanatory.\n" +
         "\n" +
