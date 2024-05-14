@@ -118,8 +118,6 @@ module.exports = {
 	async execute(interaction, client) {
         try {
 
-        if (interaction.user.id != '122568101995872256') return interaction.reply('Not for you!');
-
         await interaction.deferReply();
         await interaction.editReply('Gathering data.. This may take a bit, please be patient!');
         let queryRequest = interaction.options.getSubcommand();
