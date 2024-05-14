@@ -136,7 +136,7 @@ module.exports = {
             let isPodcast = false;
 
             let lfmApi = await lfm_api_setup(interaction.user.id);
-            if (interaction.commandName.includes('review') && interaction.commandName != 'getreview' && interaction.commandName != 'getepreview') lfmApi = false;
+            if (interaction.commandName.includes('review') && interaction.commandName != 'getreview' && interaction.commandName != 'getalbumreview') lfmApi = false;
             let lfmRecentSongs;
             
             if (spotifyApi == false && lfmApi == false) {
@@ -165,8 +165,8 @@ module.exports = {
                     songUri = data.body.item.uri;
                     await spotifyApi.getAlbum(data.body.item.album.id)
                     .then(async album_data => {
-                        if ((interaction.commandName.includes('ep') && interaction.commandName != 'pushtoepreview') || (subcommand.includes('ep'))
-                            || interaction.options.getSubcommandGroup() == 'ep') {
+                        if ((interaction.commandName.includes('album') && interaction.commandName != 'pushtoalbumreview') || (subcommand.includes('album'))
+                            || interaction.options.getSubcommandGroup() == 'album') {
                             if (album_data.body.album_type == 'compilation') {
                                 passesChecks = 'compilation';
                                 return;
@@ -1565,7 +1565,6 @@ module.exports = {
                 return 'https://www.google.com';
             } else {
                 let musicUrl = await getMusicUrl(origArtistArray, musicName);
-                console.log(musicUrl);
                 return musicUrl.spotify_url;
             }
         } else if (spotifyUri.includes('track')) {
