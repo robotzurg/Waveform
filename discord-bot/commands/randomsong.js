@@ -10,7 +10,7 @@ module.exports = {
     help_desc: `This command will give you a random song from the database, from a random artist, and give you basic information about it, and a spotify link if one exists for it.\n` +
     `You can also use the "Reviews" button to see relevant reviews in the server of the song, if there are any.\n\n` +
     `This is particularly useful if you want to find something random to listen to or review!`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
         if (!interaction.deferred && !interaction.replied) {
             await interaction.deferReply();
@@ -106,6 +106,11 @@ module.exports = {
                     if (songObj[globalUserArray[i]].starred == true) {
                         globalStarNum++;
                     }
+
+                    if (serverConfig.disable_ratings === true) {
+                        yourRating = false;
+                        rating = false;
+                    }
                     
                     if (rating !== false) globalRankNumArray.push(parseFloat(rating));
                     globalUserArray[i] = [rating, `${globalUserArray[i]} \`${rating}\``];
@@ -120,6 +125,11 @@ module.exports = {
                         if (localUserArray[i] == `${interaction.user.id}`) {
                             yourStar = '⭐'; //Added to the end of your rating tab
                         }
+                    }
+
+                    if (serverConfig.disable_ratings === true) {
+                        yourRating = false;
+                        rating = false;
                     }
                     
                     if (rating !== false) localRankNumArray.push(parseFloat(rating));
@@ -137,7 +147,7 @@ module.exports = {
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${(lfmScrobbles !== false) ? `\nScrobbles: \`${lfmScrobbles}\`` : ''}` +
-                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}`);
                 } else if (globalUserArray.length != 0) {
                     if (localUserArray.length > 0) {
                         songDataExists = true;
@@ -146,10 +156,10 @@ module.exports = {
                     `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + 
 
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
-                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+                    `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}`);
                 } else {
                     if (spotifyUrl == 'N/A') {
-                        randomSongEmbed.setDescription(`<:spotify:961509676053323806> [Spotify](${spotifyUrl})`);
+                        randomSongEmbed.setDescription(`<:spotify:899365299814559784> [Spotify](${spotifyUrl})`);
                     }
                 }
 
@@ -170,10 +180,10 @@ module.exports = {
                     } 
                 }
             } else {
-                randomSongEmbed.setDescription(`${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+                randomSongEmbed.setDescription(`${spotifyUrl == 'N/A' ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}`);
             }
         } else {
-            randomSongEmbed.setDescription(`${spotifyUrl == 'N/A' ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}`);
+            randomSongEmbed.setDescription(`${spotifyUrl == 'N/A' ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}`);
         }
         
 
@@ -203,11 +213,11 @@ module.exports = {
             if (i.customId == 'getsong') {
                 i.update({ content: 'Loading song data...', embeds: [] });
                 let command = client.commands.get('getsong');
-                await command.execute(interaction, client, artistArray, randomSong);
+                await command.execute(interaction, client, serverConfig, artistArray, randomSong);
             } else {
                 i.update({ content: null });
                 let command = client.commands.get('randomsong');
-                await command.execute(interaction, client);
+                await command.execute(interaction, client, serverConfig);
             }
         });
 

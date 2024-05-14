@@ -33,7 +33,7 @@ module.exports = {
     `The remixers argument should have the remixer specified if you are trying to pull up a remix, the remixer should be put in the song_name or artists arguments.\n\n` +
     `Leaving the artist, song_name, and remixers arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)\n\n` +
     `Putting in a user into the user argument will allow you to view another users ratings of the specified artist, otherwise leaving it blank will default to yourself.`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
             let artists = interaction.options.getString('artist');
             let song = interaction.options.getString('song_name');
@@ -99,6 +99,10 @@ module.exports = {
             if (rsentby != false) {
                 usrSentBy = await interaction.guild.members.cache.get(rsentby);            
                 if (usrSentBy == undefined) rsentby = false;
+            }
+
+            if (serverConfig.disable_ratings === true) {
+                rscore = false;
             }
 
             // If we don't have a single review link, we can check for an EP/LP review link

@@ -22,8 +22,12 @@ module.exports = {
     help_desc: `Displays all ratings you have given to an artists, and what songs you haven't rated from the given artist.\n\n` +
     `Leaving the artist argument blank will pull from your spotify playback to fill in the argument (if logged in to Waveform with Spotify)\n\n` +
     `Putting in a user into the user argument will allow you to view another users ratings of the specified artist, otherwise leaving it blank will default to yourself.`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
+
+        if (serverConfig.disable_ratings === true) {
+            return interaction.reply('This command has been disabled due to the rating system being disabled on this server.\nFor more information, please contact your servers admins.');
+        }
 
         let spotifyCheck;
         let isPodcast;
@@ -152,7 +156,7 @@ module.exports = {
         if (pagedReviewList.length > 1) {
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ time: 360000 });
+            const collector = message.createMessageComponentCollector({ idle: 120000 });
 
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;

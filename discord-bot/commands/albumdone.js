@@ -4,8 +4,8 @@ const { handle_error, get_review_channel } = require("../func.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('epdone')
-        .setDescription('Finish an in-progress EP/LP review.')
+        .setName('albumdone')
+        .setDescription('Finish an in-progress album or EP review.')
         .setDMPermission(false),
 	help_desc: `Manually finishes an in-progress EP/LP review. For use in non-spotify EP/LP reviews when you have reviewed each song, or any other times you may run into an issue with the normal button.`,
 	async execute(interaction, client) {

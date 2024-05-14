@@ -70,11 +70,11 @@ module.exports = {
                         .setRequired(false))))
 
         .addSubcommandGroup(group =>
-            group.setName('ep')
-            .setDescription('Edit an EP/LP review you have made.')
+            group.setName('album')
+            .setDescription('Edit an album or EP review you have made.')
             .addSubcommand(subcommand => 
                 subcommand.setName('with_spotify')
-                .setDescription('Edit/add data to an EP/LP review with spotify playback data.')
+                .setDescription('Edit/add data to an album or EP review with spotify playback data.')
 
                 .addStringOption(option => 
                     option.setName('rating')
@@ -103,8 +103,8 @@ module.exports = {
                     .setRequired(true))
     
             .addStringOption(option => 
-                option.setName('ep_name')
-                    .setDescription('The EP/LP name.')
+                option.setName('album_name')
+                    .setDescription('The album or EP name.')
                     .setAutocomplete(true)
                     .setRequired(true))
 
@@ -127,11 +127,11 @@ module.exports = {
     `Can be used for all types of reviews, using either the "song" subcommand for songs/remixes, or the "ep" command for EPs/LPs/Albums.\n\n` + 
     `Using the \`with_spotify\` subcommand will pull from your spotify playback to fill in arguments (if logged into Waveform with Spotify), ` + 
     `while the \`manually\` subcommand will allow you to type in the arguments manually.`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
 
         let epCmd = false;
-        if (interaction.options.getSubcommandGroup() == 'ep') {
+        if (interaction.options.getSubcommandGroup() == 'album') {
             epCmd = true;
         }
             
@@ -142,7 +142,7 @@ module.exports = {
         }
         
         if (epCmd == true) {
-            song = interaction.options.getString('ep_name');
+            song = interaction.options.getString('album_name');
         }
         
         let remixers = interaction.options.getString('remixers');
@@ -165,6 +165,11 @@ module.exports = {
             if (isNaN(rating)) return interaction.reply('Your rating must be a valid number or decimal between 0-10, or `-` to remove a rating.');
         } else if (rating === '-') {
             rating = false;
+        }
+        
+        // Disable ratings check
+        if (serverConfig.disable_ratings === true) {
+            rating = null;
         }
 
         let review = interaction.options.getString('review');
@@ -194,7 +199,12 @@ module.exports = {
         let guildStatsObj;
         let botStatsObj = db.global_bot.get('stats');
 
-        if (rating == null && review == null && user_who_sent == null) return interaction.reply('You must supply either a rating change, a review change, or a user_who_sent change.');
+        // This gets an extra message if the disable ratings setting is enabled.
+        if (rating == null && review == null && user_who_sent == null) {
+            return interaction.reply('You must supply either a rating change, a review change, or a user_who_sent change.' + 
+            `${serverConfig.disable_ratings ? `\n**Note: Your server admins have disabled ratings for the bot in this server, so you cannot edit your rating here.**` : ``}`);
+        }
+
         if (user_who_sent != null && user_who_sent != undefined) {
             taggedMember = await interaction.guild.members.fetch(user_who_sent);
             taggedUser = taggedMember.user;

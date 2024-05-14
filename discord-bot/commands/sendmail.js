@@ -10,39 +10,69 @@ module.exports = {
         .setName('sendmail')
         .setDescription('Send a song/EP/LP to a users Waveform Mailbox.')
         .setDMPermission(false)
-        .addUserOption(option => 
-            option.setName('user')
-                .setDescription('User whose mailbox you would like to send a song to. Leave blank if in a mailbox channel!')
-                .setRequired(true))
-        .addStringOption(option => 
-            option.setName('link')
-                .setDescription('Link to the song you would like to send to the mailbox.')
-                .setRequired(false))
-        .addBooleanOption(option => 
-            option.setName('album')
-                .setDescription('Send the EP/LP you are currently listening to on Spotify, instead of the song.')
-                .setRequired(false))
-        .addStringOption(option => 
-            option.setName('force')
-                .setDescription('Force send a song to a users mailbox, even if they have scrobbles on Last.fm.')
-                .setRequired(false)
-                .addChoices({ name: 'yes', value: 'yes' })),
+        .addSubcommand(subcommand =>
+            subcommand.setName('link')
+            .setDescription('Send a link of a song to a user\'s Waveform mailbox.')
+            
+            .addUserOption(option => 
+                option.setName('user')
+                    .setDescription('User whose mailbox you would like to send a song to.')
+                    .setRequired(true))
+
+            .addStringOption(option => 
+                option.setName('link')
+                    .setDescription('Link to the song you would like to send to the mailbox.')
+                    .setRequired(true))
+                    
+            .addStringOption(option => 
+                option.setName('force')
+                    .setDescription('Force send a song to a users mailbox, even if they have scrobbled it.')
+                    .setRequired(false)
+                    .addChoices({ name: 'yes', value: 'yes' })))
+
+        .addSubcommand(subcommand =>
+            subcommand.setName('spotify')
+            .setDescription('Send the song or album that you are listening to on Spotify to a user.')
+
+            .addUserOption(option => 
+                option.setName('user')
+                    .setDescription('User whose mailbox you would like to send a song to. Leave blank if in a mailbox channel!')
+                    .setRequired(true))
+
+            .addBooleanOption(option => 
+                option.setName('album')
+                    .setDescription('Send the album you are currently listening to on Spotify, instead of the song.')
+                    .setRequired(false))
+                    
+            .addStringOption(option => 
+                option.setName('force')
+                    .setDescription('Force send a song to a users mailbox, even if they have scrobbled it.')
+                    .setRequired(false)
+                    .addChoices({ name: 'yes', value: 'yes' }))),
+
     help_desc: `Send a song to a users Waveform Mailbox, specified with the user argument.\n\n` + 
     `The songs are usually sent from Spotify (mainly), but you can also send YouTube, Apple Music, and SoundCloud links.\n\n` +
     `Leaving the link argument blank will pull from your currently playing song on spotify.\n` + 
     `Using the force argument will allow you to send a song regardless of if they have scrobbles or not on last.fm. This does not have any effect if they've been sent the song through Waveform.`,
 	async execute(interaction, client) {
+        let commandType = interaction.options.getSubcommand();
         let taggedUser = interaction.options.getUser('user');
         let taggedMember = await interaction.guild.members.fetch(taggedUser.id);
+
+        // If the user has not interacted with the bot before
+        if (!db.user_stats.has(taggedUser.id)) {
+            return interaction.reply('This user does not have a Waveform Mailbox setup.');
+        }
+
         let spotifyCmdUserApi = await spotify_api_setup(interaction.user.id);
         let spotifyTaggedApi = await spotify_api_setup(taggedUser.id);
         let lfmApi = await lfm_api_setup(interaction.user.id);
         let lfmForce = interaction.options.getString('force');
 
         const guild = client.guilds.cache.get(interaction.guild.id);
-
         let playlistId = db.user_stats.get(taggedUser.id, 'mailbox_playlist_id');
         let trackLink = interaction.options.getString('link');
+        if (commandType == 'spotify') trackLink = null;
         if (trackLink != null) {
             if (trackLink.includes('spotify.link')) {
                 return interaction.reply('The type of link `spotify.link` is not supported by Waveform. Please use a valid `open.spotify.com` link instead.');

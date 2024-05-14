@@ -11,7 +11,7 @@ module.exports = {
         .setDescription('View currently playing songs on Spotify by Waveform users.')
         .setDMPermission(false),
     help_desc: `View the currently playing songs of any Spotify users on Waveform in this Discord Server.`,
-	async execute(interaction) {
+	async execute(interaction, client, serverConfig) {
         interaction.deferReply();
         const members = await interaction.guild.members.fetch();
         let memberList = members.map(v => v.user.id);
@@ -84,11 +84,12 @@ module.exports = {
                 if (db.reviewDB.has(origArtistArray[0])) {
                     let reviewData = db.reviewDB.get(origArtistArray[0], `${dbSongName}.${interaction.user.id}`);
                     if (reviewData != undefined) {
+                        if (serverConfig.disable_ratings === true) reviewData.rating = false;
                         if (reviewData.rating != false) extraData = `\n**Rating:** \`${reviewData.rating}/10${reviewData.starred ? `⭐\`` : `\``}`;
                     }
                 }
                 if (lfmScrobbles != false) extraData += `\n**Scrobbles:** \`${lfmScrobbles}\``;
-                playList.push(`- ${platform == 'lastfm' ? `<:lastfm:1204990903278895154>` : `<:spotify:961509676053323806>`} <@${member}>: [**${origArtistArray.join(' & ')} - ${songDisplayName}**](${songUrl})${extraData != `` ? `${extraData}` : ``}\n`);
+                playList.push(`- ${platform == 'lastfm' ? `<:lastfm:1227869050084921375>` : `<:spotify:899365299814559784>`} <@${member}>: [**${origArtistArray.join(' & ')} - ${songDisplayName}**](${songUrl})${extraData != `` ? `${extraData}` : ``}\n`);
             }
         }
 
@@ -124,7 +125,7 @@ module.exports = {
         if (pagedPlayList.length > 1) {
             let message = await interaction.fetchReply();
         
-            const collector = message.createMessageComponentCollector({ time: 360000 });
+            const collector = message.createMessageComponentCollector({ idle: 120000 });
 
             collector.on('collect', async i => {
                 (i.customId == 'left') ? page_num -= 1 : page_num += 1;

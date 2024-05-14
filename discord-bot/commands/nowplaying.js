@@ -14,7 +14,7 @@ module.exports = {
     `You can also use the "Reviews" button to see relevant reviews in the server of the song, if there are any.\n\n` + 
     `This requires /login to be successfully run before it can be used, and can only be used with Spotify or Last.fm.\n` + 
     `You can also view your song scrobbles on Last.fm, if you are logged into Last.fm on Waveform.`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
         await interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
@@ -113,26 +113,44 @@ module.exports = {
         let user_who_sent = false;
         let mailbox_data = false;
         let mailbox_member = null;
+        let mailbox_text = ``;
+        let mailbox_iconUrl = null;
 
         if (spotifyUri != false && spotifyUri != undefined) {
-            if (mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:track:', ''))) {
+            if (mailbox_list.some(v => {
+                if (v.track_uris.length == 1) {
+                    return v.spotify_id == spotifyUri.replace('spotify:track:', '');
+                } else {
+                    return v.track_uris.includes(spotifyUri);
+                }
+            })) {
                 is_mailbox = true;
             }
         }
         
         // If we are in the mailbox and don't specify a user who sent, try to pull it from the mailbox list
         if (is_mailbox == true) {
-            temp_mailbox_list = mailbox_list.filter(v => v.spotify_id == spotifyUri.replace('spotify:track:', ''));
+            temp_mailbox_list = mailbox_list.filter(v => {
+                if (v.track_uris.length == 1) {
+                    return v.spotify_id == spotifyUri.replace('spotify:track:', '');
+                } else {
+                    return v.track_uris.includes(spotifyUri);
+                }
+            });
+
             if (temp_mailbox_list.length != 0) {
                 mailbox_data = temp_mailbox_list[0];
                 if (mailbox_data.user_who_sent != interaction.user.id) {
                     await interaction.guild.members.fetch(mailbox_data.user_who_sent).then(async user_data => {
                         user_who_sent = user_data.user;
                         mailbox_member = user_data;
+                        mailbox_text = `📬 Sent to you by ${mailbox_member.displayName}`;
+                        mailbox_iconUrl = user_who_sent.avatarURL({ extension: "png", dynamic: true });
                     }).catch(() => {
                         user_who_sent = false;
-                        is_mailbox = false;
+                        is_mailbox = true;
                         mailbox_member = null;
+                        mailbox_text = `📬 This song is in your mailbox!`;
                     });
                 }
             }
@@ -149,6 +167,8 @@ module.exports = {
             lfmTrackData = false;
         }
 
+        //getMusicUrl(origArtistArray, songName);
+
         const npEmbed = new EmbedBuilder()
         .setColor(`${getEmbedColor(interaction.member)}`)
         .setTitle(`${origArtistArray.join(' & ')} - ${songDisplayName}`)
@@ -157,8 +177,8 @@ module.exports = {
 
         let extraEmbedData = `${lfmTrackData != false ? `\nScrobbles: \`${lfmTrackData.userplaycount}\`` : ``}` +
         `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-        `${spotifyUrl == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}` +
-        `${lfmUrl == false ? `` : `\n<:lastfm:1204990903278895154> [Last.fm](${lfmUrl})`}`;
+        `${spotifyUrl == false ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}` +
+        `${lfmUrl == false ? `` : `\n<:lastfm:1227869050084921375> [Last.fm](${lfmUrl})`}`;
 
         if (db.reviewDB.has(artistArray[0])) {
             let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
@@ -201,11 +221,17 @@ module.exports = {
                     localUserArray[i] = [rating, `${localUserArray[i]} \`${rating}\``];
                 }
 
+                if (serverConfig.disable_ratings === true) {
+                    localRankNumArray = [];
+                    globalRankNumArray = [];
+                    yourRating = false;
+                }
+
                 extraEmbedData = `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                 `${lfmTrackData != false ? `\nScrobbles: \`${lfmTrackData.userplaycount}\`` : ``}` +
                 `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-                `${spotifyUrl == false ? `` : `\n<:spotify:961509676053323806> [Spotify](${spotifyUrl})`}` +
-                `${lfmUrl == false ? `` : `\n<:lastfm:1204990903278895154> [Last.fm](${lfmUrl})`}`;
+                `${spotifyUrl == false ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}` +
+                `${lfmUrl == false ? `` : `\n<:lastfm:1227869050084921375> [Last.fm](${lfmUrl})`}`;
 
                 if (globalRankNumArray.length != 0) { 
                     if (localRankNumArray.length > 0) {
@@ -219,8 +245,9 @@ module.exports = {
                     if (localUserArray.length > 0) {
                         songDataExists = true;
                     }
+                    
                     npEmbed.setDescription(`Local Reviews: \`${localUserArray.length != 0 ? `${localUserArray.length} review${localUserArray.length > 1 ? 's' : ''}\`` : `No Reviews`}` + 
-                    `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : '`'}` + extraEmbedData);
+                    `${localStarNum >= 1 ? ` and ${localStarNum} ⭐\`` : ''}` + extraEmbedData);
                 } else {
                     npEmbed.setDescription(extraEmbedData);
                 }
@@ -249,8 +276,8 @@ module.exports = {
             npEmbed.setFooter({ text: `from ${albumData.name} ${albumData.name.includes(' LP') && albumData.name.includes(' EP') ? albumData.album_type == 'album' ? 'LP' : 'EP' : ``}`, iconURL: albumData.images[0].url });
         }
 
-        if (is_mailbox == true && mailbox_member != null) {
-            let mailboxFooterObj = { text: `📬 Sent to you by ${mailbox_member.displayName}`, iconURL: user_who_sent.avatarURL({ extension: "png", dynamic: true }) };
+        if (is_mailbox == true) {
+            let mailboxFooterObj = { text: mailbox_text, iconURL: mailbox_iconUrl };
             if (npEmbed.data.footer != undefined) mailboxFooterObj.text = `${mailboxFooterObj.text} • ${npEmbed.data.footer.text}`;
             npEmbed.setFooter(mailboxFooterObj);
         }
@@ -273,7 +300,7 @@ module.exports = {
                 if (i.customId == 'getsong') {
                     await i.update({ content: 'Loading song data...', embeds: [], components: [] });
                     let command = client.commands.get('getsong');
-                    await command.execute(interaction, client, artistArray, songName);
+                    await command.execute(interaction, client, serverConfig, artistArray, songName);
                 }
             });
 

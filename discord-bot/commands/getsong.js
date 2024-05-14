@@ -84,7 +84,7 @@ module.exports = {
     `You can view specific scrobble counts for the song using the \`scrobble\` argument, with the options being None (no scrobbles data shown), \`User Scrobbles\` (only your scrobbles), \`Reviewer Scrobbles\` (only scrobbles of reviewers), or \`Server Scrobbles\` (scrobbles of everyone in the server)\n` +
     `The default scrobble view is \`Reviewer Scrobbles\`. \`Server Scrobbles\` will make the command take a little bit longer to run.\n\n` +
     `Leaving the artist, song_name, and remixers arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)`,
-	async execute(interaction, client, otherCmdArtists = false, otherCmdSongName = false) {
+	async execute(interaction, client, serverConfig, otherCmdArtists = false, otherCmdSongName = false) {
         try {
         if (!interaction.deferred && !interaction.replied) await interaction.deferReply();
         await interaction.editReply('Loading song data...');
@@ -246,11 +246,11 @@ module.exports = {
 
         // Server collection scrobbles
         if (lfmScrobbleSetting == 'reviewers' || lfmScrobbleSetting == 'server') {
-            lfmServerScrobbles = lfmScrobbles === false ? 0 : parseInt(lfmScrobbles);
+            lfmServerScrobbles = 0;
             if (lfmApi == false) lfmApi = await lfm_api_setup(lfmUsers[0].user_id);
 
             let tempIDList = userIDList.map(v => v[1]);
-            if (lfmScrobbleSetting == 'reviewers') lfmUsers = lfmUsers.filter(v => tempIDList.includes(v.user_id) && v.user_id != interaction.user.id);
+            if (lfmScrobbleSetting == 'reviewers') lfmUsers = lfmUsers.filter(v => tempIDList.includes(v.user_id));
             for (let u of lfmUsers) {
                 if (lfmApi == false) { 
                     lfmApi = await lfm_api_setup(u.user_id);
@@ -269,15 +269,15 @@ module.exports = {
                 `${lfmServerScrobbles !== false ? `\n${lfmScrobbleSetting == 'reviewers' ? `*Reviewers overall have*` : `*This server has*`} ***${lfmServerScrobbles}*** *scrobbles on this song!*` : ``}` +
                 `\n*The average rating of this song is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` + 
                 `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} favorite${starCount == 1 ? '' : 's'}!** :star2:`)}` + 
-                `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
+                `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:899365299814559784> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
             } else {
                 songEmbed.setDescription(`The average rating of this song globally is **${Math.round(average(rankNumArray) * 10) / 10}!**` + 
                 `\nThis song has **${rankNumArray.length}** ratings.` +
                 `${(starCount == 0 ? `` : `\n:star2: **This song has ${starCount} favorite${starCount == 1 ? '' : 's'} globally!** :star2:`)}` + 
-                `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
+                `${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:899365299814559784> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
             }        
         } else {
-            songEmbed.setDescription(`No Reviews have been made for this song.${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:961509676053323806> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
+            songEmbed.setDescription(`No Reviews have been made for this song.${songObj.spotify_uri == false || songObj.spotify_uri == undefined ? `` : `\n<:spotify:899365299814559784> [Spotify](https://open.spotify.com/track/${songObj.spotify_uri.replace('spotify:track:', '')})`}`);
         }
 
         if (songArt == false) {
@@ -435,7 +435,7 @@ module.exports = {
         let noIdleReset = false;
 
         if (subcommand == 'server') {
-            const collector = message.createMessageComponentCollector({ time: 360000 });
+            const collector = message.createMessageComponentCollector({ idle: 120000 });
             collector.on('collect', async i => {
                 if (i.customId == 'select') { // Select Menu
 

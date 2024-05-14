@@ -4,8 +4,8 @@ const { handle_error, get_review_channel, parse_artist_song_data, getEmbedColor,
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('getepreview')
-        .setDescription('Get an EP/LP review from a user.')
+        .setName('getalbumreview')
+        .setDescription('Get an album or EP review from a user.')
         .setDMPermission(false)
         .addStringOption(option => 
             option.setName('artist')
@@ -14,8 +14,8 @@ module.exports = {
                 .setRequired(false))
 
         .addStringOption(option => 
-            option.setName('ep_name')
-                .setDescription('The name of the EP/LP.')
+            option.setName('album_name')
+                .setDescription('The name of the album or EP.')
                 .setAutocomplete(true)
                 .setRequired(false))
             
@@ -29,13 +29,13 @@ module.exports = {
                 .setDescription('Show the individual song reviews on the EP/LP review. Defaults to false on LPs, and true on EPs.')
                 .setRequired(false)),
     help_desc: `Pulls up an individual server users EP/LP review.\n\n` +
-    `Leaving the artist and ep_name arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)\n\n` +
+    `Leaving the artist and album_name arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)\n\n` +
     `Putting in a user into the user argument will allow you to view another users ratings of the specified artist, otherwise leaving it blank will default to yourself.`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
 
         try {
             let artists = interaction.options.getString('artist');
-            let ep = interaction.options.getString('ep_name');
+            let ep = interaction.options.getString('album_name');
             let song_info = await parse_artist_song_data(interaction, artists, ep);
             if (song_info.error != undefined) {
                 await interaction.reply(song_info.error);
@@ -76,7 +76,7 @@ module.exports = {
             if (epReviewObj == undefined) return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` has not been reviewed by the user ${taggedMember.displayName}.`);
 
             let ep_overall_rating = epReviewObj.rating;
-            if (ep_overall_rating == -1) ep_overall_rating = false; // ????
+            if (ep_overall_rating == -1) ep_overall_rating = false;
             let ep_overall_review = epReviewObj.review;
             let no_songs_review = epReviewObj.no_songs;
             let incomplete_review = false;
@@ -96,6 +96,10 @@ module.exports = {
 
             if (ep_sent_by != undefined && ep_sent_by != false) {
                 ep_sent_by = await client.users.fetch(ep_sent_by);
+            }
+
+            if (serverConfig.disable_ratings === true) {
+                ep_overall_rating = false;
             }
 
             // Check if we want to show song reviews, if it has song reviews.
@@ -183,6 +187,10 @@ module.exports = {
                         rscore = songReviewObj.rating;
                         rstarred = songReviewObj.starred;
                     }
+
+                    if (serverConfig.disable_ratings === true) {
+                        rscore = false;
+                    }
     
                     // This is for adding in collaborators into the name inputted into the embed title, NOT for getting data out.
                     if (songObj.collab != undefined && !ep_songs[i].includes(' Remix)')) {
@@ -211,7 +219,11 @@ module.exports = {
 
                 if (no_songs_review == true) {
                     incomplete_review = false;
-                    if (epEmbed.data.fields.length > 1) {
+                    if (epEmbed.data.fields != undefined) {
+                        if (epEmbed.data.fields.length > 1) {
+                            epEmbed.setFields([]);
+                        }
+                    } else {
                         epEmbed.setFields([]);
                     }
                 }

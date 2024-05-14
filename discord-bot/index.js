@@ -128,7 +128,7 @@ client.on('interactionCreate', async interaction => {
                     }
                 }
                 interaction.respond(artist_names);
-            } else if (focused[0].name == 'name' || focused[0].name == 'song_name' || focused[0].name == 'music_name' || focused[0].name == 'ep_name') {
+            } else if (focused[0].name == 'name' || focused[0].name == 'song_name' || focused[0].name == 'music_name' || focused[0].name == 'album_name') {
                 let artist_songs = db.reviewDB.get(val_artist.split(' & ')[0]);
                 if (artist_songs == undefined) {
                     interaction.respond([]); 
@@ -141,7 +141,7 @@ client.on('interactionCreate', async interaction => {
                 artist_songs = artist_songs.filter(v => v != 'pfp_image');
                 artist_songs = artist_songs.reverse();
                 if (focused[0].name != 'old_name' && focused[0].name != 'name') {
-                    if (focused[0].name != 'ep_name') {
+                    if (focused[0].name != 'album_name') {
                         artist_songs = artist_songs.filter(v => !v.includes(' EP'));
                         artist_songs = artist_songs.filter(v => !v.includes(' LP'));
                     } else {
@@ -255,11 +255,19 @@ client.on('interactionCreate', async interaction => {
     let ban_list = db.global_bot.get('ban_list');
     if (ban_list == undefined) ban_list = [];
     if (ban_list.includes(interaction.user.id)) {
-        return interaction.reply(`You have been banned from Waveform. For more information or to appeal your ban, please contact \`jeffdev\` on discord.`);
+        return interaction.reply(`You have been banned from Waveform. For more information or to appeal your ban, please contact \`@jeffdev\` on discord.`);
+    }
+
+    let serverConfig = db.server_settings.get(interaction.guild.id, 'config');
+    if (serverConfig == undefined) {
+        serverConfig = {
+            disable_ratings: false,
+        };
+        db.server_settings.set(interaction.guild.id, serverConfig, 'config');
     }
 
     try {
-        await command.execute(interaction, client);
+        await command.execute(interaction, client, serverConfig);
     } catch (error) {
         await console.error(error);
         if (interaction.commandName != 'login') {
@@ -275,53 +283,6 @@ client.on('interactionCreate', async interaction => {
     
 });
 
-client.on('guildMemberAdd', async (member) => {
-    if (!db.user_stats.has(member.user.id)) {
-        db.user_stats.set(member.user.id, {
-            lfm_username: false,
-            access_token: "na",
-            refresh_token: false,
-            current_ep_review: false,
-            fav_genres: [],
-            fav_song: "N/A",
-            fav_artist: "N/A",
-            mailbox: false,
-            mailbox_list: [],
-            mailbox_playlist_id: false,
-            mailbox_history: [],
-            mailbox_blocklist: [],
-            config: {
-                mail_filter: { // Filter settings for what type of songs you want to be sent, all default to true
-                    sp: true, // Spotify
-                    sp_ep: true, // Spotify (EP)
-                    sp_lp: true, // Spotify (LP)
-                    sc: true, // SoundCloud
-                    yt: true, // YouTube and Youtube Music
-                    apple: true, // Apple Music
-                },
-                review_ping: false, // If you want to get pinged for a review if you are tagged as a user who sent it (default: false)
-                star_spotify_playlist: false, // If you have a star spotify playlist setup (default: false)
-                mailbox_dm: true, // If you want to be DM'd when you receive a mailbox send (default: true)
-                mailbox_channel: false, // Mailbox channel to be sent music in (default: false, aka no channel)
-                embed_color: false, // Embed color for review embeds (default: false)
-                display_scrobbles: true, // Display scrobble counts on Waveform (default: true)
-            },
-            stats: {
-                // These 2 were removed due to speed issues with my current hardware.
-                // Could be re-added later when I get better hardware.
-                // most_reviewed: ['N/A', 0], 
-                // most_starred: ['N/A', 0],
-                star_num: 0, // Number of stars given from reviews done by the user
-                ten_num: 0, // Number of 10s given from reviews done by the user
-                review_num: 0, // Number of reviews done by the user
-                ep_review_num: 0, // Number of EP/LP reviews done by the user
-                star_list: [],
-                ratings_list: {},
-            },
-        });
-    }
-});
-
 client.on('guildCreate', async (guild) => {
     if (!db.server_settings.has(guild.id)) {
         db.server_settings.set(guild.id, {
@@ -335,10 +296,11 @@ client.on('guildCreate', async (guild) => {
                 review_num: 0, // Number of reviews done in the server
                 ep_review_num: 0, // Number of EP/LP reviews done in the server
             },
+            config: {
+                disable_ratings: false,
+            },
         });
     }
-
-
 });
 
 // login to Discord

@@ -6,12 +6,12 @@ require('dotenv').config();
 
 module.exports = {
     data: new SlashCommandBuilder()
-        .setName('epreview')
-        .setDescription('Review an EP/LP.')
+        .setName('albumreview')
+        .setDescription('Review an album or EP in Waveform.')
         .setDMPermission(false)
         .addSubcommand(subcommand =>
             subcommand.setName('with_spotify')
-            .setDescription('Review an EP/LP by utilizing the album of your currently playing spotify song. (requires login)')
+            .setDescription('Review an album or EP by utilizing the album of your currently playing spotify song.')
             .addStringOption(option => 
                 option.setName('overall_rating')
                     .setDescription('Overall Rating of the EP/LP. Out of 10, decimals allowed. Can be added later.')
@@ -35,7 +35,7 @@ module.exports = {
 
         .addSubcommand(subcommand =>
             subcommand.setName('manually')
-            .setDescription('Review an EP/LP by putting in the information manually.')
+            .setDescription('Review an album or EP by putting in the information manually.')
             .addStringOption(option => 
                 option.setName('artist')
                     .setDescription('The name of the MAIN EP/LP artist(s). (separate with &, Do not put any one-off collaborators here.)')
@@ -43,8 +43,8 @@ module.exports = {
                     .setRequired(true))
     
             .addStringOption(option => 
-                option.setName('ep_name')
-                    .setDescription('The name of the EP/LP. (INCLUDE EP OR LP IN THE TITLE!)')
+                option.setName('album_name')
+                    .setDescription('The name of the album or EP. (INCLUDE EP OR LP IN THE TITLE!)')
                     .setAutocomplete(true)
                     .setRequired(true))
     
@@ -71,7 +71,7 @@ module.exports = {
 
             .addSubcommand(subcommand =>
                 subcommand.setName('spotify_link')
-                .setDescription('Review an EP/LP by entering a spotify link.')
+                .setDescription('Review an album or EP by entering a spotify link.')
     
                 .addStringOption(option =>
                     option.setName('spotify_link')
@@ -103,7 +103,7 @@ module.exports = {
     + `The subcommand \`with_spotify\` pulls from your spotify playback to fill in arguments (if logged into Waveform with Spotify)` + 
     ` while the \`manually\` subcommand allows you to manually type in the EP/LP name yourself.` + 
     ` and the \`spotify_link\` subcommand allows you to review by placing in a valid open.spotify.com EP/LP link.`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
             // Check if we have an existing EP/LP review running, and back out immediately if we do.
             if (db.user_stats.get(interaction.user.id, 'current_ep_review') != false) {
@@ -115,7 +115,7 @@ module.exports = {
             let spotifyUri;
             let art = interaction.options.getString('art');
             let artists = interaction.options.getString('artist');
-            let ep = interaction.options.getString('ep_name');
+            let ep = interaction.options.getString('album_name');
             let trackList = false;
             let passesChecks = true;
 
@@ -218,6 +218,11 @@ module.exports = {
                 if (isNaN(overallRating)) return interaction.reply('The rating you put in is not valid, please make sure you put in an integer or decimal rating!');
             }
 
+            
+            if (serverConfig.disable_ratings === true) {
+                overallRating = false;
+            }
+
             let overallReview = interaction.options.getString('overall_review');
             if (overallReview == null) overallReview = false;
             if (overallReview != false) {
@@ -316,10 +321,15 @@ module.exports = {
                 );
             }
 
+            if (serverConfig.disable_ratings === false) {
+                row.addComponents(
+                    new ButtonBuilder()
+                        .setCustomId('rating').setLabel('Rating')
+                        .setStyle(ButtonStyle.Primary).setEmoji('📝'),
+                );
+            }
+
             row.addComponents(
-                new ButtonBuilder()
-                    .setCustomId('rating').setLabel('Rating')
-                    .setStyle(ButtonStyle.Primary).setEmoji('📝'),
                 new ButtonBuilder()
                     .setCustomId('review').setLabel('Review')
                     .setStyle(ButtonStyle.Primary).setEmoji('📝'),
@@ -327,7 +337,6 @@ module.exports = {
                     .setCustomId('star')
                     .setStyle(ButtonStyle.Secondary).setLabel('Favorite').setEmoji('🌟'),
             );
-
 
             // Setup bottom row
             if (overallRating == false && overallReview == false) {
