@@ -257,9 +257,11 @@ module.exports = {
                     continue;
                 }
                 let lfmTrackData = await lfmApi.track_getInfo({ artist: lfmPrimArtist.replace('\\&', '&'), track: songName, username: u.lfm_username });
-                lfmServerScrobbles += parseInt(lfmTrackData.userplaycount);
-                u.scrobbles = lfmTrackData.userplaycount;
-                lfmUserScrobbles[u.user_id] = u;
+                if (!isNaN(parseInt(lfmTrackData.userplaycount))) {
+                    lfmServerScrobbles += parseInt(lfmTrackData.userplaycount);
+                    u.scrobbles = lfmTrackData.userplaycount;
+                    lfmUserScrobbles[u.user_id] = u;
+                }
             }
         }
 
