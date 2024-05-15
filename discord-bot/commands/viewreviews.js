@@ -22,10 +22,19 @@ module.exports = {
                     .addChoices(
                         { name: 'Ascending', value: 'asc' },
                         { name: 'Descending', value: 'dsc' },
-                        { name: 'Recently Reviewed', value: 'recent' }, // TODO: NOT DONE
+                        { name: 'Recently Reviewed', value: 'recent' },
                         // { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
                         // { name: 'Alphabetical Song', value: 'alpha_music' }, // TODO: NOT DONE
                     ))
+
+            .addStringOption(option => 
+                option.setName('favorites')
+                    .setDescription('Only display things you have favorited, rather than all things.')
+                    .setRequired(false)
+                    .addChoices(
+                        { name: 'yes', value: 'yes' },
+                    ),
+            )
     
             .addUserOption(option => 
                 option.setName('user')
@@ -57,6 +66,15 @@ module.exports = {
                         // { name: 'Alphabetical Remix', value: 'alpha_music' }, // TODO: NOT DONE
                     ))
 
+            .addStringOption(option => 
+                option.setName('favorites')
+                    .setDescription('Only display things you have favorited, rather than all things.')
+                    .setRequired(false)
+                    .addChoices(
+                        { name: 'yes', value: 'yes' },
+                    ),
+            )
+
             .addUserOption(option => 
                 option.setName('user')
                     .setDescription('User whose reviews you\'d like to see, defaults to yourself')
@@ -83,6 +101,15 @@ module.exports = {
                         // { name: 'Alphabetical EP', value: 'alpha_music' }, // TODO: NOT DONE
                     ))
             
+            .addStringOption(option => 
+                option.setName('favorites')
+                    .setDescription('Only display things you have favorited, rather than all things.')
+                    .setRequired(false)
+                    .addChoices(
+                        { name: 'yes', value: 'yes' },
+                    ),
+            )
+
             .addUserOption(option => 
                 option.setName('user')
                     .setDescription('User whose reviews you\'d like to see, defaults to yourself')
@@ -107,6 +134,15 @@ module.exports = {
                         // { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
                         // { name: 'Alphabetical Album', value: 'alpha_music' }, // TODO: NOT DONE
                     ))
+
+            .addStringOption(option => 
+                option.setName('favorites')
+                    .setDescription('Only display things you have favorited, rather than all things.')
+                    .setRequired(false)
+                    .addChoices(
+                        { name: 'yes', value: 'yes' },
+                    ),
+            )       
 
             .addUserOption(option => 
                 option.setName('user')
@@ -134,6 +170,13 @@ module.exports = {
             queryMember = await interaction.guild.members.fetch(queryUser.id);
         }
 
+        let favFilter = interaction.options.getString('favorites');
+        if (favFilter == 'yes') {
+            favFilter = true;
+        } else {
+            favFilter = false;
+        }
+
         let queryNoRemix = false;
         if (queryRequest == 'song') {
             queryNoRemix = interaction.options.getBoolean('no_remixes');
@@ -155,7 +198,7 @@ module.exports = {
             case 'recent': sortFooterText = 'Sorting by Recent Reviews'; break;
         }
 
-        let resultList = await queryReviewDatabase(queryRequest, { sort: sortMode, rating: queryRating, user_id: queryUser.id, guild: interaction.guild.id, no_remix: queryNoRemix });
+        let resultList = await queryReviewDatabase(queryRequest, { sort: sortMode, rating: queryRating, user_id: queryUser.id, guild: interaction.guild.id, no_remix: queryNoRemix, fav_filter: favFilter });
 
         resultList = await Promise.all(resultList.map(async v => {
             let userRating = v.dataObj[queryUser.id].rating;

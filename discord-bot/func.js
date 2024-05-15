@@ -1372,7 +1372,7 @@ module.exports = {
      * @param {Object} options Default: {sort = 'asc', rating = false, user = false, guild = false} should be adjusted based on queryType necessities.
      * @returns A list of the query result 
      */
-    queryReviewDatabase: async function(queryType = DatabaseQuery.GlobalAllAlbums, options = { sort: 'asc', rating: false, user_id: false, guild_id: false, no_remix: false }) {
+    queryReviewDatabase: async function(queryType = DatabaseQuery.GlobalAllAlbums, options = { sort: 'asc', rating: false, user_id: false, guild_id: false, no_remix: false, fav_filter: false }) {
         const { convertToSetterName, get_user_reviews, getProperRemixers } = require('./func.js');
 
         const ARTISTARRAY = db.reviewDB.keyArray();
@@ -1381,6 +1381,7 @@ module.exports = {
         let optionsUser = options.user_id || false;
         let optionsSort = options.sort || 'asc';
         let optionsNoRemix = options.no_remix || false;
+        let optionsFavFilter = options.fav_filter || false;
 
         //let optionsGuild = options.guild_id || false;
         let optionsRating = options.rating || false;
@@ -1457,24 +1458,26 @@ module.exports = {
                 for (let k = 0; k < userArray.length; k++) {
                     let userData = songObj[userArray[k]];
 
-                    if (song.includes(' LP') && allAlbumQueries.includes(queryType)) {
-                        resultList.push(resultDataObj); break;
-                    } else if (song.includes(' EP') && allEPQueries.includes(queryType)) {
-                        resultList.push(resultDataObj); break;
-                    } else if (isRemix == true && allRemixQueries.includes(queryType)) {
-                        resultList.push(resultDataObj); break;
-                    } else if (allSongQueries.includes(queryType) && !song.includes(' EP') && !song.includes(' LP')) {
-                        resultList.push(resultDataObj); break;
+                    if ((optionsFavFilter === true && userData.starred === true) || optionsFavFilter === false) {
+                        if (song.includes(' LP') && allAlbumQueries.includes(queryType)) {
+                            resultList.push(resultDataObj); break;
+                        } else if (song.includes(' EP') && allEPQueries.includes(queryType)) {
+                            resultList.push(resultDataObj); break;
+                        } else if (isRemix == true && allRemixQueries.includes(queryType)) {
+                            resultList.push(resultDataObj); break;
+                        } else if (allSongQueries.includes(queryType) && !song.includes(' EP') && !song.includes(' LP')) {
+                            resultList.push(resultDataObj); break;
 
-                    // Specific rating   
-                    } else if (song.includes(' LP') && allSpecAlbumQueries.includes(queryType)) {
-                        if (parseFloat(userData.rating) === parseFloat(optionsRating)) resultList.push(resultDataObj); break;
-                    } else if (song.includes(' EP') && allSpecEPQueries.includes(queryType)) {
-                        if (parseFloat(userData.rating) === parseFloat(optionsRating)) resultList.push(resultDataObj); break;
-                    } else if (isRemix == true && allSpecRemixQueries.includes(queryType) && !song.includes(' EP') && !song.includes(' LP')) {
-                        if (parseFloat(userData.rating) === parseFloat(optionsRating)) resultList.push(resultDataObj); break;
-                    } else if (allSpecSongQueries.includes(queryType) && !song.includes(' EP') && !song.includes(' LP')) {
-                        if (parseFloat(userData.rating) === parseFloat(optionsRating)) resultList.push(resultDataObj); break;
+                        // Specific rating   
+                        } else if (song.includes(' LP') && allSpecAlbumQueries.includes(queryType)) {
+                            if (parseFloat(userData.rating) === parseFloat(optionsRating)) resultList.push(resultDataObj); break;
+                        } else if (song.includes(' EP') && allSpecEPQueries.includes(queryType)) {
+                            if (parseFloat(userData.rating) === parseFloat(optionsRating)) resultList.push(resultDataObj); break;
+                        } else if (isRemix == true && allSpecRemixQueries.includes(queryType) && !song.includes(' EP') && !song.includes(' LP')) {
+                            if (parseFloat(userData.rating) === parseFloat(optionsRating)) resultList.push(resultDataObj); break;
+                        } else if (allSpecSongQueries.includes(queryType) && !song.includes(' EP') && !song.includes(' LP')) {
+                            if (parseFloat(userData.rating) === parseFloat(optionsRating)) resultList.push(resultDataObj); break;
+                        }
                     }
                 }
 
