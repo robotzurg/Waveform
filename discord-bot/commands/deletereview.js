@@ -27,7 +27,7 @@ module.exports = {
     help_desc: `Delete a review you have made from the review database.\n\n` + 
     `This only deletes YOUR review, not anyone else's review or the song/artist data itself.\n\n` + 
     `Leaving the artist and song name arguments blank will pull from currently playing song on Spotify, if you are logged in to Waveform with Spotify.`,
-    async execute(interaction, client, userID = false) {
+    async execute(interaction, client, serverConfig, userID = false) {
 
         try {
 

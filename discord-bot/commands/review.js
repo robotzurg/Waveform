@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 const SpotifyWebApi = require("spotify-web-api-node");
 const db = require("../db.js");
 const { update_art, review_song, handle_error, get_review_channel, grab_spotify_art, parse_artist_song_data, isValidURL, spotify_api_setup, grab_spotify_artist_art, updateStats, getEmbedColor, convertToSetterName } = require('../func.js');
@@ -110,7 +111,7 @@ module.exports = {
     + `The subcommand \`with_spotify\` pulls from your spotify playback to fill in arguments (if logged into Waveform with Spotify),` + 
     ` the \`manually\` subcommand allows you to manually type in the song name yourself,` +
     ` and the \`spotify_link\` subcommand allows you to review by placing in a valid open.spotify.com link.`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
         await interaction.deferReply();
 
@@ -350,7 +351,7 @@ module.exports = {
             }
         }
 
-        if (interaction.commandName != 'pushtoepreview') {
+        if (interaction.commandName != 'pushtoalbumreview') {
             if (review == false && rating === false) {
                 return await interaction.editReply('While you can review with only a rating or only a text review, you cannot review with neither.\n' +
                 'Please make sure you use the `rating` and `review` arguments in this command to properly review this song.');
@@ -358,7 +359,7 @@ module.exports = {
                 if (rating !== false) reviewEmbed.addFields([{ name: 'Rating: ', value: `**${rating}/10**`, inline: true }]);
                 if (review != false) reviewEmbed.setDescription(review);
             }
-        } else if (interaction.commandName == 'pushtoepreview') { // If we are using this command through /pushtoepreview, pull from the existing songs rating and review, if they exist
+        } else if (interaction.commandName == 'pushtoalbumreview') { // If we are using this command through /pushtoalbumreview, pull from the existing songs rating and review, if they exist
             let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
             if (songObj == undefined) {
                 return interaction.editReply(`No review found for \`${origArtistArray.join(' & ')} - ${displaySongName}\`.`);
