@@ -88,7 +88,7 @@ module.exports = {
             subcommand = 'N/A';
         }
 
-        if (interaction.commandName == 'editdata') {
+        if (interaction.commandName == 'admineditdata') {
             if (subcommand == 'artist' && artists != null) {
                 return { 
                     prod_artists: [artists], 
@@ -455,7 +455,7 @@ module.exports = {
      
         if (interaction.commandName != 'nowplaying' && !interaction.commandName.includes('mail')) {
             // Check if all the artists exist (don't check this if we're pulling data for /review or /epreview)
-            if (interaction.commandName != 'review' && interaction.commandName != 'albumreview' && interaction.commandName != 'pushtoalbumreview') {
+            if (interaction.commandName != 'review' && interaction.commandName != 'albumreview' && interaction.commandName != 'pushtoalbumreview' && interaction.commandName != 'whoknows') {
                 for (let i = 0; i < artistArray.length; i++) {
                     if (!db.reviewDB.has(artistArray[i])) {
                         return { error: `The artist \`${artistArray[i]}\` is not in the database. This is either due to no reviews being made of this song, or could be due to an artist renaming themselves on Spotify. If you believe the latter is the case, please use \`/reportsongdata\` to submit a song data edit request.` };
@@ -482,7 +482,11 @@ module.exports = {
                         }
                     }
 
-                    if (db.reviewDB.get(artistArray[0], `${setterSongArg}`).spotify_uri && songUri == false && rmxArtistArray.length != 0) {
+                    if (db.reviewDB.get(artistArray[0], `${setterSongArg}`).art && songArt == false) {
+                        songArt = db.reviewDB.get(artistArray[0], `${setterSongArg}`).art;
+                    }
+
+                    if (db.reviewDB.get(artistArray[0], `${setterSongArg}`).spotify_uri && songUri == false) {
                         songUri = db.reviewDB.get(artistArray[0], `${setterSongArg}`).spotify_uri;
                     }
                 }
@@ -496,6 +500,10 @@ module.exports = {
                                 rmxArtistArray.push(db.reviewDB.get(rmxArtistArray[0])[songArg].rmx_collab);
                                 rmxArtistArray = rmxArtistArray.flat(1);
                             }
+                        }
+
+                        if (db.reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).art && songArt == false) {
+                            songArt = db.reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).art;
                         }
 
                         if (db.reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).spotify_uri && songUri == false) {
@@ -1352,9 +1360,16 @@ module.exports = {
         return lfm;
     },
 
-    getLfmUsers: function() {
+    getLfmUsers: async function(interaction, global = false) {
         let userArray = db.user_stats.keyArray();
         let output = [];
+
+        let res = await interaction.guild.members.fetch();
+        let guildUsers = [...res.keys()];
+        if (global === false) {
+            userArray = userArray.filter(v => guildUsers.includes(v));
+        }
+
         for (let user of userArray) {
             let userData = db.user_stats.get(user);
             if (userData.lfm_username != false && userData.lfm_username != undefined) {

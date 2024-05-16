@@ -32,6 +32,7 @@ module.exports = {
 
         if (lfmApi != false) {
             lfmRecentSongs = await lfmApi.user_getRecentTracks({ limit: 1 });
+            console.log(lfmRecentSongs);
             if (lfmRecentSongs.success) {
                 if (lfmRecentSongs.track.length != 0) {
                     lfmUrl = lfmRecentSongs.track[0].url;

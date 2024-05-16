@@ -21,7 +21,7 @@ module.exports = {
                 { name: 'Number of Artists', value: `${botStats.artist_num}`, inline: true },
                 { name: 'Number of Songs', value: `${botStats.song_num}`, inline: true },
                 { name: 'Number of EP/LPs', value: `${botStats.ep_num}`, inline: true },
-                { name: 'Number of Reviews', value: `${botStats.review_num}`, inline: true },
+                { name: 'Number of Song Reviews', value: `${botStats.review_num}`, inline: true },
                 { name: 'Number of EP/LP Reviews', value: `${botStats.ep_review_num}`, inline: true },
                 { name: 'Number of Favorites Given', value: `${botStats.star_num}` },
                 { name: 'Number of 10s Given', value: `${botStats.ten_num}` },

@@ -70,7 +70,7 @@ module.exports = {
             let artistArray = song_info.db_artists;
             let epType = epName.includes(' LP') ? `LP` : `EP`;
             let lfmApi = await lfm_api_setup(interaction.user.id);
-            let lfmUsers = getLfmUsers();
+            let lfmUsers = await getLfmUsers(interaction);
             let lfmScrobbleSetting = interaction.options.getString('scrobbles');
             if (lfmScrobbleSetting == 'none') lfmApi = false;
             let lfmUserScrobbles = {};
