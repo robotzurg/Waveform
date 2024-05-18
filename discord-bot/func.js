@@ -88,7 +88,7 @@ module.exports = {
             subcommand = 'N/A';
         }
 
-        if (interaction.commandName == 'admineditdata') {
+        if (interaction.commandName == 'admineditdata' || interaction.commandName == 'whoknows') {
             if (subcommand == 'artist' && artists != null) {
                 return { 
                     prod_artists: [artists], 
@@ -98,7 +98,9 @@ module.exports = {
                     db_artists: [artists], 
                     all_artists: [artists],
                     remix_artists: [], 
-                    art: 'N/A',
+                    art: false,
+                    lastfm_artists: [artists],
+                    lastfm_song_name: 'N/A',
                     spotify_uri: false,
                     current_ep_review_data: false,
                 };
@@ -125,6 +127,12 @@ module.exports = {
         let notPlaying = false;
         let rmx_delimiter = ' & ';
         let current_ep_review_data = false;
+
+        // These are for Last.fm queries, they're entirely unedited from Spotify. It seems to track better that way.
+        let lfmArtists = artists;
+        if (lfmArtists != null) lfmArtists = lfmArtists.split(' & ');
+        let lfmSong = song;
+
         if (remixers != null) {
             rmxArtistArray = [remixers.split(' & ')];
             rmxArtistArray = rmxArtistArray.flat(1);
@@ -157,6 +165,9 @@ module.exports = {
                         return; 
                     } 
 
+                    lfmArtists = data.body.item.artists.map(artist => artist.name);
+                    lfmSong = data.body.item.name;
+
                     origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
                     songArg = data.body.item.name;
                     songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
@@ -180,6 +191,8 @@ module.exports = {
 
                             origArtistArray = album_data.body.artists.map(artist => artist.name);
                             songArg = album_data.body.name;
+                            lfmArtists = album_data.body.artists.map(artist => artist.name);
+                            lfmSong = songArg;
                             songUri = album_data.body.uri;
                             if (album_data.body.album_type == 'single' && !songArg.includes(' EP')) {
                                 songArg = `${songArg} EP`;
@@ -573,6 +586,8 @@ module.exports = {
             remix_artists: rmxArtistArray, 
             art: songArt,
             spotify_uri: songUri,
+            lastfm_artists: lfmArtists,
+            lastfm_song_name: lfmSong,
             current_ep_review_data: current_ep_review_data,
             passes_checks: passesChecks,
         };
