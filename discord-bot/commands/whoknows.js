@@ -60,7 +60,7 @@ module.exports = {
     help_desc: `View who knows a song/EP/album/artist on Last.fm, out of logged in Last.fm Waveform users in your server.`,
 	async execute(interaction, client, serverConfig) {
         await interaction.deferReply();
-        await interaction.editReply('Loading song data...');
+        await interaction.editReply('Loading data...');
         
         let lfmUserApi = await lfm_api_setup(interaction.user.id);
         let lfmUsers = await getLfmUsers(interaction);
