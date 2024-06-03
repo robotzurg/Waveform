@@ -175,7 +175,7 @@ module.exports = {
         .setAuthor({ name: `${interaction.member.displayName}'s ${isPlaying ? `current song` : `last song played`}`, iconURL: `${interaction.user.avatarURL({ extension: "png", dynamic: true })}` })
         .setThumbnail(songArt);
 
-        let extraEmbedData = `${lfmTrackData != false ? `\nScrobbles: \`${lfmTrackData.userplaycount}\`` : ``}` +
+        let extraEmbedData = `${lfmTrackData != false ? `\nPlays: \`${lfmTrackData.userplaycount}\`` : ``}` +
         `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
         `${spotifyUrl == false ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}` +
         `${lfmUrl == false ? `` : `\n<:lastfm:1227869050084921375> [Last.fm](${lfmUrl})`}`;
@@ -228,7 +228,7 @@ module.exports = {
                 }
 
                 extraEmbedData = `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
-                `${lfmTrackData != false ? `\nScrobbles: \`${lfmTrackData.userplaycount}\`` : ``}` +
+                `${lfmTrackData != false ? `\nPlays: \`${lfmTrackData.userplaycount}\`` : ``}` +
                 `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
                 `${spotifyUrl == false ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}` +
                 `${lfmUrl == false ? `` : `\n<:lastfm:1227869050084921375> [Last.fm](${lfmUrl})`}`;
