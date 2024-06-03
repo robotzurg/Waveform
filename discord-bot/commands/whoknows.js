@@ -1,8 +1,10 @@
 /* eslint-disable no-unreachable */
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { lfm_api_setup, getLfmUsers, parse_artist_song_data, getEmbedColor, grab_spotify_art, grab_spotify_artist_art } = require('../func');
+const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require('discord.js');
+const { lfm_api_setup, getLfmUsers, parse_artist_song_data, getEmbedColor, grab_spotify_art, grab_spotify_artist_art, convertToSetterName } = require('../func');
 require('dotenv').config();
 const db = require('../db.js');
+const { ButtonStyle } = require('discord-api-types/v9');
+const _ = require('lodash');
 // const { spotify_api_setup } = require('../func.js');
 // const lastfm = require('lastfm-njs');
 
@@ -55,11 +57,33 @@ module.exports = {
                     .setDescription('The name of the artist.')
                     .setAutocomplete(true)
                     .setRequired(false))),
-    help_desc: `View who knows a song/EP/LP/artist on Last.fm, out of logged in Last.fm Waveform users in your server.`,
-	async execute(interaction) {
+    help_desc: `View who knows a song/EP/album/artist on Last.fm, out of logged in Last.fm Waveform users in your server.`,
+	async execute(interaction, client, serverConfig) {
         await interaction.deferReply();
         let lfmUserApi = await lfm_api_setup(interaction.user.id);
         let lfmUsers = await getLfmUsers(interaction);
+
+        // Setup buttons
+        const pageButtons = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('left')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('⬅️'),
+            new ButtonBuilder()
+                .setCustomId('right')
+                .setStyle(ButtonStyle.Primary)
+                .setEmoji('➡️'),
+        );
+        
+        const getSongButton = new ActionRowBuilder()
+        .addComponents(
+            new ButtonBuilder()
+                .setCustomId('getsong')
+                .setLabel('See Reviews')
+                .setStyle(ButtonStyle.Primary),
+        );
+        let componentList = [];
 
         let subcommand = interaction.options.getSubcommand();
         let artistArg = interaction.options.getString('artist');
@@ -75,22 +99,35 @@ module.exports = {
             return;
         }
 
-        console.log(song_info);
-
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
-        // let artistArray = song_info.db_artists;
+        let artistArray = song_info.db_artists;
         // rmxArtistArray = song_info.remix_artists;
         let displaySongName = song_info.display_song_name;
         let lfmRecentSongs = { success: false };
         let lfmArtistArray = song_info.lastfm_artists;
         let lfmSongName = song_info.lastfm_song_name;
         let artistPfp = false;
+        let songObj = false;
         if (lfmUserApi != false && songArg === null && epArg == null && artistArg === null) lfmRecentSongs = await lfmUserApi.user_getRecentTracks({ limit: 1 });
+
+        if (db.reviewDB.has(origArtistArray[0])) {
+            let getterSongName = convertToSetterName(songName); 
+            songObj = db.reviewDB.get(origArtistArray[0], getterSongName);
+            if (songObj == undefined) songObj = false;
+        }
 
         for (let i = 0; i < lfmUsers.length; i++) {
             let lfmUsername = lfmUsers[i].lfm_username;
             let lfmData = { success: false };
+            lfmUsers[i].rating = false;
+            lfmUsers[i].starred = false;
+            if (songObj != false && serverConfig.disable_ratings == false) {
+                if (songObj[lfmUsers[i].user_id] != undefined) {
+                    lfmUsers[i].rating = songObj[lfmUsers[i].user_id].rating;
+                    lfmUsers[i].starred = songObj[lfmUsers[i].user_id].starred;
+                }
+            }
 
             if (lfmRecentSongs.success) {
                 if (lfmRecentSongs.track.length != 0) {
@@ -166,21 +203,60 @@ module.exports = {
         let counter = 0;
         lfmUsers = lfmUsers.map(v => {
             counter += 1;
-            return `${counter}. <@${v.user_id}> - \`${v.scrobbles} plays\``;
+            return `${counter}. <@${v.user_id}> - \`${v.scrobbles} plays\`${subcommand != 'artist' && v.rating != false ? `\nRating: \`${v.rating}/10\`${v.starred != false ? ` 🌟` : ``}` : ``}`;
         });
 
         if (lfmUsers.length == 0) return interaction.editReply(`Nobody in ${interaction.guild.name} has heard this.`);
 
-        whoKnowsEmbed.setColor(getEmbedColor(interaction.member))
-            .setDescription(lfmUsers.join('\n'))
-            .setFooter({ text: `In ${interaction.guild.name}` });
+        let paged_user_list = _.chunk(lfmUsers, 10);
+        let page_num = 0;
 
+        whoKnowsEmbed.setColor(getEmbedColor(interaction.member))
+            .setDescription(paged_user_list[0].join('\n'));
+            if (paged_user_list.length > 1) {
+                componentList.push(pageButtons);
+                whoKnowsEmbed.setFooter({ text: `In ${interaction.guild.name} • Page 1 / ${paged_user_list.length}`, iconURL: interaction.guild.iconURL({ extension: 'png' }) });
+            } else {
+                whoKnowsEmbed.setFooter({ text: `In ${interaction.guild.name}`, iconURL: interaction.guild.iconURL({ extension: 'png' }) });
+            }
+
+        
         if (subcommand == 'song' || subcommand == 'album') {
             if (song_info.art != false) whoKnowsEmbed.setThumbnail(song_info.art);
             whoKnowsEmbed.setTitle(`Who knows ${origArtistArray.join(` & `)} - ${displaySongName}`);
         } else {
             if (artistPfp != false) whoKnowsEmbed.setThumbnail(artistPfp);
             whoKnowsEmbed.setTitle(`Who knows ${origArtistArray[0]}`);
+        }
+
+        if (songObj != false) componentList.push(getSongButton);
+        await interaction.editReply({ content: null, embeds: [whoKnowsEmbed], components: componentList });
+        
+        if (paged_user_list.length > 1) {
+            let message = await interaction.fetchReply();
+            const collector = message.createMessageComponentCollector({ idle: 120000 });
+
+            collector.on('collect', async i => {
+                if (i.customId != 'getsong') {
+                    (i.customId == 'left') ? page_num -= 1 : page_num += 1;
+                    page_num = _.clamp(page_num, 0, paged_user_list.length - 1);
+
+                    whoKnowsEmbed.setDescription(paged_user_list[page_num].join('\n'));
+                    whoKnowsEmbed.setFooter({ text: `In ${interaction.guild.name} • Page ${page_num + 1} / ${paged_user_list.length}`, iconURL: interaction.guild.iconURL({ extension: 'png' }) });
+                    await i.update({ content: null, embeds: [whoKnowsEmbed] });
+                } else {
+                    await i.update({ content: 'Loading song data...', embeds: [], components: [] });
+                    let command = client.commands.get('getsong');
+                    await command.execute(interaction, client, serverConfig, artistArray, songName);
+                }
+            });
+
+            collector.on('end', async collected => {
+                // If we are on the getsong command, don't change our interaction when timer ends.
+                if (!collected.some(v => v.customId === 'getsong')) {
+                    await interaction.editReply({ content: null, embeds: [whoKnowsEmbed], components: [] });
+                }
+            });
         }
 
         interaction.editReply({ embeds: [whoKnowsEmbed], allowedMentions: { parse: ["users", "roles"] } });

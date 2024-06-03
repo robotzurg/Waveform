@@ -492,6 +492,7 @@ module.exports = {
                             origArtistArray = artistArray.flat(1);
                             artistArray = [...new Set(artistArray)];
                             origArtistArray = [...new Set(origArtistArray)];
+
                         }
                     }
 
@@ -1542,6 +1543,15 @@ module.exports = {
                     if (b_timestamp === undefined) return -1;
 
                     return b_timestamp - a_timestamp;
+                });
+            } else if (optionsSort.includes('alpha')) {
+                resultList.sort((a, b) => {
+                    let artistCheckA = a.origArtistArray[0];
+                    let artistCheckB = b.origArtistArray[0];
+                    if (a.origArtistArray[0] == undefined) artistCheckA = a.allArtists[0];
+                    if (b.origArtistArray[0] == undefined) artistCheckB = b.allArtists[0];
+                    if (optionsSort == 'alpha_artist') return artistCheckA.localeCompare(artistCheckB);
+                    else return a.name.localeCompare(b.name);
                 });
             }
         }

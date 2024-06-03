@@ -24,14 +24,14 @@ module.exports = {
                     .setRequired(false))
 
             .addStringOption(option =>
-                option.setName('scrobbles')
-                    .setDescription('Set what scrobble data to view. (defaults to Reviewer Scrobbles)')
+                option.setName('plays')
+                    .setDescription('Set what play count data to view. (defaults to Reviewer Plays)')
                     .setRequired(false)
                     .addChoices(
                         { name: 'None', value: 'none' },
-                        { name: 'User Scrobbles', value: 'user' },
-                        { name: 'Reviewer Scrobbles', value: 'reviewers' },
-                        { name: 'Server Scrobbles', value: 'server' },
+                        { name: 'User Plays', value: 'user' },
+                        { name: 'Reviewer Plays', value: 'reviewers' },
+                        { name: 'Server Plays', value: 'server' },
                     )))
 
         .addSubcommand(subcommand =>
@@ -71,7 +71,7 @@ module.exports = {
             let epType = epName.includes(' LP') ? `LP` : `EP`;
             let lfmApi = await lfm_api_setup(interaction.user.id);
             let lfmUsers = await getLfmUsers(interaction);
-            let lfmScrobbleSetting = interaction.options.getString('scrobbles');
+            let lfmScrobbleSetting = interaction.options.getString('plays');
             if (lfmScrobbleSetting == 'none') lfmApi = false;
             let lfmUserScrobbles = {};
             let lfmPrimArtist = origArtistArray[0];
@@ -243,7 +243,7 @@ module.exports = {
             if (subcommand != 'global') {
                 for (let i = 0; i < userArray.length; i++) {
                     if ((lfmUserScrobbles[userIDList[i]]) != undefined) {
-                        userArray[i] += ` \`${lfmUserScrobbles[userIDList[i]].scrobbles} scrobbles\``;
+                        userArray[i] += ` \`${lfmUserScrobbles[userIDList[i]].scrobbles} plays\``;
                     }
                 }
             }
@@ -309,8 +309,8 @@ module.exports = {
                 // If there are songs attached to the EP/LP
                 if (songRankArray.length != 0) {
                     if (subcommand == 'server') {
-                        epEmbed.setDescription(`${lfmScrobbles !== false ? `*You have* ***${lfmScrobbles}*** *scrobbles on this ${epType}!*` : ``}` +
-                        `${lfmServerScrobbles !== false ? `\n${lfmScrobbleSetting == 'reviewers' ? `*Reviewers overall have*` : `*This server has*`} ***${lfmServerScrobbles}*** *scrobbles on this ${epType}!*` : ``}` +
+                        epEmbed.setDescription(`${lfmScrobbles !== false ? `*You have* ***${lfmScrobbles}*** *plays on this ${epType}!*` : ``}` +
+                        `${lfmServerScrobbles !== false ? `\n${lfmScrobbleSetting == 'reviewers' ? `*Reviewers overall have*` : `*This server has*`} ***${lfmServerScrobbles}*** *plays on this ${epType}!*` : ``}` +
                         `\n*The average overall user rating of this ${epType} is* ***${Math.round(average(epRankArray) * 10) / 10}!***` + 
                         `\n*The total average rating of all songs on this ${epType} is* ***${Math.round(average(songRankArray) * 10) / 10}!***` +
                         `${(starCount == 0 ? `` : `\n:star2: **This ${epType} has ${starCount} favorite${starCount == 1 ? '' : 's'}!** :star2:`)}` +
@@ -344,8 +344,8 @@ module.exports = {
                         `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:899365299814559784> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}`);
                     }
                 } else {
-                    epEmbed.setDescription(`${lfmScrobbles !== false ? `*You have* ***${lfmScrobbles}*** *scrobbles on this ${epType}!*` : ``}` +
-                    `${lfmServerScrobbles !== false ? `\n${lfmScrobbleSetting == 'reviewers' ? `*Reviewers overall have*` : `*This server has*`} ***${lfmServerScrobbles}*** *scrobbles on this ${epType}!*` : ``}` +
+                    epEmbed.setDescription(`${lfmScrobbles !== false ? `*You have* ***${lfmScrobbles}*** *plays on this ${epType}!*` : ``}` +
+                    `${lfmServerScrobbles !== false ? `\n${lfmScrobbleSetting == 'reviewers' ? `*Reviewers overall have*` : `*This server has*`} ***${lfmServerScrobbles}*** *plays on this ${epType}!*` : ``}` +
                     `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:899365299814559784> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}` +
                     `\n${paged_user_list[page_num].join('\n')}`);
                 }
@@ -516,9 +516,9 @@ module.exports = {
                             } else {
                                 sentbyDisplayName = sentByMember.displayName;
                             }
-                            epReviewEmbed.setFooter({ text: `Sent by ${sentbyDisplayName}${lfmScrobbles !== false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
+                            epReviewEmbed.setFooter({ text: `Sent by ${sentbyDisplayName}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
                         } else if (lfmScrobbles !== false) {
-                            epReviewEmbed.setFooter({ text: `Scrobbles: ${lfmScrobbles}` });
+                            epReviewEmbed.setFooter({ text: `Plays: ${lfmScrobbles}` });
                         }
 
                         let reviewMsgID = epReviewObj.msg_id;

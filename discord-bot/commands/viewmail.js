@@ -19,9 +19,14 @@ module.exports = {
                         { name: 'Albums', value: 'album' },
                     ))
 
+        .addUserOption(option =>
+            option.setName('user_filter')
+                .setDescription('Filter your mailbox to only show music sent by a specific user.')
+                .setRequired(false))
+
         .addUserOption(option => 
-            option.setName('user')
-                .setDescription('User to see mail from. (Optional, Defaults to yourself)')
+            option.setName('mailbox_user')
+                .setDescription('What users mailbox to view (Optional, Defaults to yourself)')
                 .setRequired(false))
 
         .addStringOption(option => 
@@ -32,8 +37,13 @@ module.exports = {
     help_desc: `View a list of every song you currently have in your mailbox that you have not reviewed yet.`,
 	async execute(interaction, client) {
 
-        let user = interaction.options.getUser('user');
+        let user = interaction.options.getUser('mailbox_user');
         let filterOption = interaction.options.getString('filter');
+        let filterUser = interaction.options.getUser('user_filter');
+        let filterMember;
+        if (filterUser != null) {
+            filterMember = await interaction.guild.members.fetch(filterUser.id);
+        }
         let taggedMember;
 
         if (user == null) {
@@ -98,12 +108,16 @@ module.exports = {
             }
         }
 
+        if (filterUser != null) {
+            mail_list = mail_list.filter(v => v.user_who_sent === filterUser.id);
+        }
+
         mail_list = mail_list.map(v => `• [**${v.display_name}**](${v.spotify_url})\n${guildUsers.includes(v.user_who_sent) ? `Sent by <@${v.user_who_sent}>` : `Sent by a user outside this server`}\n\n`);
 
         if (mail_list == undefined || mail_list == false) {
-            return interaction.reply('You have nothing in your mailbox.');
+            return interaction.reply(`You have nothing in your mailbox${filterUser != null ? ` from the user **${filterMember.displayName}**.` : `.`}`);
         } else if (mail_list.length == 0) {
-            return interaction.reply('You have nothing in your mailbox.');
+            return interaction.reply(`You have nothing in your mailbox${filterUser != null ? ` from the user **${filterMember.displayName}**.` : `.`}`);
         }
 
         let paged_mail_list = _.chunk(mail_list, 10);

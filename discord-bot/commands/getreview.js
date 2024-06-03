@@ -153,11 +153,11 @@ module.exports = {
             reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ extension: "png" }) : songArt);
 
             if (rsentby != false) {
-                reviewEmbed.setFooter({ text: `Sent by ${usrSentBy.displayName}${lfmScrobbles !== false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: `${usrSentBy.user.avatarURL({ extension: "png" })}` });
+                reviewEmbed.setFooter({ text: `Sent by ${usrSentBy.displayName}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: `${usrSentBy.user.avatarURL({ extension: "png" })}` });
             } else if (epfrom != undefined && epfrom != false) {
-                reviewEmbed.setFooter({ text: `from ${epfrom}${lfmScrobbles !== false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: db.reviewDB.get(artistArray[0], `${setterEpName}`).art });
+                reviewEmbed.setFooter({ text: `from ${epfrom}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: db.reviewDB.get(artistArray[0], `${setterEpName}`).art });
             } else if (lfmScrobbles !== false) {
-                reviewEmbed.setFooter({ text: `Scrobbles: ${lfmScrobbles}` });
+                reviewEmbed.setFooter({ text: `Plays: ${lfmScrobbles}` });
             }
 
             if ((rurl == undefined && rtimestamp == undefined) || rurl == false) {

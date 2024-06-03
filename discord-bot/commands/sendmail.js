@@ -240,7 +240,7 @@ module.exports = {
                     if (linkType != 'sp_ep' && linkType != 'sp_lp') {
                         let lfmTrackData = await lfmApi.track_getInfo({ artist: origArtistArray[0].replace('\\&', '&'), track: name, username: lfmUsername });
                         if (lfmTrackData.userplaycount != 0 && lfmForce == null && lfmTrackData.userplaycount != undefined) {
-                            return interaction.editReply(`**${taggedMember.displayName}** has already heard **${origArtistArray.join(' & ')} - ${displayName}**, with \`${lfmTrackData.userplaycount}\` scrobbles on Last.fm, so this song was not sent.\n` + 
+                            return interaction.editReply(`**${taggedMember.displayName}** has already heard **${origArtistArray.join(' & ')} - ${displayName}**, with \`${lfmTrackData.userplaycount}\` plays on Last.fm, so this song was not sent.\n` + 
                             `(If you would like to send the song anyways, use the \`force\` argument to bypass this warning.)`);
                         }
 
