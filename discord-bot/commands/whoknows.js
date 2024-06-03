@@ -250,6 +250,7 @@ module.exports = {
                     await i.update({ content: 'Loading song data...', embeds: [], components: [] });
                     let command = client.commands.get('getsong');
                     await command.execute(interaction, client, serverConfig, artistArray, songName);
+                    await collector.stop();
                 }
             });
 
