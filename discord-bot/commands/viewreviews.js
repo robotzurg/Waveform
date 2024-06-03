@@ -23,8 +23,8 @@ module.exports = {
                         { name: 'Ascending', value: 'asc' },
                         { name: 'Descending', value: 'dsc' },
                         { name: 'Recently Reviewed', value: 'recent' },
-                        // { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
-                        // { name: 'Alphabetical Song', value: 'alpha_music' }, // TODO: NOT DONE
+                        { name: 'Alphabetical Artist', value: 'alpha_artist' },
+                        { name: 'Alphabetical Song', value: 'alpha_music' },
                     ))
 
             .addStringOption(option => 
@@ -62,8 +62,8 @@ module.exports = {
                         { name: 'Ascending', value: 'asc' },
                         { name: 'Descending', value: 'dsc' },
                         { name: 'Recently Reviewed', value: 'recent' }, 
-                        // { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
-                        // { name: 'Alphabetical Remix', value: 'alpha_music' }, // TODO: NOT DONE
+                        { name: 'Alphabetical Artist', value: 'alpha_artist' },
+                        { name: 'Alphabetical Remix', value: 'alpha_music' },
                     ))
 
             .addStringOption(option => 
@@ -97,8 +97,8 @@ module.exports = {
                         { name: 'Ascending', value: 'asc' },
                         { name: 'Descending', value: 'dsc' },
                         { name: 'Recently Reviewed', value: 'recent' },
-                        // { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
-                        // { name: 'Alphabetical EP', value: 'alpha_music' }, // TODO: NOT DONE
+                        { name: 'Alphabetical Artist', value: 'alpha_artist' },
+                        { name: 'Alphabetical EP', value: 'alpha_music' },
                     ))
             
             .addStringOption(option => 
@@ -131,8 +131,8 @@ module.exports = {
                         { name: 'Ascending Rating', value: 'asc' },
                         { name: 'Descending Rating', value: 'dsc' },
                         { name: 'Recently Reviewed', value: 'recent' },
-                        // { name: 'Alphabetical Artist', value: 'alpha_artist' }, // TODO: NOT DONE
-                        // { name: 'Alphabetical Album', value: 'alpha_music' }, // TODO: NOT DONE
+                        { name: 'Alphabetical Artist', value: 'alpha_artist' },
+                        { name: 'Alphabetical Album', value: 'alpha_music' },
                     ))
 
             .addStringOption(option => 
@@ -151,7 +151,7 @@ module.exports = {
 
         .setDMPermission(false),
     help_desc: `View all the reviews you've made in the database, with various filters and arguments (To be added to later with a better help description).`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
 
         await interaction.deferReply();
@@ -196,14 +196,24 @@ module.exports = {
             case 'asc': sortFooterText = 'Sorting by Ascending Rating'; break;
             case 'dsc': sortFooterText = 'Sorting by Descending Rating'; break;
             case 'recent': sortFooterText = 'Sorting by Recent Reviews'; break;
+            case 'alpha_artist': sortFooterText = 'Sorting by Artist Name Alphabetically A-Z'; break;
+            case 'alpha_music': sortFooterText = 'Sorting by Song Name Alphabetically A-Z'; break;
+        }
+
+        if (serverConfig.disable_ratings) {
+            if (sortMode == 'asc' || sortMode == 'dsc') {
+                sortMode = 'recent';
+                sortFooterText = 'Sorting by Recent Reviews';
+            }
         }
 
         let resultList = await queryReviewDatabase(queryRequest, { sort: sortMode, rating: queryRating, user_id: queryUser.id, guild: interaction.guild.id, no_remix: queryNoRemix, fav_filter: favFilter });
 
         resultList = await Promise.all(resultList.map(async v => {
             let userRating = v.dataObj[queryUser.id].rating;
+            if (serverConfig.disable_ratings) userRating = false;
             let songUrl = await spotifyUritoURL(v.dataObj.spotify_uri);
-            return `-${v.dataObj[queryUser.id].starred === true ? ' ⭐' : ``} [${v.origArtistArray.join(' & ')} - ${v.name}](${songUrl})\n**Rating**: \`${userRating === false ? `No Rating` : `${userRating}/10`}\``;
+            return `-${v.dataObj[queryUser.id].starred === true ? ' ⭐' : ``} [${v.origArtistArray.join(' & ')} - ${v.name}](${songUrl})\n**Rating**: \`${userRating === false ? `N/A` : `${userRating}/10`}\``;
         }));
 
         let paged_review_list = _.chunk(resultList, 10);

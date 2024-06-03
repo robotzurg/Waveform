@@ -18,7 +18,7 @@ module.exports = {
                     .setRequired(false))
             .addStringOption(option =>
                 option.setName('hide_scrobbles')
-                    .setDescription('Hide the overall server scrobble count. (Makes the command run quicker)')
+                    .setDescription('Hide the overall server play count. (Makes the command run quicker)')
                     .setRequired(false)
                     .addChoices({ name: 'yes', value: 'yes' })))
         .addSubcommand(subcommand =>
@@ -31,7 +31,7 @@ module.exports = {
                     .setRequired(false))),
     help_desc: `Displays all songs, EPs/LPs, Remixes, and other information regarding an artist in Waveform.\n\n` +
     `You can view a summary view of all data relating to an artist globally by using the \`global\` subcommand, or view data locally using the \`server\` subcommand.\n\n` +
-    `This command will by default show a last.fm scrobble count for everyone in the server logged into last.fm, which makes the command take a little bit longer to run, but this can be turned off by using the \`hide_scrobbles\` argument.\n\n` +
+    `This command will by default show a last.fm play count for everyone in the server logged into last.fm, which makes the command take a little bit longer to run, but this can be turned off by using the \`hide_scrobbles\` argument.\n\n` +
     `Leaving the artist argument blank will pull from your spotify playback to fill in the argument (if logged in to Waveform with Spotify)`,
 	async execute(interaction, client, serverConfig) {
         try {
@@ -41,7 +41,7 @@ module.exports = {
             let subcommand = interaction.options.getSubcommand();
             let artist = interaction.options.getString('artist');
             let scrobbleHide = interaction.options.getString('hide_scrobbles');
-            let lfmUsers = getLfmUsers();
+            let lfmUsers = await getLfmUsers(interaction);
             let lfmApi = await lfm_api_setup(interaction.user.id);
             let lfmScrobbles = false;
             let lfmServerScrobbles = false;
@@ -403,8 +403,8 @@ module.exports = {
             globalRankNumArray = globalRankNumArray.filter(v => !isNaN(v));
             localRankNumArray = localRankNumArray.filter(v => !isNaN(v));
             let rankNumArray = interaction.options.getSubcommand() == 'global' ? globalRankNumArray : localRankNumArray;
-            let artistEmbedDesc = `${lfmScrobbles !== false ? `*You have* ***${lfmScrobbles}*** *scrobbles on ${artist}!*` : ``}` +
-            `${lfmServerScrobbles != false && subcommand != 'global' ? `\n*This server has* ***${lfmServerScrobbles}*** *scrobbles on ${artist}!*` : ``}` +
+            let artistEmbedDesc = `${lfmScrobbles !== false ? `*You have* ***${lfmScrobbles}*** *plays on ${artist}!*` : ``}` +
+            `${lfmServerScrobbles != false && subcommand != 'global' ? `\n*This server has* ***${lfmServerScrobbles}*** *plays on ${artist}!*` : ``}` +
             `${(singleArray.length != 0 || remixArray.length != 0 || epArray.length != 0) && rankNumArray.length != 0 ? `\n*The average ${subcommand == 'global' ? 'global' : 'local'} rating of ${artist} is* ***${Math.round(average(rankNumArray) * 10) / 10}!***` : ``}` + 
             `${fullStarNum != 0 ? `\n:star2: **${artist} has ${fullStarNum} total favorites in this server!** :star2:` : ``}`;
 

@@ -41,8 +41,7 @@ module.exports = {
             db.user_stats.set(interaction.user.id, [], 'mailbox_history');
             db.user_stats.set(interaction.user.id, false, 'spotify_mailbox'); 
             db.user_stats.set(interaction.user.id, true, 'config.mailbox_dm');
-            await interaction.editReply(`Your mailbox has now been setup on Waveform. Because this is not a spotify linked mailbox, it cannot be sent Spotify Links, but users can send you mail manually in your channel!\n`
-             + `If you meant to create a Spotify mailbox, please make sure you run \`/login\`, then run this command again, and you will have a Spotify Mailbox properly created!`);
+            await interaction.editReply(`Your non-spotify Waveform mailbox has now been setup on Waveform. Use \`/login\` to login to Spotify to setup a Spotify Mailbox!`);
         }
 
         } catch (err) {

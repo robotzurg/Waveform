@@ -88,7 +88,7 @@ module.exports = {
                         if (reviewData.rating != false) extraData = `\n**Rating:** \`${reviewData.rating}/10${reviewData.starred ? `⭐\`` : `\``}`;
                     }
                 }
-                if (lfmScrobbles != false) extraData += `\n**Scrobbles:** \`${lfmScrobbles}\``;
+                if (lfmScrobbles != false) extraData += `\n**Plays:** \`${lfmScrobbles}\``;
                 playList.push(`- ${platform == 'lastfm' ? `<:lastfm:1227869050084921375>` : `<:spotify:899365299814559784>`} <@${member}>: [**${origArtistArray.join(' & ')} - ${songDisplayName}**](${songUrl})${extraData != `` ? `${extraData}` : ``}\n`);
             }
         }

@@ -149,9 +149,9 @@ module.exports = {
             epEmbed.setThumbnail(ep_art);
 
             if (ep_sent_by != false && ep_sent_by != undefined) {
-                epEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}${lfmScrobbles !== false ? ` • Scrobbles: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
+                epEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
             } else if (lfmScrobbles !== false) {
-                epEmbed.setFooter({ text: `Scrobbles: ${lfmScrobbles}` });
+                epEmbed.setFooter({ text: `Plays: ${lfmScrobbles}` });
             }
 
             let reviewMsgID = epReviewObj.msg_id;

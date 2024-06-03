@@ -88,7 +88,7 @@ module.exports = {
             subcommand = 'N/A';
         }
 
-        if (interaction.commandName == 'editdata') {
+        if (interaction.commandName == 'admineditdata' || interaction.commandName == 'whoknows') {
             if (subcommand == 'artist' && artists != null) {
                 return { 
                     prod_artists: [artists], 
@@ -98,7 +98,9 @@ module.exports = {
                     db_artists: [artists], 
                     all_artists: [artists],
                     remix_artists: [], 
-                    art: 'N/A',
+                    art: false,
+                    lastfm_artists: [artists],
+                    lastfm_song_name: 'N/A',
                     spotify_uri: false,
                     current_ep_review_data: false,
                 };
@@ -125,6 +127,12 @@ module.exports = {
         let notPlaying = false;
         let rmx_delimiter = ' & ';
         let current_ep_review_data = false;
+
+        // These are for Last.fm queries, they're entirely unedited from Spotify. It seems to track better that way.
+        let lfmArtists = artists;
+        if (lfmArtists != null) lfmArtists = lfmArtists.split(' & ');
+        let lfmSong = song;
+
         if (remixers != null) {
             rmxArtistArray = [remixers.split(' & ')];
             rmxArtistArray = rmxArtistArray.flat(1);
@@ -157,6 +165,9 @@ module.exports = {
                         return; 
                     } 
 
+                    lfmArtists = data.body.item.artists.map(artist => artist.name);
+                    lfmSong = data.body.item.name;
+
                     origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
                     songArg = data.body.item.name;
                     songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
@@ -180,6 +191,8 @@ module.exports = {
 
                             origArtistArray = album_data.body.artists.map(artist => artist.name);
                             songArg = album_data.body.name;
+                            lfmArtists = album_data.body.artists.map(artist => artist.name);
+                            lfmSong = songArg;
                             songUri = album_data.body.uri;
                             if (album_data.body.album_type == 'single' && !songArg.includes(' EP')) {
                                 songArg = `${songArg} EP`;
@@ -455,7 +468,7 @@ module.exports = {
      
         if (interaction.commandName != 'nowplaying' && !interaction.commandName.includes('mail')) {
             // Check if all the artists exist (don't check this if we're pulling data for /review or /epreview)
-            if (interaction.commandName != 'review' && interaction.commandName != 'albumreview' && interaction.commandName != 'pushtoalbumreview') {
+            if (interaction.commandName != 'review' && interaction.commandName != 'albumreview' && interaction.commandName != 'pushtoalbumreview' && interaction.commandName != 'whoknows') {
                 for (let i = 0; i < artistArray.length; i++) {
                     if (!db.reviewDB.has(artistArray[i])) {
                         return { error: `The artist \`${artistArray[i]}\` is not in the database. This is either due to no reviews being made of this song, or could be due to an artist renaming themselves on Spotify. If you believe the latter is the case, please use \`/reportsongdata\` to submit a song data edit request.` };
@@ -479,10 +492,15 @@ module.exports = {
                             origArtistArray = artistArray.flat(1);
                             artistArray = [...new Set(artistArray)];
                             origArtistArray = [...new Set(origArtistArray)];
+
                         }
                     }
 
-                    if (db.reviewDB.get(artistArray[0], `${setterSongArg}`).spotify_uri && songUri == false && rmxArtistArray.length != 0) {
+                    if (db.reviewDB.get(artistArray[0], `${setterSongArg}`).art && songArt == false) {
+                        songArt = db.reviewDB.get(artistArray[0], `${setterSongArg}`).art;
+                    }
+
+                    if (db.reviewDB.get(artistArray[0], `${setterSongArg}`).spotify_uri && songUri == false) {
                         songUri = db.reviewDB.get(artistArray[0], `${setterSongArg}`).spotify_uri;
                     }
                 }
@@ -496,6 +514,10 @@ module.exports = {
                                 rmxArtistArray.push(db.reviewDB.get(rmxArtistArray[0])[songArg].rmx_collab);
                                 rmxArtistArray = rmxArtistArray.flat(1);
                             }
+                        }
+
+                        if (db.reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).art && songArt == false) {
+                            songArt = db.reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).art;
                         }
 
                         if (db.reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).spotify_uri && songUri == false) {
@@ -565,6 +587,8 @@ module.exports = {
             remix_artists: rmxArtistArray, 
             art: songArt,
             spotify_uri: songUri,
+            lastfm_artists: lfmArtists,
+            lastfm_song_name: lfmSong,
             current_ep_review_data: current_ep_review_data,
             passes_checks: passesChecks,
         };
@@ -1352,9 +1376,16 @@ module.exports = {
         return lfm;
     },
 
-    getLfmUsers: function() {
+    getLfmUsers: async function(interaction, global = false) {
         let userArray = db.user_stats.keyArray();
         let output = [];
+
+        let res = await interaction.guild.members.fetch();
+        let guildUsers = [...res.keys()];
+        if (global === false) {
+            userArray = userArray.filter(v => guildUsers.includes(v));
+        }
+
         for (let user of userArray) {
             let userData = db.user_stats.get(user);
             if (userData.lfm_username != false && userData.lfm_username != undefined) {
@@ -1512,6 +1543,15 @@ module.exports = {
                     if (b_timestamp === undefined) return -1;
 
                     return b_timestamp - a_timestamp;
+                });
+            } else if (optionsSort.includes('alpha')) {
+                resultList.sort((a, b) => {
+                    let artistCheckA = a.origArtistArray[0];
+                    let artistCheckB = b.origArtistArray[0];
+                    if (a.origArtistArray[0] == undefined) artistCheckA = a.allArtists[0];
+                    if (b.origArtistArray[0] == undefined) artistCheckB = b.allArtists[0];
+                    if (optionsSort == 'alpha_artist') return artistCheckA.localeCompare(artistCheckB);
+                    else return a.name.localeCompare(b.name);
                 });
             }
         }

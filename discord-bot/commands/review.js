@@ -202,7 +202,7 @@ module.exports = {
         }
 
         let rating = interaction.options.getString('rating');
-        if (rating == null) rating = false;
+        if (rating == null || serverConfig.disable_ratings == true) rating = false;
         let review = interaction.options.getString('review');
         if (review == null) review = false;
         let user_who_sent = interaction.options.getUser('user_who_sent');
@@ -265,10 +265,15 @@ module.exports = {
             );
         }
 
-        editButtons.addComponents(
-            new ButtonBuilder()
-                .setCustomId('rating').setLabel('Rating')
-                .setStyle(ButtonStyle.Primary).setEmoji('📝'),
+        if (serverConfig.disable_ratings != true) {
+            editButtons.addComponents(
+                new ButtonBuilder()
+                    .setCustomId('rating').setLabel('Rating')
+                    .setStyle(ButtonStyle.Primary).setEmoji('📝'),
+            );
+        }
+
+        editButtons.addComponents(  
             new ButtonBuilder()
                 .setCustomId('review').setLabel('Review')
                 .setStyle(ButtonStyle.Primary).setEmoji('📝'),

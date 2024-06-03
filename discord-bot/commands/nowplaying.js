@@ -13,7 +13,7 @@ module.exports = {
     help_desc: `If logged into Waveform with Spotify or Last.fm, this command will display your currently playing song, and some basic data in Waveform about the song, if any exists.\n` +
     `You can also use the "Reviews" button to see relevant reviews in the server of the song, if there are any.\n\n` + 
     `This requires /login to be successfully run before it can be used, and can only be used with Spotify or Last.fm.\n` + 
-    `You can also view your song scrobbles on Last.fm, if you are logged into Last.fm on Waveform.`,
+    `You can also view your song play count on Last.fm, if you are logged into Last.fm on Waveform.`,
 	async execute(interaction, client, serverConfig) {
         try {
         await interaction.deferReply();
@@ -32,6 +32,7 @@ module.exports = {
 
         if (lfmApi != false) {
             lfmRecentSongs = await lfmApi.user_getRecentTracks({ limit: 1 });
+            console.log(lfmRecentSongs);
             if (lfmRecentSongs.success) {
                 if (lfmRecentSongs.track.length != 0) {
                     lfmUrl = lfmRecentSongs.track[0].url;

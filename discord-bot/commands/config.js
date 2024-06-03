@@ -74,8 +74,8 @@ module.exports = {
                             value: 'star_playlist',
                         },
                         {
-                            label: `Display Scrobbles`,
-                            description: 'Show your scrobbles publically.',
+                            label: `Display Play Count`,
+                            description: 'Show your play count publically.',
                             emoji: '🎵',
                             value: 'display_scrobbles',
                         },
@@ -103,7 +103,7 @@ module.exports = {
         `**Mailbox DM:** ${config_data.mailbox_dm ? '✅' : '❌'}`,
         `**Embed Color:** \`${config_data.embed_color == false ? 'Role Color' : config_data.embed_color}\``,
         `**Favs Spotify Playlist:** \`${config_data.star_spotify_playlist != false ? 'Setup!' : 'Not Setup.'}\``,
-        `**Display Scrobbles Publically:** ${config_data.display_scrobbles ? '✅' : '❌'}`];
+        `**Display Play Count Publically:** ${config_data.display_scrobbles ? '✅' : '❌'}`];
 
         let mailFilterSel = new ActionRowBuilder()
             .addComponents(
@@ -249,7 +249,7 @@ module.exports = {
                 } else if (sel.values[0] == 'display_scrobbles') {
 
                     await db.user_stats.set(interaction.user.id, !(user_profile.config.display_scrobbles), 'config.display_scrobbles');
-                    config_desc[5] = `**Display Scrobbles Publically:** ${db.user_stats.get(interaction.user.id, 'config.display_scrobbles') ? '✅' : '❌'}`;
+                    config_desc[5] = `**Display Play Count Publically:** ${db.user_stats.get(interaction.user.id, 'config.display_scrobbles') ? '✅' : '❌'}`;
                     user_profile = db.user_stats.get(interaction.user.id);
                     configEmbed.setDescription(config_desc.join('\n'));
                     await sel.update({ content: null, embeds: [configEmbed], components: [configMenu] });
