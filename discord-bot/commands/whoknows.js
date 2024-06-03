@@ -234,7 +234,7 @@ module.exports = {
         if (songObj != false) componentList.push(getSongButton);
         await interaction.editReply({ content: null, embeds: [whoKnowsEmbed], components: componentList });
         
-        if (paged_user_list.length > 1) {
+        if (paged_user_list.length > 1 || songObj != false) {
             let message = await interaction.fetchReply();
             const collector = message.createMessageComponentCollector({ idle: 120000 });
 
