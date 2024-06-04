@@ -163,6 +163,7 @@ module.exports = {
         if (rating != null && rating !== '-') {
             if (rating.includes('/10')) rating = rating.replace('/10', '');
             if (isNaN(rating)) return interaction.reply('Your rating must be a valid number or decimal between 0-10, or `-` to remove a rating.');
+            if (parseFloat(rating) < 0 || parseFloat(rating) > 10) return interaction.reply('Your rating must be between 0-10.');
         } else if (rating === '-') {
             rating = false;
         }

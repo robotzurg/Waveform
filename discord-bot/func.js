@@ -468,7 +468,7 @@ module.exports = {
      
         if (interaction.commandName != 'nowplaying' && !interaction.commandName.includes('mail')) {
             // Check if all the artists exist (don't check this if we're pulling data for /review or /epreview)
-            if (interaction.commandName != 'review' && interaction.commandName != 'albumreview' && interaction.commandName != 'pushtoalbumreview' && interaction.commandName != 'whoknows') {
+            if (interaction.commandName != 'review' && interaction.commandName != 'albumreview' && interaction.commandName != 'pushtoalbumreview' && interaction.commandName != 'whoknows' && interaction.commandName != 'lfmtop') {
                 for (let i = 0; i < artistArray.length; i++) {
                     if (!db.reviewDB.has(artistArray[i])) {
                         return { error: `The artist \`${artistArray[i]}\` is not in the database. This is either due to no reviews being made of this song, or could be due to an artist renaming themselves on Spotify. If you believe the latter is the case, please use \`/reportsongdata\` to submit a song data edit request.` };
@@ -539,7 +539,7 @@ module.exports = {
         let displaySongName = (`${displaySongArg}`);
 
         // Grab a spotify song uri through spotify search if we don't already have one.
-        if (songUri == false) {
+        if (songUri == false && interaction.commandName != 'lfmtop') {
             // let spotifyApi = new SpotifyWebApi({
             //     redirectUri: process.env.SPOTIFY_REDIRECT_URI,
             //     clientId: process.env.SPOTIFY_API_ID,
