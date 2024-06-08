@@ -70,6 +70,7 @@ module.exports = {
             let rurl;
             let usrSentBy;
             let rtimestamp;
+            let isMailbox = false;
             let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
             if (songObj == undefined) return interaction.reply(`\`${origArtistArray.join(' & ')} - ${displaySongName}\` not found in the database.`);
             let songReviewObj = songObj[taggedUser.id];
@@ -97,6 +98,7 @@ module.exports = {
             rstarred = songReviewObj.starred;
             rurl = songReviewObj.url;
             if (rsentby != false) {
+                isMailbox = true;
                 usrSentBy = await interaction.guild.members.cache.get(rsentby);            
                 if (usrSentBy == undefined) rsentby = false;
             }
@@ -152,8 +154,12 @@ module.exports = {
 
             reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ extension: "png" }) : songArt);
 
-            if (rsentby != false) {
-                reviewEmbed.setFooter({ text: `Sent by ${usrSentBy.displayName}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: `${usrSentBy.user.avatarURL({ extension: "png" })}` });
+            if (isMailbox == true) {
+                if (rsentby != false) {
+                    reviewEmbed.setFooter({ text: `Sent by ${usrSentBy.displayName}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: `${usrSentBy.user.avatarURL({ extension: "png" })}` });
+                } else {
+                    reviewEmbed.setFooter({ text: `📬 Sent by a user outside of this server${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}` });
+                }
             } else if (epfrom != undefined && epfrom != false) {
                 reviewEmbed.setFooter({ text: `from ${epfrom}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: db.reviewDB.get(artistArray[0], `${setterEpName}`).art });
             } else if (lfmScrobbles !== false) {

@@ -205,7 +205,7 @@ module.exports = {
         let counter = 0;
         lfmUsers = lfmUsers.map(v => {
             counter += 1;
-            return `${counter}. <@${v.user_id}>${v.starred != false ? ` \`🌟\`` : ``}${subcommand != 'artist' && v.rating != false ? ` \`${v.rating}/10\`` : ``} \`${v.scrobbles} plays\``;
+            return `${counter}. <@${v.user_id}>${v.starred != false ? ` 🌟` : ``}${subcommand != 'artist' && v.rating !== false ? ` **\`${v.rating}/10\`**` : ``} - **${v.scrobbles}** plays`;
         });
 
         if (lfmUsers.length == 0) return interaction.editReply(`Nobody in ${interaction.guild.name} has heard this.`);

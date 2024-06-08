@@ -149,7 +149,14 @@ module.exports = {
             epEmbed.setThumbnail(ep_art);
 
             if (ep_sent_by != false && ep_sent_by != undefined) {
-                epEmbed.setFooter({ text: `Sent by ${ep_sent_by.displayName}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
+                let sentByMember;
+                sentByMember = await interaction.guild.members.fetch(epReviewObj.sentby).catch(() => sentByMember = undefined);
+                if (sentByMember == undefined) {
+                    epEmbed.setFooter({ text: `📬 Sent by a user not in this server${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}` });
+                } else {
+                    epEmbed.setFooter({ text: `Sent by ${sentByMember.displayName}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
+                }
+
             } else if (lfmScrobbles !== false) {
                 epEmbed.setFooter({ text: `Plays: ${lfmScrobbles}` });
             }

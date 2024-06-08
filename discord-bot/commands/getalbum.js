@@ -510,13 +510,13 @@ module.exports = {
                         let sentbyDisplayName;
                         if (ep_sent_by != false && ep_sent_by != undefined) {
                             let sentByMember;
-                            sentByMember = await interaction.guild.members.fetch(epReviewObj.sentby).catch(sentByMember = undefined);
+                            sentByMember = await interaction.guild.members.fetch(epReviewObj.sentby).catch(() => sentByMember = undefined);
                             if (sentByMember == undefined) {
-                                sentbyDisplayName = ep_sent_by.username;
+                                epReviewEmbed.setFooter({ text: `📬 Sent by a user not in this server${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}` });
                             } else {
-                                sentbyDisplayName = sentByMember.displayName;
+                                epReviewEmbed.setFooter({ text: `Sent by ${sentbyDisplayName}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
                             }
-                            epReviewEmbed.setFooter({ text: `Sent by ${sentbyDisplayName}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: `${ep_sent_by.avatarURL({ extension: "png" })}` });
+                            
                         } else if (lfmScrobbles !== false) {
                             epReviewEmbed.setFooter({ text: `Plays: ${lfmScrobbles}` });
                         }
