@@ -122,6 +122,7 @@ module.exports = {
         let mailbox_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
         let temp_mailbox_list;
         let ping_for_review = false;
+        let mailUserInServer = false;
 
         let artists = interaction.options.getString('artist');
         let song = interaction.options.getString('song_name');
@@ -197,8 +198,10 @@ module.exports = {
 
         // Check if we are in a spotify mailbox
         spotifyApi = await spotify_api_setup(interaction.user.id);
-        if (mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:track:', '')) && spotifyApi != false) {
-            is_mailbox = true;
+        if (spotifyUri != false) {
+            if (mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:track:', '')) && spotifyApi != false) {
+                is_mailbox = true;
+            }
         }
 
         let rating = interaction.options.getString('rating');
@@ -216,11 +219,12 @@ module.exports = {
                 if (mailbox_data.user_who_sent != interaction.user.id) {
                     await interaction.guild.members.fetch(mailbox_data.user_who_sent).then(async user_data => {
                         user_who_sent = user_data.user; //await client.users.cache.get(mailbox_data.user_who_sent);
+                        mailUserInServer = true;
                         if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
-                    }).catch(() => {
-                        user_who_sent = false;
+                    }).catch(async () => {
+                        user_who_sent = await client.users.fetch(mailbox_data.user_who_sent);
                         ping_for_review = false;
-                        is_mailbox = false;
+                        is_mailbox = true;
                     });
                 } else {
                     user_who_sent = false;
@@ -248,7 +252,9 @@ module.exports = {
 
         if (user_who_sent != null && user_who_sent != false) {
             taggedUser = user_who_sent;
-            taggedMember = await interaction.guild.members.fetch(taggedUser.id);
+            if (mailUserInServer == true) {
+                taggedMember = await interaction.guild.members.fetch(taggedUser.id);
+            }
         }
 
         // Setup review editing buttons
@@ -389,7 +395,11 @@ module.exports = {
         
         if (taggedUser != false && taggedUser != undefined) {
             if (taggedUser.id != interaction.user.id) { // Don't add the sent by if it's sent by ourselves
-                reviewEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png", dynamic: true }) });
+                if (mailUserInServer == true) {
+                    reviewEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: taggedUser.avatarURL({ extension: "png", dynamic: true }) });
+                } else {
+                    reviewEmbed.setFooter({ text: `📬 Sent by a user outside of this server` });
+                }
             }
         }
         // End of Embed Code

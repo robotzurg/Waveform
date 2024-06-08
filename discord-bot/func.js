@@ -571,8 +571,10 @@ module.exports = {
                     }
                 }
 
-                if (pushed == false) {
+                if (pushed == false && results.length != 0) {
                     songUri = results[0].uri;
+                } else if (results.length == 0) {
+                    songUri = false;
                 }
             });
         }

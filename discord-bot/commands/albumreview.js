@@ -247,6 +247,7 @@ module.exports = {
 
             let is_mailbox = false;
             let ping_for_review = false;
+            let mailUserInServer = false;
             let temp_mailbox_list;
             let mailbox_list = db.user_stats.get(interaction.user.id, 'mailbox_list');
             let spotifyApi;
@@ -265,11 +266,12 @@ module.exports = {
                     if (mailbox_data.user_who_sent != interaction.user.id) {
                         await interaction.guild.members.fetch(mailbox_data.user_who_sent).then(() => {
                             user_who_sent = client.users.cache.get(mailbox_data.user_who_sent);
+                            mailUserInServer = true;
                             if (db.user_stats.get(mailbox_data.user_who_sent, 'config.review_ping') == true) ping_for_review = true;
-                        }).catch(() => {
-                            user_who_sent = false;
+                        }).catch(async () => {
+                            user_who_sent = await client.users.fetch(mailbox_data.user_who_sent);
                             ping_for_review = false;
-                            is_mailbox = false;
+                            is_mailbox = true;
                         });
                     } else {
                         is_mailbox = true;
@@ -280,7 +282,9 @@ module.exports = {
             }
 
             if (user_who_sent.id != null && user_who_sent.id != undefined && user_who_sent.id != false) {
-                taggedMember = await interaction.guild.members.fetch(user_who_sent.id);
+                if (mailUserInServer == true) {
+                    taggedMember = await interaction.guild.members.fetch(taggedUser.id);
+                }
                 taggedUser = user_who_sent;
             } else {
                 taggedUser = { id: false };
@@ -391,7 +395,11 @@ module.exports = {
             }
 
             if (taggedUser.id != false) {
-                epEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: true })}` });
+                if (mailUserInServer == true) {
+                    epEmbed.setFooter({ text: `Sent by ${taggedMember.displayName}`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: true })}` });
+                } else {
+                    epEmbed.setFooter({ text: `📬 Sent by a user outside this server` });
+                }
             }
 
             await interaction.reply({ embeds: [epEmbed], components: [row, row2] });
@@ -683,6 +691,7 @@ module.exports = {
                             // Remove from local playlist
                             if (spotifyApi != false) {
                                 mailbox_list = mailbox_list.filter(v => v.spotify_id != spotifyUri.replace('spotify:album:', ''));
+                                mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${epName}`);
                             } else {
                                 mailbox_list = mailbox_list.filter(v => v.display_name != `${origArtistArray.join(' & ')} - ${epName}`);
                             }

@@ -480,6 +480,7 @@ module.exports = {
                     let sentbyIconURL = false;
                     let sentbyDisplayName = false;
                     let url = songObj[i.values[0]].url;
+                    let isMailbox = false;
                     
                     // If we don't have a single review link, we can check for an EP/LP review link
                     if (url == false && (songEP != false && songEP != undefined)) {
@@ -491,14 +492,15 @@ module.exports = {
                     }
 
                     if (sentby != false && taggedUser != undefined) {
+                        isMailbox = true;
                         sentby = await client.users.fetch(sentby);
                         let sentByMember;
-                        sentByMember = await interaction.guild.members.fetch(sentby).catch(sentByMember = undefined);
-                        sentbyIconURL = sentby.avatarURL({ extension: 'png' });
-                        if (sentByMember == undefined) {
-                            sentbyDisplayName = sentby.username;
-                        } else {
+                        sentByMember = await interaction.guild.members.fetch(sentby).catch(() => sentByMember = undefined);
+                        if (sentByMember != undefined) {
                             sentbyDisplayName = sentByMember.displayName;
+                            sentby.avatarURL({ extension: 'png' });
+                        } else {
+                            sentby = false;
                         }
                     }
 
@@ -520,8 +522,12 @@ module.exports = {
         
                     reviewEmbed.setThumbnail((songArt == false) ? interaction.user.avatarURL({ extension: "png" }) : songArt);
 
-                    if (sentby != false) {
-                        reviewEmbed.setFooter({ text: `Sent by ${sentbyDisplayName}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: `${sentbyIconURL}` });
+                    if (isMailbox == true) {
+                        if (sentby != false) {
+                            reviewEmbed.setFooter({ text: `Sent by ${sentbyDisplayName.displayName}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: sentbyIconURL });
+                        } else {
+                            reviewEmbed.setFooter({ text: `📬 Sent by a user outside of this server${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}` });
+                        }
                     } else if (songEP != undefined && songEP != false) {
                         reviewEmbed.setFooter({ text: `from ${songEP}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: db.reviewDB.get(artistArray[0], `${setterSongEP}.art`) });
                     } else if (lfmScrobbles !== false) {
