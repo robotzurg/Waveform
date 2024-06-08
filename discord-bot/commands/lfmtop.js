@@ -21,12 +21,12 @@ module.exports = {
                     .setDescription('The timeframe of the top tracks.')
                     .setRequired(false)
                     .addChoices(
-                        { name: 'All Time', value: 'overall|All Time' },
                         { name: 'Week', value: '7day|Week' },
                         { name: 'Month', value: '1month|Month' },
                         { name: '3 Months', value: '3month|3 Months' },
                         { name: '6 Months', value: '6month|6 Months' },
                         { name: 'Year', value: '12month|Year' },
+                        { name: 'All Time', value: 'overall|All Time' },
                     ))
 
             .addUserOption(option =>
@@ -41,12 +41,12 @@ module.exports = {
                     .setDescription('The timeframe of the top albums.')
                     .setRequired(false)
                     .addChoices(
-                        { name: 'All Time', value: 'overall|All Time' },
                         { name: 'Week', value: '7day|Week' },
                         { name: 'Month', value: '1month|Month' },
                         { name: '3 Months', value: '3month|3 Months' },
                         { name: '6 Months', value: '6month|6 Months' },
                         { name: 'Year', value: '12month|Year' },
+                        { name: 'All Time', value: 'overall|All Time' },
                     ))
 
             .addUserOption(option =>
@@ -62,12 +62,12 @@ module.exports = {
                     .setDescription('The timeframe of the top artists.')
                     .setRequired(false)
                     .addChoices(
-                        { name: 'All Time', value: 'overall|All Time' },
                         { name: 'Week', value: '7day|Week' },
                         { name: 'Month', value: '1month|Month' },
                         { name: '3 Months', value: '3month|3 Months' },
                         { name: '6 Months', value: '6month|6 Months' },
                         { name: 'Year', value: '12month|Year' },
+                        { name: 'All Time', value: 'overall|All Time' },
                     ))
 
             .addUserOption(option =>
@@ -82,7 +82,7 @@ module.exports = {
         let lfmUserApi = await lfm_api_setup(interaction.user.id);
         let subcommand = interaction.options.getSubcommand();
         let timeframe = interaction.options.getString('timeframe');
-        if (timeframe == null) timeframe = '1month|Month';
+        if (timeframe == null) timeframe = '7day|Week';
         timeframe = timeframe.split('|');
         let taggedUser = interaction.options.getUser('user');
         if (taggedUser == null) taggedUser = interaction.user;
@@ -103,38 +103,54 @@ module.exports = {
                 .setEmoji('➡️'),
         );
 
-        let result = await lfmUserApi.user_getTopTracks({ user: lfmUsername, period: timeframe[0] });
+        let result;
+        let resultList = [];
+        switch (subcommand) {
+            case 'song': 
+                result = await lfmUserApi.user_getTopTracks({ user: lfmUsername, period: timeframe[0] }); 
+                resultList = result.track;
+            break;
+            case 'album': 
+                result = await lfmUserApi.user_getTopAlbums({ user: lfmUsername, period: timeframe[0] }); 
+                resultList = result.album;
+            break;
+            case 'artist': 
+                result = await lfmUserApi.user_getTopArtists({ user: lfmUsername, period: timeframe[0] });
+                resultList = result.artist;
+            break;
+        }
         let topLfm = [];
         let counter = 0;
 
-        for (let track of result.track) {
-            let song_info = await parse_artist_song_data(interaction, track.artist.name, track.name);
-            if (song_info.error != undefined) {
-                await interaction.editReply(song_info.error);
-                return;
-            }
-
-            let origArtistArray = song_info.prod_artists;
-            let songName = song_info.song_name;
-            let artistArray = song_info.db_artists;
-            let displaySongName = song_info.display_song_name;
-            let songObj = false;
-            let reviewObj = { starred: false, rating: false };
-    
+        for (let track of resultList) {
+            counter += 1;
             if (subcommand != 'artist') {
+                let song_info = await parse_artist_song_data(interaction, track.artist.name, track.name);
+                if (song_info.error != undefined) {
+                    await interaction.editReply(song_info.error);
+                    return;
+                }
+
+                let origArtistArray = song_info.prod_artists;
+                let songName = song_info.song_name;
+                let artistArray = song_info.db_artists;
+                let displaySongName = song_info.display_song_name;
+                let songObj = false;
+                let reviewObj = { starred: false, rating: false };
+                
                 if (db.reviewDB.has(artistArray[0])) {
                     let getterSongName = convertToSetterName(songName); 
                     songObj = db.reviewDB.get(artistArray[0], getterSongName);
                     if (songObj == undefined) songObj = false;
-                    else reviewObj = songObj[taggedUser.id];
+                    else if (songObj[taggedUser.id] != undefined) reviewObj = songObj[taggedUser.id];
                 }
                 if (serverConfig.disable_ratings) reviewObj.rating = false;
 
                 let songUrl = track.url;
-                topLfm.push(`${counter}. [**${origArtistArray.join(' & ')} - ${displaySongName}**](${songUrl})${reviewObj.starred != false ? ` \`🌟\`` : ``}${reviewObj.rating !== false ? ` **\`${reviewObj.rating}/10\`**` : ``} \`${track.playcount} plays\``);
+                topLfm.push(`${counter}. [**${origArtistArray.join(' & ')} - ${displaySongName}**](${songUrl})${reviewObj.starred != false ? ` 🌟` : ``}${reviewObj.rating !== false ? ` **\`${reviewObj.rating}/10\`**` : ``} - **${track.playcount}** plays`);
             } else {
                 let artistUrl = track.url;
-                topLfm.push(`${counter}. [**${track.artist.name}**](${artistUrl}) \`${track.playcount} plays\``);
+                topLfm.push(`${counter}. [**${track.name}**](${artistUrl}) - **${track.playcount}** plays`);
             }
         }
 
@@ -144,6 +160,7 @@ module.exports = {
         let topEmbed = new EmbedBuilder()
             .setColor(getEmbedColor(interaction.member))
             .setTitle(`Top ${_.upperFirst(subcommand)}s on Last.fm (${timeframe[1]})`)
+            .setThumbnail(taggedUser.avatarURL({ extension: "png", dynamic: true }))
             .setDescription(paged_top_list[0].join('\n'));
             if (paged_top_list.length > 1) {
                 componentList.push(pageButtons);
