@@ -303,6 +303,7 @@ client.on('guildCreate', async (guild) => {
             },
             config: {
                 disable_ratings: false,
+                disable_global: false,
             },
         });
     }
