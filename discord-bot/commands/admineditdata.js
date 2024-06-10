@@ -206,7 +206,6 @@ module.exports = {
             editEmbed.setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`);
             editEmbed.addFields(
                 { name: 'Artists:', value: `${origArtistArray.join('\n')}\n${rmxArtistArray.join('\n')}`, inline: true }, // 0
-                { name: 'Vocalists:', value: `N/A`, inline: true }, // 1
                 { name: 'Remixers:', value: `${remixers.length != 0 ? remixers.join('\n') : `N/A`}`, inline: true }, // 2
                 { name: 'Song Name:', value: `${songName}`, inline: true }, // 3
                 { name: 'Song Type:', value: `${songType}`, inline: true }, // 4
