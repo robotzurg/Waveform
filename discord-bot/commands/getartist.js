@@ -39,6 +39,7 @@ module.exports = {
             interaction.editReply('Loading artist data...');
             let spotifyCheck;
             let subcommand = interaction.options.getSubcommand();
+            if (serverConfig.disable_global && subcommand == 'global') return interaction.editReply('Global subcommands are unavailable when external reviews are disabled. Please contact your server admins for more info.');
             let artist = interaction.options.getString('artist');
             let scrobbleHide = interaction.options.getString('hide_scrobbles');
             let lfmUsers = await getLfmUsers(interaction);
@@ -194,10 +195,10 @@ module.exports = {
                     let localReviews, globalReviews;
                     // Get all users if global, otherwise get only guild specific users if server.
                     if (subcommand == 'server') {
-                        localReviews = await get_user_reviews(songObj, guildUsers);
+                        localReviews = await get_user_reviews(songObj, serverConfig.disable_global, guild, guildUsers);
                         globalReviews = [];
                     } else {
-                        globalReviews = await get_user_reviews(songObj);
+                        globalReviews = await get_user_reviews(songObj, serverConfig.disable_global, guild);
                         localReviews = [];
                     }
 
@@ -273,10 +274,10 @@ module.exports = {
                 globalRankNumArray = [];
                 // Get all users if global, otherwise get only guild specific users if server.
                 if (subcommand == 'server') {
-                    localReviews = await get_user_reviews(songObj, guildUsers);
+                    localReviews = await get_user_reviews(songObj, serverConfig.disable_global, guild, guildUsers);
                     globalReviews = [];
                 } else {
-                    globalReviews = await get_user_reviews(songObj);
+                    globalReviews = await get_user_reviews(songObj, serverConfig.disable_global, guild);
                     localReviews = [];
                 }
 

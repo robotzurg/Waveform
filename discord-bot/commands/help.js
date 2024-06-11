@@ -125,15 +125,17 @@ module.exports = {
         // TL;DR guide
         let basics_guide = "To use Waveform, the main commands you need to know are:\n" +
         "- `/review`, which allows you to review a song or remix\n" +
-        "- `/albumreview`, which allows you to review an EP/LP\n" +
+        "- `/albumreview`, which allows you to review an EP or album.\n" +
         "- `/editreview`, which allows you to edit a review\n" +
         "As well as the get and set commands, which are self explanatory.\n" +
         "\n" +
-        "Before reviewing, I strongly recommend logging into Spotify as well, using `/login`. This will make your experience with Waveform much better. You can utilize Spotify with reviewing by playing a song on spotify, then using the review commands, and can use it on the get commands by leaving artist/song arguments blank. If you choose not to use this, you can review using the manual review commands, but you will have to fill in the artist/song information yourself.\n";
+        "Before reviewing, I strongly recommend logging into Spotify and Last.fm as well, using `/login`. This will make your experience with Waveform much better. You can utilize Spotify with reviewing by playing a song on spotify, then using the review commands, and can use it on the get commands by leaving artist/song arguments blank. If you choose not to use this, you can review using the manual review commands, but you will have to fill in the artist/song information yourself.\n" + 
+        "\n" +
+        "Logging in with Last.fm will allow you to view play counts and get Last.fm playback data in Waveform. If you use Last.fm a lot, this is something you should definitely do!";
         
         // Song Review
         let song_review_guide = [
-            "This guide will help you review singles and remixes in Waveform. There are 2 different ways to review, one is through Spotify playback (use `/login` to login to Waveform with Spotify), and the other is through manually entering artist/song information (can be ANY artist, even if nothing pops up through the auto-complete). Images will be in relation to the Spotify version.\n" +
+            "This guide will help you review singles and remixes in Waveform. There are 3 different ways to review, one is through Spotify playback (use `/login` to login to Waveform with Spotify), one by entering in a spotify link to fill in data, and another through manually entering artist/song information (can be ANY artist, even if nothing pops up through the auto-complete). Images will be in relation to the Spotify version.\n" +
             "\n" +
             "To start, play a song you want to review on spotify, if reviewing with spotify. After you have done so, type /review, and select the subcommand most relevant to you and you should see something like the below. If you are manually reviewing, type out the artist and song names, and remixers if applicable in their respective arguments.",
 
@@ -145,7 +147,7 @@ module.exports = {
             // Page 3
             'After pressing enter to run the command, you’ll see this set of buttons pop up with your review.\n' +
             '- The 📝**Rating** and 📝**Review** buttons edit those values.\n' +
-            '- The 🌟 button will give the review a favorite, giving it an extra accolade for your absolute favorites.\n' +
+            '- The Favorite 🌟 button will give the review a favorite, giving an extra accolade to your absolute favorite songs.\n' +
             '- The **Confirm Review** button is what you press to finish the review.\n' +
             '- The **Delete** button will delete the review entirely.\n' +
             'To finish your review, click the confirm review button. This will finalize your review, publishing it to Waveform!',
@@ -186,16 +188,16 @@ module.exports = {
             "To start using it, you will want to run the command `/setupmailbox`. After this command is run, your mailbox system will be setup internally, and if you have a spotify mailbox, you should see a new playlist setup called **Waveform Mailbox**, like below. This will be auto updated with new songs sent and auto removed as you review.",
 
             // Page 2
-            "In order to send a song to someone through Waveform Mailbox, you will want to use the `/sendmail` command. It is important to note that if you are listening to a song on spotify, you can leave the `link` argument blank to send whatever song you are playing to a user. The user will be notified via DM when you send them a song.",
+            "In order to send a song to someone through Waveform Mailbox, you will want to use the `/sendmail spotify` (to send what you are listening to) or `/sendmail link` (to send a song link) command. If you wish to send an album you are listening to with `/sendmail spotify`, use the `album` argument, and it will send the album rather than the song. The user will be notified via DM when you send them something.",
 
             // Page 3
-            "You can also view a local mail list using `/viewmail`, and manually delete entries from your local mail list using `/deletemail` (or `/clearallmail` to clear it all out). These commands are particularly useful if using a non-spotify mailbox, as that will not create a playlist or auto update the local mail list.",
+            "You can also view a local mail list using `/viewmail`, and manually delete entries from your mail list using `/deletemail`. These commands are particularly useful if using a non-spotify mailbox, as that will not create a playlist or auto update the local mail list.",
 
         ];
 
         let mailbox_guide_images = [
             'https://media.discordapp.net/attachments/1142701807852859443/1142702022949339166/mailbox_help_1.png?width=1210&height=310',
-            'https://media.discordapp.net/attachments/1142701807852859443/1142702029387612230/mailbox_help_2.png?width=636&height=398',
+            'https://media.discordapp.net/attachments/1142701807852859443/1249947253351780363/image.png?ex=66692798&is=6667d618&hm=9dfe91bd7b75da51194f161ccbca885c4561c6bb870cabf1d565330424861f3a&=&format=webp&quality=lossless&width=903&height=342',
             null,
         ];
 

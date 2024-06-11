@@ -1,6 +1,6 @@
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 const db = require("../db.js");
-const { parse_artist_song_data, handle_error, get_review_channel, getEmbedColor, convertToSetterName, lfm_api_setup } = require('../func.js');
+const { parse_artist_song_data, handle_error, get_review_channel, getEmbedColor, convertToSetterName, lfm_api_setup, checkForGlobalReview } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -76,6 +76,12 @@ module.exports = {
             let songReviewObj = songObj[taggedUser.id];
             if (songReviewObj == undefined) return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${displaySongName}\`. *Note that for EP/LP reviews, you need to use \`/getepreview\`.*`);
 
+            if (serverConfig.disable_global) {
+                if (checkForGlobalReview(songReviewObj, interaction.guild.id) == true) {
+                    return interaction.reply('This review was made in another server, and cannot be viewed here due to this server blocking external reviews from other servers.');
+                }
+            }
+
             let epfrom = songObj.ep;
             let setterEpName = false;
             if (epfrom != false && epfrom != undefined) {
@@ -99,7 +105,8 @@ module.exports = {
             rurl = songReviewObj.url;
             if (rsentby != false) {
                 isMailbox = true;
-                usrSentBy = await interaction.guild.members.cache.get(rsentby);            
+                usrSentBy = await interaction.guild.members.cache.get(rsentby);        
+                console.log(usrSentBy.displayName);
                 if (usrSentBy == undefined) rsentby = false;
             }
 

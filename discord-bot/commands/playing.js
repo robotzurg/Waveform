@@ -2,7 +2,7 @@
 const { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = require('discord.js');
 require('dotenv').config();
 const db = require('../db.js');
-const { spotify_api_setup, convertToSetterName, lfm_api_setup } = require('../func.js');
+const { spotify_api_setup, convertToSetterName, lfm_api_setup, checkForGlobalReview } = require('../func.js');
 const _ = require('lodash');
 
 module.exports = {
@@ -83,6 +83,12 @@ module.exports = {
                 let dbSongName = convertToSetterName(songDisplayName);
                 if (db.reviewDB.has(origArtistArray[0])) {
                     let reviewData = db.reviewDB.get(origArtistArray[0], `${dbSongName}.${interaction.user.id}`);
+                    if (serverConfig.disable_global && reviewData != undefined) {
+                        if (checkForGlobalReview(reviewData, interaction.guild.id) == true) {
+                            reviewData = undefined;
+                        }
+                    }
+
                     if (reviewData != undefined) {
                         if (serverConfig.disable_ratings === true) reviewData.rating = false;
                         if (reviewData.rating != false) extraData = `\n**Rating:** \`${reviewData.rating}/10${reviewData.starred ? `⭐\`` : `\``}`;

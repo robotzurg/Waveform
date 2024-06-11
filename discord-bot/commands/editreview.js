@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { parse_artist_song_data, handle_error, get_review_channel, convertToSetterName } = require("../func.js");
+const { parse_artist_song_data, handle_error, get_review_channel, convertToSetterName, checkForGlobalReview } = require("../func.js");
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -216,6 +216,13 @@ module.exports = {
             songObj = db.reviewDB.get(artistArray[i], `${setterSongName}`);
             if (songObj == undefined) return interaction.reply(`Song ${songName} not found!`);
             songReviewObj = songObj[interaction.user.id];
+
+            if (serverConfig.disable_global) {
+                if (checkForGlobalReview(songReviewObj, interaction.guild.id) == true) {
+                    return interaction.reply('This review was made in another server, and cannot be edited here due to this server blocking external reviews from other servers.');
+                }
+            }
+
             if (songReviewObj == undefined) return interaction.reply(`Review not found!`);
             if (songReviewObj.guild_id === false) songReviewObj.guild_id = '680864893552951306';
             guildStatsObj = db.server_settings.get(songReviewObj.guild_id, 'stats');

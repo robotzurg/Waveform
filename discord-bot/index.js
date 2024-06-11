@@ -263,12 +263,19 @@ client.on('interactionCreate', async interaction => {
         return interaction.reply(`You have been banned from Waveform. For more information or to appeal your ban, please contact \`@jeffdev\` on discord.`);
     }
 
+    // Double check that the server config does exist in the server
     let serverConfig = db.server_settings.get(interaction.guild.id, 'config');
     if (serverConfig == undefined) {
         serverConfig = {
             disable_ratings: false,
+            disable_global: false,
         };
         db.server_settings.set(interaction.guild.id, serverConfig, 'config');
+    } else {
+        if (serverConfig.disable_global == undefined) {
+            serverConfig.disable_global = false;
+            db.server_settings.set(interaction.guild.id, serverConfig, 'config');
+        }
     }
 
     try {

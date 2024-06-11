@@ -185,8 +185,8 @@ module.exports = {
 
             if (songObj != undefined) {
                 const guild = client.guilds.cache.get(interaction.guild.id);
-                let localUserArray = await get_user_reviews(songObj, guild);
-                let globalUserArray = await get_user_reviews(songObj);
+                let localUserArray = await get_user_reviews(songObj, serverConfig.disable_global, guild, guild);
+                let globalUserArray = await get_user_reviews(songObj, serverConfig.disable_global, guild);
                 let globalRankNumArray = [];
                 let localRankNumArray = [];
                 let localStarNum = 0;

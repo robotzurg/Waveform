@@ -40,15 +40,6 @@ module.exports = {
                         { name: 'Server Plays', value: 'server' },
                     )))
 
-            // .addStringOption(option => 
-            //     option.setName('sort_mode')
-            //         .setDescription('The sort mode of the ratings list')
-            //         .setRequired(false)
-            //         .addChoices(
-            //             { name: 'By Rating', value: 'rating_value' },
-            //             { name: 'By Scrobbles', value: 'scrobble' },
-            //         )))
-
         .addSubcommand(subcommand =>
             subcommand.setName('global')
             .setDescription('Get data specific across the whole bot about a song.')
@@ -101,6 +92,7 @@ module.exports = {
 
         if (interaction.commandName != 'nowplaying' && interaction.commandName != 'randomsong' && interaction.commandName != 'whoknows') { 
             subcommand = interaction.options.getSubcommand();
+            if (serverConfig.disable_global && subcommand == 'global') return interaction.editReply('Global subcommands are unavailable when external reviews are disabled. Please contact your server admins for more info.');
         } else {
             artists = otherCmdArtists.join(' & ');
             song = otherCmdSongName;
@@ -202,9 +194,9 @@ module.exports = {
         let userArray;
         // Get all users if global, otherwise get only guild specific users if server.
         if (subcommand == 'server') {
-            userArray = await get_user_reviews(songObj, guildUsers);
+            userArray = await get_user_reviews(songObj, serverConfig.disable_global, guild, guildUsers);
         } else {
-            userArray = await get_user_reviews(songObj);
+            userArray = await get_user_reviews(songObj, serverConfig.disable_global, guild);
         }
         
         let userIDList = userArray.slice(0); //.slice(0) is there to create a COPY, not a REFERENCE.
@@ -220,9 +212,11 @@ module.exports = {
                 let rating;
                 let ratingDisplay;
                 let starred = false;
-                rating = songObj[userArray[i]].rating;
+                let reviewObj = songObj[userArray[i]];
+                
+                rating = reviewObj.rating;
                 if (serverConfig.disable_ratings) rating = false;
-                if (songObj[userArray[i]].starred == true) {
+                if (reviewObj.starred == true) {
                     starCount++;
                     starred = true;
                 }
@@ -477,8 +471,7 @@ module.exports = {
                     let rating = songObj[i.values[0]].rating;
                     if (serverConfig.disable_ratings) rating = false;
                     let sentby = songObj[i.values[0]].sentby;
-                    let sentbyIconURL = false;
-                    let sentbyDisplayName = false;
+                    let sentByMember = false;
                     let url = songObj[i.values[0]].url;
                     let isMailbox = false;
                     
@@ -494,14 +487,8 @@ module.exports = {
                     if (sentby != false && taggedUser != undefined) {
                         isMailbox = true;
                         sentby = await client.users.fetch(sentby);
-                        let sentByMember;
-                        sentByMember = await interaction.guild.members.fetch(sentby).catch(() => sentByMember = undefined);
-                        if (sentByMember != undefined) {
-                            sentbyDisplayName = sentByMember.displayName;
-                            sentby.avatarURL({ extension: 'png' });
-                        } else {
-                            sentby = false;
-                        }
+                        sentByMember = await interaction.guild.members.cache.get(sentby.id);  
+                        if (sentByMember == undefined) sentby = false;
                     }
 
                     const reviewEmbed = new EmbedBuilder();
@@ -524,7 +511,7 @@ module.exports = {
 
                     if (isMailbox == true) {
                         if (sentby != false) {
-                            reviewEmbed.setFooter({ text: `Sent by ${sentbyDisplayName.displayName}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: sentbyIconURL });
+                            reviewEmbed.setFooter({ text: `Sent by ${sentByMember.displayName}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: sentby.avatarURL({ extension: 'png' }) });
                         } else {
                             reviewEmbed.setFooter({ text: `📬 Sent by a user outside of this server${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}` });
                         }

@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
-const { parse_artist_song_data, handle_error, get_review_channel, spotify_api_setup, convertToSetterName, arrayEqual } = require('../func.js');
+const { parse_artist_song_data, handle_error, get_review_channel, spotify_api_setup, convertToSetterName, arrayEqual, checkForGlobalReview } = require('../func.js');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -47,7 +47,7 @@ module.exports = {
     `A favorite is a personal accolade you can give a song. It is up to you how you want to use favorites.\n\n` + 
     `Leaving the artist, song_name, and remixers arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)\n\n` + 
     `The remixers argument should have the remixer specified if you are trying to pull up a remix, the remixer should be put in the song_name or artists arguments.`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         try {
 
         let subcommand = interaction.options.getSubcommand();
@@ -84,6 +84,12 @@ module.exports = {
         let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
         if (songObj == undefined) return interaction.reply(`${origArtistArray.join(' & ')} - ${displaySongName} not found in database.`);
         let songReviewObj = songObj[interaction.user.id];
+        if (serverConfig.disable_global) {
+            if (checkForGlobalReview(songReviewObj, interaction.guild.id) == true) {
+                return interaction.reply('This review was made in another server, and cannot be edited here due to this server blocking external reviews from other servers.');
+            }
+        }
+
         if (songReviewObj == undefined) return interaction.reply(`You haven't reviewed ${origArtistArray.join(' & ')} - ${displaySongName}.`);
         if (songReviewObj.guild_id == false) songReviewObj.guild_id = '680864893552951306';
         guildStatsObj = db.server_settings.get(songReviewObj.guild_id, 'stats');

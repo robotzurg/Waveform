@@ -34,20 +34,18 @@ module.exports = {
                     .addOptions(
                         {
                             label: 'Disable Music Ratings',
-                            description: 'Disable music ratings server wide. Will block people from rating when reviewing.',
+                            description: 'Disable music ratings server wide.',
                             emoji: '💯',
                             value: 'disable_ratings',
                         },
                         {
                             label: 'Disable Global Reviews',
-                            description: 'Disable reviews from other servers. This will only show reviews made in this server on Waveform. Disables global commands.',
-                            emoji: ':globe_with_meridians:',
+                            description: 'Only show reviews made in this server.',
+                            emoji: '🌐',
                             value: 'disable_global',
                         },
                     ),
             );
-
-        db.user_stats.set(interaction.user.id, config_data, `config`);
 
         let config_desc = [`**Disable Ratings Server-Wide:** ${config_data.disable_ratings ? '✅' : '❌'}`,
             `**Disable Global Reviews:** ${config_data.disable_global ? '✅' : '❌'}`,
