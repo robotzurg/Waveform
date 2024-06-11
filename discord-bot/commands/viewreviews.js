@@ -216,6 +216,10 @@ module.exports = {
             return `-${v.dataObj[queryUser.id].starred === true ? ' ⭐' : ``} [${v.origArtistArray.join(' & ')} - ${v.name}](${songUrl})\n**Rating**: \`${userRating === false ? `N/A` : `${userRating}/10`}\``;
         }));
 
+        if (resultList.length == 0) {
+            return interaction.editReply('You do not have any reviews in Waveform.');
+        }
+
         let paged_review_list = _.chunk(resultList, 10);
         let page_num = 0;
         const row = new ActionRowBuilder()
