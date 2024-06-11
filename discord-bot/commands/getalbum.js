@@ -54,13 +54,14 @@ module.exports = {
     `Leaving the artist and album_name arguments blank will pull from your spotify playback to fill in the arguments (if you are logged into Waveform with Spotify)`,
 	async execute(interaction, client, serverConfig) {
         try {
-
+            await interaction.deferReply();
             let subcommand = interaction.options.getSubcommand();
+            if (serverConfig.disable_global && subcommand == 'global') return interaction.editReply('Global subcommands are unavailable when external reviews are disabled. Please contact your server admins for more info.');
             let artists = interaction.options.getString('artist');
             let ep = interaction.options.getString('album_name');
             let song_info = await parse_artist_song_data(interaction, artists, ep);
             if (song_info.error != undefined) {
-                await interaction.reply(song_info.error);
+                await interaction.editReply(song_info.error);
                 return;
             }
 
@@ -78,7 +79,7 @@ module.exports = {
 
             let epObj = db.reviewDB.get(artistArray[0], `${setterEpName}`);
             if (epObj == undefined) {
-                return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
+                return interaction.editReply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
             }
 
             let ep_art = epObj.art;
@@ -103,9 +104,9 @@ module.exports = {
             let reviewNum;
             // Get all users if global, otherwise get only guild specific users if server.
             if (subcommand == 'server') {
-                reviewNum = await get_user_reviews(epObj, guildUsers);
+                reviewNum = await get_user_reviews(epObj, serverConfig.disable_global, guild, guildUsers);
             } else {
-                reviewNum = await get_user_reviews(epObj);
+                reviewNum = await get_user_reviews(epObj, serverConfig.disable_global, guild);
             }
             let userArray = reviewNum.slice(0);
             let userIDList = userArray.slice(0);
@@ -114,6 +115,7 @@ module.exports = {
 
             for (let i = 0; i < reviewNum.length; i++) {
                 let userObj = epObj[reviewNum[i]];
+
                 if (userObj.rating == -1) userObj.rating = false;
 
                 if (serverConfig.disable_ratings === true) {
@@ -138,7 +140,7 @@ module.exports = {
                 }
             }
 
-             // Check last.fm info
+            // Check last.fm info
             if (lfmScrobbleSetting == null && subcommand == 'server') lfmScrobbleSetting = 'reviewers';
             let lfmScrobbles = false;
             let lfmServerScrobbles = false;
@@ -169,9 +171,9 @@ module.exports = {
 
                 // Get all users if global, otherwise get only guild specific users if server.
                 if (subcommand == 'server') {
-                    reviewNum = await get_user_reviews(songObj, guildUsers);
+                    reviewNum = await get_user_reviews(songObj, serverConfig.disable_global, guild, guildUsers);
                 } else {
-                    reviewNum = await get_user_reviews(songObj);
+                    reviewNum = await get_user_reviews(songObj, serverConfig.disable_global, guild);
                 }
 
                 rankNumArray = [];
@@ -253,6 +255,7 @@ module.exports = {
             let paged_user_id_list = _.chunk(userIDList, 10);
             let page_num = 0;
             let select_options = [];
+            if (paged_user_list.length == 0) paged_user_list = [[]];
             if (paged_user_id_list.length == 0) paged_user_id_list = [[]];
 
             for (let userID of paged_user_id_list[0]) {
@@ -347,7 +350,7 @@ module.exports = {
                     epEmbed.setDescription(`${lfmScrobbles !== false ? `*You have* ***${lfmScrobbles}*** *plays on this ${epType}!*` : ``}` +
                     `${lfmServerScrobbles !== false ? `\n${lfmScrobbleSetting == 'reviewers' ? `*Reviewers overall have*` : `*This server has*`} ***${lfmServerScrobbles}*** *plays on this ${epType}!*` : ``}` +
                     `${epObj.spotify_uri == false || epObj.spotify_uri == undefined ? `` : `\n<:spotify:899365299814559784> [Spotify](https://open.spotify.com/album/${epObj.spotify_uri.replace('spotify:album:', '')})`}` +
-                    `\n${paged_user_list[page_num].join('\n')}`);
+                    `\n${paged_user_list[0].join('\n')}`);
                 }
             }
 
@@ -360,7 +363,7 @@ module.exports = {
                 components = paged_user_list.length > 1 ? [sel_row, btn_row] : [sel_row];
             }
             
-            interaction.reply({ embeds: [epEmbed], components: components });
+            interaction.editReply({ embeds: [epEmbed], components: components });
             let message = await interaction.fetchReply();
         
             if (subcommand == 'server') {

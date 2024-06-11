@@ -34,12 +34,15 @@ module.exports = {
         // Randomly check for song, rerolling the artist every time
         while (!endRandomCheck) {
             randomSong = artistSongs[Math.floor(Math.random() * artistSongs.length)];
-            setterSongName = convertToSetterName(randomSong);
-            songObj = db.reviewDB.get(randomArtist, `${setterSongName}`);
-            let userArray = await get_user_reviews(songObj);
-            if (userArray.length != 0 && !randomSong.includes(' EP') && !randomSong.includes(' LP')) {
-                endRandomCheck = true;
-                break;
+
+            if (randomSong != undefined) {
+                setterSongName = convertToSetterName(randomSong);
+                songObj = db.reviewDB.get(randomArtist, `${setterSongName}`);
+                // let userArray = await get_user_reviews(songObj, serverConfig.disable_global, interaction.guild);
+                if (!randomSong.includes(' EP') && !randomSong.includes(' LP')) {
+                    endRandomCheck = true;
+                    break;
+                }
             }
 
             randomArtist = db.reviewDB.randomKey();
@@ -76,8 +79,8 @@ module.exports = {
 
             if (songObj != undefined) {
                 const guild = client.guilds.cache.get(interaction.guild.id);
-                let localUserArray = await get_user_reviews(songObj, guild);
-                let globalUserArray = await get_user_reviews(songObj);
+                let localUserArray = await get_user_reviews(songObj, serverConfig.disable_global, guild, guild);
+                let globalUserArray = await get_user_reviews(songObj, serverConfig.disable_global, guild);
                 let globalRankNumArray = [];
                 let localRankNumArray = [];
                 let localStarNum = 0;
@@ -158,7 +161,7 @@ module.exports = {
                     `${(yourRating !== false && yourRating != undefined) ? `\nYour Rating: \`${yourRating}/10${yourStar}\`` : ''}` +
                     `${spotifyUrl == 'N/A' ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}`);
                 } else {
-                    if (spotifyUrl == 'N/A') {
+                    if (spotifyUrl != 'N/A') {
                         randomSongEmbed.setDescription(`<:spotify:899365299814559784> [Spotify](${spotifyUrl})`);
                     }
                 }

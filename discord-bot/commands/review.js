@@ -251,9 +251,20 @@ module.exports = {
         }
 
         if (user_who_sent != null && user_who_sent != false) {
+            if (interaction.options.getUser('user_who_sent') != null) {
+                await interaction.guild.members.fetch(user_who_sent.id).then(() => {
+                    mailUserInServer = true;
+                    is_mailbox = true;
+                    if (db.user_stats.get(user_who_sent.id, 'config.review_ping') == true) ping_for_review = true;
+                }).catch(async () => {
+                    ping_for_review = false;
+                    is_mailbox = true;
+                });
+            }
+
             taggedUser = user_who_sent;
             if (mailUserInServer == true) {
-                taggedMember = await interaction.guild.members.fetch(taggedUser.id);
+                taggedMember = await interaction.guild.members.cache.get(taggedUser.id);
             }
         }
 

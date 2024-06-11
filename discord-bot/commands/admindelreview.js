@@ -30,7 +30,8 @@ module.exports = {
                 .setRequired(false)),
     help_desc: `Admin command. Deletes any users review.`,
     async execute(interaction, client) {
-        if (interaction.user.id != '122568101995872256') return interaction.reply('This command is not for you.');
+        // Allow for me or specified users to delete reviews.
+        if (interaction.user.id != '122568101995872256' && interaction.user.id != '103502445014949888') return interaction.reply('This command is not for you.');
         let userID = interaction.options.getString('user_id');
         let command = client.commands.get('deletereview');
         command.execute(interaction, client, userID);

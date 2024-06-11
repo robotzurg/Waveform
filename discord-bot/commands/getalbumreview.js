@@ -1,6 +1,6 @@
 const db = require("../db.js");
 const { EmbedBuilder, SlashCommandBuilder, Embed } = require('discord.js');
-const { handle_error, get_review_channel, parse_artist_song_data, getEmbedColor, convertToSetterName, lfm_api_setup } = require('../func.js');
+const { handle_error, get_review_channel, parse_artist_song_data, getEmbedColor, convertToSetterName, lfm_api_setup, checkForGlobalReview } = require('../func.js');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -73,6 +73,12 @@ module.exports = {
             if (epObj == undefined) return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` was not found in the database.`);
 
             let epReviewObj = epObj[taggedUser.id];
+            if (serverConfig.disable_global) {
+                if (checkForGlobalReview(epReviewObj, interaction.guild.id) == true) {
+                    return interaction.reply('This review was made in another server, and cannot be viewed here due to this server blocking external reviews from other servers.');
+                }
+            }
+
             if (epReviewObj == undefined) return interaction.reply(`The ${epType} \`${origArtistArray.join(' & ')} - ${epName}\` has not been reviewed by the user ${taggedMember.displayName}.`);
 
             let ep_overall_rating = epReviewObj.rating;

@@ -78,7 +78,7 @@ module.exports = {
         for (let i = 0; i < songArray.length; i++) {
             let setterSongName = convertToSetterName(songArray[i]);
             songObj = db.reviewDB.get(artist, `${setterSongName}`);
-            userArray = await get_user_reviews(songObj);
+            userArray = await get_user_reviews(songObj, serverConfig.disable_global, interaction.guild);
             userArray = userArray.filter(item => item == taggedUser.id);
             if (userArray.length != 0) {
                 if (songObj[taggedUser.id].rating != undefined && songObj[taggedUser.id].rating != null) {

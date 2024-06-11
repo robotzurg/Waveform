@@ -207,7 +207,7 @@ module.exports = {
             }
         }
 
-        let resultList = await queryReviewDatabase(queryRequest, { sort: sortMode, rating: queryRating, user_id: queryUser.id, guild: interaction.guild.id, no_remix: queryNoRemix, fav_filter: favFilter });
+        let resultList = await queryReviewDatabase(queryRequest, { sort: sortMode, rating: queryRating, user_id: queryUser.id, guild: interaction.guild, no_remix: queryNoRemix, fav_filter: favFilter, disable_global: serverConfig.disable_global });
 
         resultList = await Promise.all(resultList.map(async v => {
             let userRating = v.dataObj[queryUser.id].rating;

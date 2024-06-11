@@ -44,7 +44,8 @@ module.exports = {
     },
 
     // server_filter is an object of the server guild
-    get_user_reviews: async function(songObj, guild = false) {
+    get_user_reviews: async function(songObj, disableGlobalReviews = false, guild = false, guildUsers = false) {
+        const { checkForGlobalReview } = require('./func.js');
         if (songObj == undefined && songObj == null) return [];
         let userArray = Object.keys(songObj);
 
@@ -59,16 +60,21 @@ module.exports = {
         userArray = userArray.filter(e => e !== 'tags');
         userArray = userArray.filter(e => e !== 'spotify_uri');
         userArray = userArray.filter(e => e !== 'songs');
+        
+        // Filter out the array to only reviews made in the guild, if disableGuildReviews is true
+        if (disableGlobalReviews) {
+            userArray = userArray.filter(user => {
+                return !checkForGlobalReview(songObj[user], guild.id);
+            });
+        }
 
         // Filter out the user array to only those in the guild, if this is not false
-        if (guild != false) {
-            let guildUsers;
-            if (!Array.isArray(guild)) {
+        if (guildUsers != false) {
+            if (!Array.isArray(guildUsers)) {
                 let res = await guild.members.fetch();
                 guildUsers = [...res.keys()];
-            } else {
-                guildUsers = guild;
             }
+
             userArray = userArray.filter(e => {
                 return guildUsers.includes(e);
             });
@@ -1405,7 +1411,7 @@ module.exports = {
      * @param {Object} options Default: {sort = 'asc', rating = false, user = false, guild = false} should be adjusted based on queryType necessities.
      * @returns A list of the query result 
      */
-    queryReviewDatabase: async function(queryType = DatabaseQuery.GlobalAllAlbums, options = { sort: 'asc', rating: false, user_id: false, guild_id: false, no_remix: false, fav_filter: false }) {
+    queryReviewDatabase: async function(queryType = DatabaseQuery.GlobalAllAlbums, options = { sort: 'asc', rating: false, user_id: false, guild: false, no_remix: false, fav_filter: false, disable_global: false }) {
         const { convertToSetterName, get_user_reviews, getProperRemixers } = require('./func.js');
 
         const ARTISTARRAY = db.reviewDB.keyArray();
@@ -1415,8 +1421,9 @@ module.exports = {
         let optionsSort = options.sort || 'asc';
         let optionsNoRemix = options.no_remix || false;
         let optionsFavFilter = options.fav_filter || false;
+        let optionsDisableGlobal = options.disable_global || false;
+        let optionsGuild = options.guild || false;
 
-        //let optionsGuild = options.guild_id || false;
         let optionsRating = options.rating || false;
         let allSongQueries = [DatabaseQuery.GlobalAllSongs, DatabaseQuery.ServerAllSongs, DatabaseQuery.UserAllSongs];
         let allSpecSongQueries = [DatabaseQuery.GlobalSpecRatingAlbums, DatabaseQuery.ServerSpecRatingSongs, DatabaseQuery.UserSpecRatingSongs];
@@ -1438,7 +1445,8 @@ module.exports = {
                 let userArray = [];
                 let isRemix = false;
                 if (songObj != null && songObj != undefined) {
-                    userArray = await get_user_reviews(songObj);
+
+                    userArray = await get_user_reviews(songObj, optionsDisableGlobal, optionsGuild);
                 } else {
                     userArray = [];
                 }
@@ -1708,5 +1716,10 @@ module.exports = {
             console.error('Error fetching page:', error);
             return null;
         }
+    },
+
+    checkForGlobalReview: function(reviewObj, guild_id) {
+        if (reviewObj.guild_id === undefined) reviewObj.guild_id = '680864893552951306';
+        return (reviewObj.guild_id != guild_id);
     },
 };

@@ -1,6 +1,6 @@
 /* eslint-disable no-unreachable */
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require('discord.js');
-const { lfm_api_setup, getLfmUsers, parse_artist_song_data, getEmbedColor, grab_spotify_art, grab_spotify_artist_art, convertToSetterName } = require('../func');
+const { lfm_api_setup, getLfmUsers, parse_artist_song_data, getEmbedColor, grab_spotify_art, grab_spotify_artist_art, convertToSetterName, checkForGlobalReview } = require('../func');
 require('dotenv').config();
 const db = require('../db.js');
 const { ButtonStyle } = require('discord-api-types/v9');
@@ -126,8 +126,15 @@ module.exports = {
             lfmUsers[i].starred = false;
             if (songObj != false && serverConfig.disable_ratings == false) {
                 if (songObj[lfmUsers[i].user_id] != undefined) {
-                    lfmUsers[i].rating = songObj[lfmUsers[i].user_id].rating;
-                    lfmUsers[i].starred = songObj[lfmUsers[i].user_id].starred;
+                    if (serverConfig.disable_global) {
+                        lfmUsers[i].rating = songObj[lfmUsers[i].user_id].rating;
+                        lfmUsers[i].starred = songObj[lfmUsers[i].user_id].starred;
+
+                        if (checkForGlobalReview(songObj[lfmUsers[i].user_id], interaction.guild.id) == true) {
+                            lfmUsers[i].rating = false;
+                            lfmUsers[i].starred = false;
+                        }
+                    }
                 }
             }
 

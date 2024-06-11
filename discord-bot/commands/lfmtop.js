@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable no-unreachable */
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
-const { lfm_api_setup, getLfmUsers, getEmbedColor, parse_artist_song_data, convertToSetterName, spotifyUritoURL } = require('../func');
+const { lfm_api_setup, getLfmUsers, getEmbedColor, parse_artist_song_data, convertToSetterName, spotifyUritoURL, checkForGlobalReview } = require('../func');
 require('dotenv').config();
 const db = require('../db.js');
 const _ = require('lodash');
@@ -74,7 +74,7 @@ module.exports = {
                 option.setName('user')
                 .setDescription('The users whose top listened artists you\'d like to see.')
                 .setRequired(false))),
-    help_desc: `View who knows a song/EP/album/artist on Last.fm, out of logged in Last.fm Waveform users in your server.`,
+    help_desc: `View your top most listened to song/albums/artists on Last.fm, out of logged in Last.fm Waveform users in your server. You can use various timeframes, and it defaults to Week.`,
 	async execute(interaction, client, serverConfig) {
         await interaction.deferReply();
         await interaction.editReply('Loading data...');
@@ -143,6 +143,11 @@ module.exports = {
                     songObj = db.reviewDB.get(artistArray[0], getterSongName);
                     if (songObj == undefined) songObj = false;
                     else if (songObj[taggedUser.id] != undefined) reviewObj = songObj[taggedUser.id];
+                    if (serverConfig.disable_global) {
+                        if (checkForGlobalReview(reviewObj, interaction.guild.id) == true) {
+                            reviewObj = { starred: false, rating: false };
+                        }
+                    }
                 }
                 if (serverConfig.disable_ratings) reviewObj.rating = false;
 
