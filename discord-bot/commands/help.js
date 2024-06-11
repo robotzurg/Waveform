@@ -344,10 +344,10 @@ module.exports = {
                     }
                     i.update({ embeds: [commandEmbed] });
             }
+        });
 
-            help_collector.on('end', async () => {
-                interaction.editReply({ content: null, components: [] });
-            });
+        help_collector.on('end', async () => {
+            interaction.editReply({ content: null, components: [] });
         });
     },
 };
