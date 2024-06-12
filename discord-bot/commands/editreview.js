@@ -395,7 +395,7 @@ module.exports = {
 
             await interaction.reply({ content: `**Changes made to your \`${origArtistArray.join(' & ')} - ${displaySongName}\` review:**\n` +
             `${(oldrating != undefined && oldrating != rating) ? `- ${oldrating === false ? `\`No Rating\`` : `\`${oldrating}/10\``} changed to ${rating === false ? `\`No Rating\`` : `\`${rating}/10\``}\n` : ``}` +
-            `${(oldreview != undefined && oldreview != review) ? `- Review was changed to ${review === false ? `\`No Review\`` : `\`${review}\``}\n` : ``}` +
+            `${(oldreview != undefined && oldreview != review) ? `- Review was changed to ${review === false ? `\`No Review\`` : `${review}`}\n` : ``}` +
             `${(user_who_sent != null) ? `- User Who Sent was changed to \`${user_sent_name.displayName}\`\n` : ``}` +
             `${msgEmbed.length != 0 ? `**Edited Review**` : ``}`, embeds: msgEmbed });
             
