@@ -177,8 +177,8 @@ module.exports = {
 
         let extraEmbedData = `${lfmTrackData != false ? `\nPlays: \`${lfmTrackData.userplaycount}\`` : ``}` +
         `${musicProgressBar != false && isPlaying == true ? `\n\`${ms_format(songCurMs)}\` ${musicProgressBar} \`${ms_format(songLength)}\`` : ''}` +
-        `${spotifyUrl == false ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}` +
-        `${lfmUrl == false ? `` : `\n<:lastfm:1227869050084921375> [Last.fm](${lfmUrl})`}`;
+        `${spotifyUrl == false || spotifyUrl == undefined ? `` : `\n<:spotify:899365299814559784> [Spotify](${spotifyUrl})`}` +
+        `${lfmUrl == false || lfmUrl == undefined ? `` : `\n<:lastfm:1227869050084921375> [Last.fm](${lfmUrl})`}`;
 
         if (db.reviewDB.has(artistArray[0])) {
             let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);

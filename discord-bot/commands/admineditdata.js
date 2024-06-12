@@ -96,7 +96,7 @@ module.exports = {
         let setterOldSongName = convertToSetterName(oldSongName);
         let setterSongName = convertToSetterName(songName); // songName.includes('.') ? `["${songName}"]` : songName;
         let setterNoRemixSongName = convertToSetterName(noRemixSongName);
-        let epType = songName.includes(' EP') ? 'EP' : 'LP';
+        let epType = songName.includes(' LP') ? 'LP' : 'EP';
         let dataType = subCommand == 'song' ? 'song' : epType; // Used for the song name changing command, to display something as changing a "song" or "EP/LP"
 
         let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
@@ -327,7 +327,7 @@ module.exports = {
         );
 
         if (epFrom != false && subCommand != 'ep-lp' && subCommand != 'artist') {
-            epType = epFrom.includes(' EP') ? 'EP' : 'LP';
+            epType = epFrom.includes(' LP') ? 'LP' : 'EP';
             editEmbed.addFields([{ name: `From ${epType}:`, value: `${epFrom}`, inline: true }]);
         } else if (subCommand != 'remix' && subCommand != 'ep-lp' && subCommand != 'artist') {
             editEmbed.addFields([{ name: `From EP/LP:`, value: `N/A`, inline: true }]);

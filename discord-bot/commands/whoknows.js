@@ -124,6 +124,7 @@ module.exports = {
             let lfmData = { success: false };
             lfmUsers[i].rating = false;
             lfmUsers[i].starred = false;
+            lfmUsers[i].scrobbles = 0;
             if (songObj != false && serverConfig.disable_ratings == false) {
                 if (songObj[lfmUsers[i].user_id] != undefined) {
                     if (serverConfig.disable_global) {
@@ -167,6 +168,7 @@ module.exports = {
                             case 'album': lfmData = await lfmUserApi.album_getInfo({ artist: artist.replace('\\&', '&'), album: lfmSongName, username: lfmUsername }); break;
                             case 'artist': lfmData = await lfmUserApi.artist_getInfo({ artist: artist.replace('\\&', '&'), username: lfmUsername });
                         }
+                        console.log(lfmData);
                         if (lfmData.success) {
                             break;
                         }
@@ -180,6 +182,8 @@ module.exports = {
                     case 'album': lfmUsers[i].scrobbles = parseInt(lfmData.userplaycount); break;
                     case 'artist': lfmUsers[i].scrobbles = parseInt(lfmData.stats.userplaycount); break;
                 }
+            } else {
+                return interaction.editReply(`Could not find **${origArtistArray.join(' & ')} - ${displaySongName}** on Last.fm.`);
             }
 
             // Grab artist or song art if needed
@@ -215,7 +219,7 @@ module.exports = {
             return `${counter}. <@${v.user_id}>${v.starred != false ? ` 🌟` : ``}${subcommand != 'artist' && v.rating !== false ? ` **\`${v.rating}/10\`**` : ``} - **${v.scrobbles}** plays`;
         });
 
-        if (lfmUsers.length == 0) return interaction.editReply(`Nobody in ${interaction.guild.name} has heard this.`);
+        if (lfmUsers.length == 0) return interaction.editReply(`Nobody in ${interaction.guild.name} has heard **${origArtistArray.join(' & ')} - ${displaySongName}**.`);
 
         let paged_user_list = _.chunk(lfmUsers, 10);
         let page_num = 0;

@@ -213,7 +213,7 @@ module.exports = {
             let userRating = v.dataObj[queryUser.id].rating;
             if (serverConfig.disable_ratings) userRating = false;
             let songUrl = await spotifyUritoURL(v.dataObj.spotify_uri);
-            return `-${v.dataObj[queryUser.id].starred === true ? ' ⭐' : ``} [${v.origArtistArray.join(' & ')} - ${v.name}](${songUrl})\n**Rating**: \`${userRating === false ? `N/A` : `${userRating}/10`}\``;
+            return `-${v.dataObj[queryUser.id].starred === true ? ' ⭐' : ``} [${v.origArtistArray.join(' & ')} - ${v.name}](${songUrl})${serverConfig.disable_ratings ? `` : `\n**Rating**: \`${userRating === false ? `N/A` : `${userRating}/10`}\``}`;
         }));
 
         if (resultList.length == 0) {

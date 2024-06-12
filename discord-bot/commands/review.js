@@ -130,6 +130,17 @@ module.exports = {
         let spotifyUri = false;
         let songArt = interaction.options.getString('art');
 
+        if (artists != null) {
+            if (artists.length > 250) {
+                return interaction.editReply('You cannot review a song with this many artists on Waveform.');
+            }
+        }
+        if (rmxArtistArray != null) {
+            if (rmxArtistArray.length > 250) {
+                return interaction.editReply('You cannot review a song with this many remixers on Waveform.');
+            }
+        }
+
         // Handle spotify link if we have one
         if (interaction.options.getSubcommand() == 'spotify_link') {
             // Create the api object with the credentials

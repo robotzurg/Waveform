@@ -67,9 +67,10 @@ module.exports = {
 
             let origArtistArray = song_info.prod_artists;
             let epName = song_info.song_name;
+            if (!epName.includes(' EP') && !epName.includes(' LP')) epName += ' LP';
             let setterEpName = convertToSetterName(epName);
             let artistArray = song_info.db_artists;
-            let epType = epName.includes(' LP') ? `LP` : `EP`;
+            let epType = epName.includes(' EP') ? `EP` : `LP`;
             let lfmApi = await lfm_api_setup(interaction.user.id);
             let lfmUsers = await getLfmUsers(interaction);
             let lfmScrobbleSetting = interaction.options.getString('plays');
