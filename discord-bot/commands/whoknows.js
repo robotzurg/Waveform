@@ -64,6 +64,11 @@ module.exports = {
         
         let lfmUserApi = await lfm_api_setup(interaction.user.id);
         let lfmUsers = await getLfmUsers(interaction);
+        if (lfmUserApi == false && lfmUsers.length == 0) {
+            return interaction.editReply('Nobody in this server is logged into Last.fm on Waveform.');
+        } else if (lfmUserApi == false && lfmUsers.length != 0) {
+            lfmUserApi = await lfm_api_setup(lfmUsers[0].user_id);
+        }
 
         // Setup buttons
         const pageButtons = new ActionRowBuilder()

@@ -32,17 +32,28 @@ module.exports = {
         .setDescription("Set what your favorite genres are currently is on your Waveform Profile!")
         .addStringOption((option) =>
             option
-                .setName('genres')
-                .setDescription('Genre names to put in (seperated by &, max of 3!)')
+                .setName('genre_1')
+                .setDescription('1st genre to put in your profile (required).')
                 .setRequired(true),
+            )
+        .addStringOption((option) =>
+            option
+                .setName('genre_2')
+                .setDescription('2nd genre to put in your profile.')
+                .setRequired(false),
+            )
+        .addStringOption((option) =>
+            option
+                .setName('genre_3')
+                .setDescription('3rd genre to put in your profile.')
+                .setRequired(false),
             ),
         ),
     help_desc: `Allows you to edit entries on your Waveform profile, such as your favorite artist, favorite song, and favorite genres.\n\n`
     + `The favorite genres can have up to 3 genres put in, separated by \`&\``,
 	async execute(interaction, client) {
         try {
-            
-        let split_genres;
+        let genre1, genre2, genre3, genreList;
         switch (interaction.options.getSubcommand()) {
             case 'fav_song': 
                 db.user_stats.set(interaction.user.id, interaction.options.getString('song_name'), 'fav_song');
@@ -53,10 +64,14 @@ module.exports = {
                 interaction.reply(`Set favorite artist to ${interaction.options.getString('artist')}!`);
             break;
             case 'fav_genres':
-                split_genres = interaction.options.getString('genres').split(' & ');
-                if (split_genres.length > 3) return interaction.reply('Favorite genres are limited to a max of 3 entries. Do not put more then this.');
-                db.user_stats.set(interaction.user.id, split_genres, 'fav_genres');
-                interaction.reply(`Set favorite genres to ${split_genres.join(' & ')}!`);
+                genre1 = interaction.options.getString('genre_1');
+                genre2 = interaction.options.getString('genre_2');
+                genre3 = interaction.options.getString('genre_3');
+                genreList = [genre1];
+                if (genre2 != null) genreList.push(genre2);
+                if (genre3 != null) genreList.push(genre3);
+                db.user_stats.set(interaction.user.id, genreList, 'fav_genres');
+                interaction.reply(`Set favorite genres to ${genreList.join(' & ')}!`);
             break;
         }
 
