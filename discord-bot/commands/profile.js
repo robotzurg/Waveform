@@ -38,7 +38,7 @@ module.exports = {
     `You can view other users profiles by specifying them in the user argument, or leave it blank to view your own.\n` +
     `You can also view extra stats with the extra_stats argument, but keep in mind that this will make the command take a lot longer to run!\n` +
     `Finally, if you want to view data in embed form rather than picture, form, use the embed argument!`,
-	async execute(interaction, client) {
+	async execute(interaction, client, serverConfig) {
         await interaction.deferReply();
         let canvas = new Canvas(1305, 872);
         // let extraStats = interaction.options.getString('extra_stats');
@@ -128,7 +128,9 @@ module.exports = {
                 ctx.fillText(`Favorites Given: ${starCount}`, stats_x, stats_y + 40);
                 ctx.fillText(`Reviews: ${reviewCount}`, stats_x, stats_y + 80);
                 ctx.fillText(`EP/LP Reviews: ${epReviewCount}`, stats_x, stats_y + 120);
-                ctx.fillText(`10/10: ${tenCount}`, stats_x, stats_y + 160);
+                if (!serverConfig.disable_ratings) {
+                    ctx.fillText(`10/10: ${tenCount}`, stats_x, stats_y + 160);
+                }
 
                 // Draw Waveform Logo
                 const waveformLogo = await loadImage('./images/Waveform_Logo_Transparent.png');
@@ -168,12 +170,17 @@ module.exports = {
                     genreList.push('N/A');
                 }
 
+                let stats = `Favorites Given: \`${starCount}\`\n` + 
+                `Reviews: \`${reviewCount}\`\n` +
+                `EP/LP Reviews: \`${epReviewCount}\``;
+
+                if (!serverConfig.disable_ratings) {
+                    stats += `\n10/10: \`${tenCount}\``;
+                }
+
                 profileEmbedFields.push({ name: 'Favorite Genres', value: genreList.join('\n') });
                 profileEmbedFields.push({ name: 'General Stats:', value: 
-                `Favorites Given: \`${starCount}\`\n` + 
-                `Reviews: \`${reviewCount}\`\n` +
-                `EP/LP Reviews: \`${epReviewCount}\`\n` +
-                `10/10: \`${tenCount}\`\n`, inline: true });
+                stats, inline: true });
 
                 profileEmbed.addFields(profileEmbedFields);
                 interaction.editReply({ content: null, embeds: [profileEmbed] });

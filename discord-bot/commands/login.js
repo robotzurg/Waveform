@@ -27,7 +27,7 @@ module.exports = {
         let loginType = interaction.options.getSubcommand();
         
         if (loginType == 'spotify') {
-            await interaction.reply({ content: 'Sent a DM about logging in to Waveform with Spotify!' });
+            await interaction.reply({ content: 'Sent a DM about logging in to Waveform with Spotify!', ephemeral: true });
             let dmMsg = await interaction.user.send('Here is how you login to Waveform with Spotify!\n1. Go to [this website](https://waveformlogin.netlify.app/)\n2. Copy the refresh token it returns, and **send it into this DM. Do not send it anywhere else.**' +
             `\nPlease note that this process works best on Chrome. Firefox is known to have minor issues but some times works. If you are unable to login, please contact jeffdev (the bot developer) on Discord!`);
             let msg_filter = m => m.author.id == interaction.user.id && m.content.length > 30;
@@ -63,9 +63,9 @@ module.exports = {
             let lfmUserData = await lfm.user_getInfo({ user: lfmUsername });
             if (lfmUserData.success != false) {
                 db.user_stats.set(interaction.user.id, lfmUsername, 'lfm_username');
-                interaction.reply(`Connected the Last.fm account \`${lfmUsername}\` to Waveform!`);
+                interaction.reply({ content: `Connected the Last.fm account \`${lfmUsername}\` to Waveform!`, ephemeral: true });
             } else {
-                interaction.reply(`The user \`${lfmUsername}\` was not found on Last.fm. Please try again.`);
+                interaction.reply({ content: `The user \`${lfmUsername}\` was not found on Last.fm. Please try again.`, ephemeral: true });
             }
 
             
