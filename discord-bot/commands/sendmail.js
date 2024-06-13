@@ -293,10 +293,10 @@ module.exports = {
 
                 // Add the spotify ID to mailbox history if we have one
                 if (mainId != false) {
-                    console.log(mainId);
                     db.user_stats.push(taggedUser.id, mainId, 'mailbox_history');
                 }
-            }).catch(() => {
+            }).catch((err) => {
+                console.log(err);
                 return interaction.editReply(`Waveform ran into an issue sending this mail. Please contact Jeffdev, the bot developer.`);
             });
         } else { // If we have a non-spotify link
