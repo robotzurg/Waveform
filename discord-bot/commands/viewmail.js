@@ -35,7 +35,7 @@ module.exports = {
                 .setRequired(false)
                 .addChoices({ name: 'yes', value: 'yes' })),
     help_desc: `View a list of every song you currently have in your mailbox that you have not reviewed yet.`,
-	async execute(interaction, client) {
+	async execute(interaction) {
 
         let user = interaction.options.getUser('mailbox_user');
         let filterOption = interaction.options.getString('filter');
