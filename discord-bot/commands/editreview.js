@@ -235,9 +235,11 @@ module.exports = {
             reviewGuildID = songReviewObj.guild_id;
             
             // Disable ratings check for the server the original rating is from
-            if (db.server_settings.get(reviewGuildID, 'config.disable_ratings')) {
+            if (db.server_settings.get(reviewGuildID, 'config.disable_ratings') && reviewGuildID == interaction.guild.id) {
                 rating = null;
-            }    
+            } else if (reviewGuildID != interaction.guild.id && db.server_settings.get(reviewGuildID, 'config.disable_ratings') == true) {
+                reviewMsgID = false;
+            }
 
             if (rating != null && rating != undefined) {
                 
@@ -330,6 +332,7 @@ module.exports = {
             }
         }
 
+        // TODO: Make this not update if disable ratings is enabled and rating is changed
         let primArtist = artistArray[0];
         let epMsgToEdit = false;
         let epMsgGuild = false;
