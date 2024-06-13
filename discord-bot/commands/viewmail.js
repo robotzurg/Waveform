@@ -77,9 +77,8 @@ module.exports = {
         .setTitle(`${taggedMember.displayName}'s Waveform Spotify Mailbox`);
 
         let guildUsers = [];
-        if (!(interaction.chnanel instanceof DMChannel)) {
-            let guild = client.guilds.cache.get(interaction.guild.id);
-            let res = await guild.members.fetch();
+        if (!(interaction.channel instanceof DMChannel)) {
+            let res = await interaction.guild.members.fetch();
             guildUsers = [...res.keys()];
         }
 
