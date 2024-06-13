@@ -150,7 +150,7 @@ module.exports = {
                         user_who_sent = false;
                         is_mailbox = true;
                         mailbox_member = null;
-                        mailbox_text = `📬 This song is in your mailbox!`;
+                        mailbox_text = `📬 This song is in your mailbox, sent from another server!`;
                     });
                 }
             }

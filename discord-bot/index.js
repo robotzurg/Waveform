@@ -214,7 +214,7 @@ client.on('interactionCreate', async interaction => {
             fav_genres: [],
             fav_song: "N/A",
             fav_artist: "N/A",
-            mailbox: false,
+            has_mailbox: false,
             mailbox_list: [],
             mailbox_playlist_id: false,
             mailbox_history: [],
@@ -231,7 +231,6 @@ client.on('interactionCreate', async interaction => {
                 review_ping: false, // If you want to get pinged for a review if you are tagged as a user who sent it (default: false)
                 star_spotify_playlist: false, // If you have a star spotify playlist setup (default: false)
                 mailbox_dm: true, // If you want to be DM'd when you receive a mailbox send (default: true)
-                mailbox_channel: false, // Mailbox channel to be sent music in (default: false, aka no channel)
                 embed_color: false, // Embed color for review embeds (default: false)
                 display_scrobbles: true, // Display scrobble counts on Waveform (default: true)
             },
@@ -264,18 +263,24 @@ client.on('interactionCreate', async interaction => {
     }
 
     // Double check that the server config does exist in the server
-    let serverConfig = db.server_settings.get(interaction.guild.id, 'config');
-    if (serverConfig == undefined) {
-        serverConfig = {
-            disable_ratings: false,
-            disable_global: false,
-        };
-        db.server_settings.set(interaction.guild.id, serverConfig, 'config');
-    } else {
-        if (serverConfig.disable_global == undefined) {
-            serverConfig.disable_global = false;
+    // If we're in DMs, just assume we have the settings of HWRC (which is basically just default settings)
+    let serverConfig;
+    if (!(interaction.channel instanceof Discord.DMChannel)) {
+        serverConfig = db.server_settings.get(interaction.guild.id, 'config');
+        if (serverConfig == undefined) {
+            serverConfig = {
+                disable_ratings: false,
+                disable_global: false,
+            };
             db.server_settings.set(interaction.guild.id, serverConfig, 'config');
+        } else {
+            if (serverConfig.disable_global == undefined) {
+                serverConfig.disable_global = false;
+                db.server_settings.set(interaction.guild.id, serverConfig, 'config');
+            }
         }
+    } else {
+        serverConfig = { disable_ratings: false, disable_global: false };
     }
 
     try {

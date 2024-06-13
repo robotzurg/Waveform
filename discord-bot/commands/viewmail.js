@@ -70,14 +70,18 @@ module.exports = {
         let allServers = interaction.options.getString('all_servers');
         allServers = (allServers == 'yes');
         let mail_list = db.user_stats.get(user.id, 'mailbox_list');
-        const guild = client.guilds.cache.get(interaction.guild.id);
-        let res = await guild.members.fetch();
-        let guildUsers = [...res.keys()];
 
         const mailEmbed = new EmbedBuilder()
         .setColor(`${getEmbedColor(taggedMember)}`)
         .setThumbnail(user.avatarURL({ extension: "png" }))
         .setTitle(`${taggedMember.displayName}'s Waveform Spotify Mailbox`);
+
+        let guildUsers = [];
+        if (!(interaction.chnanel instanceof DMChannel)) {
+            let guild = client.guilds.cache.get(interaction.guild.id);
+            let res = await guild.members.fetch();
+            guildUsers = [...res.keys()];
+        }
 
         // If we are in a DM or allServers is true, don't filter the list. Otherwise, do.
         if (!(interaction.channel instanceof DMChannel) && allServers == false) {
@@ -112,7 +116,7 @@ module.exports = {
             mail_list = mail_list.filter(v => v.user_who_sent === filterUser.id);
         }
 
-        mail_list = mail_list.map(v => `• [**${v.display_name}**](${v.spotify_url})\n${guildUsers.includes(v.user_who_sent) ? `Sent by <@${v.user_who_sent}>` : `Sent by a user outside this server`}\n\n`);
+        mail_list = mail_list.map(v => `• [**${v.display_name}**](${v.spotify_url})\n${guildUsers.includes(v.user_who_sent) || interaction.channel instanceof DMChannel ? `Sent by <@${v.user_who_sent}>` : `Sent by a user outside this server`}\n\n`);
 
         if (mail_list == undefined || mail_list == false) {
             return interaction.reply(`You have nothing in your mailbox${filterUser != null ? ` from the user **${filterMember.displayName}**.` : `.`}`);
