@@ -62,6 +62,8 @@ module.exports = {
         // If the user has not interacted with the bot before
         if (!db.user_stats.has(taggedUser.id)) {
             return interaction.reply('This user does not have a Waveform Mailbox setup.');
+        } else if (db.user_stats.get(taggedUser.id, 'has_mailbox') != true && db.user_stats.get(taggedUser.id, 'mailbox_playlist_id') == false) {
+            return interaction.reply('This user does not have a Waveform Mailbox setup.');
         }
 
         let spotifyCmdUserApi = await spotify_api_setup(interaction.user.id);
@@ -295,7 +297,7 @@ module.exports = {
                     db.user_stats.push(taggedUser.id, mainId, 'mailbox_history');
                 }
             }).catch(() => {
-                return interaction.editReply(`Waveform ran into an issue sending this mail. This is either due to a spotify issue, or this user doesn't have a music mailbox setup.`);
+                return interaction.editReply(`Waveform ran into an issue sending this mail. Please contact Jeffdev, the bot developer.`);
             });
         } else { // If we have a non-spotify link
 

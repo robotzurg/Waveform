@@ -1,6 +1,6 @@
 /* eslint-disable no-unreachable */
 const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder } = require('discord.js');
-const { lfm_api_setup, getLfmUsers, parse_artist_song_data, getEmbedColor, grab_spotify_art, grab_spotify_artist_art, convertToSetterName, checkForGlobalReview } = require('../func');
+const { lfm_api_setup, getLfmUsers, parse_artist_song_data, getEmbedColor, grab_spotify_art, grab_spotify_artist_art, convertToSetterName, checkForGlobalReview, get_user_reviews } = require('../func');
 require('dotenv').config();
 const db = require('../db.js');
 const { ButtonStyle } = require('discord-api-types/v9');
@@ -96,6 +96,10 @@ module.exports = {
         let artistArg = interaction.options.getString('artist');
         let songArg = interaction.options.getString('song_name');
         let epArg = interaction.options.getString('album_name');
+        if (epArg != null) {
+            if (epArg.includes(' EP')) epArg = epArg.replace(' EP', '');
+            if (epArg.includes(' LP')) epArg = epArg.replace(' LP', '');
+        }
         let queryMusicArg = subcommand == 'song' ? songArg : epArg;
         let remixerArg = interaction.options.getString('remixers');
         let whoKnowsEmbed = new EmbedBuilder();
@@ -108,6 +112,8 @@ module.exports = {
 
         let origArtistArray = song_info.prod_artists;
         let songName = song_info.song_name;
+        if (songName.includes(' EP')) songName = songName.replace(' EP', '');
+        if (songName.includes(' LP')) songName = songName.replace(' LP', '');
         let artistArray = song_info.db_artists;
         // rmxArtistArray = song_info.remix_artists;
         let displaySongName = song_info.display_song_name;
@@ -247,7 +253,12 @@ module.exports = {
             whoKnowsEmbed.setTitle(`Who knows ${origArtistArray[0]}`);
         }
 
-        if (songObj != false) componentList.push(getSongButton);
+        if (songObj != false) {
+            let userList = await get_user_reviews(songObj, serverConfig.disable_global, interaction.guild);
+            if (userList.length != 0) {
+                componentList.push(getSongButton);
+            }
+        }
         await interaction.editReply({ content: null, embeds: [whoKnowsEmbed], components: componentList });
         
         if (paged_user_list.length > 1 || songObj != false) {

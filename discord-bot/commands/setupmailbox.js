@@ -24,6 +24,7 @@ module.exports = {
             .then(async function(data) {
                 db.user_stats.set(interaction.user.id, data.body.id, 'mailbox_playlist_id');
                 db.user_stats.set(interaction.user.id, [], 'mailbox_list');
+                db.user_stats.set(interaction.user.id, true, 'has_mailbox');
                 db.user_stats.set(interaction.user.id, [], 'mailbox_history');
                 db.user_stats.set(interaction.user.id, true, 'spotify_mailbox'); 
                 db.user_stats.set(interaction.user.id, true, 'config.mailbox_dm');
@@ -37,6 +38,7 @@ module.exports = {
             });
         } else {
             db.user_stats.set(interaction.user.id, false, 'mailbox_playlist_id');
+            db.user_stats.set(interaction.user.id, true, 'has_mailbox');
             db.user_stats.set(interaction.user.id, [], 'mailbox_list');
             db.user_stats.set(interaction.user.id, [], 'mailbox_history');
             db.user_stats.set(interaction.user.id, false, 'spotify_mailbox'); 

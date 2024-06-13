@@ -200,6 +200,15 @@ module.exports = {
         let guildStatsObj;
         let botStatsObj = db.global_bot.get('stats');
 
+        let reviewMsgID = songReviewObj.msg_id;
+        let reviewChannelID = songReviewObj.channel_id;
+        let reviewGuildID = songReviewObj.guild_id;
+        
+        // Disable ratings check for the server the original rating is from
+        if (db.server_settings.get(reviewGuildID, 'config.disable_ratings')) {
+            rating = null;
+        }
+
         // This gets an extra message if the disable ratings setting is enabled.
         if (rating == null && review == null && user_who_sent == null) {
             return interaction.reply('You must supply either a rating change, a review change, or a user_who_sent change.' + 
@@ -266,10 +275,6 @@ module.exports = {
             }
             
         }
-
-        let reviewMsgID = songReviewObj.msg_id;
-        let reviewChannelID = songReviewObj.channel_id;
-        let reviewGuildID = songReviewObj.guild_id;
 
         if (reviewMsgID != false) {
             let channelsearch = await get_review_channel(client, reviewGuildID, reviewChannelID, reviewMsgID);
