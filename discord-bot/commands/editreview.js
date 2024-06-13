@@ -199,15 +199,7 @@ module.exports = {
         let userStatsObj = db.user_stats.get(interaction.user.id, 'stats');
         let guildStatsObj;
         let botStatsObj = db.global_bot.get('stats');
-
-        let reviewMsgID = songReviewObj.msg_id;
-        let reviewChannelID = songReviewObj.channel_id;
-        let reviewGuildID = songReviewObj.guild_id;
-        
-        // Disable ratings check for the server the original rating is from
-        if (db.server_settings.get(reviewGuildID, 'config.disable_ratings')) {
-            rating = null;
-        }
+        let reviewMsgID, reviewChannelID, reviewGuildID;
 
         // This gets an extra message if the disable ratings setting is enabled.
         if (rating == null && review == null && user_who_sent == null) {
@@ -237,6 +229,15 @@ module.exports = {
             if ((songReviewObj.rating === false && review == false) || (songReviewObj.review == false && rating === false)) {
                 return interaction.reply('You cannot remove both the rating and review at the same time.');
             }
+
+            reviewMsgID = songReviewObj.msg_id;
+            reviewChannelID = songReviewObj.channel_id;
+            reviewGuildID = songReviewObj.guild_id;
+            
+            // Disable ratings check for the server the original rating is from
+            if (db.server_settings.get(reviewGuildID, 'config.disable_ratings')) {
+                rating = null;
+            }    
 
             if (rating != null && rating != undefined) {
                 
