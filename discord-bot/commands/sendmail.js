@@ -141,7 +141,7 @@ module.exports = {
             );
             mainId = trackLink.split('/')[4].split('?')[0];
 
-            if (db.user_stats.get(taggedUser.id, 'spotify_playlist') == false || spotifyTaggedApi == false) {
+            if (db.user_stats.get(taggedUser.id, 'spotify_playlist') == false || spotifyTaggedApi == false || db.user_stats.get(taggedUser.id, 'mailbox_playlist_id') == false) {
                 return interaction.editReply('This user has not setup a spotify mailbox playlist, and thus cannot be sent spotify songs.');
             }
 
