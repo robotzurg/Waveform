@@ -6,34 +6,37 @@ const { getEmbedColor } = require('../func.js');
 module.exports = {
     data: new SlashCommandBuilder()
         .setName('viewmail')
-        .setDescription('View all songs in your personal Waveform mailbox that you have not reviewed yet.')
+        .setDescription('View all songs in a users Spotify Waveform mailbox.')
         .setDMPermission(true)
+        .addSubcommand(subcommand =>
+            subcommand.setName('spotify')
+            .setDescription('View all songs sent in a users Spotify Mailbox.')
 
-        .addStringOption(option =>
-            option.setName('filter')
-                .setDescription('Filter your mailbox to show specific types of music. (Leaving blank will show all types)')
-                .setRequired(false)
-                .addChoices(
-                        { name: 'Songs', value: 'song' },
-                        { name: 'EPs', value: 'ep' },
-                        { name: 'Albums', value: 'album' },
-                    ))
+            .addStringOption(option =>
+                option.setName('filter')
+                    .setDescription('Filter your mailbox to show specific types of music. (Leaving blank will show all types)')
+                    .setRequired(false)
+                    .addChoices(
+                            { name: 'Songs', value: 'song' },
+                            { name: 'EPs', value: 'ep' },
+                            { name: 'Albums', value: 'album' },
+                        ))
 
-        .addUserOption(option =>
-            option.setName('user_filter')
-                .setDescription('Filter your mailbox to only show music sent by a specific user.')
-                .setRequired(false))
+            .addUserOption(option =>
+                option.setName('user_filter')
+                    .setDescription('Filter your mailbox to only show music sent by a specific user.')
+                    .setRequired(false))
 
-        .addUserOption(option => 
-            option.setName('mailbox_user')
-                .setDescription('What users mailbox to view (Optional, Defaults to yourself)')
-                .setRequired(false))
+            .addUserOption(option => 
+                option.setName('mailbox_user')
+                    .setDescription('What users mailbox to view (Optional, Defaults to yourself)')
+                    .setRequired(false))
 
-        .addStringOption(option => 
-            option.setName('all_servers')
-                .setDescription('View songs sent from all servers, instead of just this one (names hidden for privacy)')
-                .setRequired(false)
-                .addChoices({ name: 'yes', value: 'yes' })),
+            .addStringOption(option => 
+                option.setName('all_servers')
+                    .setDescription('View songs sent from all servers, instead of just this one (names hidden for privacy)')
+                    .setRequired(false)
+                    .addChoices({ name: 'yes', value: 'yes' }))),
     help_desc: `View a list of every song you currently have in your mailbox that you have not reviewed yet.`,
 	async execute(interaction) {
 

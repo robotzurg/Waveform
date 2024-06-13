@@ -440,7 +440,7 @@ module.exports = {
         }
 
         const filter = i => i.user.id == interaction.user.id && i.message.interaction.user.id == i.user.id;
-        const collector = int_channel.createMessageComponentCollector({ filter, time: 300000 });
+        const collector = int_channel.createMessageComponentCollector({ filter, idle: 10000 });
         let a_collector;
         let s_collector;
         let ra_collector;
@@ -1021,9 +1021,10 @@ module.exports = {
         });
 
         collector.on('end', async (collected) => {
-            if (collected.size == 0) {
+            if (!collected.find(item => item.customId === 'done') && !collected.find(item => item.customId === 'ep_done')) {
                 try {
                     await interaction.deleteReply();
+                    await interaction.followUp({ content: `Your review for **${origArtistArray.join(' & ')} - ${displaySongName}** has timed out, and was not submitted. Please make sure you click "Confirm Review" to send your review to Waveform!`, ephemeral: true });
                 } catch (err) {
                     console.log(err);
                 }
