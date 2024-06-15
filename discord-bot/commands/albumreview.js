@@ -110,7 +110,7 @@ module.exports = {
                 let epReviewUserData = db.user_stats.get(interaction.user.id, 'current_ep_review');
                 let type = epReviewUserData.ep_name.includes(' LP') ? 'LP' : 'EP'; 
                 return interaction.reply(`You already have an ${type} review for ${epReviewUserData.artist_array.join(' & ')} - ${epReviewUserData.ep_name} in progress.\n` + 
-                `Please finish reviewing all songs on the ${type} review before starting a new one, or run \`/epdone\` to manually end the review.`);
+                `Please finish reviewing all songs on the ${type} review before starting a new one, or run \`/albumdone\` to manually end the review.`);
             }
             let spotifyUri;
             let art = interaction.options.getString('art');
@@ -398,12 +398,12 @@ module.exports = {
             }
 
             if (overallRating !== false && overallReview != false) {
-                epEmbed.setDescription(`*${overallReview}*`);
-                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overallRating}/10)`);
+                epEmbed.setDescription(`${overallReview}`);
+                epEmbed.addFields({ name: 'Rating', value: `${overallRating}/10` });
             } else if (overallRating !== false) {
-                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overallRating}/10)`);
+                epEmbed.addFields({ name: 'Rating', value: `${overallRating}/10` });
             } else if (overallReview != false) {
-                epEmbed.setDescription(`*${overallReview}*`);
+                epEmbed.setDescription(`${overallReview}`);
             }
 
             if (taggedUser.id != false) {
@@ -518,9 +518,9 @@ module.exports = {
                                 if (overallRating.includes('/10')) overallRating = overallRating.replace('/10', '');
                                 overallRating = parseFloat(overallRating);
                                 if (isNaN(overallRating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
-                                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overallRating}/10)`);
+                                epEmbed.setFields([{ name: `Rating`, value: `${overallRating}/10` }]);
                             } else {
-                                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
+                                epEmbed.setFields([]);
                             }
 
                             row2 = new ActionRowBuilder()
@@ -562,7 +562,7 @@ module.exports = {
 
                             if (overallReview == '-') overallReview = false;
                             if (overallReview !== false) {
-                                epEmbed.setDescription(`*${overallReview}*`);
+                                epEmbed.setDescription(`${overallReview}`);
                             } else {
                                 epEmbed.setDescription(null);
                             }
@@ -593,18 +593,10 @@ module.exports = {
                     } break;
                     case 'star': {
                         if (starred == false) {
-                            if (overallRating !== false) {
-                                epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} (${overallRating}/10) 🌟`);
-                            } else {
-                                epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} 🌟`);
-                            }
+                            epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} 🌟`);
                             starred = true;
                         } else {
-                            if (overallRating !== false) {
-                                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName} (${overallRating}/10)`);
-                            } else {
-                                epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
-                            }
+                            epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
                             starred = false;
                         }
 
@@ -658,20 +650,7 @@ module.exports = {
                         // Update user stats
                         await updateStats(interaction, interaction.guild.id, origArtistArray, artistArray, [], epName, epName, db.reviewDB.get(artistArray[0], `${setterEpName}`), true);
                         db.user_stats.set(interaction.user.id, false, 'current_ep_review');
-
-                        if (overallReview !== false || overallRating !== false || starred === false) {
-                            if (overallReview != false) await epEmbed.setDescription(`${overallReview}`);
-                            if (overallRating !== false) await epEmbed.addFields([{ name: `Rating`, value: `**${overallRating}/10**` }]);
-                            if (starred == false) {
-                                await epEmbed.setTitle(`${artistArray.join(' & ')} - ${epName}`);
-                            } else {
-                                await epEmbed.setTitle(`🌟 ${artistArray.join(' & ')} - ${epName} 🌟`);
-                            }
-                            
-                            await i.update({ embeds: [epEmbed], components: [] });
-                        } else {
-                            await i.update({ embeds: [epEmbed], components: [] });
-                        }
+                        await i.update({ embeds: [epEmbed], components: [] });
 
                         //Fix artwork on all reviews for this song
                         if (art != false && db.reviewDB.has(artistArray[0])) {
@@ -759,9 +738,9 @@ module.exports = {
 
                         if (epSongs.length != 0) {
                             await i.followUp({ content: `With this button, you must now review each song on this ${epType} in order.\nHere is the order in which you should review the songs on this ${epType}:\n\n**${epSongs.join('\n')}**\n\nMake sure to use \`/review\` to review these songs, one by one!\n` +
-                            `Note: You can use \`/epdone\` to end the ${epType} review, if you run into issues or need to end your review early for whatever reason.\n`, ephemeral: true });
+                            `Note: You can use \`/albumdone\` to end the ${epType} review, if you run into issues or need to end your review early for whatever reason.\n`, ephemeral: true });
                         } else if (interaction.options.getSubcommand() == 'manually') {
-                            await i.followUp({ content: `With this button, you must now review each song on this ${epType} in order.\nMake sure to use \`/review\` to review the ${epType} songs, one by one!\nWhen you are finished with this ${epType} review, type \`/epdone\` to finalize the EP/LP review fully! You can also type this command if you run into any issues and need to restart the ${epType} review.`, ephemeral: true });
+                            await i.followUp({ content: `With this button, you must now review each song on this ${epType} in order.\nMake sure to use \`/review\` to review the ${epType} songs, one by one!\nWhen you are finished with this ${epType} review, type \`/albumdone\` to finalize the EP/LP review fully! You can also type this command if you run into any issues and need to restart the ${epType} review.`, ephemeral: true });
                         }
 
                         // Do it again, cause for some reason it sometimes doesn't remove the buttons properly.
