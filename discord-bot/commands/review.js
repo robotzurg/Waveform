@@ -742,7 +742,6 @@ module.exports = {
                         
                         if (msgEmbed.data.fields != undefined || msgEmbed.data.description != null) {
                             if (msgEmbed.data.description != null) msgEmbed.setDescription(`*${msgEmbed.data.description}*`);
-                                msgEmbed.setTitle(`${epArtists} - ${ep_name} (${msgEmbed.data.fields[0].value})`);
                             if (msgEmbed.data.fields != undefined) {
                                 if (msgEmbed.data.fields[0].name == 'Rating') {
                                     msgEmbed.setTitle(`${epArtists} - ${ep_name} (${msgEmbed.data.fields[0].value})`);
