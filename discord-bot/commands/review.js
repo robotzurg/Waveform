@@ -440,7 +440,7 @@ module.exports = {
         }
 
         const filter = i => i.user.id == interaction.user.id && i.message.interaction.user.id == i.user.id;
-        const collector = int_channel.createMessageComponentCollector({ filter, idle: 10000 });
+        const collector = int_channel.createMessageComponentCollector({ filter, idle: 120000 });
         let a_collector;
         let s_collector;
         let ra_collector;
