@@ -7,23 +7,57 @@ module.exports = {
 		.setName('deletereview')
 		.setDescription('Delete a review you\'ve made.')
         .setDMPermission(false)
-        .addStringOption(option => 
-            option.setName('artist')
-                .setDescription('The name of the artist(s).')
-                .setAutocomplete(true)
-                .setRequired(false))
+        .addSubcommandGroup(group =>
+            group.setName('song')
+            .setDescription('Delete a song review you have made.')
+            .addSubcommand(subcommand => 
+                subcommand.setName('with_spotify')
+                .setDescription('Delete a song review with spotify playback data.'))
 
-        .addStringOption(option => 
-            option.setName('name')
-                .setDescription('The name of the song/EP/LP.')
-                .setAutocomplete(true)
-                .setRequired(false))
+            .addSubcommand(subcommand =>
+                subcommand.setName('manually')
+                .setDescription('Delete a song review with manually entered information.')
 
-        .addStringOption(option => 
-            option.setName('remixers')
-                .setDescription('Remix artists on the song, for remix reviews.')
-                .setAutocomplete(true)
-                .setRequired(false)),
+                .addStringOption(option => 
+                    option.setName('artist')
+                        .setDescription('The name of primary artist(s).')
+                        .setAutocomplete(true)
+                        .setRequired(true))
+        
+                .addStringOption(option => 
+                    option.setName('song_name')
+                        .setDescription('The song name.')
+                        .setAutocomplete(true)
+                        .setRequired(true))
+
+                .addStringOption(option => 
+                    option.setName('remixers')
+                        .setDescription('Remixers involved in a remix of a song, for remix reviews.')
+                        .setAutocomplete(true)
+                        .setRequired(false))))
+
+        .addSubcommandGroup(group =>
+            group.setName('album')
+            .setDescription('Delete an album or EP review you have made.')
+            .addSubcommand(subcommand => 
+            subcommand.setName('with_spotify')
+                .setDescription('Delete an album or EP review with spotify playback data.'))
+
+            .addSubcommand(subcommand =>
+                subcommand.setName('manually')
+                .setDescription('Delete an album or EP review with manually entered information.')
+
+                .addStringOption(option => 
+                    option.setName('artist')
+                        .setDescription('The name of primary artist(s).')
+                        .setAutocomplete(true)
+                        .setRequired(true))
+        
+                .addStringOption(option => 
+                    option.setName('album_name')
+                        .setDescription('The album or EP name.')
+                        .setAutocomplete(true)
+                        .setRequired(true)))),
     help_desc: `Delete a review you have made from the review database.\n\n` + 
     `This only deletes YOUR review, not anyone else's review or the song/artist data itself.\n\n` + 
     `Leaving the artist and song name arguments blank will pull from currently playing song on Spotify, if you are logged in to Waveform with Spotify.`,
@@ -31,11 +65,24 @@ module.exports = {
 
         try {
 
-        if (userID == false) userID = interaction.user.id;
+        let isAdminDelete = false;
+        if (userID == false) {
+            userID = interaction.user.id;
+        } else {
+            isAdminDelete = true;
+        }
 
+        let subcommand = interaction.options.getSubcommand();
         let artists = interaction.options.getString('artist');
-        let song = interaction.options.getString('name');
+        let song = null;
+        if (subcommand == 'song') {
+            song = interaction.options.getString('song_name');
+        } else {
+            song = interaction.options.getString('album_name');
+        }
+
         let remixers = interaction.options.getString('remixers');
+
         let song_info = await parse_artist_song_data(interaction, artists, song, remixers);
 
         if (song_info.error != undefined) {
@@ -52,6 +99,7 @@ module.exports = {
         let setterSongName = convertToSetterName(songName);
         let songObj = db.reviewDB.get(origArtistArray[0], `${setterSongName}`);
 
+        if (songObj == undefined) return interaction.reply(`**${origArtistArray.join(' & ')} - ${displaySongName}** has not been reviewed on Waveform.`);
         if (songObj[userID] == undefined) return interaction.reply('You don\'t have a review of this in Waveform, so there is nothing to delete.');
 
         if (rmxArtistArray.length != 0) {
@@ -108,7 +156,7 @@ module.exports = {
             db.reviewDB.set(artistArray[i], songObj, `${setterSongName}`);
         }
 
-        await interaction.reply(`Deleted ${interaction.member.displayName}'s review of ${origArtistArray.join(' & ')} - ${displaySongName}.`);
+        await interaction.reply(`Deleted ${isAdminDelete ? `your` : `**${interaction.member.displayName}**'s`} review of **${origArtistArray.join(' & ')} - ${displaySongName}**.`);
 
         } catch (err) {
             let error = err;

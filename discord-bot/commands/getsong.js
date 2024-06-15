@@ -409,6 +409,7 @@ module.exports = {
         if (remixes.length != 0) songEmbed.addFields([{ name: 'Remixes:', value: remixes.join('\n') }]);
         if (songVIP != false) songEmbed.addFields([{ name: 'VIP:', value: `\`${songVIP}\`` }]);
         if (songEP != false) {
+            if (songEPArt.art == false || songEPArt.art == undefined) songEPArt.art = null;
             songEmbed.setFooter({ text: `from ${songEP}${paged_user_list > 1 && subcommand != 'global' ? ` • Page ${page_num + 1} / ${paged_user_list.length}` : ``}`, iconURL: songEPArt.art });
         } else if (paged_user_list > 1 && subcommand != 'global') {
             songEmbed.setFooter({ text: `Page ${page_num + 1} / ${paged_user_list.length}` });
@@ -516,7 +517,9 @@ module.exports = {
                             reviewEmbed.setFooter({ text: `📬 Sent by a user outside of this server${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}` });
                         }
                     } else if (songEP != undefined && songEP != false) {
-                        reviewEmbed.setFooter({ text: `from ${songEP}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: db.reviewDB.get(artistArray[0], `${setterSongEP}.art`) });
+                        let iconUrl = db.reviewDB.get(artistArray[0], `${setterSongEP}.art`);
+                        if (iconUrl == false || iconUrl == undefined) iconUrl = null;
+                        reviewEmbed.setFooter({ text: `from ${songEP}${lfmScrobbles !== false ? ` • Plays: ${lfmScrobbles}` : ``}`, iconURL: iconUrl });
                     } else if (lfmScrobbles !== false) {
                         reviewEmbed.setFooter({ text: `Plays: ${lfmScrobbles}` });
                     }
