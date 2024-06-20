@@ -399,9 +399,9 @@ module.exports = {
 
             if (overallRating !== false && overallReview != false) {
                 epEmbed.setDescription(`${overallReview}`);
-                epEmbed.addFields({ name: 'Rating', value: `${overallRating}/10` });
+                epEmbed.addFields({ name: 'Rating', value: `**${overallRating}/10**` });
             } else if (overallRating !== false) {
-                epEmbed.addFields({ name: 'Rating', value: `${overallRating}/10` });
+                epEmbed.addFields({ name: 'Rating', value: `**${overallRating}/10**` });
             } else if (overallReview != false) {
                 epEmbed.setDescription(`${overallReview}`);
             }
@@ -518,7 +518,7 @@ module.exports = {
                                 if (overallRating.includes('/10')) overallRating = overallRating.replace('/10', '');
                                 overallRating = parseFloat(overallRating);
                                 if (isNaN(overallRating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
-                                epEmbed.setFields([{ name: `Rating`, value: `${overallRating}/10` }]);
+                                epEmbed.setFields([{ name: `Rating`, value: `**${overallRating}/10**` }]);
                             } else {
                                 epEmbed.setFields([]);
                             }
