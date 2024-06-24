@@ -337,10 +337,11 @@ module.exports = {
 
             let rating = db.reviewDB.get(artistArray[0], `${setterSongName}.${userID}.rating`);
             if (serverConfig.disable_ratings) rating = false;
-            let selDesc = rating != false && rating != -1 ? `Rating: ${rating}/10` : ``;
+            let selDesc = rating !== false && rating != -1 ? `Rating: ${rating}/10` : ``;
             if ((lfmUserScrobbles[userID]) != undefined) {
                 selDesc += ` • ${lfmUserScrobbles[userID].scrobbles} plays`;
             }
+            if (selDesc == '') selDesc = undefined;
 
             select_options.push({
                 label: `${selDisplayName}`,
