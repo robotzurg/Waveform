@@ -11,7 +11,7 @@ const { Client, GatewayIntentBits, Partials } = require('discord.js');
 const { convertToSetterName } = require('./func');
 
 const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions, 
-    GatewayIntentBits.GuildMembers, GatewayIntentBits.GuildPresences, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages], partials: [Partials.Channel, Partials.Message, Partials.Reaction] });
+    GatewayIntentBits.GuildMembers, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages], partials: [Partials.Channel, Partials.Message, Partials.Reaction] });
 client.commands = new Discord.Collection();
 client.cooldowns = new Discord.Collection();
 const mainCommands = [];
