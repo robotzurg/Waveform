@@ -28,7 +28,7 @@ module.exports = {
         
         if (loginType == 'spotify') {
             await interaction.reply({ content: 'Sent a DM about logging in to Waveform with Spotify!', ephemeral: true });
-            let dmMsg = await interaction.user.send('Here is how you login to Waveform with Spotify!\n1. Go to [this website](https://waveformlogin.netlify.app/)\n2. Copy the refresh token it returns, and **send it into this DM. Do not send it anywhere else.**' +
+            let dmMsg = await interaction.user.send('Here is how you login to Waveform with Spotify!\n1. Go to [this website](https://waveformdiscordbot.netlify.app/#info)\n2. Copy the refresh token it returns, and **send it into this DM. Do not send it anywhere else.**' +
             `\nPlease note that this process works best on Chrome. Firefox is known to have minor issues but some times works. If you are unable to login, please contact jeffdev (the bot developer) on Discord!`);
             let msg_filter = m => m.author.id == interaction.user.id && m.content.length > 30;
             const collector = await dmMsg.channel.createMessageCollector({ filter: msg_filter, max: 1, time: 240000 });
