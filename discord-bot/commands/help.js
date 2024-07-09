@@ -72,7 +72,8 @@ module.exports = {
         .setTitle(`Waveform Help Desk 🗂️`)
         .setDescription(`Use the buttons below to select through the categories to get help on specific things!\n` +
                         `\nIf you need more assistance than what these give you, you can join the official Waveform support server [here](https://discord.gg/sxmFRyZtUf) and ask the developer, Jeffdev, for assistance.` +
-                        `You can also report things using the commands that begin with \`report\`.`);
+                        `You can also report things using the commands that begin with \`report\`.\n` +
+                        `You can also review the ToS and Privacy Policy [here](https://waveformdiscordbot.netlify.app)`);
 
         // Setup the commandEmbed and commandList and the commandSelectMenu
         let commandSelectOptions = [];
