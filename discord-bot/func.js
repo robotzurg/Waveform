@@ -131,6 +131,7 @@ module.exports = {
         let localReturnObj = {};
         let songUri = false;
         let notPlaying = false;
+        let releaseDate = false;
         let rmx_delimiter = ' & ';
         let current_ep_review_data = false;
 
@@ -180,6 +181,7 @@ module.exports = {
                     songArg = songArg.replace('remix', 'Remix'); // Just in case there is lower case remix
                     songArt = data.body.item.album.images[0].url;
                     songUri = data.body.item.uri;
+                    releaseDate = data.body.item.album.release_date;
                     await spotifyApi.getAlbum(data.body.item.album.id)
                     .then(async album_data => {
                         if ((interaction.commandName.includes('album') && interaction.commandName != 'pushtoalbumreview') || (subcommand.includes('album'))
@@ -200,6 +202,7 @@ module.exports = {
                             lfmArtists = album_data.body.artists.map(artist => artist.name);
                             lfmSong = songArg;
                             songUri = album_data.body.uri;
+                            releaseDate = album_data.body.release_date;
                             if (album_data.body.album_type == 'single' && !songArg.includes(' EP')) {
                                 songArg = `${songArg} EP`;
                             } else if (album_data.body.album_type == 'album' && !songArg.includes(' LP')) {
@@ -509,6 +512,10 @@ module.exports = {
                     if (db.reviewDB.get(artistArray[0], `${setterSongArg}`).spotify_uri && songUri == false) {
                         songUri = db.reviewDB.get(artistArray[0], `${setterSongArg}`).spotify_uri;
                     }
+
+                    if (db.reviewDB.get(artistArray[0], `${setterSongArg}`).release_date && releaseDate == false) {
+                        releaseDate = db.reviewDB.get(artistArray[0], `${setterSongArg}`).release_date;
+                    }
                 }
             }
 
@@ -528,6 +535,10 @@ module.exports = {
 
                         if (db.reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).spotify_uri && songUri == false) {
                             songUri = db.reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).spotify_uri;
+                        }
+
+                        if (db.reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).release_date && releaseDate == false) {
+                            releaseDate = db.reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).release_date;
                         }
                     }
                 }
@@ -585,6 +596,11 @@ module.exports = {
             });
         }
 
+        // Parse release date
+        if (releaseDate !== false) {
+            releaseDate = Math.floor(new Date(releaseDate).getTime() / 1000);
+        }
+
         return { 
             prod_artists: origArtistArray, 
             song_name: songArg, // Song name with remixers in the name
@@ -598,6 +614,7 @@ module.exports = {
             lastfm_artists: lfmArtists,
             lastfm_song_name: lfmSong,
             current_ep_review_data: current_ep_review_data,
+            release_date: releaseDate,
             passes_checks: passesChecks,
         };
     },

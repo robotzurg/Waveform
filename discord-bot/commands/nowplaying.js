@@ -18,7 +18,7 @@ module.exports = {
         try {
         await interaction.deferReply();
         let average = (array) => array.reduce((a, b) => a + b) / array.length;
-        let songArt, spotifyUrl = false, spotifyUri, yourRating, origArtistArray, artistArray, songName, songDisplayName, noSong = false, isPlaying = true, isPodcast = false, validSong = true;
+        let songArt, spotifyUrl = false, spotifyUri, yourRating, origArtistArray, artistArray, songName, songDisplayName, noSong = false, isPlaying = true, isPodcast = false, validSong = true, releaseDate = false;
         let songDataExists = false;
         let albumData = false;
         let setterSongName, song_info;
@@ -54,6 +54,8 @@ module.exports = {
                     spotifyUri = data.body.item.uri;
                     spotifyUrl = data.body.item.external_urls.spotify;
                     songArt = data.body.item.album.images[0].url;
+                    releaseDate = Math.ceil(new Date(data.body.item.album.release_date + ' ').getTime() / 1000);
+                    releaseDate = new Date(releaseDate * 1000).toLocaleDateString("en-US");
                 } else {
                     spotifyUrl = false;
                     songArt = false;
@@ -261,7 +263,7 @@ module.exports = {
                         epSongArt = db.reviewDB.get(songObj.collab[0], `${setterEpName}.art`);
                     } 
 
-                    npEmbed.setFooter({ text: `from ${songObj.ep}`, iconURL: epSongArt != false ? epSongArt : null });
+                    npEmbed.setFooter({ text: `from ${songObj.ep}${releaseDate !== false ? ` • Released on ${releaseDate}` : ``}`, iconURL: epSongArt != false ? epSongArt : null });
                 }
                 
             }
@@ -273,7 +275,9 @@ module.exports = {
 
         // Footer stuff
         if (albumData != false && npEmbed.data.footer == undefined) {
-            npEmbed.setFooter({ text: `from ${albumData.name} ${albumData.name.includes(' LP') && albumData.name.includes(' EP') ? albumData.album_type == 'album' ? 'LP' : 'EP' : ``}`, iconURL: albumData.images[0].url });
+            npEmbed.setFooter({ text: `from ${albumData.name} ${albumData.name.includes(' LP') && albumData.name.includes(' EP') ? albumData.album_type == 'album' ? 'LP' : 'EP' : ``}${releaseDate !== false ? ` • Released on ${releaseDate}` : ``}`, iconURL: albumData.images[0].url });
+        } else if (npEmbed.data.footer == undefined && releaseDate !== false) {
+            npEmbed.setFooter({ text: `Released on ${releaseDate}` });
         }
 
         if (is_mailbox == true) {
