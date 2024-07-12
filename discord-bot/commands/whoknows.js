@@ -222,7 +222,7 @@ module.exports = {
             }
         }
 
-        lfmUsers = lfmUsers.filter(v => v.scrobbles !== 0);
+        lfmUsers = lfmUsers.filter(v => v.scrobbles !== 0 && !isNaN(v.scrobbles));
         lfmUsers.sort((a, b) => b.scrobbles - a.scrobbles);
         let counter = 0;
         lfmUsers = lfmUsers.map(v => {
