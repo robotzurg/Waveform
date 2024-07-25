@@ -88,6 +88,8 @@ module.exports = {
             let no_songs_review = epReviewObj.no_songs;
             let incomplete_review = false;
             let ep_sent_by = epReviewObj.sentby;
+            let ep_fav_songs = epReviewObj.fav_songs;
+            let ep_least_fav_songs = epReviewObj.least_fav_songs;
             if (no_songs_review == undefined) no_songs_review = false; // Undefined handling for EP/LP reviews without this
             let ep_url = epReviewObj.url;
             let ep_starred = epReviewObj.starred;
@@ -135,22 +137,27 @@ module.exports = {
             epEmbed.setColor(`${getEmbedColor(interaction.member)}`);
             epEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName}` : `🌟 ${origArtistArray.join(' & ')} - ${epName} 🌟`);
 
+            let epEmbedFields = [];
+
             if (ep_overall_rating !== false && ep_overall_review != false) {
                 if (no_songs_review == false) {
                     epEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                 } else {
-                    epEmbed.addFields([{ name: `Rating`, value: `**${ep_overall_rating}/10**` }]);
+                    epEmbedFields.push({ name: `Rating`, value: `**${ep_overall_rating}/10**` });
                 }
                 epEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
             } else if (ep_overall_rating !== false) {
                 if (no_songs_review == false) {
                     epEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                 } else {
-                    epEmbed.addFields([{ name: `Rating`, value: `**${ep_overall_rating}/10**` }]);
+                    epEmbedFields.push({ name: `Rating`, value: `**${ep_overall_rating}/10**` });
                 }
             } else if (ep_overall_review != false) {
                 epEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
             }
+
+            if (ep_fav_songs) epEmbedFields.push({ name: 'Favorite Songs:', value: `${ep_fav_songs}`, inline: true });
+            if (ep_least_fav_songs) epEmbedFields.push({ name: 'Least Favorite Songs', value: `${ep_least_fav_songs}`, inline: true });
 
             epEmbed.setAuthor({ name: `${taggedMember.displayName}'s ${epType} review`, iconURL: `${taggedUser.avatarURL({ extension: "png", dynamic: true })}` });
             epEmbed.setThumbnail(ep_art);
@@ -235,10 +242,12 @@ module.exports = {
                     incomplete_review = false;
                     if (epEmbed.data.fields != undefined) {
                         if (epEmbed.data.fields.length > 1) {
-                            epEmbed.setFields([]);
+                            epEmbedFields.splice(0, 0);
+                            epEmbed.setFields(epEmbedFields);
                         }
                     } else {
-                        epEmbed.setFields([]);
+                        epEmbedFields.splice(0, 0);
+                        epEmbed.setFields(epEmbedFields);
                     }
                 }
             }

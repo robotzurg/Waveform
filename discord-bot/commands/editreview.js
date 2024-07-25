@@ -86,6 +86,16 @@ module.exports = {
                     option.setName('review')
                         .setDescription('The newly edited written review. (Type "-" to remove)')
                         .setRequired(false))
+
+                // .addStringOption(option => 
+                //     option.setName('fav_songs')
+                //         .setDescription('The newly edited favorite songs. (Type "-" to remove).')
+                //         .setRequired(false))
+        
+                // .addStringOption(option => 
+                //     option.setName('least_fav_songs')
+                //         .setDescription('The newly edited least favorite songs. (Type "-" to remove).')
+                //         .setRequired(false))
         
                 .addUserOption(option => 
                     option.setName('user_who_sent')
@@ -118,6 +128,16 @@ module.exports = {
                 option.setName('review')
                     .setDescription('The newly edited written review. (Type "-" to remove)')
                     .setRequired(false))
+
+            // .addStringOption(option => 
+            //     option.setName('fav_songs')
+            //         .setDescription('The newly edited favorite songs. (Type "-" to remove).')
+            //         .setRequired(false))
+    
+            // .addStringOption(option => 
+            //     option.setName('least_fav_songs')
+            //         .setDescription('The newly edited least favorite songs. (Type "-" to remove).')
+            //         .setRequired(false))
     
             .addUserOption(option => 
                 option.setName('user_who_sent')
@@ -187,11 +207,31 @@ module.exports = {
             return interaction.reply('You cannot remove both your rating and your review at the same time. You can only remove one or the other.');
         }
 
+        let favSongs = interaction.options.getString('fav_songs');
+        if (favSongs != null && favSongs !== '-') {
+            if (favSongs.includes('\\n')) {
+                favSongs = favSongs.split('\\n').join('\n');
+            } 
+        } else if (favSongs === '-') {
+            favSongs = false;
+        }
+
+        let leastFavSongs = interaction.options.getString('least_fav_songs');
+        if (leastFavSongs != null && leastFavSongs !== '-') {
+            if (leastFavSongs.includes('\\n')) {
+                leastFavSongs = leastFavSongs.split('\\n').join('\n');
+            } 
+        } else if (leastFavSongs === '-') {
+            leastFavSongs = false;
+        }
+
         let user_who_sent = interaction.options.getUser('user_who_sent');
         let taggedMember;
         let taggedUser;
         let oldrating;
         let oldreview;
+        let oldFavSongs;
+        let oldLeastFavSongs;
         let user_sent_name;
         let songObj;
         let msgEmbed;
@@ -202,8 +242,8 @@ module.exports = {
         let reviewMsgID, reviewChannelID, reviewGuildID;
 
         // This gets an extra message if the disable ratings setting is enabled.
-        if (rating == null && review == null && user_who_sent == null) {
-            return interaction.reply('You must supply either a rating change, a review change, or a user_who_sent change.' + 
+        if (rating == null && review == null && user_who_sent == null && favSongs == null && leastFavSongs == null) {
+            return interaction.reply('You must supply either a rating change, a review change, fav/least fav songs change, or a user_who_sent change.' + 
             `${serverConfig.disable_ratings ? `\n**Note: Your server admins have disabled ratings for the bot in this server, so you cannot edit your rating here.**` : ``}`);
         }
 
@@ -272,11 +312,20 @@ module.exports = {
                 db.reviewDB.set(artistArray[i], review, `${setterSongName}.${interaction.user.id}.review`);
             }
 
+            if (favSongs != null && favSongs != undefined) {
+                oldFavSongs = songReviewObj.fav_songs;
+                db.reviewDB.set(artistArray[i], favSongs, `${setterSongName}.${interaction.user.id}.fav_songs`);
+            }
+
+            if (leastFavSongs != null && leastFavSongs != undefined) {
+                oldLeastFavSongs = songReviewObj.least_fav_songs;
+                db.reviewDB.set(artistArray[i], leastFavSongs, `${setterSongName}.${interaction.user.id}.least_fav_songs`);
+            }
+
             if (user_who_sent != null && user_who_sent != undefined) {
                 user_sent_name = await interaction.guild.members.fetch(user_who_sent);
                 db.reviewDB.set(artistArray[i], user_who_sent.id, `${setterSongName}.${interaction.user.id}.user_who_sent`);
             }
-            
         }
 
         if (reviewMsgID != false) {
@@ -296,12 +345,57 @@ module.exports = {
                         } else if (rating != null && songReviewObj.no_songs == true) {
                             // Change field /10 rating value
                             if (msgEmbed.data.fields != undefined) {
-                                msgEmbed.data.fields[0].value = `**${rating}/10**`;
-                                if (rating === false) {
-                                    delete msgEmbed.data.fields[0];
+                                if (msgEmbed.data.fields[0] != undefined) {
+                                    msgEmbed.data.fields[0].value = `**${rating}/10**`;
+                                    if (rating === false) {
+                                        msgEmbed.data.fields.splice(0, 1);
+                                    }
+                                } else {
+                                    msgEmbed.addFields({ name: `Rating:`, value: `**${rating}/10**` });
                                 }
                             } else if (rating !== false) {
                                 msgEmbed.addFields({ name: `Rating:`, value: `**${rating}/10**` });
+                            }
+                        }
+
+
+                        let leastFavSongsIdx = 1;
+                        if ((songReviewObj.fav_songs != null && songReviewObj.fav_songs != false && songReviewObj.fav_songs != undefined) || (favSongs)) leastFavSongsIdx = 2;
+
+                        if (favSongs != null) {
+                            if (msgEmbed.data.fields != undefined) {
+                                if (msgEmbed.data.fields[1] != undefined) {
+                                    if (msgEmbed.data.fields[1].name === 'Least Favorite Songs') {
+                                        msgEmbed.addFields({ name: `Least Favorite Songs`, value: `${msgEmbed.data.fields[1].value}`, inline: true });
+                                    }
+                                    msgEmbed.data.fields[1].name = 'Favorite Songs';
+                                    msgEmbed.data.fields[1].value = `${favSongs}`;
+                                    if (favSongs === false) {
+                                        delete msgEmbed.data.fields[1];
+                                        if (msgEmbed.data.fields[2] != undefined) {
+                                            msgEmbed.data.fields[1] = { name: `Least Favorite Songs`, value: `${msgEmbed.data.fields[2].value}`, inline: true };
+                                        }
+                                    }
+                                } else {
+                                    msgEmbed.addFields({ name: `Favorite Songs`, value: `${favSongs}`, inline: true });
+                                }
+                            } else if (favSongs !== false) {
+                                msgEmbed.addFields({ name: `Favorite Songs`, value: `${favSongs}`, inline: true });
+                            }
+                        }
+
+                        if (leastFavSongs != null) {
+                            if (msgEmbed.data.fields != undefined) {
+                                if (msgEmbed.data.fields[leastFavSongsIdx] != undefined) {
+                                    msgEmbed.data.fields[leastFavSongsIdx].value = `${leastFavSongs}`;
+                                    if (leastFavSongs === false) {
+                                        delete msgEmbed.data.fields[leastFavSongsIdx];
+                                    }
+                                } else {
+                                    msgEmbed.addFields({ name: `Least Favorite Songs`, value: `${leastFavSongs}`, inline: true });
+                                }
+                            } else if (leastFavSongs !== false) {
+                                msgEmbed.addFields({ name: `Least Favorite Songs`, value: `${leastFavSongs}`, inline: true });
                             }
                         }
 
@@ -391,10 +485,12 @@ module.exports = {
         db.server_settings.set(songReviewObj.guild_id, guildStatsObj, 'stats');
         db.global_bot.set('stats', botStatsObj);
 
-        if ((oldrating != undefined && oldrating != rating) || (oldreview != undefined && oldreview != review) || user_who_sent != null) {
+        if ((oldrating != undefined && oldrating != rating) || (oldreview != undefined && oldreview != review) || (oldFavSongs != undefined && oldFavSongs != favSongs) || (oldLeastFavSongs != undefined && oldLeastFavSongs != leastFavSongs) || user_who_sent != null) {
 
             await interaction.reply({ content: `**Changes made to your \`${origArtistArray.join(' & ')} - ${displaySongName}\` review:**\n` +
             `${(oldrating != undefined && oldrating != rating) ? `- ${oldrating === false ? `\`No Rating\`` : `\`${oldrating}/10\``} changed to ${rating === false ? `\`No Rating\`` : `\`${rating}/10\``}\n` : ``}` +
+            `${(oldFavSongs != undefined && oldFavSongs != favSongs) ? `- Favorite Songs changed to:\n${favSongs === false ? `\`No Favorites\`` : `${favSongs}`}\n` : ``}` +
+            `${(oldLeastFavSongs != undefined && oldLeastFavSongs != leastFavSongs) ? `- Least Favorite Songs changed to:\n${leastFavSongs === false ? `\`No Least Favorites\`` : `${leastFavSongs}`}\n` : ``}` +
             `${(oldreview != undefined && oldreview != review) ? `- Review changed to:\n${review === false ? `\`No Review\`` : `${review}`}\n` : ``}` +
             `${(user_who_sent != null) ? `- User Who Sent was changed to \`${user_sent_name.displayName}\`\n` : ``}` });
             

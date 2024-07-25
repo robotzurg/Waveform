@@ -152,7 +152,7 @@ module.exports = {
                 if (serverConfig.disable_ratings) reviewObj.rating = false;
 
                 let songUrl = track.url;
-                topLfm.push(`${counter}. [**${origArtistArray.join(' & ')} - ${displaySongName}**](${songUrl})${reviewObj.starred != false ? ` 🌟` : ``}${reviewObj.rating !== false ? ` **\`${reviewObj.rating}/10\`**` : ``} - **${track.playcount}** plays`);
+                topLfm.push(`${counter}. [**${origArtistArray.join(' & ')} - ${displaySongName}**](${songUrl})${reviewObj.starred != false ? ` 🌟` : ``} - **${track.playcount}** plays${reviewObj.rating !== false ? `\n**Rating: \`${reviewObj.rating}/10\`**` : ``}`);
             } else {
                 let artistUrl = track.url;
                 topLfm.push(`${counter}. [**${track.name}**](${artistUrl}) - **${track.playcount}** plays`);
