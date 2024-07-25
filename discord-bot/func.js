@@ -823,7 +823,7 @@ module.exports = {
         }
     },
 
-    review_ep: async function(interaction, artistArray, ep_name, overall_rating, overall_review, taggedUser, art, starred, spotifyUri) {
+    review_ep: async function(interaction, artistArray, ep_name, overall_rating, overall_review, fav_songs, least_fav_songs, taggedUser, art, starred, spotifyUri) {
         let { convertToSetterName, updateStats } = require('./func.js');
 
         // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
@@ -846,6 +846,8 @@ module.exports = {
                         name: interaction.member.displayName,
                         rating: overall_rating,
                         review: overall_review,
+                        fav_songs: fav_songs,
+                        least_fav_songs: least_fav_songs,
                         sentby: taggedUser.id,
                         no_songs: true,
                     },
@@ -865,6 +867,8 @@ module.exports = {
                 name: interaction.member.displayName,
                 rating: overall_rating,
                 review: overall_review,
+                fav_songs: fav_songs,
+                least_fav_songs: least_fav_songs,
                 sentby: taggedUser.id,
                 no_songs: true,
             };
@@ -1414,7 +1418,7 @@ module.exports = {
         for (let user of userArray) {
             let userData = db.user_stats.get(user);
             if (userData.lfm_username != false && userData.lfm_username != undefined) {
-                output.push({ user_id: user, lfm_username: userData.lfm_username });
+                output.push({ user_id: user, display_name: user.displayName, lfm_username: userData.lfm_username });
             }
         }
 

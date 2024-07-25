@@ -22,6 +22,16 @@ module.exports = {
                 option.setName('overall_review')
                     .setDescription('Overall Review of the EP/LP. Can be added later.')
                     .setRequired(false))
+
+            .addStringOption(option => 
+                option.setName('fav_songs')
+                    .setDescription('Favorite songs on the EP/LP. Can be added later.')
+                    .setRequired(false))
+    
+            .addStringOption(option => 
+                option.setName('least_fav_songs')
+                    .setDescription('Least favorite songs on the EP/LP. Can be added later.')
+                    .setRequired(false))
     
             .addStringOption(option => 
                 option.setName('art')
@@ -58,6 +68,16 @@ module.exports = {
                 option.setName('overall_review')
                     .setDescription('Overall Review of the EP/LP. Can be added later.')
                     .setRequired(false))
+
+            .addStringOption(option => 
+                option.setName('fav_songs')
+                    .setDescription('Favorite songs on the EP/LP. Can be added later.')
+                    .setRequired(false))
+    
+            .addStringOption(option => 
+                option.setName('least_fav_songs')
+                    .setDescription('Least favorite songs on the EP/LP. Can be added later.')
+                    .setRequired(false))
     
             .addStringOption(option => 
                 option.setName('art')
@@ -88,6 +108,16 @@ module.exports = {
                 .addStringOption(option => 
                     option.setName('overall_review')
                         .setDescription('Overall Review of the EP/LP. Can be added later.')
+                        .setRequired(false))
+
+                .addStringOption(option => 
+                    option.setName('fav_songs')
+                        .setDescription('Favorite songs on the EP/LP. Can be added later.')
+                        .setRequired(false))
+        
+                .addStringOption(option => 
+                    option.setName('least_fav_songs')
+                        .setDescription('Least favorite songs on the EP/LP. Can be added later.')
                         .setRequired(false))
     
                 .addUserOption(option => 
@@ -230,13 +260,31 @@ module.exports = {
                     overallReview = overallReview.split('\\n').join('\n');
                 }
             }
+
+            // Get fav/least fav songs
+            let favSongs = interaction.options.getString('fav_songs');
+            if (favSongs === null) favSongs = false;
+            if (favSongs != false) {
+                if (favSongs.includes('\\n')) {
+                    favSongs = favSongs.split('\\n').join('\n');
+                }
+            }
+
+            let leastFavSongs = interaction.options.getString('least_fav_songs');
+            if (leastFavSongs === null) leastFavSongs = false;
+            if (leastFavSongs != false) {
+                if (leastFavSongs.includes('\\n')) {
+                    leastFavSongs = leastFavSongs.split('\\n').join('\n');
+                }
+            }
+         
+      
             
             let user_who_sent = interaction.options.getUser('user_who_sent');
             if (user_who_sent == null) user_who_sent = false;
             let taggedMember = false;
             let taggedUser = false;
             let starred = false;
-            let row2;
             let mailbox_data = false;
 
             // Check to make sure "EP" or "LP" is in the ep/lp name
@@ -253,8 +301,10 @@ module.exports = {
             let spotifyApi;
             // Check if we are in a spotify mailbox
             spotifyApi = await spotify_api_setup(interaction.user.id);
-            if ((mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:album:', '')) || mailbox_list.some(v => v.db_song_name == epName)) && spotifyApi != false) {
-                is_mailbox = true;
+            if ((spotifyUri instanceof String)) {
+                if ((mailbox_list.some(v => v.spotify_id == spotifyUri.replace('spotify:album:', '')) || mailbox_list.some(v => v.db_song_name == epName)) && spotifyApi != false) {
+                    is_mailbox = true;
+                }
             }
 
             // If we are in the mailbox and don't specify a user who sent, try to pull it from the mailbox list
@@ -320,7 +370,9 @@ module.exports = {
             let artistImgs = await grab_spotify_artist_art(artistArray);
 
             // Setup buttons
-            const row = new ActionRowBuilder();
+            let row = new ActionRowBuilder();
+            let row2 = new ActionRowBuilder();
+            let row3 = new ActionRowBuilder();
 
             if (interaction.options.getSubcommand() == 'manually') {
                 row.addComponents(
@@ -354,10 +406,18 @@ module.exports = {
                     .setStyle(ButtonStyle.Secondary).setLabel('Favorite').setEmoji('🌟'),
             );
 
+            row2.addComponents(
+                new ButtonBuilder()
+                    .setCustomId('fav_songs').setLabel('Set Favorite Songs')
+                    .setStyle(ButtonStyle.Primary).setEmoji('👍'),
+                new ButtonBuilder()
+                    .setCustomId('least_fav_songs').setLabel('Set Least Favorite Songs')
+                    .setStyle(ButtonStyle.Primary).setEmoji('👎'),
+            );
+
             // Setup bottom row
             if (overallRating == false && overallReview == false) {
-                row2 = new ActionRowBuilder()
-                .addComponents(
+                row3.addComponents(
                     new ButtonBuilder()
                         .setCustomId('begin')
                         .setLabel(`Begin ${epType} Review`)
@@ -368,8 +428,7 @@ module.exports = {
                         .setStyle(ButtonStyle.Danger),
                 );
             } else {
-                row2 = new ActionRowBuilder()
-                .addComponents(
+                row3.addComponents(
                     new ButtonBuilder()
                         .setCustomId('begin')
                         .setLabel(`Begin ${epType} Review`)
@@ -397,14 +456,20 @@ module.exports = {
                 epEmbed.setThumbnail(art);
             }
 
+            let epEmbedFields = [];
             if (overallRating !== false && overallReview != false) {
                 epEmbed.setDescription(`${overallReview}`);
-                epEmbed.addFields({ name: 'Rating', value: `**${overallRating}/10**` });
+                epEmbedFields.push({ name: 'Rating', value: `**${overallRating}/10**` });
             } else if (overallRating !== false) {
-                epEmbed.addFields({ name: 'Rating', value: `**${overallRating}/10**` });
+                epEmbedFields.push({ name: 'Rating', value: `**${overallRating}/10**` });
             } else if (overallReview != false) {
                 epEmbed.setDescription(`${overallReview}`);
             }
+
+            if (favSongs) epEmbedFields.push({ name: 'Favorite Songs', value: `${favSongs}`, inline: true });
+            if (leastFavSongs) epEmbedFields.push({ name: 'Least Favorite Songs', value: `${leastFavSongs}`, inline: true });
+
+            epEmbed.setFields(epEmbedFields);
 
             if (taggedUser.id != false) {
                 if (mailUserInServer == true) {
@@ -414,7 +479,7 @@ module.exports = {
                 }
             }
 
-            await interaction.reply({ embeds: [epEmbed], components: [row, row2] });
+            await interaction.reply({ embeds: [epEmbed], components: [row, row2, row3] });
 
             // Grab message id to put in user_stats and the ep object
             const msg = await interaction.fetchReply();
@@ -423,10 +488,14 @@ module.exports = {
             const collector = interaction.channel.createMessageComponentCollector({ filter, time: 300000 });
             let ra_collector;
             let re_collector;
+            let fav_collector;
+            let least_fav_collector;
             let a_collector;
             let name_collector;
 
             collector.on('collect', async i => {
+
+                console.log(i.customId);
 
                 switch (i.customId) {
                     case 'artist': {
@@ -462,13 +531,13 @@ module.exports = {
                             }
                             epEmbed.setThumbnail(art);
 
-                            await i.editReply({ embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ embeds: [epEmbed], components: [row, row2, row3] });
                             db.user_stats.set(interaction.user.id, artistArray, 'current_ep_review.artist_array');      
                             m.delete();
                         });
                         
                         a_collector.on('end', async () => {
-                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2, row3] });
                         });
                     } break;
                     case 'ep': {
@@ -496,34 +565,36 @@ module.exports = {
                             }
                             epEmbed.setThumbnail(art);
 
-                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2, row3] });
                             db.user_stats.set(interaction.user.id, epName, 'current_ep_review.ep_name');      
                             m.delete();
                         });
                         
                         name_collector.on('end', async () => {
-                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2, row3] });
                         });
                     } break;
                     case 'rating': {
                         await i.deferUpdate();
-                        await i.editReply({ content: `Type in the overall ${epType} rating (DO NOT ADD \`/10\`!)`, components: [] });
+                        await i.editReply({ content: `Type in the overall ${epType} rating (DO NOT ADD \`/10\`), or \`-\` to remove this field.`, components: [] });
 
                         const ra_filter = m => m.author.id == interaction.user.id;
                         ra_collector = interaction.channel.createMessageCollector({ filter: ra_filter, max: 1, time: 60000 });
                         ra_collector.on('collect', async m => {
                             overallRating = m.content;
-                            if (overallRating == '-') overallRating = false;
+                            if (overallRating == '-') overallRating = false;    
                             if (overallRating !== false) {
                                 if (overallRating.includes('/10')) overallRating = overallRating.replace('/10', '');
                                 overallRating = parseFloat(overallRating);
+                                epEmbedFields[0] = { name: `Rating`, value: `**${overallRating}/10**` };
                                 if (isNaN(overallRating)) i.editReply('The rating you put in is not valid, please make sure you put in an integer or decimal rating for your replacement rating!');
-                                epEmbed.setFields([{ name: `Rating`, value: `**${overallRating}/10**` }]);
+                                epEmbed.setFields(epEmbedFields);
                             } else {
-                                epEmbed.setFields([]);
+                                epEmbedFields.splice(0, 1);
+                                epEmbed.setFields(epEmbedFields);
                             }
 
-                            row2 = new ActionRowBuilder()
+                            row3 = new ActionRowBuilder()
                             .addComponents(
                                 new ButtonBuilder()
                                     .setCustomId('begin')
@@ -539,17 +610,17 @@ module.exports = {
                                     .setStyle(ButtonStyle.Danger),
                             );
                             
-                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2, row3] });
                             m.delete();
                         });
                         
                         ra_collector.on('end', async () => {
-                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2, row3] });
                         });
                     } break;
                     case 'review': {
                         await i.deferUpdate();
-                        await i.editReply({ content: `Type in the new overall ${epType} review.`, components: [] });
+                        await i.editReply({ content: `Type in the new overall ${epType} review, or \`-\` to remove this field.`, components: [] });
 
                         const re_filter = m => m.author.id == interaction.user.id;
                         re_collector = interaction.channel.createMessageCollector({ filter: re_filter, max: 1, time: 120000 });
@@ -567,7 +638,7 @@ module.exports = {
                                 epEmbed.setDescription(null);
                             }
 
-                            row2 = new ActionRowBuilder()
+                            row3 = new ActionRowBuilder()
                             .addComponents(
                                 new ButtonBuilder()
                                     .setCustomId('begin')
@@ -583,12 +654,81 @@ module.exports = {
                                     .setStyle(ButtonStyle.Danger),
                             );
 
-                            await i.editReply({ embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ embeds: [epEmbed], components: [row, row2, row3] });
                             m.delete();
                         });
                         
                         re_collector.on('end', async () => {
-                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2] });
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2, row3] });
+                        });
+                    } break;
+                    case 'fav_songs': {
+                        await i.deferUpdate();
+                        await i.editReply({ content: `Type in your new favorite songs, or \`-\` to remove this field.`, components: [] });
+
+                        let fieldIdx = (overallRating ? 1 : 0);
+
+                        const fav_filter = m => m.author.id == interaction.user.id;
+                        fav_collector = interaction.channel.createMessageCollector({ filter: fav_filter, max: 1, time: 60000 });
+                        fav_collector.on('collect', async m => {
+                            favSongs = m.content;
+
+                            if (favSongs != false) {
+                                if (favSongs.includes('\\n')) {
+                                    favSongs = favSongs.split('\\n').join('\n');
+                                }
+                            }
+
+                            if (favSongs == '-') favSongs = false;
+                            if (favSongs !== false) {
+                                epEmbedFields[fieldIdx] = { name: `Favorite Songs`, value: `${favSongs}`, inline: true };
+                                epEmbed.setFields(epEmbedFields);
+                            } else {
+                                epEmbedFields.splice(fieldIdx, 1);
+                                epEmbed.setFields(epEmbedFields);
+                            }
+                            
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2, row3] });
+                            m.delete();
+                        });
+                        
+                        fav_collector.on('end', async () => {
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2, row3] });
+                        });
+                    } break;
+                    case 'least_fav_songs': {
+                        await i.deferUpdate();
+                        await i.editReply({ content: `Type in your new least favorite songs, or \`-\` to remove this field.`, components: [] });
+
+                        let fieldIdx = (overallRating ? 1 : 0);
+                        if (favSongs !== false) fieldIdx += 1;
+
+                        const least_fav_filter = m => m.author.id == interaction.user.id;
+                        least_fav_collector = interaction.channel.createMessageCollector({ filter: least_fav_filter, max: 1, time: 60000 });
+                        least_fav_collector.on('collect', async m => {
+                            leastFavSongs = m.content;
+
+                            if (leastFavSongs != false) {
+                                if (leastFavSongs.includes('\\n')) {
+                                    leastFavSongs = leastFavSongs.split('\\n').join('\n');
+                                }
+                            }
+
+                            if (leastFavSongs == '-') leastFavSongs = false;
+                            if (leastFavSongs !== false) {
+                                epEmbedFields[fieldIdx] = { name: `Least Favorite Songs`, value: `${leastFavSongs}`, inline: true };
+                                epEmbed.setFields(epEmbedFields);
+                            } else {
+                                epEmbedFields.splice(fieldIdx, 1);
+                                epEmbed.setFields(epEmbedFields);
+                            }
+                            
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2, row3] });
+                            m.delete();
+                        });
+                        
+                        least_fav_collector.on('end', async () => {
+                            await i.editReply({ content: null, embeds: [epEmbed], components: [row, row2, row3] });
                         });
                     } break;
                     case 'star': {
@@ -600,7 +740,7 @@ module.exports = {
                             starred = false;
                         }
 
-                        await i.update({ embeds: [epEmbed], components: [row, row2] });
+                        await i.update({ embeds: [epEmbed], components: [row, row2, row3] });
                     } break;
                     case 'delete': {
                         db.user_stats.set(interaction.user.id, false, 'current_ep_review');
@@ -612,6 +752,8 @@ module.exports = {
 
                         if (ra_collector != undefined) ra_collector.stop();
                         if (re_collector != undefined) re_collector.stop();
+                        if (fav_collector != undefined) fav_collector.stop();
+                        if (least_fav_collector != undefined) least_fav_collector.stop();
                         if (a_collector != undefined) a_collector.stop();
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
@@ -619,6 +761,8 @@ module.exports = {
                     case 'done': {
                         if (ra_collector != undefined) ra_collector.stop();
                         if (re_collector != undefined) re_collector.stop();
+                        if (fav_collector != undefined) fav_collector.stop();
+                        if (least_fav_collector != undefined) least_fav_collector.stop();
                         if (a_collector != undefined) a_collector.stop();
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
@@ -628,7 +772,7 @@ module.exports = {
                         db.user_stats.set(interaction.user.id, msg.channelId, 'current_ep_review.channel_id');
                         db.user_stats.set(interaction.user.id, msg.guildId, 'current_ep_review.guild_id');
 
-                        await review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, spotifyUri);
+                        await review_ep(interaction, artistArray, epName, overallRating, overallReview, favSongs, leastFavSongs, taggedUser, art, starred, spotifyUri);
                         let timestamp = msg.createdTimestamp;
 
                         // Set message ids and setup artist images
@@ -695,6 +839,8 @@ module.exports = {
                         }
                         if (ra_collector != undefined) ra_collector.stop();
                         if (re_collector != undefined) re_collector.stop();
+                        if (fav_collector != undefined) fav_collector.stop();
+                        if (least_fav_collector != undefined) least_fav_collector.stop();
                         if (a_collector != undefined) a_collector.stop();
                         if (name_collector != undefined) name_collector.stop();
                         if (collector != undefined) collector.stop(); // Collector for all buttons
@@ -704,7 +850,7 @@ module.exports = {
                         db.user_stats.set(interaction.user.id, msg.channelId, 'current_ep_review.channel_id');
                         db.user_stats.set(interaction.user.id, msg.guildId, 'current_ep_review.guild_id');
 
-                        await review_ep(interaction, artistArray, epName, overallRating, overallReview, taggedUser, art, starred, spotifyUri);
+                        await review_ep(interaction, artistArray, epName, overallRating, overallReview, favSongs, leastFavSongs, taggedUser, art, starred, spotifyUri);
                         let timestamp = msg.createdTimestamp;
 
                         let epSongs = await (db.user_stats.get(interaction.user.id, 'current_ep_review.track_list') != false 
@@ -762,6 +908,8 @@ module.exports = {
 
                 if (ra_collector != undefined) ra_collector.stop();
                 if (re_collector != undefined) re_collector.stop();
+                if (fav_collector != undefined) fav_collector.stop();
+                if (least_fav_collector != undefined) least_fav_collector.stop();
                 if (a_collector != undefined) a_collector.stop();
                 if (name_collector != undefined) name_collector.stop();
             });

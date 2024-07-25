@@ -400,6 +400,8 @@ module.exports = {
                         let no_songs_review = epReviewObj.no_songs;
                         let incomplete_review = false;
                         let ep_sent_by = epReviewObj.sentby;
+                        let ep_fav_songs = epReviewObj.fav_songs;
+                        let ep_least_fav_songs = epReviewObj.least_fav_songs;
                         if (no_songs_review == undefined) no_songs_review = false; // Undefined handling for EP/LP reviews without this
                         let ep_starred = epReviewObj.starred;
                         if (ep_starred == undefined) ep_starred = false;
@@ -482,27 +484,35 @@ module.exports = {
                         }
 
                         if (no_songs_review == true) {
-                            epReviewEmbed.setFields([]);
+                            epEmbedFields.splice(0, 0);
+                            epReviewEmbed.setFields(epEmbedFields);
                         }
 
                         epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName}` : `🌟 ${origArtistArray.join(' & ')} - ${epName} 🌟`);
+
+                        let epEmbedFields = [];
 
                         if (ep_overall_rating !== false && ep_overall_review != false) {
                             if (no_songs_review == false) {
                                 epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                             } else {
-                                epReviewEmbed.addFields([{ name: `Rating`, value: `**${ep_overall_rating}/10**` }]);
+                                epEmbedFields.push({ name: `Rating`, value: `**${ep_overall_rating}/10**` });
                             }
                             epReviewEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
                         } else if (ep_overall_rating !== false) {
                             if (no_songs_review == false) {
                                 epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
                             } else {
-                                epEmbed.addFields([{ name: `Rating`, value: `**${ep_overall_rating}/10**` }]);
+                                epEmbedFields.push({ name: `Rating`, value: `**${ep_overall_rating}/10**` });
                             }
                         } else if (ep_overall_review != false) {
                             epReviewEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
                         }
+
+                        if (ep_fav_songs) epEmbedFields.push({ name: 'Favorite Songs:', value: `${ep_fav_songs}`, inline: true });
+                        if (ep_least_fav_songs) epEmbedFields.push({ name: 'Least Favorite Songs', value: `${ep_least_fav_songs}`, inline: true });
+
+                        epEmbed.setFields(epEmbedFields);
 
                         if (incomplete_review == true) {
                             epReviewEmbed.setDescription(`This ${epType} review was manually finished before all songs were reviewed, so there is no review.`);
