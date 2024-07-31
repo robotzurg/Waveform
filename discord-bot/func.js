@@ -1410,15 +1410,17 @@ module.exports = {
         let output = [];
 
         let res = await interaction.guild.members.fetch();
-        let guildUsers = [...res.keys()];
+        let guildUsers = [...res.entries()];
         if (global === false) {
-            userArray = userArray.filter(v => guildUsers.includes(v));
+            guildUsers = guildUsers.filter(v => {
+                return userArray.includes(v[0]);
+            });
         }
 
-        for (let user of userArray) {
-            let userData = db.user_stats.get(user);
+        for (let user of guildUsers) {
+            let userData = db.user_stats.get(user[0]);
             if (userData.lfm_username != false && userData.lfm_username != undefined) {
-                output.push({ user_id: user, display_name: user.displayName, lfm_username: userData.lfm_username });
+                output.push({ user_id: user[0], display_name: user[1].displayName, lfm_username: userData.lfm_username });
             }
         }
 
