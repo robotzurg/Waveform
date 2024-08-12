@@ -87,15 +87,15 @@ module.exports = {
                         .setDescription('The newly edited written review. (Type "-" to remove)')
                         .setRequired(false))
 
-                // .addStringOption(option => 
-                //     option.setName('fav_songs')
-                //         .setDescription('The newly edited favorite songs. (Type "-" to remove).')
-                //         .setRequired(false))
+                .addStringOption(option => 
+                    option.setName('fav_songs')
+                        .setDescription('The newly edited favorite songs.')
+                        .setRequired(false))
         
-                // .addStringOption(option => 
-                //     option.setName('least_fav_songs')
-                //         .setDescription('The newly edited least favorite songs. (Type "-" to remove).')
-                //         .setRequired(false))
+                .addStringOption(option => 
+                    option.setName('least_fav_songs')
+                        .setDescription('The newly edited least favorite songs.')
+                        .setRequired(false))
         
                 .addUserOption(option => 
                     option.setName('user_who_sent')
@@ -129,15 +129,15 @@ module.exports = {
                     .setDescription('The newly edited written review. (Type "-" to remove)')
                     .setRequired(false))
 
-            // .addStringOption(option => 
-            //     option.setName('fav_songs')
-            //         .setDescription('The newly edited favorite songs. (Type "-" to remove).')
-            //         .setRequired(false))
+            .addStringOption(option => 
+                option.setName('fav_songs')
+                    .setDescription('The newly edited favorite songs.')
+                    .setRequired(false))
     
-            // .addStringOption(option => 
-            //     option.setName('least_fav_songs')
-            //         .setDescription('The newly edited least favorite songs. (Type "-" to remove).')
-            //         .setRequired(false))
+            .addStringOption(option => 
+                option.setName('least_fav_songs')
+                    .setDescription('The newly edited least favorite songs.')
+                    .setRequired(false))
     
             .addUserOption(option => 
                 option.setName('user_who_sent')

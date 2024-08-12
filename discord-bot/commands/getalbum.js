@@ -483,11 +483,6 @@ module.exports = {
                             epReviewEmbed.setColor(`${getEmbedColor(taggedMember)}`);
                         }
 
-                        if (no_songs_review == true) {
-                            epEmbedFields.splice(0, 0);
-                            epReviewEmbed.setFields(epEmbedFields);
-                        }
-
                         epReviewEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName}` : `🌟 ${origArtistArray.join(' & ')} - ${epName} 🌟`);
 
                         let epEmbedFields = [];
@@ -512,7 +507,11 @@ module.exports = {
                         if (ep_fav_songs) epEmbedFields.push({ name: 'Favorite Songs:', value: `${ep_fav_songs}`, inline: true });
                         if (ep_least_fav_songs) epEmbedFields.push({ name: 'Least Favorite Songs', value: `${ep_least_fav_songs}`, inline: true });
 
-                        epEmbed.setFields(epEmbedFields);
+                        
+                        if (no_songs_review == true) {
+                            epEmbedFields.splice(0, 0);
+                            epReviewEmbed.setFields(epEmbedFields);
+                        }
 
                         if (incomplete_review == true) {
                             epReviewEmbed.setDescription(`This ${epType} review was manually finished before all songs were reviewed, so there is no review.`);

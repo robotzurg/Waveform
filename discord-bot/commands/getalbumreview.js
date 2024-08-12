@@ -139,6 +139,8 @@ module.exports = {
 
             let epEmbedFields = [];
 
+            console.log(ep_overall_rating, ep_overall_review);
+
             if (ep_overall_rating !== false && ep_overall_review != false) {
                 if (no_songs_review == false) {
                     epEmbed.setTitle(ep_starred == false ? `${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10)` : `🌟 ${origArtistArray.join(' & ')} - ${epName} (${ep_overall_rating}/10) 🌟`);
@@ -152,7 +154,7 @@ module.exports = {
                 } else {
                     epEmbedFields.push({ name: `Rating`, value: `**${ep_overall_rating}/10**` });
                 }
-            } else if (ep_overall_review != false) {
+            } else if (ep_overall_review !== false) {
                 epEmbed.setDescription(no_songs_review == false ? `*${ep_overall_review}*` : `${ep_overall_review}`);
             }
 
@@ -237,21 +239,21 @@ module.exports = {
                         }
                     }
                 }
+            }
 
-                if (no_songs_review == true) {
-                    incomplete_review = false;
-                    if (epEmbed.data.fields != undefined) {
-                        if (epEmbed.data.fields.length > 1) {
-                            epEmbedFields.splice(0, 0);
-                            epEmbed.setFields(epEmbedFields);
-                        }
-                    } else {
+            if (no_songs_review == true) {
+                incomplete_review = false;
+                if (epEmbed.data.fields != undefined) {
+                    if (epEmbed.data.fields.length > 1) {
                         epEmbedFields.splice(0, 0);
                         epEmbed.setFields(epEmbedFields);
                     }
+                } else {
+                    epEmbedFields.splice(0, 0);
+                    epEmbed.setFields(epEmbedFields);
                 }
             }
-
+            
             if (incomplete_review == true) {
                 epEmbed.setDescription(`This ${epType} review was manually finished before all songs were reviewed, so there is no review.`);
             }
