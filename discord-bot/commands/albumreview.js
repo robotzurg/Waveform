@@ -445,6 +445,11 @@ module.exports = {
             }
 
             // Set up the embed
+            // Start creation of embed
+            if ((artistArray.join(' & ').length + epName.length) > 256) {
+                return interaction.editReply(`Your ${epType} and artist names combined must be less than 256 characters. This will be addressed in a future update, but for now this is unreviewable. Please ask Jeffdev for more details.`);
+            }
+
             const epEmbed = new EmbedBuilder()
             .setColor(`${getEmbedColor(interaction.member)}`)
             .setTitle(`${artistArray.join(' & ')} - ${epName}`)

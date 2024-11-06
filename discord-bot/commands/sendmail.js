@@ -232,7 +232,7 @@ module.exports = {
 
         if (linkType.includes('sp')) {
             if (passesChecks == false) return;
-            if (db.user_stats.get(taggedUser.id, 'mailbox_history').includes(mainId)) {
+            if (db.user_stats.get(taggedUser.id, 'mailbox_history').includes(mainId) && lfmForce === false) {
                 return interaction.editReply(`**${taggedMember.displayName}** has already been sent **${origArtistArray.join(' & ')} - ${displayName}** through Waveform Mailbox!`);
             }
 
