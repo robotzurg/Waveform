@@ -424,7 +424,7 @@ module.exports = {
         // Error check
         if (songArg.includes('\\') && songArg.includes('.')) {
             passesChecks = false;
-        } else if (origArtistArray.includes('Various Artists')) {
+        } else if (origArtistArray.includes('Various Artists') && !interaction.commandName.includes('lfmtop')) {
             passesChecks = false;
         } else if (origArtistArray.includes('')) {
             passesChecks = false;
@@ -557,22 +557,6 @@ module.exports = {
 
         // Grab a spotify song uri through spotify search if we don't already have one.
         if (songUri == false && interaction.commandName != 'lfmtop') {
-            // let spotifyApi = new SpotifyWebApi({
-            //     redirectUri: process.env.SPOTIFY_REDIRECT_URI,
-            //     clientId: process.env.SPOTIFY_API_ID,
-            //     clientSecret: process.env.SPOTIFY_CLIENT_SECRET,
-            // });
-            
-            // // Retrieve an access token.
-            // spotifyApi.clientCredentialsGrant().then(
-            //     function(data) {
-            //         // Save the access token so that it's used in future calls
-            //         spotifyApi.setAccessToken(data.body['access_token']);
-            //     },
-            //     function(err) {
-            //         console.log('Something went wrong when retrieving an access token', err);
-            //     },
-            // );
 
             const spotifyApi = await spotify_api_setup('122568101995872256');
 
@@ -1006,6 +990,7 @@ module.exports = {
 
         for (let artist of artistArray) {
             await spotifyApi.searchArtists(artist).then(function(data) {  
+                if (data.body.artists.items[0] === undefined) return;
                 let results = data.body.artists.items[0].images;
                 if (results.length == 0) imageArray.push(false);
                 else imageArray.push(results[0].url);
@@ -1017,7 +1002,13 @@ module.exports = {
 
     handle_error: function(interaction, client, err) {
         let strErr = `${err}`;
-        if (strErr.toLowerCase().includes('webapiregularerror') || strErr.toLowerCase().includes('webapierror')) {
+        if (strErr.toLowerCase().includes('webapiauthenticationerror') && strErr.toLowerCase().includes('invalid_grant')) {
+            interaction.editReply({ content: `Your Spotify login has expired. Please run \`/login\` once again to set it back up.`, 
+            embeds: [], components: [] }).catch(() => {
+                interaction.reply({ content: `Your Spotify login has expired. Please run \`/login\` once again to set it back up.`, 
+                embeds: [], components: [] });
+            }); 
+        } else if (strErr.toLowerCase().includes('webapiregularerror') || strErr.toLowerCase().includes('webapierror') || strErr.toLowerCase().includes('webapiauthenticationerror')) {
             interaction.editReply({ content: `The Spotify Web API is currently down or having issues, which means that Spotify functions are temporarily unavailable. This usually only lasts a couple minutes, so try again in just a bit!`, 
             embeds: [], components: [] }).catch(() => {
                 interaction.reply({ content: `The Spotify Web API is currently down or having issues, which means that Spotify functions are temporarily unavailable. This usually only lasts a couple minutes, so try again in just a bit!`, 

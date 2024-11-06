@@ -162,7 +162,10 @@ module.exports = {
             );
             let trackLink = interaction.options.getString('spotify_link');
             if (trackLink.includes('spotify.link')) return interaction.editReply('The link type `spotify.link` is not supported on Waveform. Please use a valid `open.spotify.com` link instead.');
-            let mainId = trackLink.split('/')[4].split('?')[0];
+            let mainId;
+            if (trackLink !== undefined && trackLink !== null && trackLink !== false) {
+                mainId = trackLink.split('/')[4].split('?')[0];
+            }
 
             if (trackLink.includes("track")) {
                 await spotifyApi.getTrack(mainId).then(async data => {
@@ -363,6 +366,9 @@ module.exports = {
         let artistImgs = await grab_spotify_artist_art(allArtistArray);
 
         // Start creation of embed
+        if ((origArtistArray.join(' & ').length + displaySongName.length) > 256) {
+            return interaction.editReply('Your song and artist names combined must be less than 256 characters. This will be addressed in a future update, but for now this is unreviewable. Please ask Jeffdev for more details.');
+        }
         let reviewEmbed = new EmbedBuilder()
         .setColor(`${getEmbedColor(interaction.member)}`)
         .setTitle(`${origArtistArray.join(' & ')} - ${displaySongName}`)
@@ -1039,9 +1045,7 @@ module.exports = {
                 try {
                     await interaction.deleteReply();
                     await interaction.followUp({ content: `Your review for **${origArtistArray.join(' & ')} - ${displaySongName}** has timed out, and was not submitted. Please make sure you click "Confirm Review" to send your review to Waveform!`, ephemeral: true });
-                } catch (err) {
-                    console.log(err);
-                }
+                } catch (err) { console.log(err); }
             }
 
             if (a_collector != undefined) a_collector.stop();
