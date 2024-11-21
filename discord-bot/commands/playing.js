@@ -67,15 +67,9 @@ module.exports = {
                     } else {
                         skip = true;
                     }
-
-                
-                    try {
-                        origArtistArray = [lfmRecentSongs.track[0].artist['#text']];
-                        songDisplayName = lfmRecentSongs.track[0].name;
-                        platform = 'lastfm';
-                    } catch {
-                        skip = true;
-                    }
+                    origArtistArray = [lfmRecentSongs.track[0].artist['#text']];
+                    songDisplayName = lfmRecentSongs.track[0].name;
+                    platform = 'lastfm';
                 } else {
                     skip = true;
                 }
