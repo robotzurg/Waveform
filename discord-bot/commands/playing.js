@@ -12,9 +12,10 @@ module.exports = {
         .setDMPermission(false),
     help_desc: `View the currently playing songs of any Spotify users on Waveform in this Discord Server.`,
 	async execute(interaction, client, serverConfig) {
-        interaction.deferReply();
+        await interaction.deferReply();
+        await interaction.editReply('Gathering information about songs being played in this server, please wait... This may take a bit!');
         const members = await interaction.guild.members.fetch();
-        let memberList = members.map(v => v.user.id);
+        let memberList = members.map(v => [v.user.id, v.displayName]);
         let skip = false;
         let playList = [];
 
@@ -22,14 +23,14 @@ module.exports = {
             skip = false;
             let origArtistArray, songDisplayName;
             let lfmTrackData;
-            if (!db.user_stats.has(member)) continue;
+            if (!db.user_stats.has(member[0])) continue;
             // Last.fm login
-            let lfmApi = await lfm_api_setup(member);
+            let lfmApi = await lfm_api_setup(member[0]);
             let lfmScrobbles = false;
-            let lfmUsername = db.user_stats.get(member, 'lfm_username');
+            let lfmUsername = db.user_stats.get(member[0], 'lfm_username');
             // Spotify login
             let spotifyApi = false;
-            spotifyApi = await spotify_api_setup(member).catch(() => {
+            spotifyApi = await spotify_api_setup(member[0]).catch(() => {
                 spotifyApi = false;
             });
             let songUrl = 'https://www.google.com';
@@ -47,7 +48,7 @@ module.exports = {
                     songUrl = data.body.item.external_urls.spotify;
                 }).catch((err) => {
                     skip = true;
-                    console.log(`Unable to pull up song info for ${member}`);
+                    console.log(`Unable to pull up song info for ${member[0]}`);
                     console.log(err);
                 });
             } else if (lfmApi != false && origArtistArray == undefined) {
@@ -103,7 +104,7 @@ module.exports = {
                     }
                 }
                 if (lfmScrobbles != false) extraData += `\n**Plays:** \`${lfmScrobbles}\``;
-                playList.push(`- ${platform == 'lastfm' ? `<:lastfm:1227869050084921375>` : `<:spotify:899365299814559784>`} <@${member}>: [**${origArtistArray.join(' & ')} - ${songDisplayName}**](${songUrl})${extraData != `` ? `${extraData}` : ``}`);
+                playList.push(`- ${platform == 'lastfm' ? `<:lastfm:1227869050084921375>` : `<:spotify:899365299814559784>`} **${member[1]}**: [**${origArtistArray.join(' & ')} - ${songDisplayName}**](${songUrl})${extraData != `` ? `${extraData}` : ``}`);
             }
         }
 
