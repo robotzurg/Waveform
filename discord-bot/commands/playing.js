@@ -45,6 +45,9 @@ module.exports = {
                     origArtistArray = data.body.item.artists.map(v => v.name);
                     songDisplayName = data.body.item.name;
                     songUrl = data.body.item.external_urls.spotify;
+                }).catch((err) => {
+                    console.log(`Unable to pull up song info for ${member}`);
+                    console.log(err);
                 });
             } else if (lfmApi != false && origArtistArray == undefined) {
                 let lfmRecentSongs = await lfmApi.user_getRecentTracks({ limit: 1 });
@@ -95,7 +98,7 @@ module.exports = {
                     }
                 }
                 if (lfmScrobbles != false) extraData += `\n**Plays:** \`${lfmScrobbles}\``;
-                playList.push(`- ${platform == 'lastfm' ? `<:lastfm:1227869050084921375>` : `<:spotify:899365299814559784>`} <@${member}>: [**${origArtistArray.join(' & ')} - ${songDisplayName}**](${songUrl})${extraData != `` ? `${extraData}` : ``}\n`);
+                playList.push(`- ${platform == 'lastfm' ? `<:lastfm:1227869050084921375>` : `<:spotify:899365299814559784>`} <@${member}>: [**${origArtistArray.join(' & ')} - ${songDisplayName}**](${songUrl})${extraData != `` ? `${extraData}` : ``}`);
             }
         }
 
