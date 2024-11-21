@@ -46,6 +46,7 @@ module.exports = {
                     songDisplayName = data.body.item.name;
                     songUrl = data.body.item.external_urls.spotify;
                 }).catch((err) => {
+                    skip = true;
                     console.log(`Unable to pull up song info for ${member}`);
                     console.log(err);
                 });
