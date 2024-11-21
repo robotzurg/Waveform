@@ -59,12 +59,14 @@ module.exports = {
                     }
                 }
 
-                if (lfmRecentSongs.track[0]['@attr'] != false && lfmRecentSongs.track[0]['@attr'] != undefined) {
-                    if (lfmRecentSongs.track[0]['@attr'].nowplaying != 'true') {
+                if (lfmRecentSongs.track[0] != undefined) {
+                    if (lfmRecentSongs.track[0]['@attr'] != false && lfmRecentSongs.track[0]['@attr'] != undefined) {
+                        if (lfmRecentSongs.track[0]['@attr'].nowplaying != 'true') {
+                            skip = true;
+                        }
+                    } else {
                         skip = true;
                     }
-                } else {
-                    skip = true;
                 }
                  
                 origArtistArray = [lfmRecentSongs.track[0].artist['#text']];
