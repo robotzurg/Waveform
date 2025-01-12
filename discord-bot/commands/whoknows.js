@@ -19,7 +19,7 @@ module.exports = {
             .addStringOption(option => 
                 option.setName('artist')
                     .setDescription('The name of the main artist(s).')
-                    .setAutocomplete(true)
+                    .setAutocomplete(false)
                     .setRequired(false))
     
             .addStringOption(option => 
@@ -40,7 +40,7 @@ module.exports = {
             .addStringOption(option => 
                 option.setName('artist')
                     .setDescription('The name of the main artist(s).')
-                    .setAutocomplete(true)
+                    .setAutocomplete(false)
                     .setRequired(false))
     
             .addStringOption(option => 
