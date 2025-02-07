@@ -39,4 +39,4 @@ const DatabaseQuery = {
 
 };
 
-module.exports = { DatabaseQuery };
+export default { DatabaseQuery };

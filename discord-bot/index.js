@@ -1,22 +1,44 @@
-// require the discord.js module
-const fs = require('fs');
-const Discord = require('discord.js');
-const { token } = require('./config.json');
-const db = require('./db');
-const { REST } = require('@discordjs/rest');
-const { Routes, InteractionType } = require('discord-api-types/v9');
+// Import required modules
+import { readdirSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { Collection, DMChannel, Client, GatewayIntentBits, Partials } from 'discord.js';
+import { REST } from '@discordjs/rest';
+import { Routes, InteractionType } from 'discord-api-types/v9';
+import 'dotenv/config';
+import { convertToSetterName } from './func.js';
 
-// create a new Discord client and give it some variables
-const { Client, GatewayIntentBits, Partials } = require('discord.js');
-const { convertToSetterName } = require('./func');
+// Create __dirname equivalent in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMessages, GatewayIntentBits.GuildMessageReactions, 
-    GatewayIntentBits.GuildMembers, GatewayIntentBits.MessageContent, GatewayIntentBits.DirectMessages], partials: [Partials.Channel, Partials.Message, Partials.Reaction] });
-client.commands = new Discord.Collection();
-client.cooldowns = new Discord.Collection();
+// Initialize your Discord client
+const client = new Client({ 
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.GuildMessageReactions, 
+        GatewayIntentBits.GuildMembers,
+        GatewayIntentBits.MessageContent,
+        GatewayIntentBits.DirectMessages
+    ], 
+    partials: [Partials.Channel, Partials.Message, Partials.Reaction] 
+});
+
+client.commands = new Collection();
+client.cooldowns = new Collection();
 const mainCommands = [];
 const adminCommands = [];
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+const commandFiles = readdirSync(join(__dirname, 'commands')).filter(file => file.endsWith('.js'));
+
+// Dynamically import command files
+for (const file of commandFiles) {
+    const { default: command } = await import(join(__dirname, 'commands', file));
+    client.commands.set(command.data.name, command);
+}
+
+// Set up REST API with your token
+const rest = new REST({ version: '9' }).setToken(process.env.TOKEN_DEV);
 
 // Place your client and guild ids here
 // eslint-disable-next-line no-unused-vars
@@ -28,36 +50,17 @@ const mainGuildId = '680864893552951306';
 // eslint-disable-next-line no-unused-vars
 const devGuildId = "1119885734913003551";
 
-for (const file of commandFiles) {
-	const command = require(`./commands/${file}`);
-    client.commands.set(command.data.name, command);
-    if (command.data.name.includes('admin')) {
-        adminCommands.push(command.data.toJSON());
-    } else {
-        mainCommands.push(command.data.toJSON());
-    }
-}
-
-const rest = new REST({ version: '9' }).setToken(token);
-
 (async () => {
-	try {
-		console.log('Started refreshing application (/) commands.');
-
-		await rest.put(
-            Routes.applicationCommands(mainClientId),
-            { body: mainCommands },
+    try {
+        console.log('Started refreshing application (/) commands.');
+        await rest.put(
+            Routes.applicationCommands(devClientId),
+            { body: mainCommands }
         );
-
-		await rest.put(
-			Routes.applicationGuildCommands(mainClientId, devGuildId),
-			{ body: adminCommands },
-		);
-
-		console.log('Successfully reloaded application (/) commands.');
-	} catch (error) {
-		console.error(error);
-	}
+        console.log('Successfully reloaded application (/) commands.');
+    } catch (error) {
+        console.error(error);
+    }
 })();
 
 client.once('ready', async () => {
@@ -88,7 +91,7 @@ client.on('interactionCreate', async interaction => {
             };
             
             if (focused[0].name == 'artist') {
-                let artist_names = db.reviewDB.keyArray();
+                let artist_names = reviewDB.keyArray();
 
                 // Search filters
                 artist_names = artist_names.filter(letter_filter);
@@ -101,7 +104,7 @@ client.on('interactionCreate', async interaction => {
                 artist_names = artist_names.map(v => v = { name: v, value: v });
 
                 if (artist_names.length == 1 && interaction.commandName != 'getartist' && !interaction.commandName.includes('ep')) {
-                    artist_collab = Object.keys(db.reviewDB.get(artist_names[0].name));
+                    artist_collab = Object.keys(reviewDB.get(artist_names[0].name));
                     artist_collab = artist_collab.map(v => v = v.replace('_((', '[').replace('))_', ']'));
                     artist_collab = artist_collab.filter(v => v != 'pfp_image');
                     if (artist_collab != undefined) {
@@ -112,7 +115,7 @@ client.on('interactionCreate', async interaction => {
                             }
                             let setterArtistCollab = convertToSetterName(artist_collab[i]);
 
-                            artist_collab[i] = db.reviewDB.get(artist_names[0].name, `${setterArtistCollab}`).collab;
+                            artist_collab[i] = reviewDB.get(artist_names[0].name, `${setterArtistCollab}`).collab;
                             if (artist_collab[i] == undefined) artist_collab[i] = [];
                             if (artist_collab[i].length > 1) {
                                 artist_collab[i] = artist_collab[i].join(' & ');
@@ -129,7 +132,7 @@ client.on('interactionCreate', async interaction => {
                 }
                 interaction.respond(artist_names);
             } else if (focused[0].name == 'name' || focused[0].name == 'song_name' || focused[0].name == 'music_name' || focused[0].name == 'album_name') {
-                let artist_songs = db.reviewDB.get(val_artist.split(' & ')[0]);
+                let artist_songs = reviewDB.get(val_artist.split(' & ')[0]);
                 if (artist_songs == undefined) {
                     interaction.respond([]); 
                     return;
@@ -155,8 +158,8 @@ client.on('interactionCreate', async interaction => {
                     if (val_artist_array.length <= 1) {
                         break;
                     } else {
-                        if (db.reviewDB.get(val_artist_array[0], `${setterArtistSong}`).collab == undefined) return interaction.respond([]);
-                        if (db.reviewDB.get(val_artist_array[0], `${setterArtistSong}`).collab.includes(`${val_artist_array[1]}`)) {
+                        if (reviewDB.get(val_artist_array[0], `${setterArtistSong}`).collab == undefined) return interaction.respond([]);
+                        if (reviewDB.get(val_artist_array[0], `${setterArtistSong}`).collab.includes(`${val_artist_array[1]}`)) {
                             collab_artist_songs.push(artist_songs[i]);
                         }
                     }
@@ -177,9 +180,9 @@ client.on('interactionCreate', async interaction => {
                 }
 
             } else if (focused[0].name == 'remixers') {
-                if (db.reviewDB.has(val_artist.split(' & ')[0])) {
+                if (reviewDB.has(val_artist.split(' & ')[0])) {
                     let valSongSetter = convertToSetterName(val_song);
-                    let artist_remixers = db.reviewDB.get(val_artist.split(' & ')[0], `${valSongSetter}`);
+                    let artist_remixers = reviewDB.get(val_artist.split(' & ')[0], `${valSongSetter}`);
                     if (artist_remixers == undefined) {
                         interaction.respond([]);
                         return;   
@@ -200,8 +203,8 @@ client.on('interactionCreate', async interaction => {
 
 	if (interaction.type !== InteractionType.ApplicationCommand) return;
 
-    if (!db.user_stats.has(interaction.user.id)) {
-        db.user_stats.set(interaction.user.id, {
+    if (!user_stats.has(interaction.user.id)) {
+        user_stats.set(interaction.user.id, {
             lfm_username: false,
             access_token: "na",
             refresh_token: false,
@@ -251,7 +254,7 @@ client.on('interactionCreate', async interaction => {
         client.cooldowns.set(interaction.commandName, 0);
     }
 
-    let ban_list = db.global_bot.get('ban_list');
+    let ban_list = global_bot.get('ban_list');
     if (ban_list == undefined) ban_list = [];
     if (ban_list.includes(interaction.user.id)) {
         return interaction.reply(`You have been banned from Waveform. For more information or to appeal your ban, please contact \`@jeffdev\` on discord.`);
@@ -260,18 +263,18 @@ client.on('interactionCreate', async interaction => {
     // Double check that the server config does exist in the server
     // If we're in DMs, just assume we have the settings of HWRC (which is basically just default settings)
     let serverConfig;
-    if (!(interaction.channel instanceof Discord.DMChannel)) {
-        serverConfig = db.server_settings.get(interaction.guild.id, 'config');
+    if (!(interaction.channel instanceof DMChannel)) {
+        serverConfig = server_settings.get(interaction.guild.id, 'config');
         if (serverConfig == undefined) {
             serverConfig = {
                 disable_ratings: false,
                 disable_global: false,
             };
-            db.server_settings.set(interaction.guild.id, serverConfig, 'config');
+            server_settings.set(interaction.guild.id, serverConfig, 'config');
         } else {
             if (serverConfig.disable_global == undefined) {
                 serverConfig.disable_global = false;
-                db.server_settings.set(interaction.guild.id, serverConfig, 'config');
+                server_settings.set(interaction.guild.id, serverConfig, 'config');
             }
         }
     } else {
@@ -296,8 +299,8 @@ client.on('interactionCreate', async interaction => {
 });
 
 client.on('guildCreate', async (guild) => {
-    if (!db.server_settings.has(guild.id)) {
-        db.server_settings.set(guild.id, {
+    if (!server_settings.has(guild.id)) {
+        server_settings.set(guild.id, {
             stats: {
                 // These 2 were removed due to speed issues with my current hardware.
                 // Could be re-added later when I get better hardware.
@@ -317,4 +320,4 @@ client.on('guildCreate', async (guild) => {
 });
 
 // login to Discord
-client.login(token);
+client.login(process.env.TOKEN_DEV);
