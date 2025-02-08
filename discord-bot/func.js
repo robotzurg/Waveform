@@ -14,6 +14,7 @@ export function removeItemOnce(arr, value) {
     }
     return arr;
 }
+
 export function sort(array, lowest_to_highest = false) {
     // This function sorts an array from highest to lowest based on this extension:
     // [ [ num, whatever else ], [ num, whatever else] ]
@@ -1186,14 +1187,16 @@ export async function updateStats(interaction, guildId, origArtistArray, artistA
     global_bot.set('stats', botStatsObj);
 }
 export function getEmbedColor(member) {
-    let embedColor = user_stats.get(member.user.id, 'config.embed_color');
-    if (embedColor == false || embedColor == undefined) {
-        embedColor = member.displayHexColor;
-    } else {
-        embedColor = embedColor.replace('#', '');
-    }
+    // let embedColor = user_stats.get(member.user.id, 'config.embed_color');
+    // if (embedColor == false || embedColor == undefined) {
+    //     embedColor = member.displayHexColor;
+    // } else {
+    //     embedColor = embedColor.replace('#', '');
+    // }
 
-    return embedColor;
+    return member.displayHexColor;
+
+    // return embedColor;
 }
 export function arrayEqual(array1, array2) {
     if (array1.length === array2.length) {

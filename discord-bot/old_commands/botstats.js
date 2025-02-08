@@ -1,5 +1,5 @@
 /* eslint-disable no-unreachable */
-const { handle_error, getEmbedColor } = require('../func');
+const { handle_error, getEmbedColor } = require('../func.js');
 const db = require('../db.js');
 const { EmbedBuilder, SlashCommandBuilder } = require('discord.js');
 
