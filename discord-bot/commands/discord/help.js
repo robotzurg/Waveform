@@ -1,6 +1,6 @@
 /* eslint-disable no-unreachable */
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder } from 'discord.js';
-import { getEmbedColor } from '../func.js';
+import { getEmbedColor } from '../../func.js';
 import { clamp } from 'lodash-es';
 
 const data = new SlashCommandBuilder()
