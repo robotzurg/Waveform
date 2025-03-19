@@ -269,7 +269,7 @@ module.exports = {
             }
         }
 
-        if (npEmbed.data.description == undefined) {
+        if (npEmbed.data.description == undefined && extraEmbedData !== '') {
             npEmbed.setDescription(extraEmbedData);
         }
 
