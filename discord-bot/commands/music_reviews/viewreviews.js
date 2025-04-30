@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from 'discord.js';
 
 const data = new SlashCommandBuilder()
-    .setName('stats')
+    .setName('viewreviews')
     .setDescription('TODO: Add')
     .addSubcommand(subcommand =>
         subcommand.setName('song')

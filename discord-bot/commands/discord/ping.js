@@ -5,7 +5,7 @@ const data = new SlashCommandBuilder()
     .setDescription('Get general info about the bot as a whole!');
     data.help_desc = `Ping the bot!`;
 async function execute(interaction, client, apiUrl) {
-    
+    interaction.reply('Pong!');
 }
 
 export default { data, execute };

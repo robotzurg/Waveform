@@ -1,12 +1,11 @@
 // Import required modules
-import { readdirSync } from 'fs';
+import { readdirSync, Dirent } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { Collection, DMChannel, Client, GatewayIntentBits, Partials } from 'discord.js';
+import { Collection, Client, GatewayIntentBits, Partials } from 'discord.js';
 import { REST } from '@discordjs/rest';
 import { Routes, InteractionType } from 'discord-api-types/v9';
 import 'dotenv/config';
-import { convertToSetterName } from './func.js';
 
 // Create __dirname equivalent in ESM
 const __filename = fileURLToPath(import.meta.url);
@@ -29,25 +28,29 @@ client.commands = new Collection();
 client.cooldowns = new Collection();
 const mainCommands = [];
 const adminCommands = [];
-const commandFiles = readdirSync(join(__dirname, 'commands')).filter(file => file.endsWith('.js'));
+const commandsPath = join(__dirname, 'commands');
+const subdirs = readdirSync(commandsPath, { withFileTypes: true })
+  .filter((d) => d.isDirectory())
+  .map(d => d.name);
 
-// Dynamically import command files using a valid file:// URL
-for (const file of commandFiles) {
-    const commandFilePath = join(__dirname, 'commands', file);
-    const commandFileUrl = pathToFileURL(commandFilePath).href;
-    const { default: command } = await import(commandFileUrl);
-
-    // Add the command to your client's command collection
-    client.commands.set(command.data.name, command);
-
-    // Depending on the command's name, add its JSON data to the appropriate array
-    if (command.data.name.includes('admin')) {
+for (const dir of subdirs) {
+    const dirPath = join(commandsPath, dir);
+    const files = readdirSync(dirPath).filter(f => f.endsWith('.js'));
+  
+    for (const file of files) {
+      const filePath = join(dirPath, file);
+      const { default: command } = await import(pathToFileURL(filePath).href);
+      if (command == undefined) continue;
+  
+      client.commands.set(command.data.name, command);
+  
+      if (dir === 'admin') {
         adminCommands.push(command.data.toJSON());
-    } else {
+      } else {
         mainCommands.push(command.data.toJSON());
+      }
     }
-}
-
+  }
 
 // Set up REST API with your token
 const rest = new REST({ version: '9' }).setToken(process.env.TOKEN_DEV);
