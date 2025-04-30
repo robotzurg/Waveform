@@ -121,6 +121,7 @@ module.exports = {
         }
         let topLfm = [];
         let counter = 0;
+        let individualAmount = result['@attr'].total;
 
         for (let track of resultList) {
             counter += 1;
@@ -152,7 +153,8 @@ module.exports = {
                 if (serverConfig.disable_ratings) reviewObj.rating = false;
 
                 let songUrl = track.url;
-                topLfm.push(`${counter}. [**${origArtistArray.join(' & ')} - ${displaySongName}**](${songUrl})${reviewObj.starred != false ? ` 🌟` : ``} - **${track.playcount}** plays${reviewObj.rating !== false ? `\n**Rating: \`${reviewObj.rating}/10\`**` : ``}`);
+                topLfm.push(`${counter}. [**${origArtistArray.join(' & ')} - ${displaySongName}**](${songUrl})${reviewObj.starred != false ? ` 🌟` : ``} - **${track.playcount}** plays` + 
+                `${reviewObj.rating !== false ? ` | \`${reviewObj.rating}/10\`` : ``}`);
             } else {
                 let artistUrl = track.url;
                 topLfm.push(`${counter}. [**${track.name}**](${artistUrl}) - **${track.playcount}** plays`);
@@ -169,7 +171,8 @@ module.exports = {
             .setDescription(paged_top_list[0].join('\n'));
             if (paged_top_list.length > 1) {
                 componentList.push(pageButtons);
-                topEmbed.setFooter({ text: `Page 1 / ${paged_top_list.length}` });
+                topEmbed.setFooter({ text: `Page 1 / ${paged_top_list.length} • ${individualAmount} ${subcommand}s listened` + 
+                    `${_.lowerCase(timeframe[1]) == 'all time' ? ` all time` : ` in the last ${_.lowerCase(timeframe[1])}`}` });
             }
         
 
