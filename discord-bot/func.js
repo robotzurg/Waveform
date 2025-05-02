@@ -3,7 +3,9 @@ import { EmbedBuilder } from 'discord.js';
 import { isEqual, clamp } from 'lodash-es';
 import SpotifyWebApi from 'spotify-web-api-node';
 import lastfm from "lastfm-njs";
-import DatabaseQuery from './enums.js';
+import { genericDB } from './utils/genericDB.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
 // TODO: ADD FUNCTION HEADERS/DEFS FOR ALL OF THESE!!!
 
@@ -36,6 +38,7 @@ export function sort(array, lowest_to_highest = false) {
 
     return array;
 }
+
 export async function get_user_reviews(songObj, disableGlobalReviews = false, guild = false, guildUsers = false) {
     if (songObj == undefined && songObj == null) return [];
     let userArray = Object.keys(songObj);
@@ -129,6 +132,8 @@ export async function parse_artist_song_data(interaction, artists = null, song =
     if (lfmArtists != null) lfmArtists = lfmArtists.split(' & ');
     let lfmSong = song;
 
+    let user_stats = genericDB.getById('users', interaction.user.id);
+
     if (remixers != null) {
         rmxArtistArray = [remixers.split(' & ')];
         rmxArtistArray = rmxArtistArray.flat(1);
@@ -153,7 +158,7 @@ export async function parse_artist_song_data(interaction, artists = null, song =
                 if (data.body.item.is_local == true) {
                     origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
                     songArg = data.body.item.name;
-                    songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
+                    songArg = songArg.replace('-', '-'); // STUPID LONGER DASH
                     songArg = songArg.replace('remix', 'Remix'); // Just in case there is lower case remix
                     songArt = false;
                     songUri = false;
@@ -166,7 +171,7 @@ export async function parse_artist_song_data(interaction, artists = null, song =
 
                 origArtistArray = data.body.item.artists.map(artist => artist.name.replace(' & ', ' \\& '));
                 songArg = data.body.item.name;
-                songArg = songArg.replace('–', '-'); // STUPID LONGER DASH
+                songArg = songArg.replace('-', '-'); // STUPID LONGER DASH
                 songArg = songArg.replace('remix', 'Remix'); // Just in case there is lower case remix
                 songArt = data.body.item.album.images[0].url;
                 songUri = data.body.item.uri;
@@ -437,102 +442,102 @@ export async function parse_artist_song_data(interaction, artists = null, song =
         return { error: `This is a compilation, and compilations cannot be reviewed as EPs/LPs.` };
     }
 
-    let setterSongArg = convertToSetterName(songArg);
+    let setterSongArg = songArg;
 
-    if (current_ep_review_data == false && interaction.commandName == 'albumreview') {
-        if (reviewDB.has(artistArray[0]) && reviewDB.get(artistArray[0], `${setterSongArg}`) != undefined && trackList == false) trackList = reviewDB.get(artistArray[0], `${setterSongArg}`).songs;
-        if (trackList == undefined || trackList == null) {
-            trackList = false;
-        }
+    // if (current_ep_review_data == false && interaction.commandName == 'albumreview') {
+    //     if (reviewDB.has(artistArray[0]) && reviewDB.get(artistArray[0], `${setterSongArg}`) != undefined && trackList == false) trackList = reviewDB.get(artistArray[0], `${setterSongArg}`).songs;
+    //     if (trackList == undefined || trackList == null) {
+    //         trackList = false;
+    //     }
 
-        current_ep_review_data = { msg_id: false, channel_id: false, guild_id: interaction.guild.id, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] };
-    }
+    //     current_ep_review_data = { msg_id: false, channel_id: false, guild_id: interaction.guild.id, artist_array: origArtistArray, ep_name: songArg, review_type: 'A', track_list: trackList, next: trackList[0] };
+    // }
 
-    if (user_stats.get(interaction.user.id, 'current_ep_review.ep_name') != undefined) {
-        if (user_stats.get(interaction.user.id, 'current_ep_review.ep_name').includes(' EP') || user_stats.get(interaction.user.id, 'current_ep_review.ep_name').includes(' LP')) {
-            for (let i = 0; i < origArtistArray.length; i++) {
-                if (origArtistArray[i].toLowerCase() == 'og') {
-                    origArtistArray[i] = user_stats.get(interaction.user.id, `current_ep_review.artist_array`);
-                    origArtistArray = origArtistArray.flat(1);
-                    artistArray = origArtistArray.slice(0);
-                }
-            }
-        }
-    }
+    // if (user_stats.get(interaction.user.id, 'current_ep_review.ep_name') != undefined) {
+    //     if (user_stats.get(interaction.user.id, 'current_ep_review.ep_name').includes(' EP') || user_stats.get(interaction.user.id, 'current_ep_review.ep_name').includes(' LP')) {
+    //         for (let i = 0; i < origArtistArray.length; i++) {
+    //             if (origArtistArray[i].toLowerCase() == 'og') {
+    //                 origArtistArray[i] = user_stats.get(interaction.user.id, `current_ep_review.artist_array`);
+    //                 origArtistArray = origArtistArray.flat(1);
+    //                 artistArray = origArtistArray.slice(0);
+    //             }
+    //         }
+    //     }
+    // }
 
     // VIP adjustment
     songArg = songArg.replace('- VIP', 'VIP');
     songArg = songArg.replace('(VIP)', 'VIP');
 
-    if (interaction.commandName != 'nowplaying' && !interaction.commandName.includes('mail')) {
-        // Check if all the artists exist (don't check this if we're pulling data for /review or /epreview)
-        if (interaction.commandName != 'review' && interaction.commandName != 'albumreview' && interaction.commandName != 'pushtoalbumreview' && interaction.commandName != 'whoknows' && interaction.commandName != 'lfmtop') {
-            for (let i = 0; i < artistArray.length; i++) {
-                if (!reviewDB.has(artistArray[i])) {
-                    return { error: `The artist \`${artistArray[i]}\` is not in the database. This is either due to no reviews being made of this song, or could be due to an artist renaming themselves on Spotify. If you believe the latter is the case, please use \`/reportsongdata\` to submit a song data edit request.` };
-                }
-            }
+    // if (interaction.commandName != 'nowplaying' && !interaction.commandName.includes('mail')) {
+    //     // Check if all the artists exist (don't check this if we're pulling data for /review or /epreview)
+    //     if (interaction.commandName != 'review' && interaction.commandName != 'albumreview' && interaction.commandName != 'pushtoalbumreview' && interaction.commandName != 'whoknows' && interaction.commandName != 'lfmtop') {
+    //         for (let i = 0; i < artistArray.length; i++) {
+    //             if (!reviewDB.has(artistArray[i])) {
+    //                 return { error: `The artist \`${artistArray[i]}\` is not in the database. This is either due to no reviews being made of this song, or could be due to an artist renaming themselves on Spotify. If you believe the latter is the case, please use \`/reportsongdata\` to submit a song data edit request.` };
+    //             }
+    //         }
 
-            for (let i = 0; i < rmxArtistArray.length; i++) {
-                if (!reviewDB.has(rmxArtistArray[i])) {
-                    return { error: `The artist \`${rmxArtistArray[i]}\` is not in the database. This is either due to no reviews being made of this song, or could be due to an artist renaming themselves on Spotify. If you believe the latter is the case, please use \`/reportsongdata\` to submit a song data edit request.` };
-                }
-            }
-        }
+    //         for (let i = 0; i < rmxArtistArray.length; i++) {
+    //             if (!reviewDB.has(rmxArtistArray[i])) {
+    //                 return { error: `The artist \`${rmxArtistArray[i]}\` is not in the database. This is either due to no reviews being made of this song, or could be due to an artist renaming themselves on Spotify. If you believe the latter is the case, please use \`/reportsongdata\` to submit a song data edit request.` };
+    //             }
+    //         }
+    //     }
 
-        if (reviewDB.has(artistArray[0])) {
-            if (reviewDB.get(artistArray[0], `${setterSongArg}`) != undefined) {
-                if (reviewDB.get(artistArray[0], `${setterSongArg}`).collab != undefined) {
-                    if (reviewDB.get(artistArray[0], `${setterSongArg}`).collab.length != 0) {
-                        artistArray.push(reviewDB.get(artistArray[0], `${setterSongArg}`).collab);
-                        origArtistArray.push(reviewDB.get(artistArray[0], `${setterSongArg}`).collab);
-                        artistArray = artistArray.flat(1);
-                        origArtistArray = artistArray.flat(1);
-                        artistArray = [...new Set(artistArray)];
-                        origArtistArray = [...new Set(origArtistArray)];
+    //     if (reviewDB.has(artistArray[0])) {
+    //         if (reviewDB.get(artistArray[0], `${setterSongArg}`) != undefined) {
+    //             if (reviewDB.get(artistArray[0], `${setterSongArg}`).collab != undefined) {
+    //                 if (reviewDB.get(artistArray[0], `${setterSongArg}`).collab.length != 0) {
+    //                     artistArray.push(reviewDB.get(artistArray[0], `${setterSongArg}`).collab);
+    //                     origArtistArray.push(reviewDB.get(artistArray[0], `${setterSongArg}`).collab);
+    //                     artistArray = artistArray.flat(1);
+    //                     origArtistArray = artistArray.flat(1);
+    //                     artistArray = [...new Set(artistArray)];
+    //                     origArtistArray = [...new Set(origArtistArray)];
 
-                    }
-                }
+    //                 }
+    //             }
 
-                if (reviewDB.get(artistArray[0], `${setterSongArg}`).art && songArt == false) {
-                    songArt = reviewDB.get(artistArray[0], `${setterSongArg}`).art;
-                }
+    //             if (reviewDB.get(artistArray[0], `${setterSongArg}`).art && songArt == false) {
+    //                 songArt = reviewDB.get(artistArray[0], `${setterSongArg}`).art;
+    //             }
 
-                if (reviewDB.get(artistArray[0], `${setterSongArg}`).spotify_uri && songUri == false) {
-                    songUri = reviewDB.get(artistArray[0], `${setterSongArg}`).spotify_uri;
-                }
+    //             if (reviewDB.get(artistArray[0], `${setterSongArg}`).spotify_uri && songUri == false) {
+    //                 songUri = reviewDB.get(artistArray[0], `${setterSongArg}`).spotify_uri;
+    //             }
 
-                if (reviewDB.get(artistArray[0], `${setterSongArg}`).release_date && releaseDate == false) {
-                    releaseDate = reviewDB.get(artistArray[0], `${setterSongArg}`).release_date;
-                }
-            }
-        }
+    //             if (reviewDB.get(artistArray[0], `${setterSongArg}`).release_date && releaseDate == false) {
+    //                 releaseDate = reviewDB.get(artistArray[0], `${setterSongArg}`).release_date;
+    //             }
+    //         }
+    //     }
 
-        if (rmxArtistArray[0] != undefined) {
-            if (reviewDB.has(rmxArtistArray[0])) {
-                if (reviewDB.get(rmxArtistArray[0], `${setterSongArg}`) != undefined) {
-                    if (reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).rmx_collab != undefined) {
-                        if (reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).rmx_collab.length != 0) {
-                            rmxArtistArray.push(reviewDB.get(rmxArtistArray[0])[songArg].rmx_collab);
-                            rmxArtistArray = rmxArtistArray.flat(1);
-                        }
-                    }
+    //     if (rmxArtistArray[0] != undefined) {
+    //         if (reviewDB.has(rmxArtistArray[0])) {
+    //             if (reviewDB.get(rmxArtistArray[0], `${setterSongArg}`) != undefined) {
+    //                 if (reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).rmx_collab != undefined) {
+    //                     if (reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).rmx_collab.length != 0) {
+    //                         rmxArtistArray.push(reviewDB.get(rmxArtistArray[0])[songArg].rmx_collab);
+    //                         rmxArtistArray = rmxArtistArray.flat(1);
+    //                     }
+    //                 }
 
-                    if (reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).art && songArt == false) {
-                        songArt = reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).art;
-                    }
+    //                 if (reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).art && songArt == false) {
+    //                     songArt = reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).art;
+    //                 }
 
-                    if (reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).spotify_uri && songUri == false) {
-                        songUri = reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).spotify_uri;
-                    }
+    //                 if (reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).spotify_uri && songUri == false) {
+    //                     songUri = reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).spotify_uri;
+    //                 }
 
-                    if (reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).release_date && releaseDate == false) {
-                        releaseDate = reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).release_date;
-                    }
-                }
-            }
-        }
-    }
+    //                 if (reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).release_date && releaseDate == false) {
+    //                     releaseDate = reviewDB.get(rmxArtistArray[0], `${setterSongArg}`).release_date;
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
     origArtistArray = origArtistArray.filter(v => !rmxArtistArray.includes(v));
     let allArtistArray = artistArray;
@@ -639,9 +644,6 @@ export async function review_song(interaction, artistArray, origArtistArray, son
 
     // To make sure we only add to the song count once
     let addedToSongCount = false;
-
-    // This is done so that key names with periods and quotation marks can both be supported in object names with enmap string dot notation
-    let setterSongName = convertToSetterName(song);
 
     for (let i = 0; i < artistArray.length; i++) {
 
@@ -1041,9 +1043,13 @@ export async function get_review_channel(client, guild_id, channel_id, msg_id) {
     return target;
 }
 export async function spotify_api_setup(user_id, first_time = false) {
-    if (!user_stats.has(user_id)) return false;
-    const access_token = user_stats.get(user_id, 'access_token');
-    const refresh_token = user_stats.get(user_id, 'refresh_token');
+
+    let userProfile = await genericDB.getById('users', user_id);
+    console.log(userProfile);
+
+    if (userProfile == null) return false;
+    const access_token = userProfile.spotify_access_token;
+    const refresh_token = userProfile.spotify_refresh_token;
 
     if (first_time) {
         const spotifyApi = new SpotifyWebApi({
@@ -1053,18 +1059,17 @@ export async function spotify_api_setup(user_id, first_time = false) {
         });
 
         // Refresh access token so we can use API
-        await spotifyApi.setRefreshToken(refresh_token);
-        await spotifyApi.setAccessToken(access_token);
+        spotifyApi.setRefreshToken(refresh_token);
+        spotifyApi.setAccessToken(access_token);
         await spotifyApi.refreshAccessToken().then(async (data) => {
-            console.log(data.body["access_token"]);
-            await user_stats.set(user_id, data.body["access_token"], 'access_token');
-            await spotifyApi.setAccessToken(data.body["access_token"]);
+            await genericDB.update('users', user_id, { spotify_access_token: data.body["access_token"] });
+            spotifyApi.setAccessToken(data.body["access_token"]);
         });
         return spotifyApi;
     }
 
     // If we have an access token for spotify API (therefore can use it)
-    if (access_token != undefined && access_token != false && access_token != 'na') {
+    if (access_token != undefined && access_token != false && access_token != null) {
         const spotifyApi = new SpotifyWebApi({
             redirectUri: process.env.SPOTIFY_REDIRECT_URI,
             clientId: process.env.SPOTIFY_API_ID,
@@ -1072,11 +1077,11 @@ export async function spotify_api_setup(user_id, first_time = false) {
         });
 
         // Refresh access token so we can use API
-        await spotifyApi.setRefreshToken(refresh_token);
-        await spotifyApi.setAccessToken(access_token);
+        spotifyApi.setRefreshToken(refresh_token);
+        spotifyApi.setAccessToken(access_token);
         await spotifyApi.refreshAccessToken().then(async (data) => {
-            await user_stats.set(user_id, data.body["access_token"], 'access_token');
-            await spotifyApi.setAccessToken(data.body["access_token"]);
+            await genericDB.update('users', userProfile.id, { spotify_access_token: data.body["access_token"] });
+            spotifyApi.setAccessToken(data.body["access_token"]);
         });
 
         return spotifyApi;
@@ -1088,13 +1093,7 @@ export function isValidURL(string) {
     let res = string.match(/(http(s)?:\/\/.)?(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/g);
     return (res !== null);
 }
-export function convertToSetterName(string) {
-    if (string.includes('[') || string.includes(']')) {
-        string = string.replace('[', '_((');
-        string = string.replace(']', '))_');
-    }
-    return string.includes('.') ? `["${string}"]` : string;
-}
+
 export function getProperRemixers(artistArray, rmxArtistArray) {
     let newRmxArtistArray = [];
     for (let i = 0; i < rmxArtistArray.length; i++) {
@@ -1315,9 +1314,13 @@ export function getTrackList(data, origArtistArray, rmxArtistArray) {
 
     return [trackList, passesChecks];
 }
+
 export async function lfm_api_setup(userId, lfmUser = false) {
-    if (lfmUser == false) lfmUser = user_stats.get(userId, 'lfm_username');
-    if (user_stats.get(userId, 'config.display_scrobbles') == false) lfmUser = false;
+    const userProfile = genericDB.getById('users', userId);
+    if (userProfile == null) return false;
+    
+    if (lfmUser != false) lfmUser = userProfile.lfm_username;
+    if (userProfile.discord_display_scrobbles == false) lfmUser = false;
     if (lfmUser == false || lfmUser == undefined) return false;
 
     let lfm = new lastfm({

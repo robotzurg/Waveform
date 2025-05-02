@@ -1,7 +1,9 @@
 import { EmbedBuilder, SlashCommandBuilder } from 'discord.js';
-import { parse_artist_song_data, handle_error, get_review_channel, getEmbedColor, convertToSetterName, lfm_api_setup, checkForGlobalReview } from '../../func.js';
-import { userDB } from '../../utils/userDB.js';
-import { songDB } from '../../utils/songDB.js'
+import { parse_artist_song_data, handle_error, get_review_channel, getEmbedColor, lfm_api_setup, checkForGlobalReview } from '../../func.js';
+// import { userDB } from '../../utils/userDB.js';
+import { genericDB } from '../../utils/genericDB.js'
+import dotenv from 'dotenv';
+dotenv.config('../../.env');
 
 const data = new SlashCommandBuilder()
   .setName('getreview')
@@ -35,42 +37,40 @@ async function execute(interaction, client, serverConfig) {
   try {
     let artists = interaction.options.getString('artist');
     let song = interaction.options.getString('song_name');
-    // let song_info = await parse_artist_song_data(interaction, artists, song);
-    // if (song_info.error != undefined) {
-    //   await interaction.reply(song_info.error);
-    //   return;
-    // }
+    let song_info = await parse_artist_song_data(interaction, artists, song);
+    if (song_info.error != undefined) {
+      await interaction.reply(song_info.error);
+      return;
+    }
 
-    // let origArtistArray = song_info.prod_artists;
-    // let songName = song_info.song_name;
-    // let setterSongName = convertToSetterName(songName);
-    // let artistArray = song_info.db_artists;
-    // let displaySongName = song_info.display_song_name;
+    console.log(song_info);
 
-    // let taggedUser = interaction.options.getUser('user');
-    // let taggedMember;
-    // if (taggedUser == null) {
-    //   taggedUser = interaction.user;
-    //   taggedMember = interaction.member;
-    // } else {
-    //   taggedMember = await interaction.guild.members.fetch(taggedUser.id);
-    // }
+    let origArtistArray = song_info.prod_artists;
+    let songName = song_info.song_name;
+    let artistArray = song_info.db_artists;
+    let displaySongName = song_info.display_song_name;
 
-    // // Last.fm
-    // let lfmApi = await lfm_api_setup(taggedUser.id);
-    // let lfmScrobbles = false;
+    let taggedUser = interaction.options.getUser('user');
+    let taggedMember;
+    if (taggedUser == null) {
+      taggedUser = interaction.user;
+      taggedMember = interaction.member;
+    } else {
+      taggedMember = await interaction.guild.members.fetch(taggedUser.id);
+    }
 
-    // let rreview;
-    // let rscore;
-    // let rsentby;
-    // let rstarred;
-    // let rurl;
-    // let usrSentBy;
-    // let rtimestamp;
-    // let isMailbox = false;
-    let songObj = await songDB.get(artists, song);
-    console.log(songObj);
-    interaction.reply(`${songObj.name} was found.`);
+    // Last.fm
+    let lfmApi = await lfm_api_setup(taggedUser.id);
+    let lfmScrobbles = false;
+
+    let rreview;
+    let rscore;
+    let rsentby;
+    let rstarred;
+    let rurl;
+    let usrSentBy;
+    let rtimestamp;
+    let isMailbox = false;
     // if (songObj == undefined) return interaction.reply(`\`${origArtistArray.join(' & ')} - ${displaySongName}\` not found in the database.`);
     // let songReviewObj = songObj[taggedUser.id];
     // if (songReviewObj == undefined) return interaction.reply(`No review found for \`${origArtistArray.join(' & ')} - ${displaySongName}\`. *Note that for EP/LP reviews, you need to use \`/getepreview\`.*`);
