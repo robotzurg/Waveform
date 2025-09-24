@@ -3,8 +3,8 @@ const fs = require('fs');
 const Discord = require('discord.js');
 const { token_dev } = require('./config.json');
 const db = require('./db');
-const { REST } = require('@discordjs/rest');
-const { Routes, InteractionType } = require('discord-api-types/v9');
+// const { REST } = require('@discordjs/rest');
+const { InteractionType } = require('discord-api-types/v9');
 
 // create a new Discord client and give it some variables
 const { Client, GatewayIntentBits, Partials } = require('discord.js');
@@ -38,32 +38,32 @@ for (const file of commandFiles) {
     }
 }
 
-const rest = new REST({ version: '9' }).setToken(token_dev);
+// const rest = new REST({ version: '9' }).setToken(token_dev);
 
-(async () => {
-	try {
-		console.log('Started refreshing application (/) commands.');
+// (async () => {
+// 	try {
+// 		console.log('Started refreshing application (/) commands.');
 
-        await rest.put(
-            Routes.applicationCommands(devClientId),
-            { body: mainCommands },
-        );
+//         await rest.put(
+//             Routes.applicationCommands(devClientId),
+//             { body: mainCommands },
+//         );
 
-		await rest.put(
-			Routes.applicationGuildCommands(devClientId, devGuildId),
-			{ body: adminCommands },
-		);
+// 		await rest.put(
+// 			Routes.applicationGuildCommands(devClientId, devGuildId),
+// 			{ body: adminCommands },
+// 		);
 
-        // await rest.put(
-		// 	Routes.applicationGuildCommands(devClientId, "784994152189919264"),
-		// 	{ body: registerCommands },
-		// );
+//         // await rest.put(
+// 		// 	Routes.applicationGuildCommands(devClientId, "784994152189919264"),
+// 		// 	{ body: registerCommands },
+// 		// );
 
-		console.log('Successfully reloaded application (/) commands.');
-	} catch (error) {
-		console.error(error);
-	}
-})();
+// 		console.log('Successfully reloaded application (/) commands.');
+// 	} catch (error) {
+// 		console.error(error);
+// 	}
+// })();
 
 client.once('ready', async () => {
     console.log('Ready!');
