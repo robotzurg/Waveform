@@ -97,7 +97,7 @@ module.exports = {
 
         // Check if a podcast is being played, as we don't support that.
         if (isPodcast == true) {
-            return interaction.editReply('Podcasts are not supported with `/np`.');
+            return interaction.editReply('Podcasts are not supported with `/nowplaying`.');
         } else if (validSong == false) {
             return interaction.editReply(`This song cannot be parsed by Waveform, therefore cannot be pulled up.`);
         }
@@ -184,11 +184,16 @@ module.exports = {
 
         if (db.reviewDB.has(artistArray[0])) {
             let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
-
             if (songObj != undefined) {
                 const guild = client.guilds.cache.get(interaction.guild.id);
-                let localUserArray = await get_user_reviews(songObj, serverConfig.disable_global, guild, guild);
-                let globalUserArray = await get_user_reviews(songObj, serverConfig.disable_global, guild);
+                let localUserArray = []; 
+                let globalUserArray = []; 
+
+                if (serverConfig.disable_ratings === false) {
+                    localUserArray = await get_user_reviews(songObj, serverConfig.disable_global, guild, guild);
+                    globalUserArray = await get_user_reviews(songObj, serverConfig.disable_global, guild);
+                }
+
                 let globalRankNumArray = [];
                 let localRankNumArray = [];
                 let localStarNum = 0;
