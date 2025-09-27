@@ -5,8 +5,7 @@ const _ = require('lodash');
 const SpotifyWebApi = require('spotify-web-api-node');
 const lastfm = require("lastfm-njs");
 const { DatabaseQuery } = require('./enums.js');
-const axios = require('axios');
-const cheerio = require('cheerio');
+
 
 // TODO: ADD FUNCTION HEADERS/DEFS FOR ALL OF THESE!!!
 
@@ -1643,94 +1642,94 @@ module.exports = {
         }
     },
 
-    getUserDataAoty: async function(user, route) {
-        const { fetchAotyPage } = require('./func.js');
-        const userUrl = `https://www.albumoftheyear.org/user/${user}${route}`;
+    // getUserDataAoty: async function(user, route) {
+    //     const { fetchAotyPage } = require('./func.js');
+    //     const userUrl = `https://www.albumoftheyear.org/user/${user}${route}`;
 
-        try {
-            const $ = await fetchAotyPage(userUrl);
+    //     try {
+    //         const $ = await fetchAotyPage(userUrl);
 
-            const perfectScores = $('.albumBlock');
-            if (!perfectScores.length) return [];
+    //         const perfectScores = $('.albumBlock');
+    //         if (!perfectScores.length) return [];
 
-            const scores = perfectScores.map((index, element) => {
-                const artistName = $(element).find('.artistTitle').text().trim();
-                const albumName = $(element).find('.albumTitle').text().trim();
-                const albumType = $(element).find('.type').text().trim();
-                const albumRating = $(element).find('.rating').text().trim();
-                const albumDate = $(element).find('.ratingText').text().trim();
+    //         const scores = perfectScores.map((index, element) => {
+    //             const artistName = $(element).find('.artistTitle').text().trim();
+    //             const albumName = $(element).find('.albumTitle').text().trim();
+    //             const albumType = $(element).find('.type').text().trim();
+    //             const albumRating = $(element).find('.rating').text().trim();
+    //             const albumDate = $(element).find('.ratingText').text().trim();
 
-                return {
-                    'artist_name': artistName,
-                    'album_name': albumName,
-                    'album_type': albumType,
-                    'album_rating': parseInt(albumRating),
-                    'album_date': albumDate,
-                };
-            }).get();
+    //             return {
+    //                 'artist_name': artistName,
+    //                 'album_name': albumName,
+    //                 'album_type': albumType,
+    //                 'album_rating': parseInt(albumRating),
+    //                 'album_date': albumDate,
+    //             };
+    //         }).get();
 
-            return scores;
-        } catch (error) {
-            console.error('Error fetching user perfect scores:', error);
-            return [];
-        }
-    },
+    //         return scores;
+    //     } catch (error) {
+    //         console.error('Error fetching user perfect scores:', error);
+    //         return [];
+    //     }
+    // },
 
-    getDataAoty: async function(route) {
-        const { fetchAotyPage } = require('./func.js');
-        const url = `https://www.albumoftheyear.org${route}`;
-        console.log(url);
+    // getDataAoty: async function(route) {
+    //     const { fetchAotyPage } = require('./func.js');
+    //     const url = `https://www.albumoftheyear.org${route}`;
+    //     console.log(url);
 
-        try {
-            const $ = await fetchAotyPage(url);
+    //     try {
+    //         const $ = await fetchAotyPage(url);
 
-            const perfectScores = $('.albumBlock');
-            if (!perfectScores.length) return [];
+    //         const perfectScores = $('.albumBlock');
+    //         if (!perfectScores.length) return [];
 
-            const scores = perfectScores.map((index, element) => {
-                const parentAnchorTag = $(element).find('.albumTitle').parent('a').attr('href').replace('/album/', '').replace('.php', '');
-                const artistName = $(element).find('.artistTitle').text().trim();
-                const albumName = $(element).find('.albumTitle').text().trim();
-                const albumType = $(element).find('.type').text().trim();
-                const albumRating = $(element).find('.rating').text().trim();
-                const albumDate = $(element).find('.ratingText').text().trim();
+    //         const scores = perfectScores.map((index, element) => {
+    //             const parentAnchorTag = $(element).find('.albumTitle').parent('a').attr('href').replace('/album/', '').replace('.php', '');
+    //             const artistName = $(element).find('.artistTitle').text().trim();
+    //             const albumName = $(element).find('.albumTitle').text().trim();
+    //             const albumType = $(element).find('.type').text().trim();
+    //             const albumRating = $(element).find('.rating').text().trim();
+    //             const albumDate = $(element).find('.ratingText').text().trim();
 
-                return {
-                    'artist_name': artistName,
-                    'album_name': albumName,
-                    'album_type': albumType,
-                    'album_rating': parseInt(albumRating),
-                    'album_date': albumDate,
-                    'aoty_id': parentAnchorTag,
-                };
-            }).get();
+    //             return {
+    //                 'artist_name': artistName,
+    //                 'album_name': albumName,
+    //                 'album_type': albumType,
+    //                 'album_rating': parseInt(albumRating),
+    //                 'album_date': albumDate,
+    //                 'aoty_id': parentAnchorTag,
+    //             };
+    //         }).get();
 
-            console.log(scores);
+    //         console.log(scores);
 
-            return scores;
-        } catch (error) {
-            console.log(url);
-            return [];
-        }
-    },
+    //         return scores;
+    //     } catch (error) {
+    //         console.log(url);
+    //         return [];
+    //     }
+    // },
 
-    fetchAotyPage: async function(url) {
-        try {
-            const response = await axios.get(url, {
-                headers: {
-                    'User-Agent': 'Mozilla/6.0',
-                },
-            });
+    // fetchAotyPage: async function(url) {
+    //     try {
+    //         const response = await axios.get(url, {
+    //             headers: {
+    //                 'User-Agent': 'Mozilla/6.0',
+    //             },
+    //         });
 
-            const html = response.data;
-            const $ = cheerio.load(html);
+    //         const html = response.data;
+    //         const $ = cheerio.load(html);
 
-            return $;
-        } catch (error) {
-            console.error('Error fetching page:', error);
-            return null;
-        }
-    },
+    //         return $;
+    //     } catch (error) {
+    //         console.error('Error fetching page:', error);
+    //         return null;
+    //     }
+    // },
 
     checkForGlobalReview: function(reviewObj, guild_id) {
         if (reviewObj.guild_id === undefined) reviewObj.guild_id = '680864893552951306';
