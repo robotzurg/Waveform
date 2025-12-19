@@ -186,32 +186,26 @@ module.exports = {
             let songObj = db.reviewDB.get(artistArray[0], `${setterSongName}`);
             if (songObj != undefined) {
                 const guild = client.guilds.cache.get(interaction.guild.id);
-                let localUserArray = []; 
-                let globalUserArray = []; 
-
-                if (serverConfig.disable_ratings === false) {
-                    localUserArray = await get_user_reviews(songObj, serverConfig.disable_global, guild, guild);
-                    globalUserArray = await get_user_reviews(songObj, serverConfig.disable_global, guild);
-                }
-
+                let localUserArray = await get_user_reviews(songObj, serverConfig.disable_global, guild, guild);
+                let globalUserArray = [];
                 let globalRankNumArray = [];
                 let localRankNumArray = [];
                 let localStarNum = 0;
                 let globalStarNum = 0;
                 let yourStar = '';
 
-                // Global
-                for (let i = 0; i < globalUserArray.length; i++) {
-                    if (globalUserArray[i] == `${interaction.user.id}`) yourRating = songObj[globalUserArray[i]].rating;
-                    let rating;
-                    rating = songObj[globalUserArray[i]].rating;
-                    if (songObj[globalUserArray[i]].starred == true) {
-                        globalStarNum++;
-                    }
+                // // Global
+                // for (let i = 0; i < globalUserArray.length; i++) {
+                //     if (globalUserArray[i] == `${interaction.user.id}`) yourRating = songObj[globalUserArray[i]].rating;
+                //     let rating;
+                //     rating = songObj[globalUserArray[i]].rating;
+                //     if (songObj[globalUserArray[i]].starred == true) {
+                //         globalStarNum++;
+                //     }
                     
-                    if (rating !== false) globalRankNumArray.push(parseFloat(rating));
-                    globalUserArray[i] = [rating, `${globalUserArray[i]} \`${rating}\``];
-                }
+                //     if (rating !== false) globalRankNumArray.push(parseFloat(rating));
+                //     globalUserArray[i] = [rating, `${globalUserArray[i]} \`${rating}\``];
+                // }
 
                 // Local
                 for (let i = 0; i < localUserArray.length; i++) {
