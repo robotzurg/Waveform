@@ -12,16 +12,17 @@ You can try out the bot in your own discord server with this invite link: https:
 ```yaml
 services:
   discord-bot:
-    image: discord-bot:latest  # will become ghrc
+    image: ghcr.io/robotzurg/waveformbot:latest
     container_name: waveform
     restart: unless-stopped
-    environment:
-      DISCORD_TOKEN: token # add token here
+    env_file:
+      - ./.env
     volumes:
       - ./data:/app/data
-
 ```
 
 - Then create a folder where the docker-compose file is located named `data` and add the DB files to it.
+
+- add `.env` file
 
 - Run the container with `docker compose up -d`
