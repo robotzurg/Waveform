@@ -23,3 +23,5 @@ services:
 ```
 
 - Then create a folder where the docker-compose file is located named `data` and add the DB files to it.
+
+- Run the container with `docker compose up -d`
