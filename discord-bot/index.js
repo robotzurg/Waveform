@@ -37,14 +37,14 @@ for (const file of commandFiles) {
     }
 }
 
-if (process.env.DISCORD_TOKEN) {
-    token = process.env.DISCORD_TOKEN;
+if (process.env.TOKEN) {
+    token = process.env.TOKEN;
 } else {
     try {
         const config = require('./config.json');
         token = config.token;
     } catch (err) {
-        console.error("config.json not found and DISCORD_TOKEN not set");
+        console.error("config.json not found and TOKEN environment variable not set");
         process.exit(1);
     }
 }

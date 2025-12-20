@@ -3,5 +3,6 @@ data
 config.json
 .git
 .gitignore
+.env
 Dockerfile
 npm-debug.log
