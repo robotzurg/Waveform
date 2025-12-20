@@ -1,7 +1,6 @@
 // require the discord.js module
 const fs = require('fs');
 const Discord = require('discord.js');
-const { token } = require('./config.json');
 const db = require('./db');
 // const { REST } = require('@discordjs/rest');
 const { InteractionType } = require('discord-api-types/v9');
@@ -35,6 +34,18 @@ for (const file of commandFiles) {
         adminCommands.push(command.data.toJSON());
     } else {
         mainCommands.push(command.data.toJSON());
+    }
+}
+
+if (process.env.DISCORD_TOKEN) {
+    token = process.env.DISCORD_TOKEN;
+} else {
+    try {
+        const config = require('./config.json');
+        token = config.token;
+    } catch (err) {
+        console.error("config.json not found and DISCORD_TOKEN not set");
+        process.exit(1);
     }
 }
 
