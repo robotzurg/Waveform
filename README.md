@@ -5,7 +5,7 @@ Waveform is a music reviewing discord bot, designed to help facilitate music and
 You can try out the bot in your own discord server with this invite link: https://discord.com/oauth2/authorize?client_id=828651073136361472&permissions=534723816512&scope=applications.commands%20bot
 
 
-## Running bot with docker (WIP)
+## Docker Compose
 
 - Create a directory and add a `docker-compose.yaml` file with the following contents:
 
@@ -21,8 +21,16 @@ services:
       - ./data:/app/data
 ```
 
-- Then create a folder where the docker-compose file is located named `data` and add the DB files to it.
+- Create a folder named `data` and add the DB files to it.
 
-- add `.env` file
+- Add a `.env` file and add the tokens to it.
 
+- Your directory structure should look like this now:
+```
+waveform
+└── data/
+    ├── database files
+├── .env
+├── docker-compose.yaml
+```
 - Run the container with `docker compose up -d`
