@@ -75,8 +75,6 @@ typings/
 # FuseBox cache
 .fusebox/
 discord-bot/config.json
-discord-bot/package-lock.json
-discord-bot/package.json
 discord-bot/data/enmap.sqlite
 discord-bot/data/enmap.sqlite-shm
 discord-bot/data/enmap.sqlite-wal
