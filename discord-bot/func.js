@@ -45,7 +45,7 @@ module.exports = {
     // server_filter is an object of the server guild
     get_user_reviews: async function(songObj, disableGlobalReviews = false, guild = false, guildUsers = false) {
         const { checkForGlobalReview } = require('./func.js');
-        if (songObj == undefined && songObj == null) return [];
+        if (songObj == undefined || songObj == null) return [];
         let userArray = Object.keys(songObj);
 
         userArray = userArray.filter(e => e !== 'ep');
