@@ -70,7 +70,7 @@ module.exports = {
         // Filter out the user array to only those in the guild, if this is not false
         if (guildUsers != false) {
             if (!Array.isArray(guildUsers)) {
-                let res = guild.members.cache.get();
+                let res = await guild.members.fetch();
                 guildUsers = [...res.keys()];
             }
 
