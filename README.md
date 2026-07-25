@@ -11,7 +11,7 @@ You can try out the bot in your own discord server with this invite link: https:
 
 ```yaml
 services:
-  discord-bot:
+  waveform:
     image: ghcr.io/robotzurg/waveformbot:latest
     container_name: waveform
     restart: unless-stopped
